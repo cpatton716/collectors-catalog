@@ -35,7 +35,7 @@ export function ComicDetailsForm({
   // Grading state - initialized from AI detection or existing item
   const [isGraded, setIsGraded] = useState(existingItem?.isGraded || initialComic.isSlabbed || false);
   const [gradingCompany, setGradingCompany] = useState<GradingCompany | "">(
-    existingItem?.gradingCompany || initialComic.gradingCompany || ""
+    (existingItem?.gradingCompany as GradingCompany) || initialComic.gradingCompany || ""
   );
   const [grade, setGrade] = useState(existingItem?.conditionGrade?.toString() || initialComic.grade || "");
   const [isSignatureSeries, setIsSignatureSeries] = useState(
