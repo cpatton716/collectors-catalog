@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
-import { Upload, X, Image as ImageIcon } from "lucide-react";
+import { useState, useCallback, useRef, useEffect } from "react";
+import { Upload, X, Image as ImageIcon, Camera } from "lucide-react";
 
 interface ImageUploadProps {
   onImageSelect: (file: File, preview: string) => void;
@@ -12,7 +12,20 @@ export function ImageUpload({ onImageSelect, disabled }: ImageUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    // Detect mobile device
+    const checkMobile = () => {
+      const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      const isSmallScreen = window.matchMedia('(max-width: 768px)').matches;
+      setIsMobile(isTouchDevice && isSmallScreen);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const acceptedTypes = ["image/jpeg", "image/jpg", "image/png"];
   const maxSize = 10 * 1024 * 1024; // 10MB
@@ -137,6 +150,8 @@ export function ImageUpload({ onImageSelect, disabled }: ImageUploadProps) {
             >
               {isDragging ? (
                 <ImageIcon className="w-10 h-10 text-primary-600" />
+              ) : isMobile ? (
+                <Camera className="w-10 h-10 text-gray-400" />
               ) : (
                 <Upload className="w-10 h-10 text-gray-400" />
               )}
@@ -146,10 +161,14 @@ export function ImageUpload({ onImageSelect, disabled }: ImageUploadProps) {
               <p className="text-lg font-medium text-gray-700">
                 {isDragging
                   ? "Drop your comic cover here"
-                  : "Upload a comic book cover"}
+                  : isMobile
+                    ? "Take a photo of your comic"
+                    : "Upload a comic book cover"}
               </p>
               <p className="text-sm text-gray-500 mt-1">
-                Drag and drop or click to select
+                {isMobile
+                  ? "Tap to open your camera"
+                  : "Drag and drop or click to select"}
               </p>
               <p className="text-xs text-gray-400 mt-2">
                 Supports: JPEG, JPG, PNG (max 10MB)
