@@ -1,0 +1,158 @@
+export interface ComicDetails {
+  id: string;
+  title: string | null;
+  issueNumber: string | null;
+  variant: string | null;
+  publisher: string | null;
+  coverArtist: string | null;
+  writer: string | null;
+  interiorArtist: string | null;
+  releaseYear: string | null;
+  confidence: "high" | "medium" | "low";
+  // Grading info (detected from slabbed comics)
+  isSlabbed: boolean;
+  gradingCompany: GradingCompany | null;
+  grade: string | null;
+  isSignatureSeries: boolean;
+  signedBy: string | null;
+  // Price/Value info
+  priceData: PriceData | null;
+}
+
+export interface PriceData {
+  estimatedValue: number | null;
+  recentSales: RecentSale[];
+  mostRecentSaleDate: string | null;
+  isAveraged: boolean; // true if value is avg of multiple sales, false if single sale
+  disclaimer: string | null;
+}
+
+export interface RecentSale {
+  price: number;
+  date: string;
+  source: string;
+  isOlderThan6Months: boolean;
+}
+
+export type GradingCompany = "CGC" | "CBCS" | "PGX" | "Other";
+
+export interface CollectionItem {
+  id: string;
+  comic: ComicDetails;
+  coverImageUrl: string;
+  conditionGrade: number | null;
+  conditionLabel: ConditionLabel | null;
+  isGraded: boolean;
+  gradingCompany: string | null;
+  purchasePrice: number | null;
+  purchaseDate: string | null;
+  notes: string | null;
+  forSale: boolean;
+  askingPrice: number | null;
+  averagePrice: number | null;
+  dateAdded: string;
+  listIds: string[];
+  isStarred: boolean;
+}
+
+export type ConditionLabel =
+  | "Poor"
+  | "Fair"
+  | "Good"
+  | "Very Good"
+  | "Fine"
+  | "Very Fine"
+  | "Near Mint"
+  | "Mint";
+
+export interface UserList {
+  id: string;
+  name: string;
+  description: string | null;
+  isDefault: boolean;
+  createdAt: string;
+}
+
+export interface PriceHistoryEntry {
+  date: string;
+  price: number;
+  source: "ebay" | "user_report" | "price_guide";
+  condition: number;
+}
+
+export interface SaleRecord {
+  id: string;
+  comic: ComicDetails;
+  coverImageUrl: string;
+  purchasePrice: number | null;
+  salePrice: number;
+  saleDate: string;
+  profit: number;
+  buyerId: string | null; // For future user-to-user sales
+}
+
+export const CONDITION_LABELS: ConditionLabel[] = [
+  "Poor",
+  "Fair",
+  "Good",
+  "Very Good",
+  "Fine",
+  "Very Fine",
+  "Near Mint",
+  "Mint",
+];
+
+export const CONDITION_TO_GRADE: Record<ConditionLabel, number> = {
+  Poor: 0.5,
+  Fair: 1.5,
+  Good: 2.5,
+  "Very Good": 4.0,
+  Fine: 6.0,
+  "Very Fine": 8.0,
+  "Near Mint": 9.4,
+  Mint: 10.0,
+};
+
+export const PUBLISHERS = [
+  "Marvel Comics",
+  "DC Comics",
+  "Image Comics",
+  "Dark Horse Comics",
+  "IDW Publishing",
+  "Boom! Studios",
+  "Dynamite Entertainment",
+  "Valiant Comics",
+  "Archie Comics",
+  "Other",
+];
+
+export const GRADING_COMPANIES: GradingCompany[] = ["CGC", "CBCS", "PGX", "Other"];
+
+// Standard comic book grading scale (CGC/CBCS scale)
+export const GRADE_SCALE: { value: string; label: string }[] = [
+  { value: "10", label: "10 - Gem Mint" },
+  { value: "9.9", label: "9.9 - Mint" },
+  { value: "9.8", label: "9.8 - Near Mint/Mint" },
+  { value: "9.6", label: "9.6 - Near Mint+" },
+  { value: "9.4", label: "9.4 - Near Mint" },
+  { value: "9.2", label: "9.2 - Near Mint-" },
+  { value: "9.0", label: "9.0 - Very Fine/Near Mint" },
+  { value: "8.5", label: "8.5 - Very Fine+" },
+  { value: "8.0", label: "8.0 - Very Fine" },
+  { value: "7.5", label: "7.5 - Very Fine-" },
+  { value: "7.0", label: "7.0 - Fine/Very Fine" },
+  { value: "6.5", label: "6.5 - Fine+" },
+  { value: "6.0", label: "6.0 - Fine" },
+  { value: "5.5", label: "5.5 - Fine-" },
+  { value: "5.0", label: "5.0 - Very Good/Fine" },
+  { value: "4.5", label: "4.5 - Very Good+" },
+  { value: "4.0", label: "4.0 - Very Good" },
+  { value: "3.5", label: "3.5 - Very Good-" },
+  { value: "3.0", label: "3.0 - Good/Very Good" },
+  { value: "2.5", label: "2.5 - Good+" },
+  { value: "2.0", label: "2.0 - Good" },
+  { value: "1.8", label: "1.8 - Good-" },
+  { value: "1.5", label: "1.5 - Fair/Good" },
+  { value: "1.0", label: "1.0 - Fair" },
+  { value: "0.5", label: "0.5 - Poor" },
+];
