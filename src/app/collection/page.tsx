@@ -62,8 +62,8 @@ export default function CollectionPage() {
   }, []);
 
   // Get unique publishers and titles for filters
-  const uniquePublishers = [...new Set(collection.map(item => item.comic.publisher).filter(Boolean))].sort();
-  const uniqueTitles = [...new Set(collection.map(item => item.comic.title).filter(Boolean))].sort();
+  const uniquePublishers = Array.from(new Set(collection.map(item => item.comic.publisher).filter((p): p is string => Boolean(p)))).sort();
+  const uniqueTitles = Array.from(new Set(collection.map(item => item.comic.title).filter((t): t is string => Boolean(t)))).sort();
 
   // Filter and sort collection
   const filteredCollection = collection
