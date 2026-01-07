@@ -77,7 +77,7 @@ Implement user registration and authentication to enable multi-user support, dat
 ---
 
 ### Enhance Mobile Camera Integration
-**Priority:** Medium
+**Priority:** Low
 **Status:** Pending
 
 Enhance the mobile camera experience with a live preview interface. Basic camera capture is already implemented via the `capture="environment"` attribute.
@@ -95,6 +95,67 @@ Enhance the mobile camera experience with a live preview interface. Basic camera
 - Support both front and rear cameras (prefer rear)
 - Works on iOS Safari, Android Chrome, and desktop browsers with webcams
 - Consider using a library like `react-webcam` for easier implementation
+
+---
+
+### Support File Import
+**Priority:** Medium
+**Status:** Pending
+
+Allow users to import their existing comic collections from files or other tracking services, making it easy to migrate to Comic Tracker.
+
+**Supported File Formats:**
+- CSV (most universal)
+- JSON (structured data)
+- Excel (.xlsx)
+- XML (some apps export this)
+
+**Import Sources to Consider:**
+- Generic spreadsheets (user-created)
+- CLZ Comics export
+- League of Comic Geeks export
+- ComicBase export
+- GoCollect export
+
+**User Experience:**
+- File upload interface with drag-and-drop support
+- Preview imported data before committing
+- Field mapping UI (map CSV columns to Comic Tracker fields)
+- Progress indicator for large imports
+- Summary report after import (success count, errors, duplicates)
+
+**Data Handling:**
+- Validate required fields (title, issue number at minimum)
+- Handle missing/optional fields gracefully
+- Normalize data formats (dates, grades, prices)
+- Currency handling for purchase prices
+
+**Duplicate Detection:**
+- Check for existing comics by title + issue + variant
+- Options: skip duplicates, overwrite existing, or import as new
+- Show duplicates in preview for user decision
+
+**Grade Mapping:**
+- Map different grading scales to internal format
+- Support CGC, CBCS, raw grades, and custom scales
+- Handle grade notes/labels
+
+**Error Handling:**
+- Partial import support (don't fail entire import for one bad row)
+- Clear error messages per row
+- Export failed rows for user to fix and retry
+- Ability to undo/rollback recent import
+
+**Technical Considerations:**
+- Client-side file parsing (Papa Parse for CSV, SheetJS for Excel)
+- Chunked processing for large files (1000+ comics)
+- Memory management for browser-based parsing
+- Consider server-side processing for very large imports (requires auth)
+
+**Post-Import Options:**
+- Assign all imported comics to a specific list
+- Trigger bulk price estimates for imported comics
+- Option to fetch cover images for imports without images
 
 ---
 

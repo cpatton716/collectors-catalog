@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
 import { ImageUpload } from "@/components/ImageUpload";
 import { ComicDetailsForm } from "@/components/ComicDetailsForm";
+import { GuestLimitBanner } from "@/components/GuestLimitBanner";
 import { storage } from "@/lib/storage";
 import { ComicDetails, CollectionItem } from "@/types/comic";
 import { useToast } from "@/components/Toast";
+import { useGuestScans } from "@/hooks/useGuestScans";
 import { Loader2, AlertCircle, ArrowLeft, Wand2, Check, Camera, Sparkles, ClipboardCheck, Save } from "lucide-react";
 
 type ScanState = "upload" | "analyzing" | "review" | "saved" | "error";
@@ -55,6 +57,7 @@ const STEPS = [
 export default function ScanPage() {
   const router = useRouter();
   const { showToast } = useToast();
+  const { isLimitReached, isGuest, incrementScan } = useGuestScans();
   const [state, setState] = useState<ScanState>("upload");
   const [imagePreview, setImagePreview] = useState<string>("");
   const [comicDetails, setComicDetails] = useState<ComicDetails | null>(null);
@@ -149,6 +152,10 @@ export default function ScanPage() {
       storage.addToCollection(newItem);
       setSavedComic(newItem);
       setState("saved");
+
+      // Increment guest scan count (only counts for non-signed-in users)
+      incrementScan();
+
       showToast(`"${newItem.comic.title}" added to collection!`, "success");
     } catch (err) {
       console.error("Error saving comic:", err);
@@ -285,21 +292,32 @@ export default function ScanPage() {
 
       {/* Upload State */}
       {state === "upload" && (
-        <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
-          <ImageUpload onImageSelect={handleImageSelect} />
+        <>
+          {/* Guest scan limit banner */}
+          {isGuest && <GuestLimitBanner variant={isLimitReached ? "warning" : "info"} />}
 
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-500 mb-3">
-              Don&apos;t have a photo? You can also:
-            </p>
-            <button
-              onClick={handleManualEntry}
-              className="text-primary-600 hover:text-primary-700 font-medium"
-            >
-              Enter details manually →
-            </button>
-          </div>
-        </div>
+          {isLimitReached ? (
+            <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
+              <GuestLimitBanner />
+            </div>
+          ) : (
+            <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
+              <ImageUpload onImageSelect={handleImageSelect} />
+
+              <div className="mt-6 text-center">
+                <p className="text-sm text-gray-500 mb-3">
+                  Don&apos;t have a photo? You can also:
+                </p>
+                <button
+                  onClick={handleManualEntry}
+                  className="text-primary-600 hover:text-primary-700 font-medium"
+                >
+                  Enter details manually →
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Analyzing State */}
