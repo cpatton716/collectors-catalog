@@ -76,11 +76,11 @@ Implement user registration and authentication to enable multi-user support, dat
 
 ---
 
-### Mobile Camera Integration
-**Priority:** High
+### Enhance Mobile Camera Integration
+**Priority:** Medium
 **Status:** Pending
 
-Add the ability to use the device's camera directly within the app to capture comic cover images, instead of requiring users to upload a pre-taken photo.
+Enhance the mobile camera experience with a live preview interface. Basic camera capture is already implemented via the `capture="environment"` attribute.
 
 **Features:**
 - Access device camera via browser APIs (MediaDevices API)
