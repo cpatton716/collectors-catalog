@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "echo '\n📋 BACKLOG REMINDER:\n' && cat BACKLOG.md | head -50 && echo '\n... (see BACKLOG.md for full details)\n'",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
