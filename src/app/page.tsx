@@ -70,7 +70,7 @@ export default function Home() {
             className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition-colors shadow-lg shadow-primary-600/25"
           >
             <Camera className="w-5 h-5" />
-            Scan a Comic
+            Scan a Book
             <ArrowRight className="w-4 h-4" />
           </Link>
           <Link

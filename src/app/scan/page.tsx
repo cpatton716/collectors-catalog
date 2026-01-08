@@ -69,7 +69,7 @@ export default function ScanPage() {
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
   const [isProcessingBarcode, setIsProcessingBarcode] = useState(false);
 
-  // Rotate fun facts every 5 seconds during analyzing state
+  // Rotate fun facts every 7 seconds during analyzing state
   useEffect(() => {
     if (state === "analyzing") {
       const getRandomFact = () => COMIC_FACTS[Math.floor(Math.random() * COMIC_FACTS.length)];
@@ -77,7 +77,7 @@ export default function ScanPage() {
 
       const interval = setInterval(() => {
         setCurrentFact(getRandomFact());
-      }, 5000);
+      }, 7000);
 
       return () => clearInterval(interval);
     }
