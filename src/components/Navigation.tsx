@@ -10,7 +10,7 @@ export function Navigation() {
 
   const links = [
     { href: "/", label: "Home", icon: Home },
-    { href: "/scan", label: "Scan Comic", icon: Camera },
+    { href: "/scan", label: "Scan Book", icon: Camera },
     { href: "/collection", label: "My Collection", icon: BookOpen },
   ];
 

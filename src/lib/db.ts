@@ -282,6 +282,7 @@ function transformDbComicToCollectionItem(dbComic: Record<string, unknown>): Col
       isSignatureSeries: dbComic.is_signature_series as boolean,
       signedBy: dbComic.signed_by as string | null,
       priceData: dbComic.price_data as CollectionItem["comic"]["priceData"],
+      keyInfo: (dbComic.key_info as string[]) || [],
     },
     coverImageUrl: dbComic.cover_image_url as string,
     conditionGrade: dbComic.condition_grade as number | null,

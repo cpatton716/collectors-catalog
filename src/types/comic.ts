@@ -17,6 +17,8 @@ export interface ComicDetails {
   signedBy: string | null;
   // Price/Value info
   priceData: PriceData | null;
+  // Key info (first appearances, deaths, team changes, etc.)
+  keyInfo: string[];
 }
 
 export interface PriceData {

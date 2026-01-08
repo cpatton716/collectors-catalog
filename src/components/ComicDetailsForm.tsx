@@ -9,7 +9,7 @@ import {
   GRADE_SCALE,
   GradingCompany,
 } from "@/types/comic";
-import { AlertCircle, CheckCircle, Loader2, DollarSign, TrendingUp, Info, Search, ExternalLink } from "lucide-react";
+import { AlertCircle, CheckCircle, Loader2, DollarSign, TrendingUp, Info, Search, ExternalLink, Plus, X, KeyRound } from "lucide-react";
 import { TitleAutocomplete } from "./TitleAutocomplete";
 
 interface ComicDetailsFormProps {
@@ -33,7 +33,10 @@ export function ComicDetailsForm({
   mode = "add",
   existingItem,
 }: ComicDetailsFormProps) {
-  const [comic, setComic] = useState<ComicDetails>(initialComic);
+  const [comic, setComic] = useState<ComicDetails>({
+    ...initialComic,
+    keyInfo: initialComic.keyInfo || [],
+  });
 
   // Grading state - initialized from AI detection or existing item
   const [isGraded, setIsGraded] = useState(existingItem?.isGraded || initialComic.isSlabbed || false);
@@ -61,6 +64,7 @@ export function ComicDetailsForm({
   const [isLookingUpDetails, setIsLookingUpDetails] = useState(false);
   const [lastLookedUpTitle, setLastLookedUpTitle] = useState<string | null>(null);
   const [lastLookedUpIssue, setLastLookedUpIssue] = useState<string | null>(null);
+  const [newKeyInfo, setNewKeyInfo] = useState("");
 
   // Auto-populate publisher when title is selected
   useEffect(() => {
@@ -125,6 +129,7 @@ export function ComicDetailsForm({
             writer: prev.writer || data.writer,
             coverArtist: prev.coverArtist || data.coverArtist,
             interiorArtist: prev.interiorArtist || data.interiorArtist,
+            keyInfo: prev.keyInfo?.length ? prev.keyInfo : (data.keyInfo || []),
           }));
           setLastLookedUpTitle(comic.title);
           setLastLookedUpIssue(comic.issueNumber);
@@ -143,7 +148,10 @@ export function ComicDetailsForm({
   // Update form when initialComic changes (e.g., when API returns data)
   useEffect(() => {
     console.log("ComicDetailsForm received initialComic:", initialComic);
-    setComic(initialComic);
+    setComic({
+      ...initialComic,
+      keyInfo: initialComic.keyInfo || [],
+    });
     // Update grading fields from AI detection
     setIsGraded(initialComic.isSlabbed || false);
     setGradingCompany(initialComic.gradingCompany || "");
@@ -420,6 +428,81 @@ export function ComicDetailsForm({
               placeholder="e.g., John Romita"
             />
           </div>
+        </div>
+      </div>
+
+      {/* Key Info */}
+      <div>
+        <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+          <KeyRound className="w-4 h-4 text-yellow-600" />
+          Key Info
+        </h3>
+        <p className="text-xs text-gray-500 mb-3">
+          First appearances, deaths, team changes, and other significant events
+        </p>
+
+        {/* Existing Key Info Items */}
+        {comic.keyInfo && comic.keyInfo.length > 0 && (
+          <div className="space-y-2 mb-3">
+            {comic.keyInfo.map((info, index) => (
+              <div
+                key={index}
+                className="flex items-start gap-2 p-2 bg-yellow-50 border border-yellow-200 rounded-lg"
+              >
+                <span className="flex-1 text-sm text-gray-700">{info}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setComic((prev) => ({
+                      ...prev,
+                      keyInfo: prev.keyInfo.filter((_, i) => i !== index),
+                    }));
+                  }}
+                  className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                  aria-label="Remove key info"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Add New Key Info */}
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={newKeyInfo}
+            onChange={(e) => setNewKeyInfo(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && newKeyInfo.trim()) {
+                e.preventDefault();
+                setComic((prev) => ({
+                  ...prev,
+                  keyInfo: [...(prev.keyInfo || []), newKeyInfo.trim()],
+                }));
+                setNewKeyInfo("");
+              }
+            }}
+            placeholder="e.g., First appearance of Venom"
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white text-gray-900 text-sm"
+          />
+          <button
+            type="button"
+            onClick={() => {
+              if (newKeyInfo.trim()) {
+                setComic((prev) => ({
+                  ...prev,
+                  keyInfo: [...(prev.keyInfo || []), newKeyInfo.trim()],
+                }));
+                setNewKeyInfo("");
+              }
+            }}
+            disabled={!newKeyInfo.trim()}
+            className="px-3 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
         </div>
       </div>
 

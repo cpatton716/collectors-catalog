@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
 import { storage } from "@/lib/storage";
 import { CollectionItem, UserList } from "@/types/comic";
 import { ComicCard } from "@/components/ComicCard";
@@ -13,13 +14,14 @@ import { useToast } from "@/components/Toast";
 import {
   Grid3X3,
   List,
+  ListFilter,
   Plus,
   Search,
   Filter,
   SortAsc,
   BookOpen,
   Book,
-  Factory,
+  Building,
   DollarSign,
   TrendingUp,
   TrendingDown,
@@ -38,6 +40,7 @@ type FilterOption = "all" | string;
 
 export default function CollectionPage() {
   const router = useRouter();
+  const { isSignedIn, isLoaded: authLoaded } = useUser();
   const { showToast } = useToast();
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [collection, setCollection] = useState<CollectionItem[]>([]);
@@ -55,11 +58,21 @@ export default function CollectionPage() {
   const [salesStats, setSalesStats] = useState({ totalSales: 0, totalRevenue: 0, totalProfit: 0 });
 
   useEffect(() => {
-    setCollection(storage.getCollection());
-    setLists(storage.getLists());
-    setSalesStats(storage.getSalesStats());
-    setIsLoaded(true);
-  }, []);
+    // Only load collection data for signed-in users
+    if (authLoaded && isSignedIn) {
+      setCollection(storage.getCollection());
+      setLists(storage.getLists());
+      setSalesStats(storage.getSalesStats());
+    } else if (authLoaded && !isSignedIn) {
+      // Clear data for logged-out users
+      setCollection([]);
+      setLists([]);
+      setSalesStats({ totalSales: 0, totalRevenue: 0, totalProfit: 0 });
+    }
+    if (authLoaded) {
+      setIsLoaded(true);
+    }
+  }, [authLoaded, isSignedIn]);
 
   // Get unique publishers and titles for filters
   const uniquePublishers = Array.from(new Set(collection.map(item => item.comic.publisher).filter((p): p is string => Boolean(p)))).sort();
@@ -260,13 +273,13 @@ export default function CollectionPage() {
           className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
         >
           <Plus className="w-5 h-5" />
-          Add Comic
+          Add Book
         </button>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-        <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100 flex items-center gap-4">
+        <div className="bg-white rounded-lg p-4 shadow-sm border border-blue-200 flex items-center gap-4">
           <div className="p-3 bg-blue-100 rounded-lg">
             <BookOpen className="w-5 h-5 text-blue-600" />
           </div>
@@ -275,7 +288,7 @@ export default function CollectionPage() {
             <p className="text-xl font-bold text-gray-900">{stats.count}</p>
           </div>
         </div>
-        <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100 flex items-center gap-4">
+        <div className="bg-white rounded-lg p-4 shadow-sm border border-purple-200 flex items-center gap-4">
           <div className="p-3 bg-purple-100 rounded-lg">
             <DollarSign className="w-5 h-5 text-purple-600" />
           </div>
@@ -286,7 +299,7 @@ export default function CollectionPage() {
             </p>
           </div>
         </div>
-        <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100 flex items-center gap-4">
+        <div className="bg-white rounded-lg p-4 shadow-sm border border-green-200 flex items-center gap-4">
           <div className="p-3 bg-green-100 rounded-lg">
             <TrendingUp className="w-5 h-5 text-green-600" />
           </div>
@@ -295,6 +308,26 @@ export default function CollectionPage() {
             <p className="text-xl font-bold text-gray-900">
               ${stats.totalValue.toFixed(2)}
             </p>
+          </div>
+        </div>
+        <div className={`bg-white rounded-lg p-4 shadow-sm border flex items-center gap-4 ${
+          salesStats.totalProfit >= 0 ? "border-blue-200" : "border-gray-100"
+        }`}>
+          <div className="p-3 bg-blue-100 rounded-lg flex-shrink-0">
+            <Receipt className="w-5 h-5 text-blue-600" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm text-gray-500">Sales ({salesStats.totalSales})</p>
+            <p className="text-xl font-bold text-gray-900">
+              ${salesStats.totalRevenue.toFixed(2)}
+            </p>
+            {salesStats.totalProfit !== 0 && (
+              <p className={`text-xs ${
+                salesStats.totalProfit >= 0 ? "text-green-500" : "text-red-500"
+              }`}>
+                {salesStats.totalProfit >= 0 ? "+" : ""}${salesStats.totalProfit.toFixed(2)} profit
+              </p>
+            )}
           </div>
         </div>
         <div className={`bg-white rounded-lg p-4 shadow-sm border flex items-center gap-4 ${
@@ -321,26 +354,6 @@ export default function CollectionPage() {
                 profitLoss >= 0 ? "text-green-500" : "text-red-500"
               }`}>
                 {profitLossPercent >= 0 ? "+" : ""}{profitLossPercent.toFixed(1)}%
-              </p>
-            )}
-          </div>
-        </div>
-        <div className={`bg-white rounded-lg p-4 shadow-sm border flex items-center gap-4 ${
-          salesStats.totalProfit >= 0 ? "border-blue-200" : "border-gray-100"
-        }`}>
-          <div className="p-3 bg-blue-100 rounded-lg flex-shrink-0">
-            <Receipt className="w-5 h-5 text-blue-600" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm text-gray-500">Sales ({salesStats.totalSales})</p>
-            <p className="text-xl font-bold text-gray-900">
-              ${salesStats.totalRevenue.toFixed(2)}
-            </p>
-            {salesStats.totalProfit !== 0 && (
-              <p className={`text-xs ${
-                salesStats.totalProfit >= 0 ? "text-green-500" : "text-red-500"
-              }`}>
-                {salesStats.totalProfit >= 0 ? "+" : ""}${salesStats.totalProfit.toFixed(2)} profit
               </p>
             )}
           </div>
@@ -429,32 +442,51 @@ export default function CollectionPage() {
           </div>
 
           {/* Bottom Row - Filters */}
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 md:gap-3">
             {/* Starred Filter */}
             <button
               onClick={() => setShowStarredOnly(!showStarredOnly)}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${
+              className={`flex items-center gap-1.5 px-2.5 py-2 rounded-lg border transition-colors text-sm ${
                 showStarredOnly
                   ? "bg-yellow-100 border-yellow-300 text-yellow-700"
                   : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
               }`}
             >
               <Star className={`w-4 h-4 ${showStarredOnly ? "fill-yellow-500 text-yellow-500" : ""}`} />
-              Starred
+              <span className="hidden sm:inline">Starred</span>
             </button>
 
+            {/* List Filter */}
+            <div className="flex items-center gap-1.5">
+              <label className="text-sm font-medium text-gray-600 hidden md:flex items-center gap-1">
+                <ListFilter className="w-4 h-4" />
+                List:
+              </label>
+              <select
+                value={selectedList}
+                onChange={(e) => setSelectedList(e.target.value)}
+                className="px-2.5 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white text-sm text-gray-900"
+              >
+                {lists.map((list) => (
+                  <option key={list.id} value={list.id}>
+                    {list.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {/* Publisher Filter */}
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-600 flex items-center gap-1.5">
-                <Factory className="w-4 h-4" />
+            <div className="flex items-center gap-1.5">
+              <label className="text-sm font-medium text-gray-600 hidden md:flex items-center gap-1">
+                <Building className="w-4 h-4" />
                 Publisher:
               </label>
               <select
                 value={publisherFilter}
                 onChange={(e) => setPublisherFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white text-sm text-gray-900"
+                className="px-2.5 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white text-sm text-gray-900"
               >
-                <option value="all">All</option>
+                <option value="all">All Publishers</option>
                 {uniquePublishers.map((publisher) => (
                   <option key={publisher} value={publisher}>
                     {publisher}
@@ -464,17 +496,17 @@ export default function CollectionPage() {
             </div>
 
             {/* Title Filter */}
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-600 flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5">
+              <label className="text-sm font-medium text-gray-600 hidden md:flex items-center gap-1">
                 <Book className="w-4 h-4" />
                 Title:
               </label>
               <select
                 value={titleFilter}
                 onChange={(e) => setTitleFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white text-sm text-gray-900"
+                className="px-2.5 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white text-sm text-gray-900"
               >
-                <option value="all">All</option>
+                <option value="all">All Titles</option>
                 {uniqueTitles.map((title) => (
                   <option key={title} value={title}>
                     {title}
@@ -484,15 +516,15 @@ export default function CollectionPage() {
             </div>
 
             {/* Sort */}
-            <div className="flex items-center gap-2 ml-auto">
-              <label className="text-sm font-medium text-gray-600 flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 ml-auto">
+              <label className="text-sm font-medium text-gray-600 hidden md:flex items-center gap-1">
                 <SortAsc className="w-4 h-4" />
                 Sort:
               </label>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white text-sm text-gray-900"
+                className="px-2.5 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white text-sm text-gray-900"
               >
                 <option value="date">Date Added</option>
                 <option value="title">Title</option>
@@ -502,15 +534,16 @@ export default function CollectionPage() {
             </div>
 
             {/* Clear Filters */}
-            {(publisherFilter !== "all" || titleFilter !== "all" || showStarredOnly || searchQuery) && (
+            {(publisherFilter !== "all" || titleFilter !== "all" || showStarredOnly || searchQuery || selectedList !== "collection") && (
               <button
                 onClick={() => {
                   setPublisherFilter("all");
                   setTitleFilter("all");
                   setShowStarredOnly(false);
                   setSearchQuery("");
+                  setSelectedList("collection");
                 }}
-                className="text-sm text-primary-600 hover:text-primary-700 underline"
+                className="text-sm text-primary-600 hover:text-primary-700 underline whitespace-nowrap"
               >
                 Clear filters
               </button>
@@ -697,6 +730,7 @@ export default function CollectionPage() {
         <ComicDetailModal
           item={selectedItem}
           lists={lists}
+          collection={collection}
           onClose={handleCloseModal}
           onRemove={handleRemove}
           onAddToList={handleAddToList}
@@ -705,6 +739,7 @@ export default function CollectionPage() {
           onMarkSold={handleMarkSold}
           onToggleStar={handleToggleStar}
           onEdit={handleEdit}
+          onViewItem={(item) => setSelectedItem(item)}
         />
       )}
 

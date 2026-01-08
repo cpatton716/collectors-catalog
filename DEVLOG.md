@@ -144,6 +144,71 @@ User Registration & Authentication + CCPA Compliance
 
 ---
 
+## January 8, 2026
+
+### Session Focus
+UX Improvements, CSV Import Feature, and Home Page Refinements
+
+### Completed
+
+**Home Page Improvements**
+- Moved Features section (Technopathic Recognition, Track Values, Buy & Sell) above "How It Works"
+- Hide "View Collection" button for non-registered users
+- Changed CTA text to "Scan Your First Book" for guests
+- "How It Works" section only displays for non-logged-in users
+
+**Collection Page Enhancements**
+- Added List dropdown filter for filtering by user lists
+- Updated Lists filter to use ListFilter icon
+- Mobile-responsive filter bar (hidden labels on small screens)
+
+**CSV Import Feature** (Registered Users Only)
+- Built CSVImport component with multi-step flow (upload → preview → import → complete)
+- Created `/api/import-lookup` endpoint for AI-powered price/key info lookups
+- Added "Import CSV" button to scan page (only visible to signed-in users)
+- Supports all collection fields: title, issueNumber, variant, publisher, etc.
+- Progress tracking during import with success/failure reporting
+- Added downloadable sample CSV template with example comics
+
+**View Variants Feature**
+- Created VariantsModal component to view all variants of same title/issue
+- Added "View Variants (X)" link in comic detail modal when duplicates exist
+- Search functionality within variants modal
+
+**Cover Image Lightbox**
+- Added click-to-enlarge cover images on book details page
+- Zoom overlay on hover, full-screen lightbox on click
+
+**Ask the Professor FAQ**
+- Added FAQ about guest vs registered user features
+
+**Copy Updates**
+- "Other ways to add comics" → "Other ways to add your books"
+- Various terminology refinements
+
+### Files Created
+- `src/components/CSVImport.tsx` - CSV import component with preview and progress
+- `src/components/VariantsModal.tsx` - Modal for viewing comic variants
+- `src/app/api/import-lookup/route.ts` - API for bulk import price/key lookups
+- `public/sample-import.csv` - Sample CSV template for users
+
+### Files Modified
+- `src/app/page.tsx` - Features section moved, conditional CTAs, guest-only sections
+- `src/app/collection/page.tsx` - List filter dropdown, ListFilter icon
+- `src/app/scan/page.tsx` - CSV import integration, updated copy
+- `src/components/ComicDetailModal.tsx` - Variants link, cover lightbox
+- `src/components/AskProfessor.tsx` - New FAQ item
+
+### Blockers / Issues Encountered
+1. **Missing comicvine lib** - Import-lookup route referenced non-existent lib; simplified to use Claude AI only
+
+### Notes for Future Reference
+- CSV import uses Claude AI for price lookups during import (rate-limited with 200ms delay)
+- Sample CSV template includes 4 example comics showing various scenarios (raw, slabbed, signed, for sale)
+- Variant detection matches on title + issueNumber across collection
+
+---
+
 <!--
 Template for new entries:
 

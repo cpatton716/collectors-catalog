@@ -100,7 +100,7 @@ Enhance the mobile camera experience with a live preview interface. Basic camera
 
 ### Support File Import
 **Priority:** Medium
-**Status:** Pending
+**Status:** ✅ Complete (Jan 8, 2026)
 
 Allow users to import their existing comic collections from files or other tracking services, making it easy to migrate to Comic Tracker.
 
@@ -202,6 +202,20 @@ Customize the email templates sent by Clerk for authentication flows (welcome, v
 
 ---
 
+### Update "Ask the Professor" FAQ Content
+**Priority:** Low
+**Status:** Pending
+
+Review and update the FAQ questions and answers in the "Ask the Professor" help feature to match the live production environment and actual user needs.
+
+**Areas to Review:**
+- Update questions based on real user feedback
+- Ensure answers reflect current app functionality
+- Add new FAQs for features added post-launch
+- Refine Professor's voice/tone for consistency
+
+---
+
 ### Clean Up Copy Throughout the Site
 **Priority:** Low
 **Status:** Pending
@@ -256,7 +270,7 @@ Create a consistent "Professor" character/persona that provides tips, guidance, 
 
 ### Professor's Hottest Books Feature
 **Priority:** Medium
-**Status:** Pending
+**Status:** ✅ Complete (Jan 8, 2026)
 
 Weekly market analysis showing the hottest comics based on recent sales activity. Similar to Key Collector's "Hot 10" feature.
 

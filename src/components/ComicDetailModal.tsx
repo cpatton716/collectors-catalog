@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { CollectionItem, UserList, GRADE_SCALE } from "@/types/comic";
+import { VariantsModal } from "./VariantsModal";
 import {
   X,
   Trash2,
@@ -20,11 +21,15 @@ import {
   Check,
   Star,
   Pencil,
+  KeyRound,
+  Layers,
+  ZoomIn,
 } from "lucide-react";
 
 interface ComicDetailModalProps {
   item: CollectionItem;
   lists: UserList[];
+  collection: CollectionItem[];
   onClose: () => void;
   onRemove: (id: string) => void;
   onAddToList: (itemId: string, listId: string) => void;
@@ -33,11 +38,13 @@ interface ComicDetailModalProps {
   onMarkSold: (itemId: string, salePrice: number, buyerId?: string) => void;
   onToggleStar: (itemId: string) => void;
   onEdit: (item: CollectionItem) => void;
+  onViewItem?: (item: CollectionItem) => void;
 }
 
 export function ComicDetailModal({
   item,
   lists,
+  collection,
   onClose,
   onRemove,
   onAddToList,
@@ -46,17 +53,32 @@ export function ComicDetailModal({
   onMarkSold,
   onToggleStar,
   onEdit,
+  onViewItem,
 }: ComicDetailModalProps) {
   const [showListMenu, setShowListMenu] = useState(false);
   const [showCreateList, setShowCreateList] = useState(false);
   const [newListName, setNewListName] = useState("");
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
   const [showSoldConfirm, setShowSoldConfirm] = useState(false);
+  const [showVariantsModal, setShowVariantsModal] = useState(false);
+  const [showImageLightbox, setShowImageLightbox] = useState(false);
   const [salePrice, setSalePrice] = useState<string>(
     item.askingPrice?.toString() || item.comic.priceData?.estimatedValue?.toString() || ""
   );
 
   const { comic } = item;
+
+  // Find all variants of this title/issue in the collection
+  const variants = useMemo(() => {
+    if (!comic.title || !comic.issueNumber) return [];
+    return collection.filter(
+      (c) =>
+        c.comic.title?.toLowerCase() === comic.title?.toLowerCase() &&
+        c.comic.issueNumber === comic.issueNumber
+    );
+  }, [collection, comic.title, comic.issueNumber]);
+
+  const variantCount = variants.length;
 
   // Get custom lists (non-default)
   const customLists = lists.filter((l) => !l.isDefault);
@@ -123,12 +145,21 @@ export function ComicDetailModal({
         <div className="flex flex-col md:flex-row max-h-[90vh]">
           {/* Cover Image */}
           <div className="md:w-1/3 bg-gray-100 p-6 flex items-center justify-center">
-            <div className="aspect-[2/3] w-full max-w-[250px] rounded-lg overflow-hidden shadow-lg">
+            <div
+              onClick={() => setShowImageLightbox(true)}
+              className="aspect-[2/3] w-full max-w-[250px] rounded-lg overflow-hidden shadow-lg cursor-pointer group relative"
+            >
               <img
                 src={item.coverImageUrl}
                 alt={`${comic.title} #${comic.issueNumber}`}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover transition-transform group-hover:scale-105"
               />
+              {/* Zoom overlay on hover */}
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 rounded-full p-2">
+                  <ZoomIn className="w-6 h-6 text-gray-700" />
+                </div>
+              </div>
             </div>
           </div>
 
@@ -147,6 +178,16 @@ export function ComicDetailModal({
                       <span className="text-gray-400 ml-2">({comic.variant})</span>
                     )}
                   </p>
+                  {/* View Variants Link */}
+                  {variantCount > 1 && (
+                    <button
+                      onClick={() => setShowVariantsModal(true)}
+                      className="mt-2 inline-flex items-center gap-1.5 text-sm text-primary-600 hover:text-primary-700 font-medium"
+                    >
+                      <Layers className="w-4 h-4" />
+                      View Variants ({variantCount})
+                    </button>
+                  )}
                 </div>
                 <button
                   onClick={() => onToggleStar(item.id)}
@@ -223,6 +264,26 @@ export function ComicDetailModal({
                 </div>
               )}
             </div>
+
+            {/* Key Info Section */}
+            {comic.keyInfo && comic.keyInfo.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                  <KeyRound className="w-4 h-4 text-yellow-600" />
+                  Key Info
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {comic.keyInfo.map((info, idx) => (
+                    <span
+                      key={idx}
+                      className="px-2 py-1 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded text-xs"
+                    >
+                      {info}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Value Section */}
             {comic.priceData && comic.priceData.estimatedValue && (
@@ -605,6 +666,44 @@ export function ComicDetailModal({
           </div>
         </div>
       </div>
+
+      {/* Variants Modal */}
+      {showVariantsModal && (
+        <VariantsModal
+          title={comic.title || "Unknown"}
+          issueNumber={comic.issueNumber || "?"}
+          year={comic.releaseYear}
+          variants={variants}
+          onClose={() => setShowVariantsModal(false)}
+          onSelectVariant={(selectedItem) => {
+            setShowVariantsModal(false);
+            if (selectedItem.id !== item.id && onViewItem) {
+              onViewItem(selectedItem);
+            }
+          }}
+        />
+      )}
+
+      {/* Image Lightbox */}
+      {showImageLightbox && (
+        <div
+          className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4"
+          onClick={() => setShowImageLightbox(false)}
+        >
+          <button
+            onClick={() => setShowImageLightbox(false)}
+            className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
+          >
+            <X className="w-6 h-6 text-white" />
+          </button>
+          <img
+            src={item.coverImageUrl}
+            alt={`${comic.title} #${comic.issueNumber}`}
+            className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 }

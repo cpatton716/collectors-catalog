@@ -122,6 +122,8 @@ Important:
         jsonText = jsonText.slice(0, -3);
       }
       comicDetails = JSON.parse(jsonText.trim());
+      // Initialize keyInfo as empty array
+      comicDetails.keyInfo = [];
       console.log("Parsed comic details:", comicDetails);
     } catch (parseError) {
       console.error("Failed to parse Claude response:", textContent.text);
@@ -232,15 +234,26 @@ Please provide the correct/complete information as a JSON object:
   "publisher": "the correct publisher name (e.g., 'Marvel Comics', 'DC Comics')",
   "releaseYear": "the 4-digit year this issue was published",
   "variant": "the variant name if this is a variant cover, or null if it's a standard cover",
-  "isKeyIssue": true or false - whether this is considered a key/significant issue,
-  "keyIssueReason": "brief explanation if it's a key issue, otherwise null"
+  "keyInfo": ["array of key facts about this issue - first appearances, deaths, team changes, cameos, significant events, etc."]
 }
 
 Important:
 - Return ONLY the JSON object, no other text
 - Use your knowledge of comic book history to provide accurate information
 - If you're not confident about a specific field, use null
-- For publisher, use the full official name`,
+- For publisher, use the full official name
+- For keyInfo, be THOROUGH and include ANY of these:
+  * First appearances of ANY character (heroes, villains, supporting cast, alternate universe versions like Lady Deadpool, Spider-Gwen, Miles Morales, etc.)
+  * First cameo vs first full appearances
+  * Character deaths or resurrections
+  * Team formations, departures, or arrivals
+  * Origin stories, costume changes, codename changes
+  * Major battles, crossover events, storyline beginnings/endings
+  * Wedding/relationship milestones, first meetings between characters
+  * Introduction of significant objects, weapons, or tech
+  * Alternate universe or legacy character introductions
+- IMPORTANT: Even minor character first appearances are valuable to collectors. When in doubt, INCLUDE the fact.
+- Only return an empty array if you are CERTAIN this issue has NO notable events`,
             },
           ],
         });
@@ -274,12 +287,101 @@ Important:
           if (!comicDetails.variant && verifyInfo.variant) {
             comicDetails.variant = verifyInfo.variant;
           }
+          // Set key info from verification
+          if (verifyInfo.keyInfo && Array.isArray(verifyInfo.keyInfo)) {
+            comicDetails.keyInfo = verifyInfo.keyInfo;
+          } else {
+            comicDetails.keyInfo = [];
+          }
 
           console.log("Final comic details after verification:", comicDetails);
         }
       } catch (verifyError) {
         // Don't fail the whole request if verification fails, just log it
         console.error("Verification lookup failed:", verifyError);
+      }
+    }
+
+    // Key Info lookup - if we have title+issue but keyInfo is empty (verification didn't run or failed)
+    if (comicDetails.title && comicDetails.issueNumber && (!comicDetails.keyInfo || comicDetails.keyInfo.length === 0)) {
+      console.log("Performing key info lookup...");
+
+      try {
+        const keyInfoResponse = await anthropic.messages.create({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1024,
+          messages: [
+            {
+              role: "user",
+              content: `You are a comic book expert and collector with encyclopedic knowledge of comic book history, first appearances, and significant issues. Your goal is to help collectors identify ALL notable facts about their comics.
+
+I need the key information for this comic:
+- Title: ${comicDetails.title}
+- Issue Number: ${comicDetails.issueNumber}
+- Publisher: ${comicDetails.publisher || "Unknown"}
+- Year: ${comicDetails.releaseYear || "Unknown"}
+
+Please provide any significant facts about this specific issue as a JSON object:
+{
+  "keyInfo": ["array of key facts about this issue"]
+}
+
+Be THOROUGH and include ANY of these facts:
+- First appearances of ANY character (heroes, villains, supporting cast, love interests)
+- Alternate universe character debuts (Lady Deadpool, Spider-Gwen, Miles Morales, Old Man Logan, etc.)
+- First cameo appearances (specify "cameo" if not a full appearance)
+- First full appearances (if different from cameo issue)
+- Character deaths (even temporary/later-reversed ones)
+- Character resurrections or returns
+- Team formations, member departures, or new member arrivals
+- Origin stories or origin retellings
+- New costume debuts or significant costume changes
+- Codename changes or new identity reveals
+- Major battles or significant confrontations
+- Crossover event tie-ins or beginnings
+- Wedding/engagement/relationship milestones
+- First meetings between significant characters
+- Significant storyline beginnings or endings (name the storyline)
+- Introduction of significant objects (Infinity Gauntlet, Mjolnir variants, etc.)
+- Legacy character introductions (new person taking up a hero/villain mantle)
+- Significant retcons or reveals
+
+IMPORTANT:
+- Collectors value even minor character first appearances - include them!
+- When in doubt, INCLUDE the fact rather than omit it
+- Be specific: "First appearance of Lady Deadpool" not just "character introduction"
+
+Return ONLY the JSON object, no other text.
+Only return {"keyInfo": []} if you are CERTAIN this issue has absolutely no notable events.`,
+            },
+          ],
+        });
+
+        const keyInfoTextContent = keyInfoResponse.content.find((block) => block.type === "text");
+        if (keyInfoTextContent && keyInfoTextContent.type === "text") {
+          let keyInfoJson = keyInfoTextContent.text.trim();
+          console.log("Key info lookup response:", keyInfoJson);
+
+          // Clean markdown if present
+          if (keyInfoJson.startsWith("```json")) {
+            keyInfoJson = keyInfoJson.slice(7);
+          }
+          if (keyInfoJson.startsWith("```")) {
+            keyInfoJson = keyInfoJson.slice(3);
+          }
+          if (keyInfoJson.endsWith("```")) {
+            keyInfoJson = keyInfoJson.slice(0, -3);
+          }
+
+          const keyInfoData = JSON.parse(keyInfoJson.trim());
+          console.log("Parsed key info:", keyInfoData);
+
+          if (keyInfoData.keyInfo && Array.isArray(keyInfoData.keyInfo)) {
+            comicDetails.keyInfo = keyInfoData.keyInfo;
+          }
+        }
+      } catch (keyInfoError) {
+        console.error("Key info lookup failed:", keyInfoError);
       }
     }
 

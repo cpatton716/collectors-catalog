@@ -2,16 +2,18 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
 import { v4 as uuidv4 } from "uuid";
 import { ImageUpload } from "@/components/ImageUpload";
 import { ComicDetailsForm } from "@/components/ComicDetailsForm";
 import { GuestLimitBanner } from "@/components/GuestLimitBanner";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
+import { CSVImport } from "@/components/CSVImport";
 import { storage } from "@/lib/storage";
 import { ComicDetails, CollectionItem } from "@/types/comic";
 import { useToast } from "@/components/Toast";
 import { useGuestScans } from "@/hooks/useGuestScans";
-import { Loader2, AlertCircle, ArrowLeft, Wand2, Check, Camera, Sparkles, ClipboardCheck, Save, ScanBarcode, PenLine } from "lucide-react";
+import { Loader2, AlertCircle, ArrowLeft, Wand2, Check, Camera, Sparkles, ClipboardCheck, Save, ScanBarcode, PenLine, FileSpreadsheet } from "lucide-react";
 
 type ScanState = "upload" | "analyzing" | "review" | "saved" | "error";
 
@@ -57,6 +59,7 @@ const STEPS = [
 
 export default function ScanPage() {
   const router = useRouter();
+  const { isSignedIn } = useUser();
   const { showToast } = useToast();
   const { isLimitReached, isGuest, incrementScan } = useGuestScans();
   const [state, setState] = useState<ScanState>("upload");
@@ -68,6 +71,7 @@ export default function ScanPage() {
   const [currentFact, setCurrentFact] = useState("");
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
   const [isProcessingBarcode, setIsProcessingBarcode] = useState(false);
+  const [showCSVImport, setShowCSVImport] = useState(false);
 
   // Rotate fun facts every 7 seconds during analyzing state
   useEffect(() => {
@@ -207,6 +211,7 @@ export default function ScanPage() {
       isSignatureSeries: false,
       signedBy: null,
       priceData: null,
+      keyInfo: [],
     });
     setState("review");
   };
@@ -250,6 +255,7 @@ export default function ScanPage() {
         isSignatureSeries: false,
         signedBy: null,
         priceData: data.priceData || null,
+        keyInfo: data.keyInfo || [],
       });
 
       setShowBarcodeScanner(false);
@@ -295,7 +301,7 @@ export default function ScanPage() {
           <ArrowLeft className="w-4 h-4" />
           Back
         </button>
-        <h1 className="text-3xl font-bold text-gray-900">Scan Comic Cover</h1>
+        <h1 className="text-3xl font-bold text-gray-900">Scan Book Cover</h1>
         <p className="text-gray-600 mt-2">
           Upload a photo of your comic book cover to identify and add it to your
           collection.
@@ -369,23 +375,32 @@ export default function ScanPage() {
               {/* Alternative add methods */}
               <div className="mt-8 pt-6 border-t border-gray-100">
                 <p className="text-sm text-gray-500 text-center mb-4">
-                  Other ways to add comics:
+                  Other ways to add your books:
                 </p>
-                <div className="flex justify-center gap-12">
+                <div className="flex flex-wrap justify-center gap-6">
                   <button
                     onClick={() => setShowBarcodeScanner(true)}
-                    className="flex flex-col items-center justify-center w-44 h-28 bg-primary-50 text-primary-700 rounded-xl hover:bg-primary-100 transition-colors border border-primary-200"
+                    className="flex flex-col items-center justify-center w-36 h-24 bg-primary-50 text-primary-700 rounded-xl hover:bg-primary-100 transition-colors border border-primary-200"
                   >
-                    <ScanBarcode className="w-8 h-8 mb-2" />
+                    <ScanBarcode className="w-7 h-7 mb-2" />
                     <span className="text-sm font-medium">Scan Barcode</span>
                   </button>
                   <button
                     onClick={handleManualEntry}
-                    className="flex flex-col items-center justify-center w-44 h-28 bg-primary-50 text-primary-700 rounded-xl hover:bg-primary-100 transition-colors border border-primary-200"
+                    className="flex flex-col items-center justify-center w-36 h-24 bg-primary-50 text-primary-700 rounded-xl hover:bg-primary-100 transition-colors border border-primary-200"
                   >
-                    <PenLine className="w-8 h-8 mb-2" />
+                    <PenLine className="w-7 h-7 mb-2" />
                     <span className="text-sm font-medium">Enter Manually</span>
                   </button>
+                  {isSignedIn && (
+                    <button
+                      onClick={() => setShowCSVImport(true)}
+                      className="hidden sm:flex flex-col items-center justify-center w-36 h-24 bg-primary-50 text-primary-700 rounded-xl hover:bg-primary-100 transition-colors border border-primary-200"
+                    >
+                      <FileSpreadsheet className="w-7 h-7 mb-2" />
+                      <span className="text-sm font-medium">Import CSV</span>
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -586,7 +601,7 @@ export default function ScanPage() {
                   className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2 font-medium"
                 >
                   <Camera className="w-5 h-5" />
-                  Scan Another Comic
+                  Scan Another Book
                 </button>
                 <button
                   onClick={() => router.push("/collection")}
@@ -607,6 +622,26 @@ export default function ScanPage() {
           onClose={() => setShowBarcodeScanner(false)}
           isProcessing={isProcessingBarcode}
         />
+      )}
+
+      {/* CSV Import Modal */}
+      {showCSVImport && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="w-full max-w-2xl">
+            <CSVImport
+              onImportComplete={(items) => {
+                // Save all items to collection
+                items.forEach((item) => {
+                  storage.addToCollection(item);
+                });
+                showToast(`Successfully imported ${items.length} comics!`, "success");
+                setShowCSVImport(false);
+                router.push("/collection");
+              }}
+              onCancel={() => setShowCSVImport(false)}
+            />
+          </div>
+        </div>
       )}
     </div>
   );

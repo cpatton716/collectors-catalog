@@ -22,14 +22,20 @@ export function TitleAutocomplete({
   const [isLoading, setIsLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const [hasFocused, setHasFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Fetch suggestions when value changes
+  // Fetch suggestions when value changes (only if user has focused)
   useEffect(() => {
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
+    }
+
+    // Don't fetch suggestions if user hasn't focused on the input yet
+    if (!hasFocused) {
+      return;
     }
 
     if (!value || value.length < 2) {
@@ -65,7 +71,7 @@ export function TitleAutocomplete({
         clearTimeout(debounceRef.current);
       }
     };
-  }, [value]);
+  }, [value, hasFocused]);
 
   // Handle click outside to close dropdown
   useEffect(() => {
@@ -124,7 +130,10 @@ export function TitleAutocomplete({
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          onFocus={() => suggestions.length > 0 && setShowDropdown(true)}
+          onFocus={() => {
+            setHasFocused(true);
+            if (suggestions.length > 0) setShowDropdown(true);
+          }}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           required={required}
