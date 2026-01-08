@@ -147,7 +147,7 @@ export function TitleAutocomplete({
               key={suggestion}
               type="button"
               onClick={() => handleSelect(suggestion)}
-              className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-100 transition-colors ${
+              className={`w-full px-3 py-2 text-left text-sm text-gray-900 hover:bg-gray-100 transition-colors ${
                 index === highlightedIndex ? "bg-gray-100" : ""
               } ${index === 0 ? "rounded-t-lg" : ""} ${
                 index === suggestions.length - 1 ? "rounded-b-lg" : ""
