@@ -55,6 +55,87 @@ export function ComicDetailsForm({
   );
   const [isSearchingCover, setIsSearchingCover] = useState(false);
   const [coverSearchUrl, setCoverSearchUrl] = useState<string | null>(null);
+  const [isLookingUpDetails, setIsLookingUpDetails] = useState(false);
+  const [lastLookedUpTitle, setLastLookedUpTitle] = useState<string | null>(null);
+  const [lastLookedUpIssue, setLastLookedUpIssue] = useState<string | null>(null);
+
+  // Auto-populate publisher when title is selected
+  useEffect(() => {
+    const lookupPublisher = async () => {
+      if (!comic.title || comic.title === lastLookedUpTitle || comic.publisher) return;
+
+      setIsLookingUpDetails(true);
+      try {
+        const response = await fetch("/api/comic-lookup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: comic.title, lookupType: "publisher" }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.publisher && !comic.publisher) {
+            setComic((prev) => ({ ...prev, publisher: data.publisher }));
+          }
+          setLastLookedUpTitle(comic.title);
+        }
+      } catch (error) {
+        console.error("Error looking up publisher:", error);
+      } finally {
+        setIsLookingUpDetails(false);
+      }
+    };
+
+    const debounce = setTimeout(lookupPublisher, 500);
+    return () => clearTimeout(debounce);
+  }, [comic.title, comic.publisher, lastLookedUpTitle]);
+
+  // Auto-populate details when title and issue number are both provided
+  useEffect(() => {
+    const lookupDetails = async () => {
+      if (!comic.title || !comic.issueNumber) return;
+
+      const lookupKey = `${comic.title}-${comic.issueNumber}`;
+      if (lookupKey === `${lastLookedUpTitle}-${lastLookedUpIssue}`) return;
+
+      // Only lookup if credits are empty (don't overwrite existing data)
+      if (comic.writer && comic.coverArtist && comic.releaseYear) return;
+
+      setIsLookingUpDetails(true);
+      try {
+        const response = await fetch("/api/comic-lookup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: comic.title,
+            issueNumber: comic.issueNumber,
+            lookupType: "full"
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setComic((prev) => ({
+            ...prev,
+            publisher: prev.publisher || data.publisher,
+            releaseYear: prev.releaseYear || data.releaseYear,
+            writer: prev.writer || data.writer,
+            coverArtist: prev.coverArtist || data.coverArtist,
+            interiorArtist: prev.interiorArtist || data.interiorArtist,
+          }));
+          setLastLookedUpTitle(comic.title);
+          setLastLookedUpIssue(comic.issueNumber);
+        }
+      } catch (error) {
+        console.error("Error looking up comic details:", error);
+      } finally {
+        setIsLookingUpDetails(false);
+      }
+    };
+
+    const debounce = setTimeout(lookupDetails, 800);
+    return () => clearTimeout(debounce);
+  }, [comic.title, comic.issueNumber, comic.writer, comic.coverArtist, comic.releaseYear, lastLookedUpTitle, lastLookedUpIssue]);
 
   // Update form when initialComic changes (e.g., when API returns data)
   useEffect(() => {
@@ -262,7 +343,15 @@ export function ComicDetailsForm({
 
       {/* Credits */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-900 mb-3">Credits</h3>
+        <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+          Credits
+          {isLookingUpDetails && (
+            <span className="flex items-center gap-1 text-xs font-normal text-gray-500">
+              <Loader2 className="w-3 h-3 animate-spin" />
+              Looking up details...
+            </span>
+          )}
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
