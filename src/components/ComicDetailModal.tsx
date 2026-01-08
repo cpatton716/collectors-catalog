@@ -423,7 +423,7 @@ export function ComicDetailModal({
                               setShowCreateList(false);
                               setNewListName("");
                             }}
-                            className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 transition-colors"
+                            className="px-3 py-1.5 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50 transition-colors"
                           >
                             Cancel
                           </button>
@@ -535,7 +535,7 @@ export function ComicDetailModal({
                   </button>
                   <button
                     onClick={() => setShowRemoveConfirm(false)}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
+                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm transition-colors"
                   >
                     Cancel
                   </button>
@@ -585,7 +585,7 @@ export function ComicDetailModal({
                   </button>
                   <button
                     onClick={() => setShowSoldConfirm(false)}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
+                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm transition-colors"
                   >
                     Cancel
                   </button>
