@@ -230,3 +230,51 @@ Test and verify the Clerk-powered password reset functionality works correctly e
 - Confirm reset link works and redirects properly
 - Verify new password can be set
 - Confirm user can log in with new password
+
+---
+
+### Add "Professor" Persona Throughout Site
+**Priority:** Medium
+**Status:** Pending
+
+Create a consistent "Professor" character/persona that provides tips, guidance, and commentary throughout the application. This persona adds personality and makes the app more engaging.
+
+**Areas to Implement:**
+- Tooltips and help text
+- Empty state messages
+- Loading messages / fun facts
+- Welcome messages
+- Feature explanations
+- Error messages (friendly Professor-style guidance)
+
+**Considerations:**
+- Design a simple avatar/icon for the Professor
+- Define the Professor's voice/tone (knowledgeable but approachable)
+- Don't overuse - sprinkle in key moments for delight
+
+---
+
+### Professor's Hottest Books Feature
+**Priority:** Medium
+**Status:** Pending
+
+Weekly market analysis showing the hottest comics based on recent sales activity. Similar to Key Collector's "Hot 10" feature.
+
+**Features:**
+- Display top 10 trending comics
+- Show key facts (first appearances, significance)
+- Price ranges (low/mid/high)
+- Recent sale comparisons vs 12-month average
+- Link to eBay/marketplace listings
+
+**Data Sources:**
+- eBay API for recent sales data
+- Claude AI for key facts and significance
+- Weekly refresh of hot list
+
+**UI Elements:**
+- Cover image thumbnail
+- Title, publisher, year
+- Key facts section
+- Price trend indicators (+/- percentage)
+- "Buy it on eBay" affiliate link (future monetization)
