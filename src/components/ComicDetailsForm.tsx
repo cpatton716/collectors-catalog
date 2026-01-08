@@ -9,7 +9,8 @@ import {
   GRADE_SCALE,
   GradingCompany,
 } from "@/types/comic";
-import { AlertCircle, CheckCircle, Loader2, DollarSign, TrendingUp, Info } from "lucide-react";
+import { AlertCircle, CheckCircle, Loader2, DollarSign, TrendingUp, Info, Search, ExternalLink } from "lucide-react";
+import { TitleAutocomplete } from "./TitleAutocomplete";
 
 interface ComicDetailsFormProps {
   comic: ComicDetails;
@@ -52,6 +53,8 @@ export function ComicDetailsForm({
   const [askingPrice, setAskingPrice] = useState<string>(
     existingItem?.askingPrice?.toString() || ""
   );
+  const [isSearchingCover, setIsSearchingCover] = useState(false);
+  const [coverSearchUrl, setCoverSearchUrl] = useState<string | null>(null);
 
   // Update form when initialComic changes (e.g., when API returns data)
   useEffect(() => {
@@ -86,6 +89,34 @@ export function ComicDetailsForm({
 
   const updateComic = (field: keyof ComicDetails, value: string | boolean | null) => {
     setComic((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSearchCover = async () => {
+    if (!comic.title) return;
+
+    setIsSearchingCover(true);
+    try {
+      const response = await fetch("/api/cover-search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: comic.title,
+          issueNumber: comic.issueNumber,
+          publisher: comic.publisher,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setCoverSearchUrl(data.searchUrl);
+        // Open the search URL in a new tab
+        window.open(data.searchUrl, "_blank");
+      }
+    } catch (error) {
+      console.error("Error searching for cover:", error);
+    } finally {
+      setIsSearchingCover(false);
+    }
   };
 
   return (
@@ -133,14 +164,15 @@ export function ComicDetailsForm({
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Title *
           </label>
-          <input
-            type="text"
+          <TitleAutocomplete
             value={comic.title || ""}
-            onChange={(e) => updateComic("title", e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white text-gray-900"
+            onChange={(value) => updateComic("title", value)}
             placeholder="e.g., Amazing Spider-Man"
             required
           />
+          <p className="text-xs text-gray-500 mt-1">
+            Start typing for suggestions
+          </p>
         </div>
 
         <div>
@@ -201,6 +233,32 @@ export function ComicDetailsForm({
           />
         </div>
       </div>
+
+      {/* Find Cover Button - only show when no cover image and title is entered */}
+      {!coverImageUrl && comic.title && (
+        <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex-1">
+            <p className="text-sm font-medium text-blue-900">Need a cover image?</p>
+            <p className="text-xs text-blue-700">
+              Search for the cover based on the comic details you&apos;ve entered.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleSearchCover}
+            disabled={isSearchingCover}
+            className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 text-sm"
+          >
+            {isSearchingCover ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Search className="w-4 h-4" />
+            )}
+            Find Cover
+            <ExternalLink className="w-3 h-3" />
+          </button>
+        </div>
+      )}
 
       {/* Credits */}
       <div>

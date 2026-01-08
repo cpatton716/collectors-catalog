@@ -130,6 +130,10 @@ export default function ScanPage() {
     setIsSaving(true);
 
     try {
+      // Determine if this is a slabbed/graded comic
+      const isSlabbed = itemData.isGraded || itemData.comic?.isSlabbed || comicDetails?.isSlabbed;
+      const listIds = isSlabbed ? ["collection", "slabbed"] : ["collection"];
+
       const newItem: CollectionItem = {
         id: uuidv4(),
         comic: itemData.comic || comicDetails!,
@@ -145,7 +149,7 @@ export default function ScanPage() {
         askingPrice: itemData.askingPrice || null,
         averagePrice: null, // Would come from price API in production
         dateAdded: new Date().toISOString(),
-        listIds: ["collection"],
+        listIds,
         isStarred: false,
       };
 
