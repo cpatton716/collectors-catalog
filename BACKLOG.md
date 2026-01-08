@@ -199,3 +199,19 @@ Customize the email templates sent by Clerk for authentication flows (welcome, v
 - Customize branding (logo, colors, fonts)
 - Update copy/messaging to match app voice
 - Test email delivery and rendering across clients
+
+---
+
+### Clean Up Copy Throughout the Site
+**Priority:** Low
+**Status:** Pending
+
+Review and improve all user-facing text throughout the application for consistency, clarity, and brand voice.
+
+**Areas to Review:**
+- Page titles and descriptions
+- Button labels and CTAs
+- Error messages and confirmations
+- Empty states and placeholder text
+- Toast notifications
+- Form labels and helper text

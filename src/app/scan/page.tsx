@@ -6,11 +6,12 @@ import { v4 as uuidv4 } from "uuid";
 import { ImageUpload } from "@/components/ImageUpload";
 import { ComicDetailsForm } from "@/components/ComicDetailsForm";
 import { GuestLimitBanner } from "@/components/GuestLimitBanner";
+import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { storage } from "@/lib/storage";
 import { ComicDetails, CollectionItem } from "@/types/comic";
 import { useToast } from "@/components/Toast";
 import { useGuestScans } from "@/hooks/useGuestScans";
-import { Loader2, AlertCircle, ArrowLeft, Wand2, Check, Camera, Sparkles, ClipboardCheck, Save } from "lucide-react";
+import { Loader2, AlertCircle, ArrowLeft, Wand2, Check, Camera, Sparkles, ClipboardCheck, Save, ScanBarcode, PenLine } from "lucide-react";
 
 type ScanState = "upload" | "analyzing" | "review" | "saved" | "error";
 
@@ -65,6 +66,8 @@ export default function ScanPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [savedComic, setSavedComic] = useState<CollectionItem | null>(null);
   const [currentFact, setCurrentFact] = useState("");
+  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
+  const [isProcessingBarcode, setIsProcessingBarcode] = useState(false);
 
   // Rotate fun facts every 5 seconds during analyzing state
   useEffect(() => {
@@ -208,6 +211,61 @@ export default function ScanPage() {
     setState("review");
   };
 
+  const handleBarcodeScan = async (barcode: string) => {
+    setIsProcessingBarcode(true);
+
+    try {
+      const response = await fetch("/api/barcode-lookup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ barcode }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to look up comic");
+      }
+
+      // Set the cover image if provided
+      if (data.coverImageUrl) {
+        setImagePreview(data.coverImageUrl);
+      }
+
+      // Set comic details
+      setComicDetails({
+        id: uuidv4(),
+        title: data.title,
+        issueNumber: data.issueNumber,
+        variant: data.variant,
+        publisher: data.publisher,
+        coverArtist: data.coverArtist,
+        writer: data.writer,
+        interiorArtist: data.interiorArtist,
+        releaseYear: data.releaseYear,
+        confidence: data.confidence || "high",
+        isSlabbed: false,
+        gradingCompany: null,
+        grade: null,
+        isSignatureSeries: false,
+        signedBy: null,
+        priceData: data.priceData || null,
+      });
+
+      setShowBarcodeScanner(false);
+      setState("review");
+      showToast("Comic found!", "success");
+    } catch (err) {
+      console.error("Barcode lookup error:", err);
+      showToast(
+        err instanceof Error ? err.message : "Failed to look up comic",
+        "error"
+      );
+    } finally {
+      setIsProcessingBarcode(false);
+    }
+  };
+
   const handleRetry = () => {
     if (imagePreview) {
       // Convert data URL back to file for retry
@@ -308,16 +366,27 @@ export default function ScanPage() {
             <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
               <ImageUpload onImageSelect={handleImageSelect} />
 
-              <div className="mt-6 text-center">
-                <p className="text-sm text-gray-500 mb-3">
-                  Don&apos;t have a photo? You can also:
+              {/* Alternative add methods */}
+              <div className="mt-8 pt-6 border-t border-gray-100">
+                <p className="text-sm text-gray-500 text-center mb-4">
+                  Other ways to add comics:
                 </p>
-                <button
-                  onClick={handleManualEntry}
-                  className="text-primary-600 hover:text-primary-700 font-medium"
-                >
-                  Enter details manually →
-                </button>
+                <div className="flex justify-center gap-4">
+                  <button
+                    onClick={() => setShowBarcodeScanner(true)}
+                    className="flex flex-col items-center justify-center w-36 h-28 bg-primary-50 text-primary-700 rounded-xl hover:bg-primary-100 transition-colors border border-primary-200"
+                  >
+                    <ScanBarcode className="w-8 h-8 mb-2" />
+                    <span className="text-sm font-medium">Scan Barcode</span>
+                  </button>
+                  <button
+                    onClick={handleManualEntry}
+                    className="flex flex-col items-center justify-center w-36 h-28 bg-primary-50 text-primary-700 rounded-xl hover:bg-primary-100 transition-colors border border-primary-200"
+                  >
+                    <PenLine className="w-8 h-8 mb-2" />
+                    <span className="text-sm font-medium">Enter Manually</span>
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -528,6 +597,15 @@ export default function ScanPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Barcode Scanner Modal */}
+      {showBarcodeScanner && (
+        <BarcodeScanner
+          onScan={handleBarcodeScan}
+          onClose={() => setShowBarcodeScanner(false)}
+          isProcessing={isProcessingBarcode}
+        />
       )}
     </div>
   );
