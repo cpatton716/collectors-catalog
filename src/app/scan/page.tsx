@@ -371,7 +371,7 @@ export default function ScanPage() {
                 <p className="text-sm text-gray-500 text-center mb-4">
                   Other ways to add comics:
                 </p>
-                <div className="flex justify-center gap-8">
+                <div className="flex justify-center gap-12">
                   <button
                     onClick={() => setShowBarcodeScanner(true)}
                     className="flex flex-col items-center justify-center w-44 h-28 bg-primary-50 text-primary-700 rounded-xl hover:bg-primary-100 transition-colors border border-primary-200"

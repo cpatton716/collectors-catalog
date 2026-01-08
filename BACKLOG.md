@@ -215,3 +215,18 @@ Review and improve all user-facing text throughout the application for consisten
 - Empty states and placeholder text
 - Toast notifications
 - Form labels and helper text
+
+---
+
+### Test Password Reset Flows
+**Priority:** Medium
+**Status:** Pending
+
+Test and verify the Clerk-powered password reset functionality works correctly end-to-end.
+
+**Test Cases:**
+- Request password reset from login page
+- Verify reset email is received
+- Confirm reset link works and redirects properly
+- Verify new password can be set
+- Confirm user can log in with new password
