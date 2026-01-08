@@ -88,7 +88,21 @@ export const storage = {
       this.saveLists(DEFAULT_LISTS);
       return DEFAULT_LISTS;
     }
-    return JSON.parse(data);
+
+    // Ensure all default lists exist (handles migrations when new default lists are added)
+    const lists: UserList[] = JSON.parse(data);
+    let needsSave = false;
+    for (const defaultList of DEFAULT_LISTS) {
+      if (!lists.find(l => l.id === defaultList.id)) {
+        lists.push(defaultList);
+        needsSave = true;
+      }
+    }
+    if (needsSave) {
+      this.saveLists(lists);
+    }
+
+    return lists;
   },
 
   saveLists(lists: UserList[]): void {

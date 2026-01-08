@@ -185,3 +185,17 @@ Extend the platform beyond comic books to support other collectible categories, 
 - Add `collectibleType` field to items
 - Dynamic metadata schema based on collectible type
 - Category-specific grading scales (PSA for cards, etc.)
+
+---
+
+### Update Email Formatting
+**Priority:** Low
+**Status:** Pending
+
+Customize the email templates sent by Clerk for authentication flows (welcome, verification, password reset, etc.) to match the Comic Tracker branding.
+
+**Steps (to be detailed when ready):**
+- Access Clerk Dashboard email templates
+- Customize branding (logo, colors, fonts)
+- Update copy/messaging to match app voice
+- Test email delivery and rendering across clients
