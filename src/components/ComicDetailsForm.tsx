@@ -15,6 +15,7 @@ import { TitleAutocomplete } from "./TitleAutocomplete";
 interface ComicDetailsFormProps {
   comic: ComicDetails;
   coverImageUrl: string;
+  onCoverImageChange?: (url: string) => void;
   onSave: (item: Partial<CollectionItem>) => void;
   onCancel: () => void;
   isLoading?: boolean;
@@ -25,6 +26,7 @@ interface ComicDetailsFormProps {
 export function ComicDetailsForm({
   comic: initialComic,
   coverImageUrl,
+  onCoverImageChange,
   onSave,
   onCancel,
   isLoading,
@@ -55,6 +57,7 @@ export function ComicDetailsForm({
   );
   const [isSearchingCover, setIsSearchingCover] = useState(false);
   const [coverSearchUrl, setCoverSearchUrl] = useState<string | null>(null);
+  const [coverUrlInput, setCoverUrlInput] = useState("");
   const [isLookingUpDetails, setIsLookingUpDetails] = useState(false);
   const [lastLookedUpTitle, setLastLookedUpTitle] = useState<string | null>(null);
   const [lastLookedUpIssue, setLastLookedUpIssue] = useState<string | null>(null);
@@ -315,27 +318,49 @@ export function ComicDetailsForm({
         </div>
       </div>
 
-      {/* Find Cover Button - only show when no cover image and title is entered */}
-      {!coverImageUrl && comic.title && (
-        <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-          <div className="flex-1">
-            <p className="text-sm font-medium text-blue-900">Need a cover image?</p>
+      {/* Cover Image Section - only show when no cover image and title is entered */}
+      {!coverImageUrl && comic.title && onCoverImageChange && (
+        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-3">
+          <div>
+            <p className="text-sm font-medium text-blue-900">Add a cover image</p>
             <p className="text-xs text-blue-700">
-              Search for the cover based on the comic details you&apos;ve entered.
+              Paste a cover image URL or search Google Images to find one.
             </p>
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="url"
+              value={coverUrlInput}
+              onChange={(e) => setCoverUrlInput(e.target.value)}
+              placeholder="Paste image URL here..."
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                if (coverUrlInput) {
+                  onCoverImageChange(coverUrlInput);
+                  setCoverUrlInput("");
+                }
+              }}
+              disabled={!coverUrlInput}
+              className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 text-sm"
+            >
+              Set Cover
+            </button>
           </div>
           <button
             type="button"
             onClick={handleSearchCover}
             disabled={isSearchingCover}
-            className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 text-sm"
+            className="flex items-center gap-2 text-sm text-blue-700 hover:text-blue-800"
           >
             {isSearchingCover ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <Search className="w-4 h-4" />
             )}
-            Find Cover
+            Search Google Images
             <ExternalLink className="w-3 h-3" />
           </button>
         </div>

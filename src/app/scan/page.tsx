@@ -532,6 +532,7 @@ export default function ScanPage() {
                 key={comicDetails.id}
                 comic={comicDetails}
                 coverImageUrl={imagePreview}
+                onCoverImageChange={setImagePreview}
                 onSave={handleSave}
                 onCancel={handleCancel}
                 isLoading={isSaving}
