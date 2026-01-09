@@ -27,6 +27,16 @@ export interface PriceData {
   mostRecentSaleDate: string | null;
   isAveraged: boolean; // true if value is avg of multiple sales, false if single sale
   disclaimer: string | null;
+  // Grade-aware pricing
+  gradeEstimates?: GradeEstimate[];
+  baseGrade?: number; // The grade the estimatedValue is based on (default 9.4 for raw estimates)
+}
+
+export interface GradeEstimate {
+  grade: number;
+  label: string; // e.g., "Near Mint", "Very Fine"
+  rawValue: number;
+  slabbedValue: number; // CGC/CBCS graded value (typically higher)
 }
 
 export interface RecentSale {

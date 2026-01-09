@@ -4,44 +4,129 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@clerk/nextjs";
 
 const GUEST_SCAN_KEY = "comic_guest_scans";
+const MILESTONES_SHOWN_KEY = "comic_milestones_shown";
 const MAX_GUEST_SCANS = 10;
+
+// Milestone thresholds
+const HALFWAY_MILESTONE = 5;
+const ALMOST_DONE_MILESTONE = 9;
+
+export type MilestoneType = "halfway" | "almostDone" | "limitReached" | null;
+
+interface MilestonesShown {
+  halfway: boolean;
+  almostDone: boolean;
+  limitReached: boolean;
+}
 
 interface GuestScanState {
   count: number;
   remaining: number;
   isLimitReached: boolean;
   isGuest: boolean;
-  incrementScan: () => void;
+  incrementScan: () => MilestoneType;
   resetScans: () => void;
+  checkMilestone: () => MilestoneType;
+  markMilestoneShown: (milestone: MilestoneType) => void;
 }
+
+// Helper to get milestones from localStorage
+const getMilestonesShown = (): MilestonesShown => {
+  if (typeof window === "undefined") {
+    return { halfway: false, almostDone: false, limitReached: false };
+  }
+  try {
+    const stored = localStorage.getItem(MILESTONES_SHOWN_KEY);
+    return stored ? JSON.parse(stored) : { halfway: false, almostDone: false, limitReached: false };
+  } catch {
+    return { halfway: false, almostDone: false, limitReached: false };
+  }
+};
+
+// Helper to save milestones to localStorage
+const saveMilestonesShown = (milestones: MilestonesShown) => {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(MILESTONES_SHOWN_KEY, JSON.stringify(milestones));
+};
 
 export function useGuestScans(): GuestScanState {
   const { isSignedIn, isLoaded } = useAuth();
   const [scanCount, setScanCount] = useState(0);
+  const [milestonesShown, setMilestonesShown] = useState<MilestonesShown>({
+    halfway: false,
+    almostDone: false,
+    limitReached: false,
+  });
 
-  // Load scan count from localStorage
+  // Load scan count and milestones from localStorage
   useEffect(() => {
     if (typeof window === "undefined") return;
     const stored = localStorage.getItem(GUEST_SCAN_KEY);
     if (stored) {
       setScanCount(parseInt(stored, 10));
     }
+    setMilestonesShown(getMilestonesShown());
   }, []);
 
-  const incrementScan = useCallback(() => {
-    if (typeof window === "undefined") return;
+  // Check which milestone should be shown based on current count
+  const checkMilestone = useCallback((): MilestoneType => {
+    // Don't show milestones for signed-in users
+    if (isSignedIn) return null;
+
+    if (scanCount >= MAX_GUEST_SCANS && !milestonesShown.limitReached) {
+      return "limitReached";
+    }
+    if (scanCount >= ALMOST_DONE_MILESTONE && !milestonesShown.almostDone) {
+      return "almostDone";
+    }
+    if (scanCount >= HALFWAY_MILESTONE && !milestonesShown.halfway) {
+      return "halfway";
+    }
+    return null;
+  }, [scanCount, milestonesShown, isSignedIn]);
+
+  // Mark a milestone as shown
+  const markMilestoneShown = useCallback((milestone: MilestoneType) => {
+    if (!milestone) return;
+
+    const updated = { ...milestonesShown, [milestone]: true };
+    setMilestonesShown(updated);
+    saveMilestonesShown(updated);
+  }, [milestonesShown]);
+
+  // Increment scan and return any milestone that should be shown
+  const incrementScan = useCallback((): MilestoneType => {
+    if (typeof window === "undefined") return null;
     // Don't count scans for signed-in users
-    if (isSignedIn) return;
+    if (isSignedIn) return null;
 
     const newCount = scanCount + 1;
     setScanCount(newCount);
     localStorage.setItem(GUEST_SCAN_KEY, newCount.toString());
+
+    // Check for milestones based on NEW count
+    const currentMilestones = getMilestonesShown();
+
+    if (newCount >= MAX_GUEST_SCANS && !currentMilestones.limitReached) {
+      return "limitReached";
+    }
+    if (newCount >= ALMOST_DONE_MILESTONE && !currentMilestones.almostDone) {
+      return "almostDone";
+    }
+    if (newCount >= HALFWAY_MILESTONE && !currentMilestones.halfway) {
+      return "halfway";
+    }
+
+    return null;
   }, [scanCount, isSignedIn]);
 
   const resetScans = useCallback(() => {
     if (typeof window === "undefined") return;
     setScanCount(0);
     localStorage.removeItem(GUEST_SCAN_KEY);
+    // Also reset milestones
+    setMilestonesShown({ halfway: false, almostDone: false, limitReached: false });
+    localStorage.removeItem(MILESTONES_SHOWN_KEY);
   }, []);
 
   const isGuest = isLoaded && !isSignedIn;
@@ -55,6 +140,8 @@ export function useGuestScans(): GuestScanState {
     isGuest,
     incrementScan,
     resetScans,
+    checkMilestone,
+    markMilestoneShown,
   };
 }
 

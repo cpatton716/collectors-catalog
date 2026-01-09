@@ -209,6 +209,95 @@ UX Improvements, CSV Import Feature, and Home Page Refinements
 
 ---
 
+## January 8, 2026 (Evening)
+
+### Session Focus
+Con Mode, Mobile Camera Enhancements, Grade-Aware Pricing, and Barcode Scanner Fixes
+
+### Completed
+
+**Con Mode - Mobile Quick Lookup** (New Feature)
+- Created dedicated `/con-mode` page for quick price lookups at conventions
+- Built QuickResultCard component with minimal UI for fast scanning
+- Created `/api/quick-lookup` endpoint combining barcode lookup + AI pricing
+- Added "Passed On" default list for tracking comics seen but not purchased
+- All 25 standard CGC grades in horizontally scrollable picker for raw books
+- Auto-detect grade for slabbed comics (no selector needed)
+- Raw and slabbed price display based on selected grade
+- Three quick-add buttons: Want List, Collection, Passed On
+- Recent scans history with localStorage persistence
+- Offline barcode cache (7-day TTL, 20 entries max)
+- Added Con Mode to mobile nav as 3rd item (Home → Scan → Con Mode → Collection)
+
+**Enhanced Mobile Camera Integration**
+- Built LiveCameraCapture component with full-screen camera preview
+- Capture button with photo review before submission
+- Retake option before confirming
+- Front/rear camera switching on supported devices
+- Gallery access option alongside camera capture
+- Graceful permission handling with clear error messages
+- Fallback to file upload for unsupported browsers
+
+**Sign-Up Prompts at Scan Milestones**
+- Created SignUpPromptModal component for milestone-based prompts
+- After 5th scan: Soft prompt highlighting cloud sync benefits
+- Before 10th scan: Stronger prompt about limit approaching
+- After limit reached: Clear CTA to unlock unlimited scanning
+- Milestone tracking persisted in localStorage (shows each prompt only once)
+
+**Grade-Aware Pricing**
+- Updated PriceData type with GradeEstimate interface (6 grades: 9.8, 9.4, 8.0, 6.0, 4.0, 2.0)
+- Modified analyze API to request grade-specific prices from Claude
+- Created gradePrice.ts utility for interpolation between grades
+- Built GradePricingBreakdown component (expandable grade/price table)
+- Integrated into ComicDetailModal and ComicDetailsForm
+- Raw vs slabbed price differentiation
+
+**Barcode Scanner Camera Fixes**
+- Rewrote BarcodeScanner with explicit Permissions API checking
+- State machine approach (checking → requesting → starting → active → error)
+- Detailed error messages for each error type (permission denied, not found, in use)
+- Retry mechanism with "Try Again" button
+- "How to Enable Camera" instructions for permission issues
+- Support for multiple barcode formats (UPC-A, UPC-E, EAN-13, EAN-8, CODE-128)
+- Visual scanning overlay with animated corners and scan line
+- Fixed DOM timing issues with initialization delays
+
+### Files Created
+- `src/app/con-mode/page.tsx` - Con Mode page
+- `src/components/QuickResultCard.tsx` - Minimal result card for Con Mode
+- `src/app/api/quick-lookup/route.ts` - Combined barcode + price lookup API
+- `src/components/LiveCameraCapture.tsx` - Full-screen camera preview
+- `src/components/SignUpPromptModal.tsx` - Milestone sign-up prompts
+- `src/components/GradePricingBreakdown.tsx` - Expandable grade price table
+- `src/lib/gradePrice.ts` - Grade interpolation utilities
+
+### Files Modified
+- `src/lib/storage.ts` - Added "Passed On" default list
+- `src/lib/db.ts` - Added "Passed On" to Supabase mapping
+- `src/components/MobileNav.tsx` - Added Con Mode as 3rd nav item
+- `src/components/BarcodeScanner.tsx` - Complete rewrite with better error handling
+- `src/components/ImageUpload.tsx` - Integrated LiveCameraCapture, added gallery access
+- `src/hooks/useGuestScans.ts` - Added milestone tracking
+- `src/app/scan/page.tsx` - Integrated SignUpPromptModal
+- `src/types/comic.ts` - Added GradeEstimate interface to PriceData
+- `src/app/api/analyze/route.ts` - Added grade-specific price requests
+- `src/components/ComicDetailModal.tsx` - Added GradePricingBreakdown
+- `src/components/ComicDetailsForm.tsx` - Added GradePricingBreakdown
+- `BACKLOG.md` - Moved 5 items to Completed section
+
+### Blockers / Issues Encountered
+1. **MilestoneType null handling** - Fixed TypeScript error with `Exclude<MilestoneType, null>` utility type
+2. **Camera permission black screen** - Solved with explicit Permissions API checks before scanner init
+
+### Notes for Future Reference
+- Con Mode barcode scans are always raw books (can't scan barcode through a slab)
+- For slabbed comics, need image scan to detect grade from CGC/CBCS label
+- Grade interpolation uses linear interpolation between known grade points
+- Barcode cache uses 7-day TTL and max 20 entries to balance storage vs usefulness
+
+---
+
 <!--
 Template for new entries:
 

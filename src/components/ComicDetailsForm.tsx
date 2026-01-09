@@ -9,8 +9,10 @@ import {
   GRADE_SCALE,
   GradingCompany,
 } from "@/types/comic";
-import { AlertCircle, CheckCircle, Loader2, DollarSign, TrendingUp, Info, Search, ExternalLink, Plus, X, KeyRound } from "lucide-react";
+import { AlertCircle, CheckCircle, Loader2, DollarSign, TrendingUp, Info, Search, ExternalLink, Plus, X, KeyRound, RefreshCw } from "lucide-react";
 import { TitleAutocomplete } from "./TitleAutocomplete";
+import { GradePricingBreakdown } from "./GradePricingBreakdown";
+import { calculateValueAtGrade } from "@/lib/gradePrice";
 
 interface ComicDetailsFormProps {
   comic: ComicDetails;
@@ -65,6 +67,12 @@ export function ComicDetailsForm({
   const [lastLookedUpTitle, setLastLookedUpTitle] = useState<string | null>(null);
   const [lastLookedUpIssue, setLastLookedUpIssue] = useState<string | null>(null);
   const [newKeyInfo, setNewKeyInfo] = useState("");
+
+  // Track original values to detect changes in edit mode
+  const [originalTitle] = useState(initialComic.title || "");
+  const [originalIssue] = useState(initialComic.issueNumber || "");
+  const [showRelookupPrompt, setShowRelookupPrompt] = useState(false);
+  const [pendingRelookup, setPendingRelookup] = useState<{ title: string; issue: string } | null>(null);
 
   // Auto-populate publisher when title is selected
   useEffect(() => {
@@ -160,6 +168,70 @@ export function ComicDetailsForm({
     setSignedBy(initialComic.signedBy || "");
   }, [initialComic]);
 
+  // Detect title/issue changes in edit mode and prompt for re-lookup
+  useEffect(() => {
+    if (mode !== "edit") return;
+
+    const titleChanged = comic.title && comic.title !== originalTitle && originalTitle !== "";
+    const issueChanged = comic.issueNumber && comic.issueNumber !== originalIssue && originalIssue !== "";
+
+    // Only show prompt if both title and issue are filled and at least one changed
+    if ((titleChanged || issueChanged) && comic.title && comic.issueNumber) {
+      // Check if we already have metadata that might be stale
+      const hasExistingMetadata = comic.writer || comic.coverArtist || comic.publisher || comic.releaseYear;
+      if (hasExistingMetadata && !showRelookupPrompt && !isLookingUpDetails) {
+        setPendingRelookup({ title: comic.title, issue: comic.issueNumber });
+        setShowRelookupPrompt(true);
+      }
+    }
+  }, [comic.title, comic.issueNumber, originalTitle, originalIssue, mode, comic.writer, comic.coverArtist, comic.publisher, comic.releaseYear, showRelookupPrompt, isLookingUpDetails]);
+
+  // Handle re-lookup confirmation
+  const handleRelookup = async () => {
+    if (!pendingRelookup) return;
+
+    setShowRelookupPrompt(false);
+    setIsLookingUpDetails(true);
+
+    try {
+      const response = await fetch("/api/comic-lookup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: pendingRelookup.title,
+          issueNumber: pendingRelookup.issue,
+          lookupType: "full"
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Update metadata fields but preserve user-entered data
+        setComic((prev) => ({
+          ...prev,
+          publisher: data.publisher || null,
+          releaseYear: data.releaseYear || null,
+          writer: data.writer || null,
+          coverArtist: data.coverArtist || null,
+          interiorArtist: data.interiorArtist || null,
+          keyInfo: data.keyInfo || [],
+        }));
+        setLastLookedUpTitle(pendingRelookup.title);
+        setLastLookedUpIssue(pendingRelookup.issue);
+      }
+    } catch (error) {
+      console.error("Error re-looking up comic details:", error);
+    } finally {
+      setIsLookingUpDetails(false);
+      setPendingRelookup(null);
+    }
+  };
+
+  const dismissRelookupPrompt = () => {
+    setShowRelookupPrompt(false);
+    setPendingRelookup(null);
+  };
+
   console.log("ComicDetailsForm rendering with comic:", comic);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -247,6 +319,38 @@ export function ComicDetailsForm({
             Graded comic detected - {comic.gradingCompany} {comic.grade}
             {comic.isSignatureSeries && " (Signature Series)"}
           </span>
+        </div>
+      )}
+
+      {/* Re-lookup Prompt - shown when title/issue changes in edit mode */}
+      {showRelookupPrompt && pendingRelookup && (
+        <div className="flex items-start gap-3 p-4 rounded-lg bg-amber-50 border border-amber-200">
+          <RefreshCw className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-amber-800">
+              Title or issue number changed
+            </p>
+            <p className="text-sm text-amber-700 mt-1">
+              Would you like to look up new details for &quot;{pendingRelookup.title} #{pendingRelookup.issue}&quot;? This will update the publisher, year, creative team, and key info.
+            </p>
+            <div className="flex gap-2 mt-3">
+              <button
+                type="button"
+                onClick={handleRelookup}
+                className="px-3 py-1.5 bg-amber-600 text-white text-sm rounded-lg hover:bg-amber-700 transition-colors flex items-center gap-1.5"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                Look Up New Details
+              </button>
+              <button
+                type="button"
+                onClick={dismissRelookupPrompt}
+                className="px-3 py-1.5 bg-white text-amber-700 text-sm rounded-lg border border-amber-300 hover:bg-amber-50 transition-colors"
+              >
+                Keep Current Details
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -374,10 +478,10 @@ export function ComicDetailsForm({
         </div>
       )}
 
-      {/* Credits */}
+      {/* Creative Team */}
       <div>
         <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-          Credits
+          Creative Team
           {isLookingUpDetails && (
             <span className="flex items-center gap-1 text-xs font-normal text-gray-500">
               <Loader2 className="w-3 h-3 animate-spin" />
@@ -599,63 +703,84 @@ export function ComicDetailsForm({
       </div>
 
       {/* Estimated Value */}
-      {comic.priceData && comic.priceData.estimatedValue && (
-        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
-          <div className="flex items-start justify-between">
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900 mb-1 flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-green-600" />
-                Estimated Value
-              </h3>
-              <div className="flex items-baseline gap-1">
-                <DollarSign className="w-5 h-5 text-green-600" />
-                <span className="text-3xl font-bold text-green-700">
-                  {comic.priceData.estimatedValue.toLocaleString("en-US", {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
-                </span>
+      {comic.priceData && comic.priceData.estimatedValue && (() => {
+        // Calculate grade-adjusted value
+        const selectedGrade = grade ? parseFloat(grade) : null;
+        const gradeAdjustedValue = selectedGrade && comic.priceData?.gradeEstimates
+          ? calculateValueAtGrade(comic.priceData, selectedGrade, isGraded)
+          : comic.priceData.estimatedValue;
+        const displayValue = gradeAdjustedValue || comic.priceData.estimatedValue;
+
+        return (
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 mb-1 flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-green-600" />
+                  Estimated Value
+                  {selectedGrade && comic.priceData?.gradeEstimates && (
+                    <span className="text-xs font-normal text-gray-500">
+                      ({isGraded ? "slabbed" : "raw"} {selectedGrade})
+                    </span>
+                  )}
+                </h3>
+                <div className="flex items-baseline gap-1">
+                  <DollarSign className="w-5 h-5 text-green-600" />
+                  <span className="text-3xl font-bold text-green-700">
+                    {displayValue.toLocaleString("en-US", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </span>
+                </div>
+                {comic.priceData.mostRecentSaleDate && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Most recent sale: {new Date(comic.priceData.mostRecentSaleDate).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </p>
+                )}
               </div>
-              {comic.priceData.mostRecentSaleDate && (
-                <p className="text-xs text-gray-500 mt-1">
-                  Most recent sale: {new Date(comic.priceData.mostRecentSaleDate).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </p>
+
+              {/* Recent Sales Summary */}
+              {comic.priceData.recentSales.length > 0 && (
+                <div className="text-right">
+                  <p className="text-xs text-gray-500 mb-1">Recent Sales</p>
+                  <div className="space-y-0.5">
+                    {comic.priceData.recentSales.slice(0, 3).map((sale, idx) => (
+                      <p key={idx} className="text-xs text-gray-600">
+                        ${sale.price.toLocaleString()}
+                        <span className="text-gray-400 ml-1">
+                          ({new Date(sale.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })})
+                        </span>
+                      </p>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
 
-            {/* Recent Sales Summary */}
-            {comic.priceData.recentSales.length > 0 && (
-              <div className="text-right">
-                <p className="text-xs text-gray-500 mb-1">Recent Sales</p>
-                <div className="space-y-0.5">
-                  {comic.priceData.recentSales.slice(0, 3).map((sale, idx) => (
-                    <p key={idx} className="text-xs text-gray-600">
-                      ${sale.price.toLocaleString()}
-                      <span className="text-gray-400 ml-1">
-                        ({new Date(sale.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })})
-                      </span>
-                    </p>
-                  ))}
-                </div>
+            {/* Disclaimer */}
+            {comic.priceData.disclaimer && (
+              <div className="mt-3 pt-3 border-t border-green-200">
+                <p className="text-xs text-gray-500 flex items-start gap-1">
+                  <Info className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                  {comic.priceData.disclaimer}
+                </p>
               </div>
             )}
-          </div>
 
-          {/* Disclaimer */}
-          {comic.priceData.disclaimer && (
-            <div className="mt-3 pt-3 border-t border-green-200">
-              <p className="text-xs text-gray-500 flex items-start gap-1">
-                <Info className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                {comic.priceData.disclaimer}
-              </p>
-            </div>
-          )}
-        </div>
-      )}
+            {/* Grade-aware pricing breakdown */}
+            <GradePricingBreakdown
+              priceData={comic.priceData}
+              currentGrade={selectedGrade}
+              isSlabbed={isGraded}
+            />
+          </div>
+        );
+      })()}
 
       {/* Purchase Info */}
       <div>

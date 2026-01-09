@@ -421,23 +421,39 @@ Based on your knowledge of the comic book market, provide realistic estimated re
 - Whether it's a signature series (adds value)
 - Recent market trends for this title
 
-Return a JSON object with estimated recent sales data:
+Return a JSON object with estimated recent sales data AND grade-specific price estimates:
 {
   "recentSales": [
     { "price": estimated_price_1, "date": "YYYY-MM-DD", "source": "eBay", "daysAgo": number },
     { "price": estimated_price_2, "date": "YYYY-MM-DD", "source": "eBay", "daysAgo": number },
     { "price": estimated_price_3, "date": "YYYY-MM-DD", "source": "eBay", "daysAgo": number }
   ],
+  "gradeEstimates": [
+    { "grade": 9.8, "label": "Near Mint/Mint", "rawValue": price, "slabbedValue": price },
+    { "grade": 9.4, "label": "Near Mint", "rawValue": price, "slabbedValue": price },
+    { "grade": 8.0, "label": "Very Fine", "rawValue": price, "slabbedValue": price },
+    { "grade": 6.0, "label": "Fine", "rawValue": price, "slabbedValue": price },
+    { "grade": 4.0, "label": "Very Good", "rawValue": price, "slabbedValue": price },
+    { "grade": 2.0, "label": "Good", "rawValue": price, "slabbedValue": price }
+  ],
   "marketNotes": "brief note about this comic's market value"
 }
 
 Important:
 - Return ONLY the JSON object, no other text
-- Provide 3 realistic sale prices that reflect actual market values
-- Use dates within the last 6 months where possible (use dates in late 2025/early 2026)
-- Prices should vary slightly as real sales do
-- Consider that CGC Signature Series books command premium prices
-- Be realistic - don't inflate or deflate values`,
+- For recentSales: provide 3 realistic sale prices at the scanned grade (or 9.4 NM for raw)
+- Use dates within the last 6 months (late 2025/early 2026)
+- For gradeEstimates: provide realistic price differences between grades
+  - Raw comics are ungraded copies (typically 10-30% less than slabbed)
+  - Slabbed values are for CGC/CBCS graded copies (command a premium)
+  - Higher grades exponentially more valuable for key issues
+  - Lower grades have smaller price gaps between them
+- Price scaling rules:
+  - For KEY issues (first appearances, deaths): 9.8 can be 2-10x the 9.4 price
+  - For regular issues: grade premiums are more modest (9.8 ~1.5-2x of 9.4)
+  - Raw copies typically 70-90% of equivalent slabbed value
+  - Lower grades (2.0-4.0) may be affordable entry points for expensive keys
+- Be realistic with actual market pricing behavior`,
             },
           ],
         });
@@ -512,12 +528,28 @@ Important:
             disclaimer = "Value based on most recent sale (older than 6 months - recent data unavailable).";
           }
 
+          // Process grade estimates if available
+          let gradeEstimates = undefined;
+          if (priceInfo.gradeEstimates && Array.isArray(priceInfo.gradeEstimates)) {
+            gradeEstimates = priceInfo.gradeEstimates.map((ge: { grade: number; label: string; rawValue: number; slabbedValue: number }) => ({
+              grade: ge.grade,
+              label: ge.label,
+              rawValue: Math.round(ge.rawValue * 100) / 100,
+              slabbedValue: Math.round(ge.slabbedValue * 100) / 100,
+            }));
+          }
+
+          // Determine base grade for the estimate
+          const baseGrade = comicDetails.grade ? parseFloat(comicDetails.grade) : 9.4;
+
           comicDetails.priceData = {
             estimatedValue: estimatedValue ? Math.round(estimatedValue * 100) / 100 : null,
             recentSales: processedSales,
             mostRecentSaleDate,
             isAveraged,
-            disclaimer
+            disclaimer,
+            gradeEstimates,
+            baseGrade,
           };
 
           console.log("Final price data:", comicDetails.priceData);

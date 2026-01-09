@@ -197,6 +197,8 @@ export async function migrateLocalDataToCloud(
     if (list.name === "My Collection") defaultListMap.set("collection", list.id);
     if (list.name === "Want List") defaultListMap.set("want-list", list.id);
     if (list.name === "For Sale") defaultListMap.set("for-sale", list.id);
+    if (list.name === "Slabbed") defaultListMap.set("slabbed", list.id);
+    if (list.name === "Passed On") defaultListMap.set("passed-on", list.id);
   });
 
   // Import custom lists

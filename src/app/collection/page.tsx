@@ -517,7 +517,7 @@ export default function CollectionPage() {
 
             {/* Sort */}
             <div className="flex items-center gap-1.5 ml-auto">
-              <label className="text-sm font-medium text-gray-600 hidden md:flex items-center gap-1">
+              <label className="text-sm font-medium text-gray-600 flex items-center gap-1">
                 <SortAsc className="w-4 h-4" />
                 Sort:
               </label>

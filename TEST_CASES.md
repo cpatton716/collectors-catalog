@@ -1,4 +1,4 @@
-# Collector's Catalog - Test Cases
+# Collectors Chest - Test Cases
 
 A guide for testing the main and secondary features of the application.
 

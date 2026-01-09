@@ -70,8 +70,8 @@ export default function Home() {
           Catalog Your Collection
         </h1>
         <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-8">
-          Upload a photo and we&apos;ll instantly identify the title, issue #,
-          publisher, creators, key info, and more.
+          Scan covers with AI recognition, track your collection&apos;s value,
+          discover key issues, and connect with fellow collectors to buy and sell.
         </p>
 
         {/* Features */}

@@ -74,7 +74,7 @@ export function ComicListItem({ item, onClick }: ComicListItemProps) {
             <span>Added {new Date(dateAdded).toLocaleDateString()}</span>
           </div>
 
-          {/* Credits */}
+          {/* Creative Team */}
           {(comic.writer || comic.coverArtist) && (
             <div className="flex items-center gap-4 mt-1 text-xs text-gray-400">
               {comic.writer && <span>Writer: {comic.writer}</span>}

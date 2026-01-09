@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Flame, TrendingUp, DollarSign, Loader2, RefreshCw } from "lucide-react";
+import { ArrowLeft, Flame, TrendingUp, DollarSign, Loader2, RefreshCw, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface HotBook {
   rank: number;
@@ -26,6 +26,60 @@ export default function HottestBooksPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedBook, setSelectedBook] = useState<HotBook | null>(null);
+  const [expandedSections, setExpandedSections] = useState({
+    keyFacts: true,
+    whyHot: true,
+    priceRange: true,
+  });
+  const detailPanelRef = useRef<HTMLDivElement>(null);
+  const bookListRef = useRef<HTMLDivElement>(null);
+
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
+
+  const handleSelectBook = (book: HotBook) => {
+    setSelectedBook(book);
+    // Auto-scroll to detail panel on mobile
+    if (window.innerWidth < 1024 && detailPanelRef.current) {
+      setTimeout(() => {
+        detailPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+    }
+  };
+
+  const navigateBook = (direction: "prev" | "next") => {
+    if (!selectedBook || books.length === 0) return;
+    const currentIndex = books.findIndex(b => b.rank === selectedBook.rank);
+    let newIndex: number;
+    if (direction === "prev") {
+      newIndex = currentIndex > 0 ? currentIndex - 1 : books.length - 1;
+    } else {
+      newIndex = currentIndex < books.length - 1 ? currentIndex + 1 : 0;
+    }
+    setSelectedBook(books[newIndex]);
+  };
+
+  // Touch swipe handling
+  const touchStartX = useRef<number | null>(null);
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const diff = touchStartX.current - touchEndX;
+    const minSwipeDistance = 50;
+
+    if (Math.abs(diff) > minSwipeDistance) {
+      if (diff > 0) {
+        navigateBook("next"); // Swipe left = next
+      } else {
+        navigateBook("prev"); // Swipe right = prev
+      }
+    }
+    touchStartX.current = null;
+  };
 
   const fetchHotBooks = async () => {
     setIsLoading(true);
@@ -97,11 +151,11 @@ export default function HottestBooksPage() {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Book List */}
-            <div className="lg:col-span-2 space-y-4">
+            <div ref={bookListRef} className="lg:col-span-2 space-y-4">
               {books.map((book) => (
                 <div
                   key={book.rank}
-                  onClick={() => setSelectedBook(book)}
+                  onClick={() => handleSelectBook(book)}
                   className={`bg-white rounded-xl p-4 shadow-sm border cursor-pointer transition-all hover:shadow-md ${
                     selectedBook?.rank === book.rank
                       ? "border-orange-500 ring-2 ring-orange-200"
@@ -147,7 +201,7 @@ export default function HottestBooksPage() {
                       </div>
 
                       {/* Price Range */}
-                      <div className="mt-3 flex items-center gap-4 text-sm">
+                      <div className="mt-3 flex items-center flex-wrap gap-x-4 gap-y-1 text-sm">
                         <div className="flex items-center gap-1 text-gray-500">
                           <DollarSign className="w-4 h-4" />
                           <span>Low: ${book.priceRange.low}</span>
@@ -169,20 +223,44 @@ export default function HottestBooksPage() {
             </div>
 
             {/* Detail Panel */}
-            <div className="lg:col-span-1">
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 sticky top-4">
+            <div ref={detailPanelRef} className="lg:col-span-1">
+              <div
+                className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 sticky top-4"
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
+              >
                 {selectedBook ? (
                   <>
-                    <div className="flex items-center gap-2 mb-4">
-                      <Flame className="w-5 h-5 text-orange-500" />
-                      <h3 className="font-semibold text-gray-900">
-                        #{selectedBook.rank} on the Hot List
-                      </h3>
+                    {/* Header with navigation */}
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <Flame className="w-5 h-5 text-orange-500" />
+                        <h3 className="font-semibold text-gray-900">
+                          #{selectedBook.rank} on the Hot List
+                        </h3>
+                      </div>
+                      {/* Navigation buttons */}
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => navigateBook("prev")}
+                          className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                          aria-label="Previous book"
+                        >
+                          <ChevronLeft className="w-5 h-5 text-gray-500" />
+                        </button>
+                        <button
+                          onClick={() => navigateBook("next")}
+                          className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                          aria-label="Next book"
+                        >
+                          <ChevronRight className="w-5 h-5 text-gray-500" />
+                        </button>
+                      </div>
                     </div>
 
-                    {/* Cover Image */}
+                    {/* Cover Image - larger on mobile */}
                     {selectedBook.coverImageUrl && (
-                      <div className="w-full aspect-[2/3] max-w-[180px] mx-auto mb-4 bg-gray-100 rounded-lg overflow-hidden shadow-md">
+                      <div className="w-full aspect-[2/3] max-w-[240px] sm:max-w-[180px] mx-auto mb-4 bg-gray-100 rounded-lg overflow-hidden shadow-md">
                         <img
                           src={selectedBook.coverImageUrl}
                           alt={`${selectedBook.title} #${selectedBook.issueNumber}`}
@@ -191,58 +269,87 @@ export default function HottestBooksPage() {
                       </div>
                     )}
 
-                    <h2 className="text-xl font-bold text-gray-900 mb-1">
+                    <h2 className="text-xl font-bold text-gray-900 mb-1 text-center sm:text-left">
                       {selectedBook.title} #{selectedBook.issueNumber}
                     </h2>
-                    <p className="text-gray-500 mb-4">
+                    <p className="text-gray-500 mb-4 text-center sm:text-left">
                       {selectedBook.publisher} &middot; {selectedBook.year}
                     </p>
 
-                    {/* Key Facts */}
-                    <div className="mb-4">
-                      <h4 className="text-sm font-semibold text-gray-700 mb-2">Key Facts</h4>
-                      <ul className="space-y-2">
-                        {selectedBook.keyFacts.map((fact, idx) => (
-                          <li key={idx} className="flex items-start gap-2 text-sm text-gray-600">
-                            <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 flex-shrink-0" />
-                            {fact}
-                          </li>
-                        ))}
-                      </ul>
+                    {/* Key Facts - Collapsible */}
+                    <div className="mb-3 border border-gray-100 rounded-lg overflow-hidden">
+                      <button
+                        onClick={() => toggleSection("keyFacts")}
+                        className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 transition-colors"
+                      >
+                        <h4 className="text-sm font-semibold text-gray-700">Key Facts</h4>
+                        <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${expandedSections.keyFacts ? "rotate-180" : ""}`} />
+                      </button>
+                      {expandedSections.keyFacts && (
+                        <ul className="p-3 space-y-2">
+                          {selectedBook.keyFacts.map((fact, idx) => (
+                            <li key={idx} className="flex items-start gap-2 text-sm text-gray-600">
+                              <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 flex-shrink-0" />
+                              {fact}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </div>
 
-                    {/* Why Hot */}
-                    <div className="mb-4">
-                      <h4 className="text-sm font-semibold text-gray-700 mb-2">Why It&apos;s Hot</h4>
-                      <p className="text-sm text-gray-600">{selectedBook.whyHot}</p>
+                    {/* Why Hot - Collapsible */}
+                    <div className="mb-3 border border-gray-100 rounded-lg overflow-hidden">
+                      <button
+                        onClick={() => toggleSection("whyHot")}
+                        className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 transition-colors"
+                      >
+                        <h4 className="text-sm font-semibold text-gray-700">Why It&apos;s Hot</h4>
+                        <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${expandedSections.whyHot ? "rotate-180" : ""}`} />
+                      </button>
+                      {expandedSections.whyHot && (
+                        <p className="p-3 text-sm text-gray-600">{selectedBook.whyHot}</p>
+                      )}
                     </div>
 
-                    {/* Price Range */}
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <h4 className="text-sm font-semibold text-gray-700 mb-3">
-                        Price Range (VF-NM Raw)
-                      </h4>
-                      <div className="grid grid-cols-3 gap-2 text-center">
-                        <div>
-                          <p className="text-xs text-gray-500">Low</p>
-                          <p className="text-lg font-semibold text-gray-700">
-                            ${selectedBook.priceRange.low}
-                          </p>
+                    {/* Price Range - Collapsible */}
+                    <div className="border border-gray-100 rounded-lg overflow-hidden">
+                      <button
+                        onClick={() => toggleSection("priceRange")}
+                        className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 transition-colors"
+                      >
+                        <h4 className="text-sm font-semibold text-gray-700">Price Range (VF-NM Raw)</h4>
+                        <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${expandedSections.priceRange ? "rotate-180" : ""}`} />
+                      </button>
+                      {expandedSections.priceRange && (
+                        <div className="p-3">
+                          <div className="grid grid-cols-3 gap-2 text-center">
+                            <div>
+                              <p className="text-xs text-gray-500">Low</p>
+                              <p className="text-lg font-semibold text-gray-700">
+                                ${selectedBook.priceRange.low}
+                              </p>
+                            </div>
+                            <div className="bg-green-50 rounded-lg py-1">
+                              <p className="text-xs text-green-600">Mid</p>
+                              <p className="text-lg font-semibold text-green-700">
+                                ${selectedBook.priceRange.mid}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-500">High</p>
+                              <p className="text-lg font-semibold text-gray-700">
+                                ${selectedBook.priceRange.high}
+                              </p>
+                            </div>
+                          </div>
                         </div>
-                        <div className="bg-green-50 rounded-lg py-1">
-                          <p className="text-xs text-green-600">Mid</p>
-                          <p className="text-lg font-semibold text-green-700">
-                            ${selectedBook.priceRange.mid}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500">High</p>
-                          <p className="text-lg font-semibold text-gray-700">
-                            ${selectedBook.priceRange.high}
-                          </p>
-                        </div>
-                      </div>
+                      )}
                     </div>
+
+                    {/* Swipe hint on mobile */}
+                    <p className="mt-4 text-xs text-gray-400 text-center lg:hidden">
+                      Swipe or use arrows to navigate between books
+                    </p>
                   </>
                 ) : (
                   <div className="text-center py-8 text-gray-500">

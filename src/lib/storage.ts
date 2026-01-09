@@ -35,6 +35,13 @@ const DEFAULT_LISTS: UserList[] = [
     isDefault: true,
     createdAt: new Date().toISOString(),
   },
+  {
+    id: "passed-on",
+    name: "Passed On",
+    description: "Comics you saw but didn't buy",
+    isDefault: true,
+    createdAt: new Date().toISOString(),
+  },
 ];
 
 export const storage = {

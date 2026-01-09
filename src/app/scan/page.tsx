@@ -9,10 +9,11 @@ import { ComicDetailsForm } from "@/components/ComicDetailsForm";
 import { GuestLimitBanner } from "@/components/GuestLimitBanner";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { CSVImport } from "@/components/CSVImport";
+import { SignUpPromptModal } from "@/components/SignUpPromptModal";
 import { storage } from "@/lib/storage";
 import { ComicDetails, CollectionItem } from "@/types/comic";
 import { useToast } from "@/components/Toast";
-import { useGuestScans } from "@/hooks/useGuestScans";
+import { useGuestScans, MilestoneType } from "@/hooks/useGuestScans";
 import { Loader2, AlertCircle, ArrowLeft, Wand2, Check, Camera, Sparkles, ClipboardCheck, Save, ScanBarcode, PenLine, FileSpreadsheet } from "lucide-react";
 
 type ScanState = "upload" | "analyzing" | "review" | "saved" | "error";
@@ -52,7 +53,7 @@ const COMIC_FACTS = [
 
 const STEPS = [
   { id: "upload", label: "Upload", icon: Camera },
-  { id: "analyzing", label: "AI Analysis", icon: Sparkles },
+  { id: "analyzing", label: "Analysis", icon: Sparkles },
   { id: "review", label: "Review", icon: ClipboardCheck },
   { id: "saved", label: "Saved", icon: Save },
 ];
@@ -61,7 +62,7 @@ export default function ScanPage() {
   const router = useRouter();
   const { isSignedIn } = useUser();
   const { showToast } = useToast();
-  const { isLimitReached, isGuest, incrementScan } = useGuestScans();
+  const { isLimitReached, isGuest, incrementScan, count, markMilestoneShown } = useGuestScans();
   const [state, setState] = useState<ScanState>("upload");
   const [imagePreview, setImagePreview] = useState<string>("");
   const [comicDetails, setComicDetails] = useState<ComicDetails | null>(null);
@@ -72,6 +73,7 @@ export default function ScanPage() {
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
   const [isProcessingBarcode, setIsProcessingBarcode] = useState(false);
   const [showCSVImport, setShowCSVImport] = useState(false);
+  const [milestoneToShow, setMilestoneToShow] = useState<MilestoneType>(null);
 
   // Rotate fun facts every 7 seconds during analyzing state
   useEffect(() => {
@@ -164,8 +166,14 @@ export default function ScanPage() {
       setSavedComic(newItem);
       setState("saved");
 
-      // Increment guest scan count (only counts for non-signed-in users)
-      incrementScan();
+      // Increment guest scan count and check for milestones
+      const milestone = incrementScan();
+      if (milestone) {
+        // Show milestone modal after a brief delay to let the success state render
+        setTimeout(() => {
+          setMilestoneToShow(milestone);
+        }, 500);
+      }
 
       showToast(`"${newItem.comic.title}" added to collection!`, "success");
     } catch (err) {
@@ -642,6 +650,18 @@ export default function ScanPage() {
             />
           </div>
         </div>
+      )}
+
+      {/* Sign-Up Milestone Modal */}
+      {milestoneToShow && (
+        <SignUpPromptModal
+          milestone={milestoneToShow}
+          scanCount={count}
+          onClose={() => {
+            markMilestoneShown(milestoneToShow);
+            setMilestoneToShow(null);
+          }}
+        />
       )}
     </div>
   );

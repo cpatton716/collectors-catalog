@@ -9,9 +9,9 @@ import AskProfessor from "@/components/AskProfessor";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Collector's Catalog - Catalog Your Collection",
+  title: "Collectors Chest - Track, Value & Trade Your Comics",
   description:
-    "Upload comic book covers to identify, track, and sell your collection",
+    "The all-in-one comic collector's companion. Scan covers with AI recognition, track your collection's value, and buy or sell with fellow collectors.",
 };
 
 export default function RootLayout({

@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Clock } from "lucide-react";
+
+const RECENT_TITLES_KEY = "comic-tracker-recent-titles";
+const MAX_RECENT_TITLES = 5;
 
 interface TitleAutocompleteProps {
   value: string;
@@ -11,6 +14,31 @@ interface TitleAutocompleteProps {
   className?: string;
 }
 
+// Helper to get recent titles from localStorage
+const getRecentTitles = (): string[] => {
+  if (typeof window === "undefined") return [];
+  try {
+    const stored = localStorage.getItem(RECENT_TITLES_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+};
+
+// Helper to save a title to recent searches
+const saveRecentTitle = (title: string) => {
+  if (typeof window === "undefined") return;
+  try {
+    const recent = getRecentTitles();
+    // Remove if already exists, then add to front
+    const filtered = recent.filter(t => t.toLowerCase() !== title.toLowerCase());
+    const updated = [title, ...filtered].slice(0, MAX_RECENT_TITLES);
+    localStorage.setItem(RECENT_TITLES_KEY, JSON.stringify(updated));
+  } catch {
+    // Ignore localStorage errors
+  }
+};
+
 export function TitleAutocomplete({
   value,
   onChange,
@@ -19,6 +47,7 @@ export function TitleAutocomplete({
   className = "",
 }: TitleAutocompleteProps) {
   const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [recentTitles, setRecentTitles] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
@@ -26,6 +55,11 @@ export function TitleAutocomplete({
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Load recent titles on mount
+  useEffect(() => {
+    setRecentTitles(getRecentTitles());
+  }, []);
 
   // Fetch suggestions when value changes (only if user has focused)
   useEffect(() => {
@@ -90,14 +124,29 @@ export function TitleAutocomplete({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Get filtered recent titles that match current input
+  const getFilteredRecent = () => {
+    if (!value || value.length < 2) return recentTitles;
+    const query = value.toLowerCase();
+    return recentTitles.filter(t => t.toLowerCase().includes(query));
+  };
+
+  // Combine recent titles with API suggestions, removing duplicates
+  const filteredRecent = getFilteredRecent();
+  const apiSuggestionsFiltered = suggestions.filter(
+    s => !filteredRecent.some(r => r.toLowerCase() === s.toLowerCase())
+  );
+  const allSuggestions = [...filteredRecent, ...apiSuggestionsFiltered];
+  const hasAnySuggestions = allSuggestions.length > 0;
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!showDropdown || suggestions.length === 0) return;
+    if (!showDropdown || allSuggestions.length === 0) return;
 
     switch (e.key) {
       case "ArrowDown":
         e.preventDefault();
         setHighlightedIndex((prev) =>
-          prev < suggestions.length - 1 ? prev + 1 : prev
+          prev < allSuggestions.length - 1 ? prev + 1 : prev
         );
         break;
       case "ArrowUp":
@@ -106,8 +155,8 @@ export function TitleAutocomplete({
         break;
       case "Enter":
         e.preventDefault();
-        if (highlightedIndex >= 0 && highlightedIndex < suggestions.length) {
-          handleSelect(suggestions[highlightedIndex]);
+        if (highlightedIndex >= 0 && highlightedIndex < allSuggestions.length) {
+          handleSelect(allSuggestions[highlightedIndex]);
         }
         break;
       case "Escape":
@@ -120,6 +169,9 @@ export function TitleAutocomplete({
     onChange(title);
     setShowDropdown(false);
     setSuggestions([]);
+    // Save to recent titles
+    saveRecentTitle(title);
+    setRecentTitles(getRecentTitles());
   };
 
   return (
@@ -132,7 +184,8 @@ export function TitleAutocomplete({
           onChange={(e) => onChange(e.target.value)}
           onFocus={() => {
             setHasFocused(true);
-            if (suggestions.length > 0) setShowDropdown(true);
+            // Show dropdown if we have suggestions or recent titles
+            if (hasAnySuggestions || recentTitles.length > 0) setShowDropdown(true);
           }}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
@@ -146,25 +199,59 @@ export function TitleAutocomplete({
         )}
       </div>
 
-      {showDropdown && suggestions.length > 0 && (
+      {showDropdown && hasAnySuggestions && (
         <div
           ref={dropdownRef}
           className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
         >
-          {suggestions.map((suggestion, index) => (
-            <button
-              key={suggestion}
-              type="button"
-              onClick={() => handleSelect(suggestion)}
-              className={`w-full px-3 py-2 text-left text-sm text-gray-900 hover:bg-gray-100 transition-colors ${
-                index === highlightedIndex ? "bg-gray-100" : ""
-              } ${index === 0 ? "rounded-t-lg" : ""} ${
-                index === suggestions.length - 1 ? "rounded-b-lg" : ""
-              }`}
-            >
-              {suggestion}
-            </button>
-          ))}
+          {/* Recent titles section */}
+          {filteredRecent.length > 0 && (
+            <>
+              <div className="px-3 py-1.5 text-xs font-medium text-gray-500 bg-gray-50 border-b border-gray-100 flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                Recent
+              </div>
+              {filteredRecent.map((title, index) => (
+                <button
+                  key={`recent-${title}`}
+                  type="button"
+                  onClick={() => handleSelect(title)}
+                  className={`w-full px-3 py-2 text-left text-sm text-gray-900 hover:bg-gray-100 transition-colors flex items-center gap-2 ${
+                    index === highlightedIndex ? "bg-gray-100" : ""
+                  }`}
+                >
+                  <Clock className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                  {title}
+                </button>
+              ))}
+            </>
+          )}
+
+          {/* API suggestions section */}
+          {apiSuggestionsFiltered.length > 0 && (
+            <>
+              {filteredRecent.length > 0 && (
+                <div className="px-3 py-1.5 text-xs font-medium text-gray-500 bg-gray-50 border-y border-gray-100">
+                  Suggestions
+                </div>
+              )}
+              {apiSuggestionsFiltered.map((suggestion, index) => {
+                const globalIndex = filteredRecent.length + index;
+                return (
+                  <button
+                    key={suggestion}
+                    type="button"
+                    onClick={() => handleSelect(suggestion)}
+                    className={`w-full px-3 py-2 text-left text-sm text-gray-900 hover:bg-gray-100 transition-colors ${
+                      globalIndex === highlightedIndex ? "bg-gray-100" : ""
+                    } ${globalIndex === allSuggestions.length - 1 ? "rounded-b-lg" : ""}`}
+                  >
+                    {suggestion}
+                  </button>
+                );
+              })}
+            </>
+          )}
         </div>
       )}
     </div>

@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { CollectionItem, UserList, GRADE_SCALE } from "@/types/comic";
 import { VariantsModal } from "./VariantsModal";
+import { GradePricingBreakdown } from "./GradePricingBreakdown";
 import {
   X,
   Trash2,
@@ -342,6 +343,13 @@ export function ComicDetailModal({
                     </p>
                   </div>
                 )}
+
+                {/* Grade-aware pricing breakdown */}
+                <GradePricingBreakdown
+                  priceData={comic.priceData}
+                  currentGrade={item.conditionGrade}
+                  isSlabbed={item.isGraded}
+                />
               </div>
             )}
 

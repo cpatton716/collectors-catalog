@@ -37,13 +37,23 @@ export async function POST(request: NextRequest) {
       messages: [
         {
           role: "user",
-          content: `You are a comic book expert. Given the partial title "${query}", suggest up to 8 official comic book series titles that match or start with this text.
+          content: `You are a comic book expert. Given the search term "${query}", suggest up to 10 official comic book series titles that CONTAIN this text anywhere in the title.
+
+IMPORTANT: Match titles where the search term appears ANYWHERE in the title, not just at the beginning. For example:
+- "Spider" should match "The Amazing Spider-Man", "Spider-Woman", "Ultimate Spider-Man", "Superior Spider-Man", etc.
+- "man" should match "Batman", "Superman", "Iron Man", "Spider-Man", etc.
+- "x-men" should match "X-Men", "Uncanny X-Men", "New X-Men", "Astonishing X-Men", etc.
+
+Also handle common typos and variations:
+- "Spiderman" or "spider man" → match "Spider-Man" titles
+- "Xmen" → match "X-Men" titles
+- "Batmam" → match "Batman" titles
 
 Focus on:
 - Major publisher titles (Marvel, DC, Image, Dark Horse, etc.)
 - Use the official/canonical series name
-- Include popular and classic series
-- Normalize variations (e.g., "Spider-Man" not "Spiderman" or "Spider man")
+- Prioritize more popular/well-known series first
+- Include both current and classic series
 
 Return ONLY a JSON array of strings, no other text:
 ["Title 1", "Title 2", ...]

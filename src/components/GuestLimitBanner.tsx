@@ -72,14 +72,20 @@ export function GuestLimitBanner({ variant = "info" }: GuestLimitBannerProps) {
     );
   }
 
-  // Info variant - subtle reminder
+  // Info variant - subtle reminder with color-coded count
   if (variant === "info") {
+    // Color coding: green (7-10), yellow (4-6), red (0-3)
+    const getCountColor = () => {
+      if (remaining >= 7) return "text-green-600 bg-green-100";
+      if (remaining >= 4) return "text-yellow-600 bg-yellow-100";
+      return "text-red-600 bg-red-100";
+    };
+
     return (
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-6">
         <div className="flex items-center justify-between">
-          <span className="text-sm text-gray-600">
-            <span className="font-medium">{remaining}</span> free scan{remaining !== 1 ? "s" : ""}{" "}
-            remaining
+          <span className={`text-sm font-semibold px-2.5 py-1 rounded ${getCountColor()}`}>
+            {remaining} free scan{remaining !== 1 ? "s" : ""} remaining
           </span>
           <Link
             href="/sign-up"

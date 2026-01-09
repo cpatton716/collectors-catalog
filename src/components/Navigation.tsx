@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
-import { Camera, BookOpen, Home, LogIn } from "lucide-react";
+import { Camera, BookOpen, Home, LogIn, Archive } from "lucide-react";
 
 export function Navigation() {
   const pathname = usePathname();
@@ -21,10 +21,10 @@ export function Navigation() {
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-              <BookOpen className="w-5 h-5 text-white" />
+              <Archive className="w-5 h-5 text-white" />
             </div>
             <span className="font-bold text-xl text-gray-900">
-              Collector&apos;s Catalog
+              Collectors Chest
             </span>
           </Link>
 

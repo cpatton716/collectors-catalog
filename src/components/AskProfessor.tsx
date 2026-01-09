@@ -69,7 +69,7 @@ export default function AskProfessor() {
       {/* Floating Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-40 group"
+        className="fixed bottom-24 md:bottom-6 right-6 z-40 group"
         aria-label="Ask the Professor"
       >
         <div className="relative">
@@ -109,7 +109,7 @@ export default function AskProfessor() {
                   <div>
                     <h2 className="text-xl font-bold text-yellow-400">Ask the Professor</h2>
                     <p className="text-blue-200 text-sm">
-                      Your guide to Collector&apos;s Catalog
+                      Your guide to Collectors Chest
                     </p>
                   </div>
                 </div>

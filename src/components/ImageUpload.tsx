@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import { Upload, X, Image as ImageIcon, Camera } from "lucide-react";
+import { Upload, X, Image as ImageIcon, Camera, FolderOpen } from "lucide-react";
+import { LiveCameraCapture } from "./LiveCameraCapture";
 
 interface ImageUploadProps {
   onImageSelect: (file: File, preview: string) => void;
@@ -13,7 +14,9 @@ export function ImageUpload({ onImageSelect, disabled }: ImageUploadProps) {
   const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [showLiveCamera, setShowLiveCamera] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     // Detect mobile device
@@ -99,6 +102,20 @@ export function ImageUpload({ onImageSelect, disabled }: ImageUploadProps) {
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
+    if (galleryInputRef.current) {
+      galleryInputRef.current.value = "";
+    }
+  };
+
+  const handleLiveCameraCapture = (file: File, capturedPreview: string) => {
+    setShowLiveCamera(false);
+    setError(null);
+    setPreview(capturedPreview);
+    onImageSelect(file, capturedPreview);
+  };
+
+  const handleGallerySelect = () => {
+    galleryInputRef.current?.click();
   };
 
   return (
@@ -121,7 +138,75 @@ export function ImageUpload({ onImageSelect, disabled }: ImageUploadProps) {
             )}
           </div>
         </div>
+      ) : isMobile ? (
+        // Mobile: Show camera and gallery buttons
+        <div className="space-y-4">
+          {/* Primary camera button */}
+          <button
+            onClick={() => !disabled && setShowLiveCamera(true)}
+            disabled={disabled}
+            className={`
+              w-full border-2 border-dashed rounded-xl p-8 text-center
+              transition-all duration-200 border-primary-400 bg-primary-50 hover:bg-primary-100
+              ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
+            `}
+          >
+            <div className="flex flex-col items-center space-y-4">
+              <div className="p-4 rounded-full bg-primary-100">
+                <Camera className="w-10 h-10 text-primary-600" />
+              </div>
+              <div>
+                <p className="text-lg font-medium text-primary-700">
+                  Take a Photo
+                </p>
+                <p className="text-sm text-primary-600 mt-1">
+                  Open camera with live preview
+                </p>
+              </div>
+            </div>
+          </button>
+
+          {/* Secondary option: Choose from gallery */}
+          <button
+            onClick={() => !disabled && handleGallerySelect()}
+            disabled={disabled}
+            className={`
+              w-full border-2 border-dashed rounded-xl p-6 text-center
+              transition-all duration-200 border-gray-300 hover:border-gray-400 hover:bg-gray-50
+              ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
+            `}
+          >
+            <div className="flex items-center justify-center gap-3">
+              <FolderOpen className="w-6 h-6 text-gray-500" />
+              <span className="text-gray-700 font-medium">Choose from Gallery</span>
+            </div>
+          </button>
+
+          {/* Hidden file inputs */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".jpg,.jpeg,.png"
+            capture="environment"
+            onChange={handleFileInput}
+            className="hidden"
+            disabled={disabled}
+          />
+          <input
+            ref={galleryInputRef}
+            type="file"
+            accept=".jpg,.jpeg,.png"
+            onChange={handleFileInput}
+            className="hidden"
+            disabled={disabled}
+          />
+
+          <p className="text-xs text-gray-400 text-center">
+            Supports: JPEG, JPG, PNG (max 10MB)
+          </p>
+        </div>
       ) : (
+        // Desktop: Drag and drop
         <div
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
@@ -138,7 +223,6 @@ export function ImageUpload({ onImageSelect, disabled }: ImageUploadProps) {
             ref={fileInputRef}
             type="file"
             accept=".jpg,.jpeg,.png"
-            capture="environment"
             onChange={handleFileInput}
             className="hidden"
             disabled={disabled}
@@ -150,8 +234,6 @@ export function ImageUpload({ onImageSelect, disabled }: ImageUploadProps) {
             >
               {isDragging ? (
                 <ImageIcon className="w-10 h-10 text-primary-600" />
-              ) : isMobile ? (
-                <Camera className="w-10 h-10 text-gray-400" />
               ) : (
                 <Upload className="w-10 h-10 text-gray-400" />
               )}
@@ -161,14 +243,10 @@ export function ImageUpload({ onImageSelect, disabled }: ImageUploadProps) {
               <p className="text-lg font-medium text-gray-700">
                 {isDragging
                   ? "Drop your comic cover here"
-                  : isMobile
-                    ? "Take a photo of your comic"
-                    : "Upload a comic book cover"}
+                  : "Upload a comic book cover"}
               </p>
               <p className="text-sm text-gray-500 mt-1">
-                {isMobile
-                  ? "Tap to open your camera"
-                  : "Drag and drop or click to select"}
+                Drag and drop or click to select
               </p>
               <p className="text-xs text-gray-400 mt-2">
                 Supports: JPEG, JPG, PNG (max 10MB)
@@ -182,6 +260,14 @@ export function ImageUpload({ onImageSelect, disabled }: ImageUploadProps) {
         <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
           <p className="text-sm text-red-600">{error}</p>
         </div>
+      )}
+
+      {/* Live Camera Modal */}
+      {showLiveCamera && (
+        <LiveCameraCapture
+          onCapture={handleLiveCameraCapture}
+          onClose={() => setShowLiveCamera(false)}
+        />
       )}
     </div>
   );
