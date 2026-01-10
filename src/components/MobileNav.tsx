@@ -1,44 +1,114 @@
 "use client";
 
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Camera, Zap, BookOpen } from "lucide-react";
+import { useUser } from "@clerk/nextjs";
+import { Home, BookOpen, ShoppingBag, KeyRound } from "lucide-react";
 
 export function MobileNav() {
   const pathname = usePathname();
+  const { isSignedIn } = useUser();
+  const [showComingSoon, setShowComingSoon] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const lastScrollY = useRef(0);
+  const scrollThreshold = 10; // Minimum scroll distance to trigger hide/show
 
-  const navItems = [
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      const scrollDelta = currentScrollY - lastScrollY.current;
+
+      // Only trigger if scroll distance exceeds threshold
+      if (Math.abs(scrollDelta) < scrollThreshold) return;
+
+      // At top of page - always show
+      if (currentScrollY < 50) {
+        setIsVisible(true);
+      }
+      // Scrolling down - hide
+      else if (scrollDelta > 0 && currentScrollY > 100) {
+        setIsVisible(false);
+      }
+      // Scrolling up - show
+      else if (scrollDelta < 0) {
+        setIsVisible(true);
+      }
+
+      lastScrollY.current = currentScrollY;
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Base items for all users
+  const baseItems = [
     { href: "/", icon: Home, label: "Home" },
-    { href: "/scan", icon: Camera, label: "Scan" },
-    { href: "/con-mode", icon: Zap, label: "Con Mode" },
     { href: "/collection", icon: BookOpen, label: "Collection" },
+    { href: "/shop", icon: ShoppingBag, label: "Shop", comingSoon: true },
   ];
 
-  return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 md:hidden z-50">
-      <div className="flex items-center justify-around py-2">
-        {navItems.map((item) => {
-          const isActive = pathname === item.href;
-          const Icon = item.icon;
+  // Add Key Hunt for signed-in users (on right for thumb access)
+  const navItems = isSignedIn
+    ? [...baseItems, { href: "/key-hunt", icon: KeyRound, label: "Key Hunt" }]
+    : baseItems;
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-colors ${
-                isActive
-                  ? "text-primary-600"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              <Icon className={`w-6 h-6 ${isActive ? "stroke-[2.5]" : ""}`} />
-              <span className={`text-xs ${isActive ? "font-semibold" : "font-medium"}`}>
-                {item.label}
-              </span>
-            </Link>
-          );
-        })}
-      </div>
-    </nav>
+  const handleNavClick = (e: React.MouseEvent, item: typeof navItems[0]) => {
+    if ('comingSoon' in item && item.comingSoon) {
+      e.preventDefault();
+      setShowComingSoon(true);
+      setTimeout(() => setShowComingSoon(false), 2000);
+    }
+  };
+
+  return (
+    <>
+      <nav
+        className={`fixed bottom-0 left-0 right-0 md:hidden z-50 transition-transform duration-300 ease-in-out ${
+          isVisible ? "translate-y-0" : "translate-y-full"
+        }`}
+      >
+        {/* Glassmorphism container */}
+        <div className="mx-3 mb-3 bg-white/80 backdrop-blur-lg rounded-2xl shadow-lg border border-gray-200/50">
+          <div className="flex items-center justify-around py-2 px-1">
+            {navItems.map((item) => {
+              const isActive = pathname === item.href;
+              const Icon = item.icon;
+              const isComingSoon = 'comingSoon' in item && item.comingSoon;
+
+              return (
+                <Link
+                  key={item.href}
+                  href={isComingSoon ? "#" : item.href}
+                  onClick={(e) => handleNavClick(e, item)}
+                  className={`flex flex-col items-center gap-0.5 px-4 py-2 rounded-xl transition-all duration-200 ${
+                    isActive
+                      ? "bg-primary-100 text-primary-600"
+                      : isComingSoon
+                      ? "text-gray-400"
+                      : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                  }`}
+                >
+                  <Icon className={`w-5 h-5 ${isActive ? "stroke-[2.5]" : ""}`} />
+                  <span className={`text-[10px] ${isActive ? "font-semibold" : "font-medium"}`}>
+                    {item.label}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+        {/* Safe area spacer for iOS */}
+        <div className="h-safe-area-inset-bottom bg-transparent" />
+      </nav>
+
+      {/* Coming Soon Toast */}
+      {showComingSoon && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-4 py-2 bg-gray-900 text-white text-sm rounded-full shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-200">
+          Shop coming soon!
+        </div>
+      )}
+    </>
   );
 }

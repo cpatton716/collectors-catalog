@@ -54,7 +54,7 @@ export function DataMigrationModal({ isOpen, onClose, onComplete }: DataMigratio
       }, 2000);
     } catch (err) {
       console.error("Migration error:", err);
-      setErrorMessage(err instanceof Error ? err.message : "Failed to migrate data");
+      setErrorMessage(err instanceof Error ? err.message : "We couldn't import your data right now. Your local data is still safe - please try again.");
       setStatus("error");
     }
   };
@@ -151,7 +151,7 @@ export function DataMigrationModal({ isOpen, onClose, onComplete }: DataMigratio
         {status === "error" && (
           <div className="text-center py-8">
             <XCircle className="w-12 h-12 text-red-500 mx-auto" />
-            <h3 className="text-lg font-semibold text-gray-900 mt-4">Import Failed</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mt-4">Couldn&apos;t Import Data</h3>
             <p className="text-gray-600 mt-2">{errorMessage}</p>
             <div className="mt-6 space-y-2">
               <button

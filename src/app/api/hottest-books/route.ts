@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { STATIC_HOT_BOOKS } from "@/lib/staticHotBooks";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -11,6 +12,10 @@ const COMIC_VINE_BASE_URL = "https://comicvine.gamespot.com/api";
 
 const CACHE_KEY = "hottest_books";
 const CACHE_TTL_HOURS = 24;
+
+// TESTING MODE: Use static list to conserve API credits
+// TODO: Set to false before production launch (see BACKLOG.md)
+const USE_STATIC_LIST = true;
 
 // Fetch cover image from Comic Vine
 async function getComicVineCoverImage(title: string, issueNumber: string): Promise<string | null> {
@@ -72,6 +77,12 @@ export interface HotBook {
 
 export async function GET() {
   try {
+    // TESTING MODE: Return static list to conserve API credits
+    if (USE_STATIC_LIST) {
+      console.log("Returning static hottest books list (testing mode)");
+      return NextResponse.json({ books: STATIC_HOT_BOOKS, cached: true, static: true });
+    }
+
     // Check Supabase cache first (shared across all users/instances)
     const { data: cachedData } = await supabase
       .from("app_cache")
@@ -86,7 +97,7 @@ export async function GET() {
 
     if (!process.env.ANTHROPIC_API_KEY) {
       return NextResponse.json(
-        { error: "ANTHROPIC_API_KEY not configured" },
+        { error: "The Hottest Books feature is temporarily unavailable. Please check back soon!" },
         { status: 500 }
       );
     }
@@ -133,7 +144,7 @@ Be accurate with your key facts and realistic with price estimates.`,
 
     const textContent = response.content.find((block) => block.type === "text");
     if (!textContent || textContent.type !== "text") {
-      return NextResponse.json({ books: [], error: "No response from AI" });
+      return NextResponse.json({ books: [], error: "We couldn't load the hottest books right now. Please try again." });
     }
 
     let books: HotBook[] = [];
@@ -152,7 +163,7 @@ Be accurate with your key facts and realistic with price estimates.`,
       books = JSON.parse(jsonText.trim());
     } catch (parseError) {
       console.error("Failed to parse hot books response:", parseError);
-      return NextResponse.json({ books: [], error: "Failed to parse response" });
+      return NextResponse.json({ books: [], error: "We had trouble loading the hottest books. Please refresh to try again." });
     }
 
     // Fetch cover images from Comic Vine for each book
@@ -185,7 +196,7 @@ Be accurate with your key facts and realistic with price estimates.`,
   } catch (error) {
     console.error("Error fetching hottest books:", error);
     return NextResponse.json(
-      { books: [], error: "Failed to fetch hottest books" },
+      { books: [], error: "Something went wrong while loading the hottest books. Please try again later." },
       { status: 500 }
     );
   }

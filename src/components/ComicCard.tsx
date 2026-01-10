@@ -36,11 +36,17 @@ export function ComicCard({ item, onClick, onToggleStar, onEdit }: ComicCardProp
     >
       {/* Cover Image */}
       <div className="relative aspect-[2/3] bg-gray-100">
-        <img
-          src={coverImageUrl}
-          alt={`${comic.title} #${comic.issueNumber}`}
-          className="w-full h-full object-cover"
-        />
+        {coverImageUrl ? (
+          <img
+            src={coverImageUrl}
+            alt={`${comic.title} #${comic.issueNumber}`}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gray-900 text-4xl">
+              <span className="text-green-400 font-bold italic drop-shadow-[0_0_8px_rgba(74,222,128,0.6)]">?</span>
+            </div>
+        )}
 
         {/* Badges */}
         <div className="absolute top-2 left-2 flex flex-col gap-1">

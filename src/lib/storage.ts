@@ -5,6 +5,71 @@ const LISTS_KEY = "comic_lists";
 const SALES_KEY = "comic_sales";
 const RECENTLY_VIEWED_KEY = "comic_recently_viewed";
 
+// Storage quota helpers
+const STORAGE_WARNING_THRESHOLD = 0.8; // Warn at 80% usage
+
+export class StorageQuotaError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "StorageQuotaError";
+  }
+}
+
+// Estimate total localStorage usage in bytes
+function getStorageUsage(): { used: number; total: number; percentage: number } {
+  if (typeof window === "undefined") return { used: 0, total: 5 * 1024 * 1024, percentage: 0 };
+
+  let used = 0;
+  for (const key in localStorage) {
+    if (Object.prototype.hasOwnProperty.call(localStorage, key)) {
+      // Each character is 2 bytes in UTF-16
+      used += (localStorage[key].length + key.length) * 2;
+    }
+  }
+
+  // localStorage is typically 5MB, but can vary
+  const total = 5 * 1024 * 1024; // 5MB estimate
+  const percentage = used / total;
+
+  return { used, total, percentage };
+}
+
+// Format bytes to human readable
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
+
+// Safe setItem with error handling
+function safeSetItem(key: string, value: string): void {
+  try {
+    localStorage.setItem(key, value);
+  } catch (error) {
+    if (error instanceof Error && error.name === "QuotaExceededError") {
+      const usage = getStorageUsage();
+      throw new StorageQuotaError(
+        `Storage is full (${formatBytes(usage.used)} used). Please sign in to sync your collection to the cloud, or remove some comics to free up space.`
+      );
+    }
+    throw error;
+  }
+}
+
+// Check if storage is getting full (for warnings)
+export function checkStorageWarning(): { warning: boolean; message: string } | null {
+  if (typeof window === "undefined") return null;
+
+  const usage = getStorageUsage();
+  if (usage.percentage >= STORAGE_WARNING_THRESHOLD) {
+    return {
+      warning: true,
+      message: `Storage is ${Math.round(usage.percentage * 100)}% full (${formatBytes(usage.used)} of ~5MB). Consider signing in to sync your collection to the cloud.`,
+    };
+  }
+  return null;
+}
+
 // Default lists that every user starts with
 const DEFAULT_LISTS: UserList[] = [
   {
@@ -54,7 +119,7 @@ export const storage = {
 
   saveCollection(collection: CollectionItem[]): void {
     if (typeof window === "undefined") return;
-    localStorage.setItem(COLLECTION_KEY, JSON.stringify(collection));
+    safeSetItem(COLLECTION_KEY, JSON.stringify(collection));
   },
 
   addToCollection(item: CollectionItem): CollectionItem[] {
@@ -114,7 +179,7 @@ export const storage = {
 
   saveLists(lists: UserList[]): void {
     if (typeof window === "undefined") return;
-    localStorage.setItem(LISTS_KEY, JSON.stringify(lists));
+    safeSetItem(LISTS_KEY, JSON.stringify(lists));
   },
 
   addList(list: UserList): UserList[] {
@@ -203,7 +268,7 @@ export const storage = {
 
   saveSales(sales: SaleRecord[]): void {
     if (typeof window === "undefined") return;
-    localStorage.setItem(SALES_KEY, JSON.stringify(sales));
+    safeSetItem(SALES_KEY, JSON.stringify(sales));
   },
 
   recordSale(item: CollectionItem, salePrice: number, buyerId?: string): SaleRecord {
@@ -257,7 +322,11 @@ export const storage = {
     filtered.unshift(itemId);
     // Keep only last 10
     const trimmed = filtered.slice(0, 10);
-    localStorage.setItem(RECENTLY_VIEWED_KEY, JSON.stringify(trimmed));
+    try {
+      safeSetItem(RECENTLY_VIEWED_KEY, JSON.stringify(trimmed));
+    } catch {
+      // Silently fail for recently viewed - not critical
+    }
   },
 
   getRecentlyViewedItems(): CollectionItem[] {

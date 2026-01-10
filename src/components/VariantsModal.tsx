@@ -84,11 +84,17 @@ export function VariantsModal({
             >
               {/* Cover Image */}
               <div className="flex-shrink-0 w-24 h-36 bg-gray-100 rounded-lg overflow-hidden">
-                <img
-                  src={variant.coverImageUrl}
-                  alt={`${variant.comic.title} #${variant.comic.issueNumber}`}
-                  className="w-full h-full object-cover"
-                />
+                {variant.coverImageUrl ? (
+                  <img
+                    src={variant.coverImageUrl}
+                    alt={`${variant.comic.title} #${variant.comic.issueNumber}`}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gray-900 text-2xl">
+                    <span className="text-green-400 font-bold italic drop-shadow-[0_0_6px_rgba(74,222,128,0.6)]">?</span>
+                  </div>
+                )}
               </div>
 
               {/* Details */}

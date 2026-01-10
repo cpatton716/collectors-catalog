@@ -263,7 +263,133 @@ export async function migrateLocalDataToCloud(
   return { success: true };
 }
 
+// ============================================
+// Comic Metadata Cache (Shared Repository)
+// ============================================
+
+export interface ComicMetadata {
+  id: string;
+  title: string;
+  issueNumber: string;
+  publisher: string | null;
+  releaseYear: string | null;
+  writer: string | null;
+  coverArtist: string | null;
+  interiorArtist: string | null;
+  coverImageUrl: string | null;
+  keyInfo: string[];
+  priceData: {
+    estimatedValue: number;
+    mostRecentSaleDate: string | null;
+    recentSales: { price: number; date: string }[];
+    gradeEstimates: {
+      grade: number;
+      label: string;
+      rawValue: number;
+      slabbedValue: number;
+    }[];
+    disclaimer: string;
+  } | null;
+  lookupCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Look up comic metadata from the shared repository
+ * Returns null if not found (caller should fall back to API)
+ */
+export async function getComicMetadata(
+  title: string,
+  issueNumber: string
+): Promise<ComicMetadata | null> {
+  const { data, error } = await supabase
+    .from("comic_metadata")
+    .select("*")
+    .ilike("title", title)
+    .ilike("issue_number", issueNumber)
+    .single();
+
+  if (error || !data) return null;
+
+  return {
+    id: data.id,
+    title: data.title,
+    issueNumber: data.issue_number,
+    publisher: data.publisher,
+    releaseYear: data.release_year,
+    writer: data.writer,
+    coverArtist: data.cover_artist,
+    interiorArtist: data.interior_artist,
+    coverImageUrl: data.cover_image_url || null,
+    keyInfo: data.key_info || [],
+    priceData: data.price_data,
+    lookupCount: data.lookup_count,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
+  };
+}
+
+/**
+ * Save comic metadata to the shared repository
+ * Uses upsert to update existing records
+ */
+export async function saveComicMetadata(metadata: {
+  title: string;
+  issueNumber: string;
+  publisher?: string | null;
+  releaseYear?: string | null;
+  writer?: string | null;
+  coverArtist?: string | null;
+  interiorArtist?: string | null;
+  coverImageUrl?: string | null;
+  keyInfo?: string[];
+  priceData?: ComicMetadata["priceData"];
+}): Promise<void> {
+  const { error } = await supabase.from("comic_metadata").upsert(
+    {
+      title: metadata.title,
+      issue_number: metadata.issueNumber,
+      publisher: metadata.publisher,
+      release_year: metadata.releaseYear,
+      writer: metadata.writer,
+      cover_artist: metadata.coverArtist,
+      interior_artist: metadata.interiorArtist,
+      cover_image_url: metadata.coverImageUrl,
+      key_info: metadata.keyInfo || [],
+      price_data: metadata.priceData,
+    },
+    {
+      onConflict: "title,issue_number",
+      ignoreDuplicates: false,
+    }
+  );
+
+  if (error) {
+    console.error("Error saving comic metadata:", error);
+    // Don't throw - cache failures shouldn't break the app
+  }
+}
+
+/**
+ * Increment lookup count for a comic (for analytics/popularity)
+ */
+export async function incrementComicLookupCount(
+  title: string,
+  issueNumber: string
+): Promise<void> {
+  // The trigger handles incrementing on update, so we just touch the record
+  await supabase
+    .from("comic_metadata")
+    .update({ updated_at: new Date().toISOString() })
+    .ilike("title", title)
+    .ilike("issue_number", issueNumber);
+}
+
+// ============================================
 // Helper functions
+// ============================================
+
 function transformDbComicToCollectionItem(dbComic: Record<string, unknown>): CollectionItem {
   return {
     id: dbComic.id as string,
@@ -334,4 +460,318 @@ function transformCollectionItemToDbComic(item: CollectionItem, profileId: strin
     date_added: item.dateAdded,
     is_starred: item.isStarred,
   };
+}
+
+// ============================================
+// Public Collection Sharing
+// ============================================
+
+export interface PublicProfile {
+  id: string;
+  displayName: string | null;
+  publicSlug: string | null;
+  publicDisplayName: string | null;
+  publicBio: string | null;
+  isPublic: boolean;
+  createdAt: string;
+}
+
+export interface PublicCollectionStats {
+  totalComics: number;
+  totalValue: number;
+  topPublishers: { publisher: string; count: number }[];
+  oldestComic: { title: string; year: string } | null;
+  newestComic: { title: string; year: string } | null;
+}
+
+/**
+ * Get a public profile by slug or user ID
+ */
+export async function getPublicProfile(
+  slugOrId: string
+): Promise<PublicProfile | null> {
+  // Try by slug first, then by ID
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .or(`public_slug.eq.${slugOrId},id.eq.${slugOrId}`)
+    .eq("is_public", true)
+    .single();
+
+  if (error || !data) return null;
+
+  return {
+    id: data.id,
+    displayName: data.display_name,
+    publicSlug: data.public_slug,
+    publicDisplayName: data.public_display_name,
+    publicBio: data.public_bio,
+    isPublic: data.is_public,
+    createdAt: data.created_at,
+  };
+}
+
+/**
+ * Get comics for a public profile (read-only)
+ */
+export async function getPublicComics(
+  profileId: string
+): Promise<CollectionItem[]> {
+  const { data, error } = await supabase
+    .from("comics")
+    .select(`
+      *,
+      comic_lists(list_id)
+    `)
+    .eq("user_id", profileId)
+    .order("date_added", { ascending: false });
+
+  if (error) return [];
+
+  return (data || []).map(transformDbComicToCollectionItem);
+}
+
+/**
+ * Get lists for a public profile (only shared lists)
+ */
+export async function getPublicLists(profileId: string): Promise<UserList[]> {
+  const { data, error } = await supabase
+    .from("lists")
+    .select("*")
+    .eq("user_id", profileId)
+    .eq("is_shared", true)
+    .order("created_at", { ascending: true });
+
+  if (error) return [];
+
+  return (data || []).map((list) => ({
+    id: list.id,
+    name: list.name,
+    description: list.description,
+    isDefault: list.is_default,
+    createdAt: list.created_at,
+  }));
+}
+
+/**
+ * Calculate stats for a public collection
+ */
+export function calculatePublicStats(
+  comics: CollectionItem[]
+): PublicCollectionStats {
+  const totalComics = comics.length;
+  const totalValue = comics.reduce(
+    (sum, item) => sum + (item.comic.priceData?.estimatedValue || 0),
+    0
+  );
+
+  // Count by publisher
+  const publisherCounts: Record<string, number> = {};
+  comics.forEach((item) => {
+    const publisher = item.comic.publisher || "Unknown";
+    publisherCounts[publisher] = (publisherCounts[publisher] || 0) + 1;
+  });
+
+  const topPublishers = Object.entries(publisherCounts)
+    .map(([publisher, count]) => ({ publisher, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+
+  // Find oldest and newest comics
+  const comicsWithYear = comics.filter((c) => c.comic.releaseYear);
+  const sortedByYear = [...comicsWithYear].sort((a, b) =>
+    (a.comic.releaseYear || "").localeCompare(b.comic.releaseYear || "")
+  );
+
+  const oldestComic = sortedByYear[0]
+    ? { title: sortedByYear[0].comic.title || "Unknown", year: sortedByYear[0].comic.releaseYear || "" }
+    : null;
+
+  const newestComic = sortedByYear[sortedByYear.length - 1]
+    ? {
+        title: sortedByYear[sortedByYear.length - 1].comic.title || "Unknown",
+        year: sortedByYear[sortedByYear.length - 1].comic.releaseYear || "",
+      }
+    : null;
+
+  return {
+    totalComics,
+    totalValue,
+    topPublishers,
+    oldestComic,
+    newestComic,
+  };
+}
+
+/**
+ * Toggle public sharing for a profile
+ */
+export async function togglePublicSharing(
+  profileId: string,
+  enable: boolean,
+  customSlug?: string
+): Promise<{ success: boolean; slug?: string; error?: string }> {
+  if (enable) {
+    // Check if custom slug is available
+    if (customSlug) {
+      const { data: existing } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("public_slug", customSlug)
+        .neq("id", profileId)
+        .single();
+
+      if (existing) {
+        return { success: false, error: "This URL is already taken" };
+      }
+    }
+
+    // Generate slug if not provided
+    let slug = customSlug;
+    if (!slug) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("display_name, email, public_slug")
+        .eq("id", profileId)
+        .single();
+
+      if (profile?.public_slug) {
+        slug = profile.public_slug;
+      } else {
+        // Generate from display name or email
+        const baseName = profile?.display_name || profile?.email?.split("@")[0] || "collector";
+        const baseSlug = baseName
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, "-")
+          .replace(/-+/g, "-")
+          .replace(/^-|-$/g, "");
+
+        // Check for uniqueness
+        let finalSlug = baseSlug;
+        let counter = 0;
+        while (true) {
+          const { data: existingSlug } = await supabase
+            .from("profiles")
+            .select("id")
+            .eq("public_slug", finalSlug)
+            .single();
+
+          if (!existingSlug) break;
+          counter++;
+          finalSlug = `${baseSlug}-${counter}`;
+        }
+        slug = finalSlug;
+      }
+    }
+
+    // Enable public sharing
+    const { error } = await supabase
+      .from("profiles")
+      .update({ is_public: true, public_slug: slug })
+      .eq("id", profileId);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, slug };
+  } else {
+    // Disable public sharing (keep the slug for reuse)
+    const { error } = await supabase
+      .from("profiles")
+      .update({ is_public: false })
+      .eq("id", profileId);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  }
+}
+
+/**
+ * Update public profile display settings
+ */
+export async function updatePublicProfileSettings(
+  profileId: string,
+  settings: {
+    publicDisplayName?: string;
+    publicBio?: string;
+    publicSlug?: string;
+  }
+): Promise<{ success: boolean; error?: string }> {
+  // Check slug uniqueness if changing
+  if (settings.publicSlug) {
+    const { data: existing } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("public_slug", settings.publicSlug)
+      .neq("id", profileId)
+      .single();
+
+    if (existing) {
+      return { success: false, error: "This URL is already taken" };
+    }
+  }
+
+  const updates: Record<string, unknown> = {};
+  if (settings.publicDisplayName !== undefined) {
+    updates.public_display_name = settings.publicDisplayName;
+  }
+  if (settings.publicBio !== undefined) {
+    updates.public_bio = settings.publicBio;
+  }
+  if (settings.publicSlug !== undefined) {
+    updates.public_slug = settings.publicSlug;
+  }
+
+  const { error } = await supabase
+    .from("profiles")
+    .update(updates)
+    .eq("id", profileId);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  return { success: true };
+}
+
+/**
+ * Get sharing settings for a profile
+ */
+export async function getSharingSettings(profileId: string): Promise<{
+  isPublic: boolean;
+  publicSlug: string | null;
+  publicDisplayName: string | null;
+  publicBio: string | null;
+} | null> {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("is_public, public_slug, public_display_name, public_bio")
+    .eq("id", profileId)
+    .single();
+
+  if (error || !data) return null;
+
+  return {
+    isPublic: data.is_public || false,
+    publicSlug: data.public_slug,
+    publicDisplayName: data.public_display_name,
+    publicBio: data.public_bio,
+  };
+}
+
+/**
+ * Toggle list sharing visibility
+ */
+export async function toggleListSharing(
+  listId: string,
+  isShared: boolean
+): Promise<void> {
+  await supabase
+    .from("lists")
+    .update({ is_shared: isShared })
+    .eq("id", listId);
 }

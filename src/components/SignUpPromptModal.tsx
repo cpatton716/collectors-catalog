@@ -14,9 +14,35 @@ interface SignUpPromptModalProps {
   onClose: () => void;
 }
 
+// Get dynamic subtitle based on milestone and actual scan count
+const getSubtitle = (milestone: ValidMilestone, scanCount: number): string => {
+  const remaining = Math.max(0, 10 - scanCount);
+
+  switch (milestone) {
+    case "fiveRemaining":
+      return `You've scanned ${scanCount} comics. Create a free account to unlock even more features.`;
+    case "threeRemaining":
+      return `Only ${remaining} free scans left! Sign up now to keep scanning and save your collection forever.`;
+    case "finalScan":
+      return "This is your final free scan. Create a free account to continue building your collection.";
+  }
+};
+
+// Get dynamic title based on milestone and actual scan count
+const getTitle = (milestone: ValidMilestone, scanCount: number): string => {
+  const remaining = Math.max(0, 10 - scanCount);
+
+  switch (milestone) {
+    case "fiveRemaining":
+      return "You're on a roll!";
+    case "threeRemaining":
+      return `Only ${remaining} free scans left!`;
+    case "finalScan":
+      return "Last Free Scan!";
+  }
+};
+
 const milestoneContent: Record<ValidMilestone, {
-  title: string;
-  subtitle: string;
   icon: React.ElementType;
   iconBg: string;
   iconColor: string;
@@ -24,9 +50,7 @@ const milestoneContent: Record<ValidMilestone, {
   ctaText: string;
   dismissText: string;
 }> = {
-  halfway: {
-    title: "You're on a roll!",
-    subtitle: "You've scanned 5 comics. Create a free account to unlock even more features.",
+  fiveRemaining: {
     icon: Sparkles,
     iconBg: "bg-primary-100",
     iconColor: "text-primary-600",
@@ -38,9 +62,7 @@ const milestoneContent: Record<ValidMilestone, {
     ctaText: "Create Free Account",
     dismissText: "Maybe later",
   },
-  almostDone: {
-    title: "Only 1 free scan left!",
-    subtitle: "Don't lose your progress. Sign up now to keep scanning and save your collection forever.",
+  threeRemaining: {
     icon: AlertTriangle,
     iconBg: "bg-amber-100",
     iconColor: "text-amber-600",
@@ -50,11 +72,9 @@ const milestoneContent: Record<ValidMilestone, {
       { icon: Smartphone, text: "Access from any device" },
     ],
     ctaText: "Sign Up Now",
-    dismissText: "Use my last scan",
+    dismissText: "Maybe later",
   },
-  limitReached: {
-    title: "You've used all free scans",
-    subtitle: "Create a free account to continue scanning and unlock all features.",
+  finalScan: {
     icon: AlertTriangle,
     iconBg: "bg-red-100",
     iconColor: "text-red-600",
@@ -64,13 +84,15 @@ const milestoneContent: Record<ValidMilestone, {
       { icon: Shield, text: "Your data is always safe" },
     ],
     ctaText: "Create Free Account",
-    dismissText: "Close",
+    dismissText: "Use my last scan",
   },
 };
 
 export function SignUpPromptModal({ milestone, scanCount, onClose }: SignUpPromptModalProps) {
   const content = milestoneContent[milestone];
   const Icon = content.icon;
+  const title = getTitle(milestone, scanCount);
+  const subtitle = getSubtitle(milestone, scanCount);
 
   // Close on escape key
   useEffect(() => {
@@ -113,8 +135,8 @@ export function SignUpPromptModal({ milestone, scanCount, onClose }: SignUpPromp
           <div className={`w-16 h-16 ${content.iconBg} rounded-full flex items-center justify-center mx-auto mb-4`}>
             <Icon className={`w-8 h-8 ${content.iconColor}`} />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900">{content.title}</h2>
-          <p className="text-gray-600 mt-2">{content.subtitle}</p>
+          <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
+          <p className="text-gray-600 mt-2">{subtitle}</p>
 
           {/* Scan count badge */}
           <div className="inline-flex items-center gap-2 mt-4 px-3 py-1.5 bg-gray-100 rounded-full">
@@ -151,10 +173,10 @@ export function SignUpPromptModal({ milestone, scanCount, onClose }: SignUpPromp
             {content.ctaText}
           </Link>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <button
               onClick={onClose}
-              className="flex-1 py-3 text-gray-600 hover:text-gray-800 font-medium transition-colors"
+              className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl transition-colors border border-gray-200"
             >
               {content.dismissText}
             </button>

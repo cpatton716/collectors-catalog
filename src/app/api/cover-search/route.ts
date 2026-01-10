@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
 
     if (!title) {
       return NextResponse.json(
-        { error: "Title is required" },
+        { error: "Please enter a comic title to search for covers." },
         { status: 400 }
       );
     }
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Error searching for covers:", error);
     return NextResponse.json(
-      { error: "Failed to search for covers" },
+      { error: "We couldn't search for covers right now. Please try again." },
       { status: 500 }
     );
   }

@@ -106,15 +106,22 @@ export function ComicDetailsForm({
   }, [comic.title, comic.publisher, lastLookedUpTitle]);
 
   // Auto-populate details when title and issue number are both provided
+  // Also re-fetch when title/issue changes from what was previously looked up
   useEffect(() => {
     const lookupDetails = async () => {
       if (!comic.title || !comic.issueNumber) return;
 
       const lookupKey = `${comic.title}-${comic.issueNumber}`;
-      if (lookupKey === `${lastLookedUpTitle}-${lastLookedUpIssue}`) return;
+      const previousKey = `${lastLookedUpTitle}-${lastLookedUpIssue}`;
 
-      // Only lookup if credits are empty (don't overwrite existing data)
-      if (comic.writer && comic.coverArtist && comic.releaseYear) return;
+      // Skip if we already looked up this exact combo
+      if (lookupKey === previousKey) return;
+
+      // Check if this is a CHANGE from a previous lookup (not first lookup)
+      const isChange = lastLookedUpTitle && lastLookedUpIssue && lookupKey !== previousKey;
+
+      // If it's a first lookup and data already exists, don't overwrite
+      if (!isChange && comic.writer && comic.coverArtist && comic.releaseYear) return;
 
       setIsLookingUpDetails(true);
       try {
@@ -130,15 +137,37 @@ export function ComicDetailsForm({
 
         if (response.ok) {
           const data = await response.json();
-          setComic((prev) => ({
-            ...prev,
-            publisher: prev.publisher || data.publisher,
-            releaseYear: prev.releaseYear || data.releaseYear,
-            writer: prev.writer || data.writer,
-            coverArtist: prev.coverArtist || data.coverArtist,
-            interiorArtist: prev.interiorArtist || data.interiorArtist,
-            keyInfo: prev.keyInfo?.length ? prev.keyInfo : (data.keyInfo || []),
-          }));
+          setComic((prev) => {
+            // If title/issue changed, REPLACE the data; otherwise merge
+            if (isChange) {
+              return {
+                ...prev,
+                // Keep user-entered title/issue
+                title: prev.title,
+                issueNumber: prev.issueNumber,
+                variant: prev.variant,
+                // Replace looked-up data with fresh data
+                publisher: data.publisher,
+                releaseYear: data.releaseYear,
+                writer: data.writer,
+                coverArtist: data.coverArtist,
+                interiorArtist: data.interiorArtist,
+                keyInfo: data.keyInfo || [],
+                priceData: data.priceData,
+              };
+            }
+            // First lookup - merge (don't overwrite existing)
+            return {
+              ...prev,
+              publisher: prev.publisher || data.publisher,
+              releaseYear: prev.releaseYear || data.releaseYear,
+              writer: prev.writer || data.writer,
+              coverArtist: prev.coverArtist || data.coverArtist,
+              interiorArtist: prev.interiorArtist || data.interiorArtist,
+              keyInfo: prev.keyInfo?.length ? prev.keyInfo : (data.keyInfo || []),
+              priceData: prev.priceData || data.priceData,
+            };
+          });
           setLastLookedUpTitle(comic.title);
           setLastLookedUpIssue(comic.issueNumber);
         }
@@ -215,6 +244,7 @@ export function ComicDetailsForm({
           coverArtist: data.coverArtist || null,
           interiorArtist: data.interiorArtist || null,
           keyInfo: data.keyInfo || [],
+          priceData: data.priceData || null,
         }));
         setLastLookedUpTitle(pendingRelookup.title);
         setLastLookedUpIssue(pendingRelookup.issue);
@@ -284,7 +314,7 @@ export function ComicDetailsForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-6">
       {/* Confidence Indicator */}
       {comic.confidence && (
         <div
@@ -362,7 +392,16 @@ export function ComicDetailsForm({
           </label>
           <TitleAutocomplete
             value={comic.title || ""}
-            onChange={(value) => updateComic("title", value)}
+            onChange={(value, years) => {
+              updateComic("title", value);
+              // If years are provided and no release year is set, extract the start year
+              if (years && !comic.releaseYear) {
+                const startYear = years.split("-")[0];
+                if (startYear && /^\d{4}$/.test(startYear)) {
+                  // Don't set a static year - let the lookup provide the specific issue year
+                }
+              }
+            }}
             placeholder="e.g., Amazing Spider-Man"
             required
           />
@@ -430,51 +469,209 @@ export function ComicDetailsForm({
         </div>
       </div>
 
-      {/* Cover Image Section - only show when no cover image and title is entered */}
-      {!coverImageUrl && comic.title && onCoverImageChange && (
-        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-3">
+      {/* Cover Image Section - show for adding new cover or updating existing */}
+      {comic.title && onCoverImageChange && (
+        <div className={`p-4 rounded-lg space-y-3 order-first md:order-none ${coverImageUrl ? 'bg-gray-50 border border-gray-200' : 'bg-blue-50 border border-blue-200'}`}>
           <div>
-            <p className="text-sm font-medium text-blue-900">Add a cover image</p>
-            <p className="text-xs text-blue-700">
-              Paste a cover image URL or search Google Images to find one.
+            <p className={`text-sm font-medium ${coverImageUrl ? 'text-gray-900' : 'text-blue-900'}`}>
+              {coverImageUrl ? 'Cover Image' : 'Add a cover image'}
             </p>
-          </div>
-          <div className="flex gap-2">
-            <input
-              type="url"
-              value={coverUrlInput}
-              onChange={(e) => setCoverUrlInput(e.target.value)}
-              placeholder="Paste image URL here..."
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-            <button
-              type="button"
-              onClick={() => {
-                if (coverUrlInput) {
-                  onCoverImageChange(coverUrlInput);
-                  setCoverUrlInput("");
-                }
-              }}
-              disabled={!coverUrlInput}
-              className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 text-sm"
-            >
-              Set Cover
-            </button>
-          </div>
-          <button
-            type="button"
-            onClick={handleSearchCover}
-            disabled={isSearchingCover}
-            className="flex items-center gap-2 text-sm text-blue-700 hover:text-blue-800"
-          >
-            {isSearchingCover ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Search className="w-4 h-4" />
+            {!coverImageUrl && (
+              <>
+                <p className="text-xs text-blue-700 hidden md:block">
+                  Paste a cover image URL or search Google Images to find one.
+                </p>
+                <p className="text-xs text-blue-700 md:hidden">
+                  Search for the cover image, then copy and paste the URL below.
+                </p>
+              </>
             )}
-            Search Google Images
-            <ExternalLink className="w-3 h-3" />
-          </button>
+          </div>
+
+          {/* Show current cover with change option */}
+          {coverImageUrl && (
+            <div className="flex items-start gap-4">
+              <div className="w-16 h-24 flex-shrink-0 rounded-md overflow-hidden bg-gray-200 shadow-sm">
+                <img
+                  src={coverImageUrl}
+                  alt="Current cover"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="flex-1 space-y-2">
+                <p className="text-xs text-gray-500">Current cover image</p>
+                {/* Mobile: Full-width buttons stacked */}
+                <div className="md:hidden space-y-2">
+                  <button
+                    type="button"
+                    onClick={handleSearchCover}
+                    disabled={isSearchingCover}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                  >
+                    {isSearchingCover ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Search className="w-4 h-4" />
+                    )}
+                    Find New Cover
+                    <ExternalLink className="w-3 h-3" />
+                  </button>
+                  <p className="text-xs text-gray-500 text-center">
+                    Tap &amp; hold image → Open in new tab → Copy URL
+                  </p>
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      value={coverUrlInput}
+                      onChange={(e) => setCoverUrlInput(e.target.value)}
+                      placeholder="Paste new image URL..."
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (coverUrlInput) {
+                          onCoverImageChange(coverUrlInput);
+                          setCoverUrlInput("");
+                        }
+                      }}
+                      disabled={!coverUrlInput}
+                      className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 text-sm font-medium"
+                    >
+                      Set
+                    </button>
+                  </div>
+                </div>
+                {/* Desktop: Inline controls */}
+                <div className="hidden md:block space-y-2">
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      value={coverUrlInput}
+                      onChange={(e) => setCoverUrlInput(e.target.value)}
+                      placeholder="Paste new image URL..."
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (coverUrlInput) {
+                          onCoverImageChange(coverUrlInput);
+                          setCoverUrlInput("");
+                        }
+                      }}
+                      disabled={!coverUrlInput}
+                      className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 text-sm"
+                    >
+                      Update
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleSearchCover}
+                    disabled={isSearchingCover}
+                    className="flex items-center gap-2 text-sm text-blue-700 hover:text-blue-800"
+                  >
+                    {isSearchingCover ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Search className="w-4 h-4" />
+                    )}
+                    Search Google Images
+                    <ExternalLink className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* No cover yet - show add options */}
+          {!coverImageUrl && (
+            <>
+              {/* Mobile: Search button first, then paste area */}
+              <div className="md:hidden space-y-3">
+                <button
+                  type="button"
+                  onClick={handleSearchCover}
+                  disabled={isSearchingCover}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                >
+                  {isSearchingCover ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Search className="w-4 h-4" />
+                  )}
+                  Search Google Images
+                  <ExternalLink className="w-4 h-4" />
+                </button>
+                <p className="text-xs text-blue-600 text-center">
+                  Tap &amp; hold image → Open in new tab → Copy URL from address bar
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    value={coverUrlInput}
+                    onChange={(e) => setCoverUrlInput(e.target.value)}
+                    placeholder="Paste image URL here..."
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (coverUrlInput) {
+                        onCoverImageChange(coverUrlInput);
+                        setCoverUrlInput("");
+                      }
+                    }}
+                    disabled={!coverUrlInput}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 text-sm font-medium"
+                  >
+                    Set
+                  </button>
+                </div>
+              </div>
+
+              {/* Desktop: URL input first, then search link */}
+              <div className="hidden md:block space-y-3">
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    value={coverUrlInput}
+                    onChange={(e) => setCoverUrlInput(e.target.value)}
+                    placeholder="Paste image URL here..."
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (coverUrlInput) {
+                        onCoverImageChange(coverUrlInput);
+                        setCoverUrlInput("");
+                      }
+                    }}
+                    disabled={!coverUrlInput}
+                    className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 text-sm"
+                  >
+                    Set Cover
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSearchCover}
+                  disabled={isSearchingCover}
+                  className="flex items-center gap-2 text-sm text-blue-700 hover:text-blue-800"
+                >
+                  {isSearchingCover ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Search className="w-4 h-4" />
+                  )}
+                  Search Google Images
+                  <ExternalLink className="w-3 h-3" />
+                </button>
+              </div>
+            </>
+          )}
         </div>
       )}
 
@@ -483,8 +680,8 @@ export function ComicDetailsForm({
         <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
           Creative Team
           {isLookingUpDetails && (
-            <span className="flex items-center gap-1 text-xs font-normal text-gray-500">
-              <Loader2 className="w-3 h-3 animate-spin" />
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-primary-700 bg-primary-50 border border-primary-200 rounded-full animate-pulse">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
               Looking up details...
             </span>
           )}

@@ -5,8 +5,14 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
+export interface TitleSuggestion {
+  title: string;
+  years: string; // e.g., "1963-2011" or "2018-Present"
+  publisher?: string;
+}
+
 // Cache for title suggestions to reduce API calls
-const titleCache = new Map<string, { suggestions: string[]; timestamp: number }>();
+const titleCache = new Map<string, { suggestions: TitleSuggestion[]; timestamp: number }>();
 const CACHE_TTL = 1000 * 60 * 60; // 1 hour
 
 export async function POST(request: NextRequest) {
@@ -26,14 +32,14 @@ export async function POST(request: NextRequest) {
 
     if (!process.env.ANTHROPIC_API_KEY) {
       return NextResponse.json(
-        { error: "ANTHROPIC_API_KEY not configured" },
+        { error: "Title suggestions are temporarily unavailable." },
         { status: 500 }
       );
     }
 
     const response = await anthropic.messages.create({
       model: "claude-sonnet-4-20250514",
-      max_tokens: 512,
+      max_tokens: 1024,
       messages: [
         {
           role: "user",
@@ -49,16 +55,24 @@ Also handle common typos and variations:
 - "Xmen" → match "X-Men" titles
 - "Batmam" → match "Batman" titles
 
+CRITICAL: Many comic series have been relaunched multiple times with the same name. Include ALL major runs as separate entries with their year ranges. For example:
+- "Amazing Spider-Man (1963-1998)" - Original run
+- "Amazing Spider-Man (1999-2013)" - Volume 2
+- "Amazing Spider-Man (2014-2015)" - Volume 3
+- "Amazing Spider-Man (2015-2018)" - Volume 4
+- "Amazing Spider-Man (2018-Present)" - Volume 5/current
+
 Focus on:
 - Major publisher titles (Marvel, DC, Image, Dark Horse, etc.)
 - Use the official/canonical series name
 - Prioritize more popular/well-known series first
 - Include both current and classic series
+- Separate different volumes/runs of the same title
 
-Return ONLY a JSON array of strings, no other text:
-["Title 1", "Title 2", ...]
+Return ONLY a JSON array of objects with this format, no other text:
+[{"title": "Amazing Spider-Man", "years": "1963-1998", "publisher": "Marvel"}, ...]
 
-If no matches, return an empty array: []`,
+Use "Present" for ongoing series. If no matches, return an empty array: []`,
         },
       ],
     });
@@ -68,7 +82,7 @@ If no matches, return an empty array: []`,
       return NextResponse.json({ suggestions: [] });
     }
 
-    let suggestions: string[] = [];
+    let suggestions: TitleSuggestion[] = [];
     try {
       let jsonText = textContent.text.trim();
       if (jsonText.startsWith("```json")) {
@@ -80,7 +94,17 @@ If no matches, return an empty array: []`,
       if (jsonText.endsWith("```")) {
         jsonText = jsonText.slice(0, -3);
       }
-      suggestions = JSON.parse(jsonText.trim());
+      const parsed = JSON.parse(jsonText.trim());
+
+      // Handle both old format (string[]) and new format (TitleSuggestion[])
+      if (Array.isArray(parsed)) {
+        suggestions = parsed.map((item: string | TitleSuggestion) => {
+          if (typeof item === "string") {
+            return { title: item, years: "" };
+          }
+          return item;
+        });
+      }
     } catch {
       console.error("Failed to parse title suggestions");
       return NextResponse.json({ suggestions: [] });

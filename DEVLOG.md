@@ -212,12 +212,12 @@ UX Improvements, CSV Import Feature, and Home Page Refinements
 ## January 8, 2026 (Evening)
 
 ### Session Focus
-Con Mode, Mobile Camera Enhancements, Grade-Aware Pricing, and Barcode Scanner Fixes
+Key Hunt, Mobile Camera Enhancements, Grade-Aware Pricing, and Barcode Scanner Fixes
 
 ### Completed
 
-**Con Mode - Mobile Quick Lookup** (New Feature)
-- Created dedicated `/con-mode` page for quick price lookups at conventions
+**Key Hunt - Mobile Quick Lookup** (New Feature)
+- Created dedicated `/key-hunt` page for quick price lookups at conventions
 - Built QuickResultCard component with minimal UI for fast scanning
 - Created `/api/quick-lookup` endpoint combining barcode lookup + AI pricing
 - Added "Passed On" default list for tracking comics seen but not purchased
@@ -227,7 +227,7 @@ Con Mode, Mobile Camera Enhancements, Grade-Aware Pricing, and Barcode Scanner F
 - Three quick-add buttons: Want List, Collection, Passed On
 - Recent scans history with localStorage persistence
 - Offline barcode cache (7-day TTL, 20 entries max)
-- Added Con Mode to mobile nav as 3rd item (Home → Scan → Con Mode → Collection)
+- Added Key Hunt to mobile nav as 3rd item (Home → Scan → Key Hunt → Collection)
 
 **Enhanced Mobile Camera Integration**
 - Built LiveCameraCapture component with full-screen camera preview
@@ -264,8 +264,8 @@ Con Mode, Mobile Camera Enhancements, Grade-Aware Pricing, and Barcode Scanner F
 - Fixed DOM timing issues with initialization delays
 
 ### Files Created
-- `src/app/con-mode/page.tsx` - Con Mode page
-- `src/components/QuickResultCard.tsx` - Minimal result card for Con Mode
+- `src/app/key-hunt/page.tsx` - Key Hunt page
+- `src/components/QuickResultCard.tsx` - Minimal result card for Key Hunt
 - `src/app/api/quick-lookup/route.ts` - Combined barcode + price lookup API
 - `src/components/LiveCameraCapture.tsx` - Full-screen camera preview
 - `src/components/SignUpPromptModal.tsx` - Milestone sign-up prompts
@@ -275,7 +275,7 @@ Con Mode, Mobile Camera Enhancements, Grade-Aware Pricing, and Barcode Scanner F
 ### Files Modified
 - `src/lib/storage.ts` - Added "Passed On" default list
 - `src/lib/db.ts` - Added "Passed On" to Supabase mapping
-- `src/components/MobileNav.tsx` - Added Con Mode as 3rd nav item
+- `src/components/MobileNav.tsx` - Added Key Hunt as 3rd nav item
 - `src/components/BarcodeScanner.tsx` - Complete rewrite with better error handling
 - `src/components/ImageUpload.tsx` - Integrated LiveCameraCapture, added gallery access
 - `src/hooks/useGuestScans.ts` - Added milestone tracking
@@ -291,10 +291,157 @@ Con Mode, Mobile Camera Enhancements, Grade-Aware Pricing, and Barcode Scanner F
 2. **Camera permission black screen** - Solved with explicit Permissions API checks before scanner init
 
 ### Notes for Future Reference
-- Con Mode barcode scans are always raw books (can't scan barcode through a slab)
+- Key Hunt barcode scans are always raw books (can't scan barcode through a slab)
 - For slabbed comics, need image scan to detect grade from CGC/CBCS label
 - Grade interpolation uses linear interpolation between known grade points
 - Barcode cache uses 7-day TTL and max 20 entries to balance storage vs usefulness
+
+---
+
+## January 9, 2026
+
+### Session Focus
+Hybrid Database Caching, Bug Fixes, and Auto-Refresh Comic Details
+
+### Completed
+
+**Hybrid Database Caching System** (Performance Optimization)
+- Created `comic_metadata` table in Supabase as shared repository
+- Implemented 3-tier caching: Memory Cache (5min TTL) → Database (~50ms) → Claude API (~1-2s)
+- Comic lookups now check database first, only calling AI for unknown comics
+- Results from AI automatically saved to database for future users
+- Tracks lookup count for popularity analytics
+- Case-insensitive matching with indexed queries
+- Updated import-lookup API to use same hybrid approach - CSV imports now seed the database
+
+**Auto-Refresh Comic Details on Title/Issue Change**
+- Detects when user changes title or issue number after initial lookup
+- Automatically fetches fresh details for the new title/issue combination
+- Smart data replacement: replaces AI-derived fields but preserves user-entered data (notes, purchase price, etc.)
+- Works in both add and edit modes
+- Tracks "last looked up" values to detect meaningful changes
+
+**Bug Fixes**
+- **Title Autocomplete Stale Results**: Fixed issue where typing new query showed results from previous search (cleared suggestions immediately on input change before debounce)
+- **Value By Grade Button Form Submission**: Fixed button triggering form submit, incrementing scan count, and showing "book added" toast (added `type="button"` attribute)
+- **Empty src Attribute Warning**: Fixed browser console warning from empty img src by adding conditional rendering
+- **Disclaimer Text Update**: Changed pricing disclaimer from "AI-estimated values..." to "Values are estimates based on market knowledge. Actual prices may vary."
+
+**Icons Directory Setup** (Preparation for Custom Branding)
+- Created `/src/components/icons/index.tsx` with icon template and specifications
+- Created `/public/icons/` directory for favicon variants
+- Added TreasureChest placeholder component ready for custom SVG paths
+- Documented all icon sizes used in app (12px to 64px)
+
+**Backlog Updates**
+- Added "Custom SVG Icons & Branding" as HIGH priority item
+- Added "Further Optimize Search Results" as Medium priority item
+
+### Files Created
+- `supabase/migrations/20260109_create_comic_metadata.sql` - Shared comic metadata table with indexes and RLS policies
+- `src/components/icons/index.tsx` - Custom icon template with TreasureChest placeholder
+
+### Files Modified
+- `src/lib/db.ts` - Added `getComicMetadata()`, `saveComicMetadata()`, `incrementComicLookupCount()` functions
+- `src/app/api/comic-lookup/route.ts` - Complete rewrite with hybrid 3-tier caching
+- `src/app/api/import-lookup/route.ts` - Added hybrid caching so CSV imports seed database
+- `src/app/api/key-hunt-lookup/route.ts` - Updated disclaimer text
+- `src/components/ComicDetailsForm.tsx` - Added auto-refresh when title/issue changes
+- `src/components/TitleAutocomplete.tsx` - Fixed stale suggestions by clearing immediately on input change
+- `src/components/GradePricingBreakdown.tsx` - Added `type="button"` to prevent form submission
+- `src/app/scan/page.tsx` - Fixed empty src conditional rendering
+- `BACKLOG.md` - Added two new items
+
+### Blockers / Issues Encountered
+1. **Supabase "destructive operation" warning** - The `DROP TRIGGER IF EXISTS` statement triggered a warning but is safe (idempotent pattern)
+2. **Title/issue change detection** - Initially only showed re-lookup prompt in edit mode; refactored to detect changes from previous lookup values
+
+### Notes for Future Reference
+- Database lookups are ~50ms vs ~1-2s for Claude API calls - significant UX improvement
+- Memory cache uses 5-minute TTL to balance freshness with speed
+- CSV imports of common comics will now benefit all future users via shared repository
+- The hybrid approach gracefully handles database failures (falls back to AI)
+- Non-blocking saves with `.catch()` ensure failed caches don't break user experience
+
+---
+
+## January 9, 2026 (Evening)
+
+### Session Focus
+Mobile UX Improvements, Empty Image Fixes, Auto-Hide Navigation, and Hottest Books Static Fallback
+
+### Completed
+
+**Home Page Updates for Logged-In Users**
+- Added collection insight cards: "Biggest Increase", "Best Buy" (ROI), "Biggest Decline"
+- Duration filters for 30/60/90 day value changes
+- Moved "Scan a Book" CTA to top position
+- Changed title to "A Look in Your Chest" for logged-in users
+- Removed Features section and "View Collection" button for logged-in users
+- Inline Hottest Books grid on home page (no longer just a banner link)
+- Removed "Powered by AI Vision" badge
+
+**Empty Image Source Fixes**
+- Fixed console error "empty string passed to src attribute" across 10+ components
+- Added Riddler-style placeholder for missing covers (green glowing "?" on dark background)
+- Components fixed: ComicCard, ComicListItem, ComicDetailModal, VariantsModal, PublicComicCard, PublicComicModal, collection/page.tsx, page.tsx
+
+**Mobile Cover Image Improvements**
+- ComicDetailModal: Cover now displays as small thumbnail (80px) alongside title on mobile
+- Desktop unchanged - full cover panel on left side
+- Edit modal: Hidden large cover preview on mobile, form-only view
+- Added bottom padding to modals to clear floating nav bar
+
+**Cover Image Editing in Edit Mode**
+- ComicDetailsForm now shows cover options even when cover already exists
+- Mobile: "Find New Cover" button + URL paste field
+- Desktop: Inline URL input with search link
+- Current cover thumbnail displayed with change options
+
+**Auto-Hide Navigation on Scroll**
+- Bottom nav slides down when scrolling down (past 100px)
+- Nav reappears when scrolling up
+- Always visible near top of page (< 50px)
+- Small scroll threshold (10px) to prevent jitter
+- Smooth 300ms transition animation
+
+**Mobile Cover Image Search Enhancement**
+- Large "Search Google Images" button at top of cover section on mobile
+- Updated instructions for Android: "Tap & hold → Open in new tab → Copy URL"
+- Added backlog item for native app implementation (open device default browser)
+
+**Hottest Books Static Fallback**
+- Created static list of 10 hot books with cover images from Comic Vine
+- Added `USE_STATIC_LIST` flag to conserve API credits during testing
+- Added Pre-Launch Checklist to BACKLOG.md with reminder to re-enable live API
+
+### Files Created
+- `src/lib/staticHotBooks.ts` - Static fallback list for Hottest Books feature
+
+### Files Modified
+- `src/components/MobileNav.tsx` - Auto-hide on scroll with transform animation
+- `src/components/ComicDetailModal.tsx` - Compact mobile layout with thumbnail
+- `src/components/ComicDetailsForm.tsx` - Cover editing for existing covers, mobile-first layout
+- `src/components/ComicCard.tsx` - Riddler-style empty image placeholder
+- `src/components/ComicListItem.tsx` - Riddler-style empty image placeholder
+- `src/components/VariantsModal.tsx` - Riddler-style empty image placeholder
+- `src/components/PublicComicCard.tsx` - Riddler-style empty image placeholder
+- `src/components/PublicComicModal.tsx` - Riddler-style empty image placeholder
+- `src/app/collection/page.tsx` - Empty image fixes, edit modal mobile improvements
+- `src/app/page.tsx` - Home page updates for logged-in users, empty image fix
+- `src/app/api/hottest-books/route.ts` - Static list fallback for testing
+- `BACKLOG.md` - Added Pre-Launch Checklist, native app cover search item
+
+### Blockers / Issues Encountered
+1. **Anthropic API credits exhausted** - Hottest Books failed to load; solved with static fallback list
+2. **Bottom nav overlapping CTAs** - Evaluated 6 options; implemented auto-hide on scroll
+3. **Cover image taking full mobile screen** - Redesigned to compact thumbnail layout
+
+### Notes for Future Reference
+- Claude Max subscription ≠ Anthropic API credits (separate billing systems)
+- Auto-hide nav pattern similar to Instagram/Twitter - users expect it
+- Riddler-style "?" placeholder adds personality while indicating missing data
+- `USE_STATIC_LIST = true` saves API costs during testing; flip to false before launch
 
 ---
 

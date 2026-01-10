@@ -1,4 +1,4 @@
-import { GradeEstimate, PriceData } from "@/types/comic";
+import { GradeEstimate, PriceData, CollectionItem } from "@/types/comic";
 
 /**
  * Calculate the estimated value for a comic at a specific grade
@@ -113,4 +113,48 @@ export function getPriceComparison(
     difference: Math.round(difference * 100) / 100,
     percentage: Math.round(percentage * 10) / 10,
   };
+}
+
+/**
+ * Get the estimated value for a collection item, using grade-specific pricing when available
+ */
+export function getComicValue(item: CollectionItem): number {
+  const { comic, conditionGrade, isGraded } = item;
+
+  // If there's a condition grade and grade estimates are available, use grade-aware pricing
+  if (conditionGrade !== null && comic.priceData?.gradeEstimates && comic.priceData.gradeEstimates.length > 0) {
+    const gradeValue = calculateValueAtGrade(comic.priceData, conditionGrade, isGraded);
+    if (gradeValue !== null) {
+      return gradeValue;
+    }
+  }
+
+  // Fall back to the base estimated value
+  return comic.priceData?.estimatedValue || 0;
+}
+
+/**
+ * Calculate total collection value with grade-aware pricing
+ * Returns total value and count of unpriced items
+ */
+export function calculateCollectionValue(collection: CollectionItem[]): {
+  totalValue: number;
+  pricedCount: number;
+  unpricedCount: number;
+} {
+  let totalValue = 0;
+  let pricedCount = 0;
+  let unpricedCount = 0;
+
+  for (const item of collection) {
+    const value = getComicValue(item);
+    if (value > 0) {
+      totalValue += value;
+      pricedCount++;
+    } else {
+      unpricedCount++;
+    }
+  }
+
+  return { totalValue, pricedCount, unpricedCount };
 }

@@ -8,15 +8,16 @@ const MILESTONES_SHOWN_KEY = "comic_milestones_shown";
 const MAX_GUEST_SCANS = 10;
 
 // Milestone thresholds
-const HALFWAY_MILESTONE = 5;
-const ALMOST_DONE_MILESTONE = 9;
+const FIRST_MILESTONE = 5;   // After 5th scan (5 remaining)
+const SECOND_MILESTONE = 7;  // After 7th scan (3 remaining)
+const FINAL_MILESTONE = 9;   // After 9th scan (1 remaining - next is their last)
 
-export type MilestoneType = "halfway" | "almostDone" | "limitReached" | null;
+export type MilestoneType = "fiveRemaining" | "threeRemaining" | "finalScan" | null;
 
 interface MilestonesShown {
-  halfway: boolean;
-  almostDone: boolean;
-  limitReached: boolean;
+  fiveRemaining: boolean;
+  threeRemaining: boolean;
+  finalScan: boolean;
 }
 
 interface GuestScanState {
@@ -33,13 +34,13 @@ interface GuestScanState {
 // Helper to get milestones from localStorage
 const getMilestonesShown = (): MilestonesShown => {
   if (typeof window === "undefined") {
-    return { halfway: false, almostDone: false, limitReached: false };
+    return { fiveRemaining: false, threeRemaining: false, finalScan: false };
   }
   try {
     const stored = localStorage.getItem(MILESTONES_SHOWN_KEY);
-    return stored ? JSON.parse(stored) : { halfway: false, almostDone: false, limitReached: false };
+    return stored ? JSON.parse(stored) : { fiveRemaining: false, threeRemaining: false, finalScan: false };
   } catch {
-    return { halfway: false, almostDone: false, limitReached: false };
+    return { fiveRemaining: false, threeRemaining: false, finalScan: false };
   }
 };
 
@@ -53,9 +54,9 @@ export function useGuestScans(): GuestScanState {
   const { isSignedIn, isLoaded } = useAuth();
   const [scanCount, setScanCount] = useState(0);
   const [milestonesShown, setMilestonesShown] = useState<MilestonesShown>({
-    halfway: false,
-    almostDone: false,
-    limitReached: false,
+    fiveRemaining: false,
+    threeRemaining: false,
+    finalScan: false,
   });
 
   // Load scan count and milestones from localStorage
@@ -73,14 +74,14 @@ export function useGuestScans(): GuestScanState {
     // Don't show milestones for signed-in users
     if (isSignedIn) return null;
 
-    if (scanCount >= MAX_GUEST_SCANS && !milestonesShown.limitReached) {
-      return "limitReached";
+    if (scanCount >= FINAL_MILESTONE && !milestonesShown.finalScan) {
+      return "finalScan";
     }
-    if (scanCount >= ALMOST_DONE_MILESTONE && !milestonesShown.almostDone) {
-      return "almostDone";
+    if (scanCount >= SECOND_MILESTONE && !milestonesShown.threeRemaining) {
+      return "threeRemaining";
     }
-    if (scanCount >= HALFWAY_MILESTONE && !milestonesShown.halfway) {
-      return "halfway";
+    if (scanCount >= FIRST_MILESTONE && !milestonesShown.fiveRemaining) {
+      return "fiveRemaining";
     }
     return null;
   }, [scanCount, milestonesShown, isSignedIn]);
@@ -107,14 +108,14 @@ export function useGuestScans(): GuestScanState {
     // Check for milestones based on NEW count
     const currentMilestones = getMilestonesShown();
 
-    if (newCount >= MAX_GUEST_SCANS && !currentMilestones.limitReached) {
-      return "limitReached";
+    if (newCount >= FINAL_MILESTONE && !currentMilestones.finalScan) {
+      return "finalScan";
     }
-    if (newCount >= ALMOST_DONE_MILESTONE && !currentMilestones.almostDone) {
-      return "almostDone";
+    if (newCount >= SECOND_MILESTONE && !currentMilestones.threeRemaining) {
+      return "threeRemaining";
     }
-    if (newCount >= HALFWAY_MILESTONE && !currentMilestones.halfway) {
-      return "halfway";
+    if (newCount >= FIRST_MILESTONE && !currentMilestones.fiveRemaining) {
+      return "fiveRemaining";
     }
 
     return null;
@@ -125,7 +126,7 @@ export function useGuestScans(): GuestScanState {
     setScanCount(0);
     localStorage.removeItem(GUEST_SCAN_KEY);
     // Also reset milestones
-    setMilestonesShown({ halfway: false, almostDone: false, limitReached: false });
+    setMilestonesShown({ fiveRemaining: false, threeRemaining: false, finalScan: false });
     localStorage.removeItem(MILESTONES_SHOWN_KEY);
   }, []);
 

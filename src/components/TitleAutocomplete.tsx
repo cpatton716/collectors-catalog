@@ -3,36 +3,55 @@
 import { useState, useEffect, useRef } from "react";
 import { Loader2, Clock } from "lucide-react";
 
-const RECENT_TITLES_KEY = "comic-tracker-recent-titles";
+const RECENT_TITLES_KEY = "comic-tracker-recent-titles-v2";
 const MAX_RECENT_TITLES = 5;
+
+export interface TitleSuggestion {
+  title: string;
+  years: string;
+  publisher?: string;
+}
 
 interface TitleAutocompleteProps {
   value: string;
-  onChange: (value: string) => void;
+  onChange: (value: string, years?: string) => void;
   placeholder?: string;
   required?: boolean;
   className?: string;
 }
 
 // Helper to get recent titles from localStorage
-const getRecentTitles = (): string[] => {
+const getRecentTitles = (): TitleSuggestion[] => {
   if (typeof window === "undefined") return [];
   try {
     const stored = localStorage.getItem(RECENT_TITLES_KEY);
-    return stored ? JSON.parse(stored) : [];
+    if (!stored) return [];
+    const parsed = JSON.parse(stored);
+    // Handle migration from old string[] format
+    if (Array.isArray(parsed)) {
+      return parsed.map((item: string | TitleSuggestion) => {
+        if (typeof item === "string") {
+          return { title: item, years: "" };
+        }
+        return item;
+      });
+    }
+    return [];
   } catch {
     return [];
   }
 };
 
 // Helper to save a title to recent searches
-const saveRecentTitle = (title: string) => {
+const saveRecentTitle = (suggestion: TitleSuggestion) => {
   if (typeof window === "undefined") return;
   try {
     const recent = getRecentTitles();
-    // Remove if already exists, then add to front
-    const filtered = recent.filter(t => t.toLowerCase() !== title.toLowerCase());
-    const updated = [title, ...filtered].slice(0, MAX_RECENT_TITLES);
+    // Remove if already exists (matching both title and years), then add to front
+    const filtered = recent.filter(
+      t => !(t.title.toLowerCase() === suggestion.title.toLowerCase() && t.years === suggestion.years)
+    );
+    const updated = [suggestion, ...filtered].slice(0, MAX_RECENT_TITLES);
     localStorage.setItem(RECENT_TITLES_KEY, JSON.stringify(updated));
   } catch {
     // Ignore localStorage errors
@@ -46,8 +65,8 @@ export function TitleAutocomplete({
   required = false,
   className = "",
 }: TitleAutocompleteProps) {
-  const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [recentTitles, setRecentTitles] = useState<string[]>([]);
+  const [suggestions, setSuggestions] = useState<TitleSuggestion[]>([]);
+  const [recentTitles, setRecentTitles] = useState<TitleSuggestion[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
@@ -77,6 +96,9 @@ export function TitleAutocomplete({
       setShowDropdown(false);
       return;
     }
+
+    // Clear stale suggestions immediately when input changes
+    setSuggestions([]);
 
     debounceRef.current = setTimeout(async () => {
       setIsLoading(true);
@@ -125,18 +147,20 @@ export function TitleAutocomplete({
   }, []);
 
   // Get filtered recent titles that match current input
-  const getFilteredRecent = () => {
+  const getFilteredRecent = (): TitleSuggestion[] => {
     if (!value || value.length < 2) return recentTitles;
     const query = value.toLowerCase();
-    return recentTitles.filter(t => t.toLowerCase().includes(query));
+    return recentTitles.filter(t => t.title.toLowerCase().includes(query));
   };
 
   // Combine recent titles with API suggestions, removing duplicates
   const filteredRecent = getFilteredRecent();
-  const apiSuggestionsFiltered = suggestions.filter(
-    s => !filteredRecent.some(r => r.toLowerCase() === s.toLowerCase())
-  );
-  const allSuggestions = [...filteredRecent, ...apiSuggestionsFiltered];
+  const apiSuggestionsFiltered = suggestions
+    .filter(s => !filteredRecent.some(
+      r => r.title.toLowerCase() === s.title.toLowerCase() && r.years === s.years
+    ))
+    .sort((a, b) => a.title.localeCompare(b.title)); // Sort alphabetically by title
+  const allSuggestions: TitleSuggestion[] = [...filteredRecent, ...apiSuggestionsFiltered];
   const hasAnySuggestions = allSuggestions.length > 0;
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -165,13 +189,21 @@ export function TitleAutocomplete({
     }
   };
 
-  const handleSelect = (title: string) => {
-    onChange(title);
+  const handleSelect = (suggestion: TitleSuggestion) => {
+    onChange(suggestion.title, suggestion.years);
     setShowDropdown(false);
     setSuggestions([]);
     // Save to recent titles
-    saveRecentTitle(title);
+    saveRecentTitle(suggestion);
     setRecentTitles(getRecentTitles());
+  };
+
+  // Helper to format display text with years
+  const formatSuggestion = (suggestion: TitleSuggestion): string => {
+    if (suggestion.years) {
+      return `${suggestion.title} (${suggestion.years})`;
+    }
+    return suggestion.title;
   };
 
   return (
@@ -211,17 +243,22 @@ export function TitleAutocomplete({
                 <Clock className="w-3 h-3" />
                 Recent
               </div>
-              {filteredRecent.map((title, index) => (
+              {filteredRecent.map((suggestion, index) => (
                 <button
-                  key={`recent-${title}`}
+                  key={`recent-${suggestion.title}-${suggestion.years}`}
                   type="button"
-                  onClick={() => handleSelect(title)}
-                  className={`w-full px-3 py-2 text-left text-sm text-gray-900 hover:bg-gray-100 transition-colors flex items-center gap-2 ${
+                  onClick={() => handleSelect(suggestion)}
+                  className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-100 transition-colors flex items-center gap-2 ${
                     index === highlightedIndex ? "bg-gray-100" : ""
                   }`}
                 >
                   <Clock className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-                  {title}
+                  <span className="flex-1">
+                    <span className="text-gray-900">{suggestion.title}</span>
+                    {suggestion.years && (
+                      <span className="text-gray-500 ml-1.5">({suggestion.years})</span>
+                    )}
+                  </span>
                 </button>
               ))}
             </>
@@ -239,14 +276,20 @@ export function TitleAutocomplete({
                 const globalIndex = filteredRecent.length + index;
                 return (
                   <button
-                    key={suggestion}
+                    key={`${suggestion.title}-${suggestion.years}`}
                     type="button"
                     onClick={() => handleSelect(suggestion)}
-                    className={`w-full px-3 py-2 text-left text-sm text-gray-900 hover:bg-gray-100 transition-colors ${
+                    className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-100 transition-colors ${
                       globalIndex === highlightedIndex ? "bg-gray-100" : ""
                     } ${globalIndex === allSuggestions.length - 1 ? "rounded-b-lg" : ""}`}
                   >
-                    {suggestion}
+                    <span className="text-gray-900">{suggestion.title}</span>
+                    {suggestion.years && (
+                      <span className="text-gray-500 ml-1.5">({suggestion.years})</span>
+                    )}
+                    {suggestion.publisher && (
+                      <span className="text-gray-400 ml-1.5 text-xs">{suggestion.publisher}</span>
+                    )}
                   </button>
                 );
               })}

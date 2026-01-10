@@ -13,20 +13,20 @@ export async function POST(request: NextRequest) {
     console.log("Image data length:", image?.length || 0);
 
     if (!image) {
-      return NextResponse.json({ error: "No image provided" }, { status: 400 });
+      return NextResponse.json({ error: "No image was received. Please try uploading your photo again." }, { status: 400 });
     }
 
     // Check if image is too large (base64 adds ~33% overhead, so 20MB base64 ≈ 15MB image)
     if (image.length > 20 * 1024 * 1024) {
       return NextResponse.json(
-        { error: "Image too large. Please use an image under 10MB." },
+        { error: "This image is too large. Please use a smaller image (under 10MB) or try taking a new photo." },
         { status: 400 }
       );
     }
 
     if (!process.env.ANTHROPIC_API_KEY) {
       return NextResponse.json(
-        { error: "ANTHROPIC_API_KEY not configured" },
+        { error: "Our comic recognition service is temporarily unavailable. Please try again in a few minutes." },
         { status: 500 }
       );
     }
@@ -102,7 +102,7 @@ Important:
     // Extract the text content from the response
     const textContent = response.content.find((block) => block.type === "text");
     if (!textContent || textContent.type !== "text") {
-      throw new Error("No text response from Claude");
+      throw new Error("We couldn't analyze this image. Please try a clearer photo of the comic cover.");
     }
 
     // Parse the JSON response
@@ -128,7 +128,7 @@ Important:
     } catch (parseError) {
       console.error("Failed to parse Claude response:", textContent.text);
       console.error("Parse error:", parseError);
-      throw new Error("Failed to parse comic details from response");
+      throw new Error("We had trouble reading the comic details. Please try a different photo with the cover clearly visible.");
     }
 
     // If we have title and issue but missing creator info, look it up
@@ -234,7 +234,7 @@ Please provide the correct/complete information as a JSON object:
   "publisher": "the correct publisher name (e.g., 'Marvel Comics', 'DC Comics')",
   "releaseYear": "the 4-digit year this issue was published",
   "variant": "the variant name if this is a variant cover, or null if it's a standard cover",
-  "keyInfo": ["array of key facts about this issue - first appearances, deaths, team changes, cameos, significant events, etc."]
+  "keyInfo": ["array of MAJOR key facts about this issue"]
 }
 
 Important:
@@ -242,18 +242,16 @@ Important:
 - Use your knowledge of comic book history to provide accurate information
 - If you're not confident about a specific field, use null
 - For publisher, use the full official name
-- For keyInfo, be THOROUGH and include ANY of these:
-  * First appearances of ANY character (heroes, villains, supporting cast, alternate universe versions like Lady Deadpool, Spider-Gwen, Miles Morales, etc.)
-  * First cameo vs first full appearances
-  * Character deaths or resurrections
-  * Team formations, departures, or arrivals
-  * Origin stories, costume changes, codename changes
-  * Major battles, crossover events, storyline beginnings/endings
-  * Wedding/relationship milestones, first meetings between characters
-  * Introduction of significant objects, weapons, or tech
-  * Alternate universe or legacy character introductions
-- IMPORTANT: Even minor character first appearances are valuable to collectors. When in doubt, INCLUDE the fact.
-- Only return an empty array if you are CERTAIN this issue has NO notable events`,
+- For keyInfo, ONLY include truly significant collector-relevant facts:
+  * First appearances of MAJOR characters (heroes, villains, or significant supporting cast that collectors care about)
+  * Major storyline events (e.g., "Death of Gwen Stacy", "Dark Phoenix Saga begins")
+  * Origin stories of major characters
+  * First appearance of iconic costumes or items (e.g., "First appearance of symbiote suit", "First Infinity Gauntlet")
+  * Iconic/historically significant cover art
+  * Creator milestones (e.g., "First Neal Adams art on Green Lantern", "First Todd McFarlane Spider-Man")
+- Do NOT include: minor character appearances, team roster changes, crossover tie-ins, relationship milestones, or anything that wouldn't significantly affect the comic's collector value
+- Quality over quantity - only 1-3 facts for truly key issues, empty array for regular issues
+- Return an empty array for issues with no major significance`,
             },
           ],
         });
@@ -313,46 +311,35 @@ Important:
           messages: [
             {
               role: "user",
-              content: `You are a comic book expert and collector with encyclopedic knowledge of comic book history, first appearances, and significant issues. Your goal is to help collectors identify ALL notable facts about their comics.
+              content: `You are a comic book expert. I need to know if this issue has any MAJOR collector significance.
 
-I need the key information for this comic:
-- Title: ${comicDetails.title}
-- Issue Number: ${comicDetails.issueNumber}
-- Publisher: ${comicDetails.publisher || "Unknown"}
-- Year: ${comicDetails.releaseYear || "Unknown"}
+Comic: ${comicDetails.title} #${comicDetails.issueNumber}
+Publisher: ${comicDetails.publisher || "Unknown"}
+Year: ${comicDetails.releaseYear || "Unknown"}
 
-Please provide any significant facts about this specific issue as a JSON object:
+Return a JSON object:
 {
-  "keyInfo": ["array of key facts about this issue"]
+  "keyInfo": ["array of MAJOR key facts - leave empty if none"]
 }
 
-Be THOROUGH and include ANY of these facts:
-- First appearances of ANY character (heroes, villains, supporting cast, love interests)
-- Alternate universe character debuts (Lady Deadpool, Spider-Gwen, Miles Morales, Old Man Logan, etc.)
-- First cameo appearances (specify "cameo" if not a full appearance)
-- First full appearances (if different from cameo issue)
-- Character deaths (even temporary/later-reversed ones)
-- Character resurrections or returns
-- Team formations, member departures, or new member arrivals
-- Origin stories or origin retellings
-- New costume debuts or significant costume changes
-- Codename changes or new identity reveals
-- Major battles or significant confrontations
-- Crossover event tie-ins or beginnings
-- Wedding/engagement/relationship milestones
-- First meetings between significant characters
-- Significant storyline beginnings or endings (name the storyline)
-- Introduction of significant objects (Infinity Gauntlet, Mjolnir variants, etc.)
-- Legacy character introductions (new person taking up a hero/villain mantle)
-- Significant retcons or reveals
+ONLY include facts that significantly impact collector value:
+- First appearances of MAJOR characters (not minor/supporting characters)
+- Major storyline events (e.g., "Death of Superman", "Kraven's Last Hunt begins")
+- Origin stories of major characters
+- First appearance of iconic costumes/items (e.g., "First symbiote suit", "First Infinity Gauntlet")
+- Iconic/historically significant cover art
+- Creator milestones (e.g., "First Jim Lee X-Men art", "First Frank Miller Daredevil")
 
-IMPORTANT:
-- Collectors value even minor character first appearances - include them!
-- When in doubt, INCLUDE the fact rather than omit it
-- Be specific: "First appearance of Lady Deadpool" not just "character introduction"
+Do NOT include:
+- Minor character first appearances
+- Team roster changes
+- Crossover tie-ins
+- Deaths that were quickly reversed
+- Relationship milestones
+- Cameo appearances
 
-Return ONLY the JSON object, no other text.
-Only return {"keyInfo": []} if you are CERTAIN this issue has absolutely no notable events.`,
+Most issues should return an empty array. Only 1-3 facts maximum for truly key issues.
+Return ONLY the JSON object.`,
             },
           ],
         });
@@ -568,13 +555,13 @@ Important:
 
     if (error instanceof Anthropic.APIError) {
       return NextResponse.json(
-        { error: `Claude API error: ${error.message}` },
+        { error: "Our comic recognition service is temporarily busy. Please wait a moment and try again." },
         { status: error.status || 500 }
       );
     }
 
     return NextResponse.json(
-      { error: "Failed to analyze comic cover" },
+      { error: "Something went wrong while analyzing your comic. Please try again or use a different photo." },
       { status: 500 }
     );
   }

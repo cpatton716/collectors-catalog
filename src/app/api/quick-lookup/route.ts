@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
+import { getComicMetadata, saveComicMetadata } from "@/lib/db";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -33,7 +34,7 @@ export async function POST(request: NextRequest) {
 
     if (!barcode) {
       return NextResponse.json(
-        { error: "Barcode is required" },
+        { error: "No barcode was detected. Please try scanning again with the barcode clearly visible." },
         { status: 400 }
       );
     }
@@ -75,12 +76,58 @@ export async function POST(request: NextRequest) {
 
     if (!comicDetails || !comicDetails.title) {
       return NextResponse.json(
-        { error: "Comic not found. Try scanning the cover instead." },
+        { error: "We couldn't find this comic by barcode. This sometimes happens with older or variant issues. Try scanning the cover instead!" },
         { status: 404 }
       );
     }
 
-    // Step 2: Get key info and price data from Claude
+    // Step 2: Check database for cached data first
+    try {
+      const dbResult = await getComicMetadata(comicDetails.title, comicDetails.issueNumber || "1");
+      if (dbResult && dbResult.priceData) {
+        console.log(`[quick-lookup] Database hit for ${comicDetails.title} #${comicDetails.issueNumber}`);
+
+        return NextResponse.json({
+          comic: {
+            id: `quick-${Date.now()}`,
+            title: comicDetails.title,
+            issueNumber: comicDetails.issueNumber,
+            variant: comicDetails.variant,
+            publisher: dbResult.publisher || comicDetails.publisher,
+            releaseYear: dbResult.releaseYear || comicDetails.releaseYear,
+            confidence: "high" as const,
+            isSlabbed: false,
+            gradingCompany: null,
+            grade: null,
+            isSignatureSeries: false,
+            signedBy: null,
+            keyInfo: dbResult.keyInfo || [],
+            priceData: {
+              estimatedValue: dbResult.priceData.estimatedValue,
+              recentSales: dbResult.priceData.recentSales || [],
+              mostRecentSale: dbResult.priceData.recentSales?.[0] || null,
+              mostRecentSaleDate: dbResult.priceData.mostRecentSaleDate,
+              isAveraged: true,
+              disclaimer: "Values are estimates based on market knowledge.",
+              gradeEstimates: dbResult.priceData.gradeEstimates,
+              baseGrade: 9.4,
+            },
+            writer: dbResult.writer,
+            coverArtist: dbResult.coverArtist,
+            interiorArtist: dbResult.interiorArtist,
+          },
+          coverImageUrl: dbResult.coverImageUrl || comicDetails.coverImageUrl,
+          source: "database",
+        });
+      }
+    } catch (dbError) {
+      console.error("[quick-lookup] Database lookup failed:", dbError);
+      // Continue to AI lookup
+    }
+
+    // Step 3: Fall back to Claude for key info and price data
+    console.log(`[quick-lookup] Database miss for ${comicDetails.title} #${comicDetails.issueNumber}, calling AI...`);
+
     if (!process.env.ANTHROPIC_API_KEY) {
       // Return what we have without price data
       return NextResponse.json({
@@ -114,7 +161,7 @@ export async function POST(request: NextRequest) {
 
 Provide key facts and estimated market values as JSON:
 {
-  "keyInfo": ["array of significant facts - first appearances, deaths, key events"],
+  "keyInfo": ["MAJOR key facts only - empty array if none"],
   "gradeEstimates": [
     { "grade": 9.8, "label": "Near Mint/Mint", "rawValue": price, "slabbedValue": price },
     { "grade": 9.4, "label": "Near Mint", "rawValue": price, "slabbedValue": price },
@@ -123,12 +170,14 @@ Provide key facts and estimated market values as JSON:
     { "grade": 4.0, "label": "Very Good", "rawValue": price, "slabbedValue": price },
     { "grade": 2.0, "label": "Good", "rawValue": price, "slabbedValue": price }
   ],
-  "estimatedValue": number (9.4 raw value as default)
+  "estimatedValue": number (9.4 raw value as default),
+  "recentSale": { "price": number, "date": "YYYY-MM-DD" }
 }
 
 Rules:
-- keyInfo: Include first appearances, deaths, team changes, significant events. Empty array only if truly nothing notable.
-- Prices: Realistic market values. Key issues have larger grade spreads. Slabbed > raw by 10-30%.
+- keyInfo: ONLY major first appearances, major storyline events, origin stories, iconic costume/item debuts, iconic cover art, or creator milestones. Empty array for regular issues.
+- Prices: Realistic market values based on recent eBay sold listings. Key issues have larger grade spreads. Slabbed > raw by 10-30%.
+- recentSale: Estimate a realistic most recent sale price and date (within last 30 days) for a 9.4 raw copy.
 - Return ONLY the JSON object, no other text.`,
         },
       ],
@@ -151,13 +200,35 @@ Rules:
         if (parsed.gradeEstimates) {
           priceData = {
             estimatedValue: parsed.estimatedValue || parsed.gradeEstimates.find((g: { grade: number }) => g.grade === 9.4)?.rawValue || null,
-            recentSales: [],
-            mostRecentSaleDate: null,
-            isAveraged: false,
+            recentSales: parsed.recentSale ? [{ price: parsed.recentSale.price, date: parsed.recentSale.date }] : [],
+            mostRecentSale: parsed.recentSale || null,
+            mostRecentSaleDate: parsed.recentSale?.date || null,
+            isAveraged: true,
             disclaimer: "AI-estimated values based on market knowledge. Actual prices may vary.",
             gradeEstimates: parsed.gradeEstimates,
             baseGrade: 9.4,
           };
+
+          // Save to database for future lookups (non-blocking)
+          if (comicDetails.title && comicDetails.issueNumber) {
+            saveComicMetadata({
+              title: comicDetails.title,
+              issueNumber: comicDetails.issueNumber,
+              publisher: comicDetails.publisher,
+              releaseYear: comicDetails.releaseYear,
+              coverImageUrl: comicDetails.coverImageUrl,
+              keyInfo,
+              priceData: {
+                estimatedValue: priceData.estimatedValue || 0,
+                mostRecentSaleDate: parsed.recentSale?.date || null,
+                recentSales: parsed.recentSale ? [parsed.recentSale] : [],
+                gradeEstimates: parsed.gradeEstimates || [],
+                disclaimer: priceData.disclaimer,
+              },
+            }).catch((err) => {
+              console.error("[quick-lookup] Failed to save to database:", err);
+            });
+          }
         }
       } catch {
         console.error("Failed to parse quick lookup response");
@@ -189,7 +260,7 @@ Rules:
   } catch (error) {
     console.error("Error in quick lookup:", error);
     return NextResponse.json(
-      { error: "Failed to look up comic" },
+      { error: "Something went wrong while looking up this comic. Please try again." },
       { status: 500 }
     );
   }

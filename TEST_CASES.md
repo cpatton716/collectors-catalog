@@ -153,6 +153,43 @@ A guide for testing the main and secondary features of the application.
 | View estimated value | Check comic detail modal | Shows AI-estimated value |
 | View key info | Check comic detail modal | Shows key facts (first appearances, etc.) |
 | Profit/loss tracking | Add purchase price to comic | Home page shows profit/loss calculation |
+| View grade breakdown | Click "Value By Grade" in comic details | Expandable table shows prices for 6 grades (9.8 to 2.0) |
+| Raw vs slabbed prices | View grade breakdown | Shows both raw and slabbed values per grade |
+
+### 13. Key Hunt (Mobile Quick Lookup)
+
+**Location:** Mobile → Key Hunt icon in bottom nav, or direct via `/key-hunt`
+
+| Test Case | Steps | Expected Result |
+|-----------|-------|-----------------|
+| Open Key Hunt | Tap Key Hunt in mobile nav | Bottom sheet opens with 3 entry options |
+| Scan cover | Select "Scan Cover" → Take photo | AI identifies comic, grade selector appears for raw |
+| Scan barcode | Select "Scan Barcode" → Scan UPC | Comic looked up by barcode, grade selector appears |
+| Manual entry | Select "Manual Entry" | Title autocomplete + issue number + grade fields |
+| Grade selection (raw) | Complete lookup for raw comic | Grade picker shows 6 options (9.8 to 2.0) |
+| Slabbed detection | Scan cover of slabbed comic | Auto-detects grade from CGC/CBCS label |
+| Price result | Complete any lookup | Shows average price and most recent sale |
+| Recent sale highlighting | View result with recent sale | Red = market cooling (20%+ above avg), Green = deal (20%+ below) |
+| Add to collection | Tap "Add to Collection" on result | Comic added, confirmation shown |
+| New lookup | Tap "New Lookup" | Returns to entry selection |
+
+### 14. Title Autocomplete & Auto-Refresh
+
+| Test Case | Steps | Expected Result |
+|-----------|-------|-----------------|
+| Title autocomplete | Type partial title (e.g., "Spider") | Suggestions appear containing search term |
+| Contains-search | Type "Spider" | Shows "Amazing Spider-Man", "Spider-Woman", etc. (not just prefix matches) |
+| Clear stale suggestions | Type "Batman" → clear → type "Spider" | Only Spider results show, no Batman |
+| Auto-refresh on change | Enter "Hulk 181" → change to "180" | Details automatically refresh for issue 180 |
+| Preserve user data on refresh | Enter notes/price → change issue | Notes and purchase price preserved, comic details updated |
+
+### 15. Database Caching (Performance)
+
+| Test Case | Steps | Expected Result |
+|-----------|-------|-----------------|
+| First lookup (cache miss) | Look up a comic never searched before | Takes 1-2 seconds (AI lookup), console shows "Database miss" |
+| Repeat lookup (cache hit) | Look up same comic again | Near-instant response (~50ms), console shows "Database hit" |
+| CSV import seeds database | Import CSV with new comics → search one | Second search is fast (database hit) |
 
 ---
 
@@ -183,9 +220,10 @@ A guide for testing the main and secondary features of the application.
 ## Known Limitations
 
 1. **Price estimates are AI-generated** - Not based on real-time market data (eBay integration pending)
-2. **Data stored in localStorage** - Collection data is device-specific until cloud sync is implemented
-3. **CSV import desktop only** - Better UX on larger screens for file management
-4. **Guest scan limit** - Guests limited to encourage registration
+2. **CSV import desktop only** - Better UX on larger screens for file management
+3. **Guest scan limit** - Guests limited to 10 scans to encourage registration
+4. **First lookups are slower** - Comics not in database require AI lookup (~1-2s); subsequent lookups are fast (~50ms)
+5. **Database caching is shared** - All users benefit from lookups made by other users
 
 ---
 
@@ -199,4 +237,4 @@ If you encounter bugs or unexpected behavior:
 
 ---
 
-*Last Updated: January 8, 2026*
+*Last Updated: January 9, 2026*

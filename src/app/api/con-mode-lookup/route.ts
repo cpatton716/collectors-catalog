@@ -1,0 +1,278 @@
+import Anthropic from "@anthropic-ai/sdk";
+import { NextRequest, NextResponse } from "next/server";
+import { getComicMetadata, saveComicMetadata, incrementComicLookupCount } from "@/lib/db";
+
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
+
+// In-memory cache for very fast repeated lookups (same session)
+const memoryCache = new Map<string, { data: ConModeLookupResult; timestamp: number }>();
+const MEMORY_CACHE_TTL = 1000 * 60 * 5; // 5 minutes
+
+interface ConModeLookupResult {
+  title: string;
+  issueNumber: string;
+  publisher: string | null;
+  releaseYear: string | null;
+  grade: number;
+  averagePrice: number | null;
+  recentSale: { price: number; date: string } | null;
+  gradeEstimates: Array<{
+    grade: number;
+    label: string;
+    rawValue: number;
+    slabbedValue: number;
+  }>;
+  keyInfo: string[];
+  coverImageUrl: string | null;
+  source: "database" | "ai";
+  disclaimer: string;
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const { title, issueNumber, grade, years } = await request.json();
+
+    if (!title || !issueNumber) {
+      return NextResponse.json(
+        { error: "Title and issue number are required." },
+        { status: 400 }
+      );
+    }
+
+    const normalizedTitle = title.trim();
+    const normalizedIssue = issueNumber.toString().trim();
+    const selectedGrade = grade || 9.4;
+    const seriesYears = years?.trim() || null; // e.g., "1963-2011" for disambiguation
+
+    // 1. Check in-memory cache first (fastest)
+    // Include years in cache key for different series with same name
+    const memoryCacheKey = `keyhunt-${normalizedTitle.toLowerCase()}-${seriesYears || "any"}-${normalizedIssue.toLowerCase()}-${selectedGrade}`;
+    const memoryCached = memoryCache.get(memoryCacheKey);
+    if (memoryCached && Date.now() - memoryCached.timestamp < MEMORY_CACHE_TTL) {
+      console.log(`[con-mode-lookup] Memory cache hit for ${normalizedTitle} #${normalizedIssue} (${seriesYears || "any series"})`);
+      return NextResponse.json(memoryCached.data);
+    }
+
+    // 2. Check database (fast ~50ms)
+    try {
+      const dbResult = await getComicMetadata(normalizedTitle, normalizedIssue);
+      if (dbResult && dbResult.priceData) {
+        console.log(`[con-mode-lookup] Database hit for ${normalizedTitle} #${normalizedIssue} (lookup #${dbResult.lookupCount})`);
+
+        // Get price for the selected grade from cached grade estimates
+        const gradeEstimate = dbResult.priceData.gradeEstimates?.find(
+          (g) => g.grade === selectedGrade
+        );
+
+        const result: ConModeLookupResult = {
+          title: dbResult.title,
+          issueNumber: dbResult.issueNumber,
+          publisher: dbResult.publisher,
+          releaseYear: dbResult.releaseYear,
+          grade: selectedGrade,
+          averagePrice: gradeEstimate?.rawValue || dbResult.priceData.estimatedValue || null,
+          recentSale: dbResult.priceData.recentSales?.[0] || null,
+          gradeEstimates: dbResult.priceData.gradeEstimates || [],
+          keyInfo: dbResult.keyInfo || [],
+          coverImageUrl: dbResult.coverImageUrl,
+          source: "database",
+          disclaimer: "Values are estimates based on market knowledge. Actual prices may vary.",
+        };
+
+        // Cache in memory and increment lookup count (non-blocking)
+        memoryCache.set(memoryCacheKey, { data: result, timestamp: Date.now() });
+        incrementComicLookupCount(normalizedTitle, normalizedIssue).catch(() => {});
+
+        return NextResponse.json(result);
+      }
+    } catch (dbError) {
+      console.error("[con-mode-lookup] Database lookup failed, falling back to AI:", dbError);
+      // Continue to AI lookup
+    }
+
+    // 3. Fall back to Claude API (slower ~1-2s)
+    console.log(`[con-mode-lookup] Database miss for ${normalizedTitle} #${normalizedIssue}${seriesYears ? ` (${seriesYears})` : ""}, calling AI...`);
+
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return NextResponse.json(
+        { error: "Price lookup is temporarily unavailable. Please try again later." },
+        { status: 500 }
+      );
+    }
+
+    // Build disambiguation context if years provided
+    const seriesContext = seriesYears
+      ? `\n\nIMPORTANT: This is specifically the "${normalizedTitle}" series that ran from ${seriesYears}. Many comics have had multiple series with the same name. Make sure your pricing is for the correct series/volume.`
+      : "";
+
+    // Get price data from Claude
+    const lookupResponse = await anthropic.messages.create({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 1024,
+      messages: [
+        {
+          role: "user",
+          content: `You are a comic book pricing expert. For "${normalizedTitle}" issue #${normalizedIssue}:${seriesContext}
+
+Provide pricing data for a ${selectedGrade} grade raw copy as JSON:
+{
+  "publisher": "Publisher name",
+  "releaseYear": "YYYY or null if unknown",
+  "averagePrice": number (average of last 5 sales for ${selectedGrade} grade raw copy),
+  "recentSale": { "price": number, "date": "YYYY-MM-DD" },
+  "gradeEstimates": [
+    { "grade": 9.8, "label": "Near Mint/Mint", "rawValue": price, "slabbedValue": price },
+    { "grade": 9.4, "label": "Near Mint", "rawValue": price, "slabbedValue": price },
+    { "grade": 8.0, "label": "Very Fine", "rawValue": price, "slabbedValue": price },
+    { "grade": 6.0, "label": "Fine", "rawValue": price, "slabbedValue": price },
+    { "grade": 4.0, "label": "Very Good", "rawValue": price, "slabbedValue": price },
+    { "grade": 2.0, "label": "Good", "rawValue": price, "slabbedValue": price }
+  ],
+  "keyInfo": ["MAJOR key facts only - empty array if none"]
+}
+
+Rules:
+- averagePrice: The average price from the last 5 sales for a ${selectedGrade} grade RAW copy. Be realistic based on eBay sold listings.
+- recentSale: The most recent sale price and date (within last 30 days) for a ${selectedGrade} grade raw copy.
+- gradeEstimates: Realistic market values for each grade. Slabbed > raw by 10-30%.
+- keyInfo: ONLY major first appearances, major storyline events, origin stories. Empty array for regular issues.
+- Return ONLY the JSON object, no other text.`,
+        },
+      ],
+    });
+
+    const textContent = lookupResponse.content.find((block) => block.type === "text");
+    if (!textContent || textContent.type !== "text") {
+      return NextResponse.json(
+        { error: "Could not get pricing data. Please try again." },
+        { status: 500 }
+      );
+    }
+
+    let jsonText = textContent.text.trim();
+    if (jsonText.startsWith("```json")) jsonText = jsonText.slice(7);
+    if (jsonText.startsWith("```")) jsonText = jsonText.slice(3);
+    if (jsonText.endsWith("```")) jsonText = jsonText.slice(0, -3);
+
+    try {
+      const parsed = JSON.parse(jsonText.trim());
+
+      // Get the price for the selected grade
+      const gradeEstimate = parsed.gradeEstimates?.find(
+        (g: { grade: number }) => g.grade === selectedGrade
+      );
+
+      // Try to fetch a cover image (non-blocking, best effort)
+      let coverImageUrl: string | null = null;
+      try {
+        coverImageUrl = await fetchCoverImage(normalizedTitle, normalizedIssue, parsed.publisher);
+      } catch (coverError) {
+        console.log("[con-mode-lookup] Cover fetch failed:", coverError);
+      }
+
+      const result: ConModeLookupResult = {
+        title: normalizedTitle,
+        issueNumber: normalizedIssue,
+        publisher: parsed.publisher || null,
+        releaseYear: parsed.releaseYear || null,
+        grade: selectedGrade,
+        averagePrice: parsed.averagePrice || gradeEstimate?.rawValue || null,
+        recentSale: parsed.recentSale || null,
+        gradeEstimates: parsed.gradeEstimates || [],
+        keyInfo: parsed.keyInfo || [],
+        coverImageUrl,
+        source: "ai",
+        disclaimer: "Values are estimates based on market knowledge. Actual prices may vary.",
+      };
+
+      // 4. Save to database for future lookups (non-blocking)
+      saveComicMetadata({
+        title: normalizedTitle,
+        issueNumber: normalizedIssue,
+        publisher: parsed.publisher,
+        releaseYear: parsed.releaseYear,
+        coverImageUrl,
+        keyInfo: parsed.keyInfo || [],
+        priceData: {
+          estimatedValue: parsed.averagePrice || gradeEstimate?.rawValue || 0,
+          mostRecentSaleDate: parsed.recentSale?.date || null,
+          recentSales: parsed.recentSale ? [parsed.recentSale] : [],
+          gradeEstimates: parsed.gradeEstimates || [],
+          disclaimer: "Values are estimates based on market knowledge. Actual prices may vary.",
+        },
+      }).catch((err) => {
+        console.error("[con-mode-lookup] Failed to save to database:", err);
+      });
+
+      // Cache in memory
+      memoryCache.set(memoryCacheKey, { data: result, timestamp: Date.now() });
+
+      return NextResponse.json(result);
+    } catch {
+      console.error("Failed to parse con mode lookup response");
+      return NextResponse.json(
+        { error: "Could not parse pricing data. Please try again." },
+        { status: 500 }
+      );
+    }
+  } catch (error) {
+    console.error("Error in con mode lookup:", error);
+    return NextResponse.json(
+      { error: "Something went wrong. Please try again." },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * Try to fetch a cover image URL for the comic
+ * Uses multiple sources with fallbacks
+ */
+async function fetchCoverImage(
+  title: string,
+  issueNumber: string,
+  publisher?: string
+): Promise<string | null> {
+  // Try Comic Vine API if we have a key
+  if (process.env.COMIC_VINE_API_KEY) {
+    try {
+      const searchQuery = `${title} ${issueNumber}`;
+      const cvResponse = await fetch(
+        `https://comicvine.gamespot.com/api/search/?api_key=${process.env.COMIC_VINE_API_KEY}&format=json&query=${encodeURIComponent(searchQuery)}&resources=issue&limit=1`,
+        { headers: { "User-Agent": "CollectorsChest/1.0" } }
+      );
+
+      if (cvResponse.ok) {
+        const cvData = await cvResponse.json();
+        if (cvData.results?.[0]?.image?.medium_url) {
+          return cvData.results[0].image.medium_url;
+        }
+      }
+    } catch (e) {
+      console.log("[cover] Comic Vine API failed:", e);
+    }
+  }
+
+  // Fallback: Try Open Library (works better for graphic novels)
+  try {
+    const searchQuery = `${title} ${issueNumber} ${publisher || ""} comic`.trim();
+    const olResponse = await fetch(
+      `https://openlibrary.org/search.json?q=${encodeURIComponent(searchQuery)}&limit=3`,
+      { signal: AbortSignal.timeout(3000) }
+    );
+
+    if (olResponse.ok) {
+      const olData = await olResponse.json();
+      const docWithCover = olData.docs?.find((doc: { cover_i?: number }) => doc.cover_i);
+      if (docWithCover?.cover_i) {
+        return `https://covers.openlibrary.org/b/id/${docWithCover.cover_i}-L.jpg`;
+      }
+    }
+  } catch (e) {
+    console.log("[cover] Open Library API failed:", e);
+  }
+
+  return null;
+}

@@ -10,11 +10,11 @@ import { GuestLimitBanner } from "@/components/GuestLimitBanner";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { CSVImport } from "@/components/CSVImport";
 import { SignUpPromptModal } from "@/components/SignUpPromptModal";
-import { storage } from "@/lib/storage";
+import { storage, StorageQuotaError } from "@/lib/storage";
 import { ComicDetails, CollectionItem } from "@/types/comic";
 import { useToast } from "@/components/Toast";
 import { useGuestScans, MilestoneType } from "@/hooks/useGuestScans";
-import { Loader2, AlertCircle, ArrowLeft, Wand2, Check, Camera, Sparkles, ClipboardCheck, Save, ScanBarcode, PenLine, FileSpreadsheet } from "lucide-react";
+import { Loader2, AlertCircle, ArrowLeft, Wand2, Check, Camera, Sparkles, ClipboardCheck, Save, ScanBarcode, PenLine, FileSpreadsheet, ZoomIn, X } from "lucide-react";
 
 type ScanState = "upload" | "analyzing" | "review" | "saved" | "error";
 
@@ -49,6 +49,58 @@ const COMIC_FACTS = [
   "The Punisher's skull logo has been worn by military and police units worldwide.",
   "Teenage Mutant Ninja Turtles started as a parody of popular comics like Daredevil.",
   "Thanos was inspired by the DC villain Darkseid and the Freudian concept of Thanatos.",
+  // Additional facts
+  "Nick Fury was originally white in the comics; the Samuel L. Jackson version was from the Ultimate universe.",
+  "The Comics Code Authority banned vampires, werewolves, and zombies from comics for nearly 20 years.",
+  "Blade first appeared as a supporting character in Tomb of Dracula #10 (1973).",
+  "Ms. Marvel (Kamala Khan) was the first Muslim character to headline a Marvel comic.",
+  "Superman once arm-wrestled Muhammad Ali in a 1978 DC comic special.",
+  "The term 'graphic novel' was popularized by Will Eisner's 'A Contract with God' in 1978.",
+  "Squirrel Girl has canonically defeated Thanos, Doctor Doom, and Galactus.",
+  "The first comic book to sell for over $1 million was a CGC 8.0 copy of Action Comics #1 in 2010.",
+  "Kitty Pryde of the X-Men was only 13 years old when she first joined the team.",
+  "Iron Man's Extremis armor was the first to be stored inside Tony Stark's body.",
+  "The Infinity Gauntlet storyline killed half of all life in the universe—including most Avengers.",
+  "Ant-Man can shrink to the subatomic level and enter the Quantum Realm.",
+  "DC's Lobo was created as a parody of violent comic book antiheroes like Wolverine.",
+  "The original Human Torch was an android, not Johnny Storm of the Fantastic Four.",
+  "Rocket Raccoon first appeared in Marvel Preview #7 (1976), years before Guardians of the Galaxy.",
+  "Jean Grey has died and been resurrected more times than any other X-Men character.",
+  "The Sandman by Neil Gaiman won a World Fantasy Award—the first comic to do so.",
+  "Batman has a contingency plan to defeat every member of the Justice League.",
+  "Daredevil's radar sense lets him 'see' better than most sighted people.",
+  "The original Captain Marvel (Shazam) once outsold Superman in the 1940s.",
+  "Cable is the son of Cyclops and a clone of Jean Grey named Madelyne Pryor.",
+  "Howard the Duck ran for President of the United States in his 1976 comic series.",
+  "The Green Lantern oath was written by Alfred Bester, a famous science fiction author.",
+  "Galactus was originally drawn as a god-like figure, not a man in purple armor.",
+  "Miles Morales was co-created by Brian Michael Bendis and artist Sara Pichelli in 2011.",
+  "The Death of Superman in 1992 sold over 6 million copies.",
+  "Watchmen was originally going to use characters DC acquired from Charlton Comics.",
+  "John Constantine (Hellblazer) was designed to look like the musician Sting.",
+  "Captain America was punching Hitler on the cover of his first comic in March 1941—before the US entered WWII.",
+  "The Batcave was invented for the 1943 Batman movie serial, then added to comics.",
+  "X-23 (Laura Kinney) was created for the X-Men: Evolution animated series before appearing in comics.",
+  "Poison Ivy was originally a one-off Batman villain in 1966 before becoming iconic.",
+  "The Superman 'S' symbol means 'hope' on Krypton.",
+  "Moon Knight has multiple personalities: Marc Spector, Steven Grant, and Jake Lockley.",
+  "Red Skull's face is not a mask—it's his actual face after a botched super-soldier serum.",
+  "Gwenpool started as a joke variant cover before getting her own comic series.",
+  "The Teen Titans were originally called the 'Junior Justice League' in early concepts.",
+  "Doctor Strange was a greedy surgeon before a car accident led him to the mystic arts.",
+  "Groot's vocabulary is limited because his species' vocal cords harden as they age.",
+  "Black Widow was originally introduced as an Iron Man villain in 1964.",
+  "Nightcrawler's father is the demon Azazel, making him part-demon.",
+  "The Joker's real name and origin have never been definitively confirmed in comics.",
+  "Martian Manhunter is considered one of the most powerful Justice League members.",
+  "Emma Frost started as a villain (the White Queen) before joining the X-Men.",
+  "The Batman Who Laughs is a version of Batman infected with Joker toxin.",
+  "Rogue permanently absorbed Ms. Marvel's powers after holding on too long.",
+  "Storm was worshipped as a goddess in Kenya before joining the X-Men.",
+  "Frank Miller's The Dark Knight Returns (1986) redefined Batman as a darker character.",
+  "The Savage Dragon by Erik Larsen has been continuously written and drawn by him since 1992.",
+  "Kryptonite was invented for the Superman radio show so the voice actor could take vacations.",
+  "Jessica Jones was originally going to be named Jessica Drew (Spider-Woman's name).",
 ];
 
 const STEPS = [
@@ -74,6 +126,7 @@ export default function ScanPage() {
   const [isProcessingBarcode, setIsProcessingBarcode] = useState(false);
   const [showCSVImport, setShowCSVImport] = useState(false);
   const [milestoneToShow, setMilestoneToShow] = useState<MilestoneType>(null);
+  const [showEnlargedImage, setShowEnlargedImage] = useState(false);
 
   // Rotate fun facts every 7 seconds during analyzing state
   useEffect(() => {
@@ -111,8 +164,20 @@ export default function ScanPage() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to analyze image");
+        // Handle non-JSON error responses (like edge function timeouts)
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to analyze image");
+        } else {
+          // Edge function timeout or other non-JSON error
+          const errorText = await response.text();
+          console.error("Non-JSON error response:", errorText);
+          if (response.status === 504 || errorText.includes("edge") || errorText.includes("timeout")) {
+            throw new Error("The image took too long to process. Please try a smaller image or take a new photo.");
+          }
+          throw new Error("Something went wrong. Please try again with a different image.");
+        }
       }
 
       const details = await response.json();
@@ -129,7 +194,7 @@ export default function ScanPage() {
     } catch (err) {
       console.error("Error analyzing comic:", err);
       setError(
-        err instanceof Error ? err.message : "Failed to analyze comic cover"
+        err instanceof Error ? err.message : "We couldn't recognize this comic. Please try a clearer photo or enter the details manually."
       );
       setState("error");
     }
@@ -178,8 +243,13 @@ export default function ScanPage() {
       showToast(`"${newItem.comic.title}" added to collection!`, "success");
     } catch (err) {
       console.error("Error saving comic:", err);
-      setError("Failed to save comic to collection");
-      showToast("Failed to save comic", "error");
+      if (err instanceof StorageQuotaError) {
+        setError(err.message);
+        showToast("Storage is full. Sign in to save to the cloud.", "error");
+      } else {
+        setError("We couldn't save this comic right now. Please try again.");
+        showToast("Couldn't save comic. Please try again.", "error");
+      }
     } finally {
       setIsSaving(false);
     }
@@ -272,7 +342,7 @@ export default function ScanPage() {
     } catch (err) {
       console.error("Barcode lookup error:", err);
       showToast(
-        err instanceof Error ? err.message : "Failed to look up comic",
+        err instanceof Error ? err.message : "We couldn't find this comic. Try scanning the cover instead.",
         "error"
       );
     } finally {
@@ -423,11 +493,13 @@ export default function ScanPage() {
             {/* Image Preview */}
             <div className="md:w-1/3">
               <div className="aspect-[2/3] rounded-lg overflow-hidden bg-gray-100">
-                <img
-                  src={imagePreview}
-                  alt="Uploaded comic"
-                  className="w-full h-full object-cover"
-                />
+                {imagePreview && (
+                  <img
+                    src={imagePreview}
+                    alt="Uploaded comic"
+                    className="w-full h-full object-cover"
+                  />
+                )}
               </div>
             </div>
 
@@ -488,7 +560,7 @@ export default function ScanPage() {
                 <AlertCircle className="w-8 h-8 text-red-600" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mt-4">
-                Analysis Failed
+                Couldn&apos;t Recognize Comic
               </h3>
               <p className="text-gray-600 mt-2 max-w-md">{error}</p>
               <div className="flex items-center gap-3 mt-6">
@@ -523,19 +595,36 @@ export default function ScanPage() {
             {/* Image Preview */}
             <div className="lg:w-1/3 p-6 bg-gray-50 border-b lg:border-b-0 lg:border-r border-gray-100">
               <div className="sticky top-6">
-                <div className="aspect-[2/3] rounded-lg overflow-hidden bg-gray-200 shadow-lg">
+                <div className="aspect-[2/3] rounded-lg overflow-hidden bg-gray-200 shadow-lg relative group">
                   {imagePreview ? (
-                    <img
-                      src={imagePreview}
-                      alt="Comic cover"
-                      className="w-full h-full object-cover"
-                    />
+                    <>
+                      <img
+                        src={imagePreview}
+                        alt="Comic cover"
+                        className="w-full h-full object-cover cursor-pointer"
+                        onClick={() => setShowEnlargedImage(true)}
+                      />
+                      {/* Zoom hint overlay */}
+                      <div
+                        className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors cursor-pointer flex items-center justify-center"
+                        onClick={() => setShowEnlargedImage(true)}
+                      >
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 rounded-full p-2 shadow-lg">
+                          <ZoomIn className="w-5 h-5 text-gray-700" />
+                        </div>
+                      </div>
+                    </>
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-gray-400">
                       No image
                     </div>
                   )}
                 </div>
+                {imagePreview && (
+                  <p className="text-xs text-gray-500 text-center mt-2">
+                    Tap image to enlarge
+                  </p>
+                )}
                 {!imagePreview && (
                   <div className="mt-4">
                     <ImageUpload
@@ -573,11 +662,17 @@ export default function ScanPage() {
             {/* Image Preview */}
             <div className="md:w-1/3">
               <div className="aspect-[2/3] rounded-lg overflow-hidden bg-gray-100 shadow-lg">
-                <img
-                  src={imagePreview}
-                  alt="Saved comic"
-                  className="w-full h-full object-cover"
-                />
+                {imagePreview ? (
+                  <img
+                    src={imagePreview}
+                    alt="Saved comic"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-400">
+                    No image
+                  </div>
+                )}
               </div>
             </div>
 
@@ -662,6 +757,36 @@ export default function ScanPage() {
             setMilestoneToShow(null);
           }}
         />
+      )}
+
+      {/* Enlarged Image Modal */}
+      {showEnlargedImage && imagePreview && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+          onClick={() => setShowEnlargedImage(false)}
+        >
+          {/* Close button */}
+          <button
+            onClick={() => setShowEnlargedImage(false)}
+            className="absolute top-4 right-4 p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors z-10"
+            aria-label="Close"
+          >
+            <X className="w-6 h-6 text-white" />
+          </button>
+
+          {/* Hint text */}
+          <p className="absolute top-4 left-4 text-white/70 text-sm">
+            Tap anywhere to close
+          </p>
+
+          {/* Enlarged image */}
+          <img
+            src={imagePreview}
+            alt="Enlarged comic cover"
+            className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
       )}
     </div>
   );

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Generate PWA Icons</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    h1 { color: #1e40af; }
+    .icon-container {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin: 20px 0;
+    }
+    .icon-box {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    .icon-box img, .icon-box canvas {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+    button {
+      background: #1e40af;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 10px 5px;
+    }
+    button:hover { background: #1e3a8a; }
+    .success { color: green; font-weight: bold; }
+    .instructions {
+      background: #e0e7ff;
+      padding: 16px;
+      border-radius: 8px;
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Collectors Chest - PWA Icon Generator</h1>
+
+  <div class="instructions">
+    <strong>Instructions:</strong>
+    <ol>
+      <li>Click "Generate PNG Icons" below</li>
+      <li>Click "Download" for each size to save the PNG files</li>
+      <li>Place the downloaded files in <code>/public/icons/</code></li>
+    </ol>
+  </div>
+
+  <button onclick="generateIcons()">Generate PNG Icons</button>
+
+  <div class="icon-container">
+    <div class="icon-box">
+      <h3>192x192</h3>
+      <canvas id="canvas192" width="192" height="192"></canvas>
+      <br>
+      <button onclick="download('canvas192', 'icon-192x192.png')" style="display:none" id="btn192">Download 192x192</button>
+    </div>
+    <div class="icon-box">
+      <h3>512x512</h3>
+      <canvas id="canvas512" width="512" height="512"></canvas>
+      <br>
+      <button onclick="download('canvas512', 'icon-512x512.png')" style="display:none" id="btn512">Download 512x512</button>
+    </div>
+  </div>
+
+  <div id="status"></div>
+
+  <script>
+    async function generateIcons() {
+      const status = document.getElementById('status');
+      status.innerHTML = 'Generating icons...';
+
+      try {
+        // Generate 192x192
+        await renderSvgToCanvas('icon-192x192.svg', 'canvas192', 192);
+        document.getElementById('btn192').style.display = 'inline-block';
+
+        // Generate 512x512
+        await renderSvgToCanvas('icon-512x512.svg', 'canvas512', 512);
+        document.getElementById('btn512').style.display = 'inline-block';
+
+        status.innerHTML = '<span class="success">Icons generated! Click the download buttons to save each PNG.</span>';
+      } catch (error) {
+        status.innerHTML = 'Error: ' + error.message;
+      }
+    }
+
+    function renderSvgToCanvas(svgFile, canvasId, size) {
+      return new Promise((resolve, reject) => {
+        const canvas = document.getElementById(canvasId);
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+
+        img.onload = function() {
+          ctx.clearRect(0, 0, size, size);
+          ctx.drawImage(img, 0, 0, size, size);
+          resolve();
+        };
+
+        img.onerror = function() {
+          reject(new Error('Failed to load ' + svgFile));
+        };
+
+        img.src = svgFile;
+      });
+    }
+
+    function download(canvasId, filename) {
+      const canvas = document.getElementById(canvasId);
+      const link = document.createElement('a');
+      link.download = filename;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+  </script>
+</body>
+</html>

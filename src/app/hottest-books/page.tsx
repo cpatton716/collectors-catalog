@@ -95,7 +95,7 @@ export default function HottestBooksPage() {
       }
     } catch (err) {
       console.error("Error fetching hot books:", err);
-      setError("Failed to load hottest books");
+      setError("We couldn't load the hottest books right now. Please try again.");
     } finally {
       setIsLoading(false);
     }

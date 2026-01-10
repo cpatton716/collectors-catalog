@@ -31,20 +31,91 @@ export function ImageUpload({ onImageSelect, disabled }: ImageUploadProps) {
   }, []);
 
   const acceptedTypes = ["image/jpeg", "image/jpg", "image/png"];
-  const maxSize = 10 * 1024 * 1024; // 10MB
+  const maxSize = 15 * 1024 * 1024; // 15MB before compression
+  const maxDimension = 2048; // Max width/height for compression
+  const targetSize = 1.5 * 1024 * 1024; // Target ~1.5MB after compression
 
   const validateFile = (file: File): string | null => {
-    if (!acceptedTypes.includes(file.type)) {
-      return "Please upload a JPEG, JPG, or PNG image";
+    const fileType = file.type.toLowerCase();
+    const fileName = file.name.toLowerCase();
+
+    // Check for HEIC/HEIF by extension if type isn't set (iOS sometimes doesn't set type)
+    const isHeic = fileName.endsWith('.heic') || fileName.endsWith('.heif') ||
+                   fileType.includes('heic') || fileType.includes('heif');
+
+    if (!acceptedTypes.includes(fileType) && !isHeic) {
+      return "This file type isn't supported. Please use a JPEG, JPG, or PNG image.";
     }
     if (file.size > maxSize) {
-      return "Image must be less than 10MB";
+      return "This image is too large. Please use an image under 15MB or try taking a new photo.";
     }
     return null;
   };
 
+  // Compress image using canvas
+  const compressImage = useCallback((file: File): Promise<{ file: File; preview: string }> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          // Calculate new dimensions
+          let { width, height } = img;
+
+          // Only resize if larger than maxDimension
+          if (width > maxDimension || height > maxDimension) {
+            if (width > height) {
+              height = Math.round((height * maxDimension) / width);
+              width = maxDimension;
+            } else {
+              width = Math.round((width * maxDimension) / height);
+              height = maxDimension;
+            }
+          }
+
+          // Create canvas and draw resized image
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            reject(new Error('Could not get canvas context'));
+            return;
+          }
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Start with high quality and reduce if needed
+          let quality = 0.85;
+          let dataUrl = canvas.toDataURL('image/jpeg', quality);
+
+          // Reduce quality if still too large
+          while (dataUrl.length > targetSize * 1.37 && quality > 0.3) { // 1.37 accounts for base64 overhead
+            quality -= 0.1;
+            dataUrl = canvas.toDataURL('image/jpeg', quality);
+          }
+
+          // Convert data URL to File
+          fetch(dataUrl)
+            .then(res => res.blob())
+            .then(blob => {
+              const compressedFile = new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), {
+                type: 'image/jpeg'
+              });
+              console.log(`Image compressed: ${(file.size / 1024 / 1024).toFixed(2)}MB -> ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB`);
+              resolve({ file: compressedFile, preview: dataUrl });
+            })
+            .catch(reject);
+        };
+        img.onerror = () => reject(new Error('Failed to load image'));
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsDataURL(file);
+    });
+  }, []);
+
   const handleFile = useCallback(
-    (file: File) => {
+    async (file: File) => {
       const validationError = validateFile(file);
       if (validationError) {
         setError(validationError);
@@ -52,15 +123,41 @@ export function ImageUpload({ onImageSelect, disabled }: ImageUploadProps) {
       }
 
       setError(null);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const previewUrl = e.target?.result as string;
-        setPreview(previewUrl);
-        onImageSelect(file, previewUrl);
-      };
-      reader.readAsDataURL(file);
+
+      // Check if HEIC - browser can't process these directly
+      const fileName = file.name.toLowerCase();
+      const isHeic = fileName.endsWith('.heic') || fileName.endsWith('.heif') ||
+                     file.type.includes('heic') || file.type.includes('heif');
+
+      if (isHeic) {
+        setError("HEIC format isn't supported yet. Please take a new photo or convert the image to JPEG first.");
+        return;
+      }
+
+      try {
+        // Compress large images or images from gallery
+        const needsCompression = file.size > 2 * 1024 * 1024; // Compress if > 2MB
+
+        if (needsCompression) {
+          const { file: compressedFile, preview: compressedPreview } = await compressImage(file);
+          setPreview(compressedPreview);
+          onImageSelect(compressedFile, compressedPreview);
+        } else {
+          // Small enough, use as-is
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const previewUrl = e.target?.result as string;
+            setPreview(previewUrl);
+            onImageSelect(file, previewUrl);
+          };
+          reader.readAsDataURL(file);
+        }
+      } catch (err) {
+        console.error('Error processing image:', err);
+        setError('Could not process this image. Please try a different photo.');
+      }
     },
-    [onImageSelect]
+    [onImageSelect, compressImage]
   );
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -141,9 +238,9 @@ export function ImageUpload({ onImageSelect, disabled }: ImageUploadProps) {
       ) : isMobile ? (
         // Mobile: Show camera and gallery buttons
         <div className="space-y-4">
-          {/* Primary camera button */}
+          {/* Primary camera button - uses native device camera */}
           <button
-            onClick={() => !disabled && setShowLiveCamera(true)}
+            onClick={() => !disabled && fileInputRef.current?.click()}
             disabled={disabled}
             className={`
               w-full border-2 border-dashed rounded-xl p-8 text-center
@@ -160,7 +257,7 @@ export function ImageUpload({ onImageSelect, disabled }: ImageUploadProps) {
                   Take a Photo
                 </p>
                 <p className="text-sm text-primary-600 mt-1">
-                  Open camera with live preview
+                  Opens your camera
                 </p>
               </div>
             </div>
@@ -172,13 +269,13 @@ export function ImageUpload({ onImageSelect, disabled }: ImageUploadProps) {
             disabled={disabled}
             className={`
               w-full border-2 border-dashed rounded-xl p-6 text-center
-              transition-all duration-200 border-gray-300 hover:border-gray-400 hover:bg-gray-50
+              transition-all duration-200 border-gray-400 hover:border-gray-500 hover:bg-gray-100
               ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
             `}
           >
             <div className="flex items-center justify-center gap-3">
-              <FolderOpen className="w-6 h-6 text-gray-500" />
-              <span className="text-gray-700 font-medium">Choose from Gallery</span>
+              <FolderOpen className="w-6 h-6 text-gray-600" />
+              <span className="text-gray-800 font-medium">Choose from Gallery</span>
             </div>
           </button>
 
@@ -186,7 +283,7 @@ export function ImageUpload({ onImageSelect, disabled }: ImageUploadProps) {
           <input
             ref={fileInputRef}
             type="file"
-            accept=".jpg,.jpeg,.png"
+            accept="image/*"
             capture="environment"
             onChange={handleFileInput}
             className="hidden"
@@ -195,7 +292,7 @@ export function ImageUpload({ onImageSelect, disabled }: ImageUploadProps) {
           <input
             ref={galleryInputRef}
             type="file"
-            accept=".jpg,.jpeg,.png"
+            accept="image/*"
             onChange={handleFileInput}
             className="hidden"
             disabled={disabled}

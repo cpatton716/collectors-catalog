@@ -144,30 +144,80 @@ export function ComicDetailModal({
         </button>
 
         <div className="flex flex-col md:flex-row max-h-[90vh]">
-          {/* Cover Image */}
-          <div className="md:w-1/3 bg-gray-100 p-6 flex items-center justify-center">
+          {/* Cover Image - Hidden on mobile, shown on desktop */}
+          <div className="hidden md:flex md:w-1/3 bg-gray-100 p-6 items-center justify-center">
             <div
-              onClick={() => setShowImageLightbox(true)}
-              className="aspect-[2/3] w-full max-w-[250px] rounded-lg overflow-hidden shadow-lg cursor-pointer group relative"
+              onClick={() => item.coverImageUrl && setShowImageLightbox(true)}
+              className={`aspect-[2/3] w-full max-w-[250px] rounded-lg overflow-hidden shadow-lg relative ${item.coverImageUrl ? 'cursor-pointer group' : ''}`}
             >
-              <img
-                src={item.coverImageUrl}
-                alt={`${comic.title} #${comic.issueNumber}`}
-                className="w-full h-full object-cover transition-transform group-hover:scale-105"
-              />
-              {/* Zoom overlay on hover */}
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 rounded-full p-2">
-                  <ZoomIn className="w-6 h-6 text-gray-700" />
+              {item.coverImageUrl ? (
+                <>
+                  <img
+                    src={item.coverImageUrl}
+                    alt={`${comic.title} #${comic.issueNumber}`}
+                    className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                  />
+                  {/* Zoom overlay on hover */}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 rounded-full p-2">
+                      <ZoomIn className="w-6 h-6 text-gray-700" />
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="w-full h-full bg-gray-900 flex items-center justify-center text-4xl">
+                  <span className="text-green-400 font-bold italic drop-shadow-[0_0_8px_rgba(74,222,128,0.6)]">?</span>
                 </div>
-              </div>
+              )}
             </div>
           </div>
 
           {/* Details */}
-          <div className="md:w-2/3 p-6 overflow-y-auto">
-            {/* Header */}
-            <div className="mb-6 pr-10">
+          <div className="md:w-2/3 p-4 md:p-6 overflow-y-auto">
+            {/* Mobile Header with Cover Thumbnail */}
+            <div className="md:hidden flex gap-4 mb-4 pr-8">
+              {/* Mobile Cover Thumbnail */}
+              <div
+                onClick={() => item.coverImageUrl && setShowImageLightbox(true)}
+                className={`flex-shrink-0 w-20 h-30 rounded-lg overflow-hidden shadow-md bg-gray-100 ${item.coverImageUrl ? 'cursor-pointer' : ''}`}
+              >
+                {item.coverImageUrl ? (
+                  <img
+                    src={item.coverImageUrl}
+                    alt={`${comic.title} #${comic.issueNumber}`}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-900 flex items-center justify-center text-2xl">
+                    <span className="text-green-400 font-bold italic drop-shadow-[0_0_6px_rgba(74,222,128,0.6)]">?</span>
+                  </div>
+                )}
+              </div>
+              {/* Mobile Title Info */}
+              <div className="flex-1 min-w-0">
+                <h2 className="text-xl font-bold text-gray-900 leading-tight">
+                  {comic.title || "Unknown Title"}
+                </h2>
+                <p className="text-base text-gray-600">
+                  Issue #{comic.issueNumber || "?"}
+                </p>
+                {comic.variant && (
+                  <p className="text-sm text-gray-400">{comic.variant}</p>
+                )}
+                {variantCount > 1 && (
+                  <button
+                    onClick={() => setShowVariantsModal(true)}
+                    className="mt-1 inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 font-medium"
+                  >
+                    <Layers className="w-3 h-3" />
+                    View Variants ({variantCount})
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Desktop Header */}
+            <div className="hidden md:block mb-6 pr-10">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1">
                   <h2 className="text-2xl font-bold text-gray-900">
@@ -704,12 +754,14 @@ export function ComicDetailModal({
           >
             <X className="w-6 h-6 text-white" />
           </button>
-          <img
-            src={item.coverImageUrl}
-            alt={`${comic.title} #${comic.issueNumber}`}
-            className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          />
+          {item.coverImageUrl && (
+            <img
+              src={item.coverImageUrl}
+              alt={`${comic.title} #${comic.issueNumber}`}
+              className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+          )}
         </div>
       )}
     </div>

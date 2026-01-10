@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { storage } from "@/lib/storage";
+import { calculateCollectionValue, getComicValue } from "@/lib/gradePrice";
 import { CollectionItem, UserList } from "@/types/comic";
 import { ComicCard } from "@/components/ComicCard";
 import { ComicListItem } from "@/components/ComicListItem";
@@ -32,7 +33,12 @@ import {
   Check,
   ChevronRight,
   Tag,
+  Download,
+  Share2,
+  BarChart3,
 } from "lucide-react";
+import { exportCollectionToCSV } from "@/lib/csvExport";
+import { ShareCollectionModal } from "@/components/ShareCollectionModal";
 
 type ViewMode = "grid" | "list";
 type SortOption = "date" | "title" | "value" | "issue";
@@ -56,6 +62,7 @@ export default function CollectionPage() {
   const [titleFilter, setTitleFilter] = useState<FilterOption>("all");
 
   const [salesStats, setSalesStats] = useState({ totalSales: 0, totalRevenue: 0, totalProfit: 0 });
+  const [showShareModal, setShowShareModal] = useState(false);
 
   useEffect(() => {
     // Only load collection data for signed-in users
@@ -136,13 +143,17 @@ export default function CollectionPage() {
       }
     });
 
-  // Calculate stats for current view
+  // Calculate stats for current view using grade-aware pricing
+  const filteredValue = calculateCollectionValue(filteredCollection);
+  const totalCollectionValue = calculateCollectionValue(collection);
+  const isFiltered = filteredCollection.length !== collection.length;
+
   const stats = {
     count: filteredCollection.length,
-    totalValue: filteredCollection.reduce(
-      (sum, item) => sum + (item.comic.priceData?.estimatedValue || 0),
-      0
-    ),
+    totalCount: collection.length,
+    totalValue: filteredValue.totalValue,
+    fullCollectionValue: totalCollectionValue.totalValue,
+    unpricedCount: filteredValue.unpricedCount,
     totalCost: filteredCollection.reduce(
       (sum, item) => sum + (item.purchasePrice || 0),
       0
@@ -254,6 +265,15 @@ export default function CollectionPage() {
     setEditingItem(null);
   };
 
+  const handleExportCSV = () => {
+    if (filteredCollection.length === 0) {
+      showToast("No comics to export", "info");
+      return;
+    }
+    exportCollectionToCSV(filteredCollection);
+    showToast(`Exported ${filteredCollection.length} comics to CSV`, "success");
+  };
+
   if (!isLoaded) {
     return <CollectionPageSkeleton />;
   }
@@ -265,16 +285,43 @@ export default function CollectionPage() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">My Collection</h1>
           <p className="text-gray-600 mt-1">
-            {stats.count} comics • ${stats.totalValue.toFixed(2)} total value
+            {isFiltered ? (
+              <>
+                {stats.count} of {stats.totalCount} comics • ${stats.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} of ${stats.fullCollectionValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} total
+              </>
+            ) : (
+              <>
+                {stats.count} comics • ${stats.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} total value
+                {stats.unpricedCount > 0 && (
+                  <span className="text-gray-400"> ({stats.unpricedCount} unpriced)</span>
+                )}
+              </>
+            )}
           </p>
         </div>
-        <button
-          onClick={() => router.push("/scan")}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-        >
-          <Plus className="w-5 h-5" />
-          Add Book
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => router.push("/stats")}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <BarChart3 className="w-5 h-5" />
+            <span className="hidden sm:inline">Stats</span>
+          </button>
+          <button
+            onClick={() => setShowShareModal(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <Share2 className="w-5 h-5" />
+            <span className="hidden sm:inline">Share</span>
+          </button>
+          <button
+            onClick={() => router.push("/scan")}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+          >
+            <Plus className="w-5 h-5" />
+            Add Book
+          </button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -284,7 +331,7 @@ export default function CollectionPage() {
             <BookOpen className="w-5 h-5 text-blue-600" />
           </div>
           <div>
-            <p className="text-sm text-gray-500">Comics</p>
+            <p className="text-sm text-gray-500">Comics{isFiltered && " (filtered)"}</p>
             <p className="text-xl font-bold text-gray-900">{stats.count}</p>
           </div>
         </div>
@@ -295,7 +342,7 @@ export default function CollectionPage() {
           <div>
             <p className="text-sm text-gray-500">Total Cost</p>
             <p className="text-xl font-bold text-gray-900">
-              ${stats.totalCost.toFixed(2)}
+              ${stats.totalCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           </div>
         </div>
@@ -304,9 +351,9 @@ export default function CollectionPage() {
             <TrendingUp className="w-5 h-5 text-green-600" />
           </div>
           <div>
-            <p className="text-sm text-gray-500">Est. Value</p>
+            <p className="text-sm text-gray-500">Est. Value{stats.unpricedCount > 0 && ` (${stats.unpricedCount} unpriced)`}</p>
             <p className="text-xl font-bold text-gray-900">
-              ${stats.totalValue.toFixed(2)}
+              ${stats.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           </div>
         </div>
@@ -319,13 +366,13 @@ export default function CollectionPage() {
           <div className="min-w-0">
             <p className="text-sm text-gray-500">Sales ({salesStats.totalSales})</p>
             <p className="text-xl font-bold text-gray-900">
-              ${salesStats.totalRevenue.toFixed(2)}
+              ${salesStats.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
             {salesStats.totalProfit !== 0 && (
               <p className={`text-xs ${
                 salesStats.totalProfit >= 0 ? "text-green-500" : "text-red-500"
               }`}>
-                {salesStats.totalProfit >= 0 ? "+" : ""}${salesStats.totalProfit.toFixed(2)} profit
+                {salesStats.totalProfit >= 0 ? "+" : ""}${salesStats.totalProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} profit
               </p>
             )}
           </div>
@@ -347,7 +394,7 @@ export default function CollectionPage() {
             <p className={`text-xl font-bold ${
               profitLoss >= 0 ? "text-green-600" : "text-red-600"
             }`}>
-              {profitLoss >= 0 ? "+" : ""}${profitLoss.toFixed(2)}
+              {profitLoss >= 0 ? "+" : ""}${profitLoss.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
             {stats.totalCost > 0 && (
               <p className={`text-xs ${
@@ -533,6 +580,16 @@ export default function CollectionPage() {
               </select>
             </div>
 
+            {/* Export CSV */}
+            <button
+              onClick={handleExportCSV}
+              title="Export current view to CSV"
+              className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-700 transition-colors text-sm"
+            >
+              <Download className="w-4 h-4" />
+              <span className="hidden sm:inline">Export CSV</span>
+            </button>
+
             {/* Clear Filters */}
             {(publisherFilter !== "all" || titleFilter !== "all" || showStarredOnly || searchQuery || selectedList !== "collection") && (
               <button
@@ -631,8 +688,8 @@ export default function CollectionPage() {
           <div className="divide-y divide-gray-100">
             {filteredCollection.map((item) => {
               const { comic } = item;
-              const estimatedValue = comic.priceData?.estimatedValue;
-              const profitLoss = estimatedValue && item.purchasePrice
+              const estimatedValue = getComicValue(item);
+              const itemProfitLoss = estimatedValue && item.purchasePrice
                 ? estimatedValue - item.purchasePrice
                 : null;
 
@@ -645,11 +702,17 @@ export default function CollectionPage() {
                   {/* Comic Info */}
                   <div className="col-span-5 flex items-center gap-3">
                     <div className="w-10 h-14 flex-shrink-0 rounded overflow-hidden bg-gray-100">
-                      <img
-                        src={item.coverImageUrl}
-                        alt={`${comic.title} #${comic.issueNumber}`}
-                        className="w-full h-full object-cover"
-                      />
+                      {item.coverImageUrl ? (
+                        <img
+                          src={item.coverImageUrl}
+                          alt={`${comic.title} #${comic.issueNumber}`}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gray-900 text-xs">
+                          <span className="text-green-400 font-bold italic drop-shadow-[0_0_4px_rgba(74,222,128,0.6)]">?</span>
+                        </div>
+                      )}
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
@@ -678,14 +741,14 @@ export default function CollectionPage() {
 
                   {/* Est. Value */}
                   <div className="col-span-2 text-right">
-                    {estimatedValue ? (
+                    {estimatedValue > 0 ? (
                       <div>
                         <p className="font-medium text-gray-900">
-                          ${estimatedValue.toFixed(2)}
+                          ${estimatedValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </p>
-                        {profitLoss !== null && (
-                          <p className={`text-xs ${profitLoss >= 0 ? "text-green-600" : "text-red-600"}`}>
-                            {profitLoss >= 0 ? "+" : ""}${profitLoss.toFixed(2)}
+                        {itemProfitLoss !== null && (
+                          <p className={`text-xs ${itemProfitLoss >= 0 ? "text-green-600" : "text-red-600"}`}>
+                            {itemProfitLoss >= 0 ? "+" : ""}${itemProfitLoss.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </p>
                         )}
                       </div>
@@ -745,26 +808,32 @@ export default function CollectionPage() {
 
       {/* Edit Modal */}
       {editingItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pb-20 md:pb-4">
           <div className="absolute inset-0 bg-black/50" onClick={handleCancelEdit} />
-          <div className="relative bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-            <div className="flex flex-col lg:flex-row max-h-[90vh]">
-              {/* Image Preview */}
-              <div className="lg:w-1/3 p-6 bg-gray-50 border-b lg:border-b-0 lg:border-r border-gray-100">
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[85vh] md:max-h-[90vh] overflow-hidden">
+            <div className="flex flex-col lg:flex-row max-h-[85vh] md:max-h-[90vh]">
+              {/* Image Preview - Hidden on mobile, shown on desktop */}
+              <div className="hidden lg:block lg:w-1/3 p-6 bg-gray-50 border-r border-gray-100">
                 <div className="sticky top-6">
                   <div className="aspect-[2/3] rounded-lg overflow-hidden bg-gray-200 shadow-lg">
-                    <img
-                      src={editingItem.coverImageUrl}
-                      alt="Comic cover"
-                      className="w-full h-full object-cover"
-                    />
+                    {editingItem.coverImageUrl ? (
+                      <img
+                        src={editingItem.coverImageUrl}
+                        alt="Comic cover"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gray-900 text-4xl">
+                        <span className="text-green-400 font-bold italic drop-shadow-[0_0_8px_rgba(74,222,128,0.6)]">?</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
 
               {/* Form */}
-              <div className="lg:w-2/3 p-6 overflow-y-auto">
-                <h2 className="text-xl font-semibold text-gray-900 mb-6">
+              <div className="lg:w-2/3 p-4 md:p-6 overflow-y-auto">
+                <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-4 md:mb-6">
                   Edit Comic Details
                 </h2>
                 <ComicDetailsForm
@@ -775,11 +844,22 @@ export default function CollectionPage() {
                   onCancel={handleCancelEdit}
                   mode="edit"
                   existingItem={editingItem}
+                  onCoverImageChange={(url) => {
+                    setEditingItem({
+                      ...editingItem,
+                      coverImageUrl: url,
+                    });
+                  }}
                 />
               </div>
             </div>
           </div>
         </div>
+      )}
+
+      {/* Share Collection Modal */}
+      {showShareModal && (
+        <ShareCollectionModal onClose={() => setShowShareModal(false)} />
       )}
     </div>
   );

@@ -1,5 +1,23 @@
 # Collectors Chest Backlog
 
+## Pre-Launch Checklist
+
+### Re-enable Live Hottest Books API
+**Priority:** Critical
+**Status:** Pending
+**File:** `src/app/api/hottest-books/route.ts`
+
+Currently using a static list (`USE_STATIC_LIST = true`) to conserve API credits during testing. Before launch:
+
+1. Set `USE_STATIC_LIST = false` in `src/app/api/hottest-books/route.ts`
+2. Ensure Anthropic API credits are topped up
+3. Verify Supabase cache is working for 24-hour TTL
+4. Test the live API generates fresh results
+
+**Related file:** `src/lib/staticHotBooks.ts` (fallback list)
+
+---
+
 ## Pending Enhancements
 
 ### Sales Flow - Use Actual Transaction Price
@@ -10,6 +28,48 @@ Currently, when marking a comic as sold, users manually enter the sale price. On
 - Ensure accurate profit/loss tracking
 - Integrate with the user-to-user marketplace flow
 - Remove potential for user entry errors
+
+---
+
+### Custom SVG Icons & Branding
+**Priority:** High
+**Status:** Pending
+
+Replace default Lucide icons with custom SVG icons for brand identity, including a treasure chest logo.
+
+**Requirements:**
+- Custom treasure chest icon for header logo and favicon
+- Favicon set (16x16, 32x32, 180x180, 192x192, 512x512)
+- Icons should match Lucide style (24x24 viewBox, stroke-based, 2px stroke width)
+- Store in `/src/components/icons/` and `/public/icons/`
+
+**Files Ready:**
+- `/src/components/icons/index.tsx` - Template with specs created
+- `/public/icons/` - Directory created for favicon variants
+
+**Icon Sizes Used in App:**
+- w-3 h-3 (12px) - Tiny indicators
+- w-4 h-4 (16px) - Small UI elements
+- w-5 h-5 (20px) - Standard (most common)
+- w-6 h-6 (24px) - Navigation
+- w-8 h-8 (32px) - Modal titles
+- w-16 h-16 (64px) - Large modal icons
+
+---
+
+### Further Optimize Search Results
+**Priority:** Medium
+**Status:** Pending
+
+Enhance the comic search and lookup experience with additional optimizations.
+
+**Potential Improvements:**
+- Fuzzy matching for title searches (handle typos, abbreviations)
+- Search by creative team (writer, artist)
+- Popularity-based suggestions (show most-looked-up comics first)
+- Pre-populate common titles in database from external sources
+- Batch lookups for CSV imports
+- Search history and favorites
 
 ---
 
@@ -137,12 +197,16 @@ Extend the platform beyond comic books to support other collectible categories, 
 - Trading cards (Pokémon, Magic: The Gathering, Yu-Gi-Oh!)
 - Action figures
 - Vinyl records
+- Movies (DVD, Blu-ray, 4K, digital) *(check CLZ Movies for ideation)*
+- Video Games (console, PC, retro) *(check CLZ Games for ideation)*
+- Music (CDs, vinyl, cassettes) *(check CLZ Music for ideation)*
+- Books (first editions, signed copies, rare prints) *(check CLZ Books for ideation)*
 - Other collectibles
 
 **Implementation Considerations:**
 - Update AI vision prompts to identify collectible type and extract relevant metadata
-- Category-specific fields (e.g., card grade, Pop number, set name)
-- Category-specific price sources (eBay, TCGPlayer, Pop Price Guide)
+- Category-specific fields (e.g., card grade, Pop number, set name, ISBN, UPC)
+- Category-specific price sources (eBay, TCGPlayer, Pop Price Guide, Discogs, PriceCharting)
 - Update UI to accommodate different collectible types
 - Allow users to filter collection by category
 - Consider renaming app to something more generic (e.g., "Collector's Vault")
@@ -150,7 +214,7 @@ Extend the platform beyond comic books to support other collectible categories, 
 **Data Model Changes:**
 - Add `collectibleType` field to items
 - Dynamic metadata schema based on collectible type
-- Category-specific grading scales (PSA for cards, etc.)
+- Category-specific grading scales (PSA for cards, VGA for games, etc.)
 
 ---
 
@@ -195,6 +259,58 @@ Review and improve all user-facing text throughout the application for consisten
 - Empty states and placeholder text
 - Toast notifications
 - Form labels and helper text
+- Sign-up prompt modals (milestone prompts for guest users)
+
+---
+
+### Key Hunt Scan History
+**Priority:** Low
+**Status:** Pending
+
+Add a history feature to Key Hunt that saves recent lookups for quick reference.
+
+**Features:**
+- Store last 20-30 lookups in localStorage
+- Show history as a scrollable list when opening Key Hunt
+- Quick tap to re-lookup with different grade
+- Clear history option
+- Persist across sessions
+
+**Implementation Notes:**
+- Similar to the original Key Hunt offline cache concept
+- Consider 7-day TTL for automatic cleanup
+- Store: title, issue, grade, price result, timestamp
+
+---
+
+### Native App: Cover Image Search via Default Browser
+**Priority:** Low
+**Status:** Pending
+
+When converting to native mobile apps (iOS/Android), the cover image search feature needs to open the device's default browser for Google Image searches instead of an in-app webview.
+
+**Current Behavior (PWA/Web):**
+- User taps "Search Google Images" button
+- Opens Google in a new tab
+- User must use native back arrow/gesture to return to app
+- User pastes copied image URL
+
+**Native App Requirements:**
+- Open device's default browser (Safari on iOS, Chrome/default on Android)
+- Maintain app state while user is in browser
+- Handle return to app gracefully (deep link or app switcher)
+- Consider clipboard monitoring to auto-detect copied image URLs (with permission)
+- Alternative: In-app browser with "Copy URL" detection
+
+**Platform-Specific Notes:**
+- iOS: Use `SFSafariViewController` or `UIApplication.open()` for external browser
+- Android: Use `Intent.ACTION_VIEW` or Chrome Custom Tabs
+- React Native: `Linking.openURL()` or `react-native-inappbrowser`
+
+**UX Considerations:**
+- Clear instructions that user will leave the app temporarily
+- "Paste URL" button should be prominent on return
+- Consider toast/notification when URL is detected in clipboard
 
 ---
 
@@ -215,27 +331,32 @@ Design and implement a custom treasure chest icon for the Collectors Chest brand
 
 ## Completed
 
-### Con Mode (Mobile Quick Lookup)
+### Key Hunt (Mobile Quick Lookup)
 **Priority:** Medium
-**Status:** ✅ Complete (Jan 8, 2026)
+**Status:** ✅ Complete (Jan 8-9, 2026)
 
 A streamlined mobile interface for quick price lookups at conventions and comic shops.
 
 **Features Implemented:**
-- Large scan button for fast barcode access
-- Minimal UI showing just price and key info
-- Quick add to Want List, Collection, or Passed On list
-- New "Passed On" default list for tracking comics seen but not purchased
-- Grade selector with instant value updates (6 grades: 9.8, 9.4, 8.0, 6.0, 4.0, 2.0)
-- Raw and slabbed price display
-- Recent scans history with localStorage persistence
-- Offline barcode cache (7-day TTL, 20 entries max)
-- Added to mobile nav as 3rd item (Home → Scan → Con Mode → Collection)
+- Bottom sheet UI with 3 entry methods: Scan Cover, Scan Barcode, Manual Entry
+- Cover scan with auto-detection of slabbed comics and graded labels
+- Grade selector for raw comics (6 grades: 9.8, 9.4, 8.0, 6.0, 4.0, 2.0)
+- Manual entry with title autocomplete + issue number + grade
+- Price result showing average of last 5 sales AND most recent sale
+- Recent sale highlighting: 20%+ above avg = red (market cooling), 20%+ below = green (deal)
+- Add to Collection and New Lookup buttons
+- Mobile utilities FAB combining Key Hunt + Ask the Professor
+- Raw and slabbed price differentiation
 
-**Files Created:**
-- `/src/app/con-mode/page.tsx` - Main Con Mode page
-- `/src/components/QuickResultCard.tsx` - Minimal result display
-- `/src/app/api/quick-lookup/route.ts` - Combined barcode + price lookup API
+**Files Created/Updated:**
+- `/src/app/key-hunt/page.tsx` - Main Key Hunt page with flow state machine
+- `/src/components/ConModeBottomSheet.tsx` - Entry method selection
+- `/src/components/GradeSelector.tsx` - Grade selection modal
+- `/src/components/ConModeManualEntry.tsx` - Manual title/issue/grade entry
+- `/src/components/ConModePriceResult.tsx` - Price result with recent sale highlighting
+- `/src/components/MobileUtilitiesFAB.tsx` - Combined FAB for Key Hunt + Ask Professor
+- `/src/app/api/key-hunt-lookup/route.ts` - Price lookup API with recent sale data
+- `/src/app/api/quick-lookup/route.ts` - Barcode lookup with price data
 
 ---
 

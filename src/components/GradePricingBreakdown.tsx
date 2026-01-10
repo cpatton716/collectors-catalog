@@ -53,6 +53,7 @@ export function GradePricingBreakdown({
   return (
     <div className="mt-3 pt-3 border-t border-green-200">
       <button
+        type="button"
         onClick={() => setIsExpanded(!isExpanded)}
         className="flex items-center justify-between w-full text-left"
       >

@@ -74,14 +74,14 @@ export function CSVImport({ onImportComplete, onCancel }: CSVImportProps) {
   const parseCSV = (text: string): ParsedRow[] => {
     const lines = text.split(/\r?\n/).filter((line) => line.trim());
     if (lines.length < 2) {
-      throw new Error("CSV must have a header row and at least one data row");
+      throw new Error("Your CSV file appears to be empty. Please make sure it has a header row and at least one comic entry.");
     }
 
     const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
 
     // Validate required headers
     if (!headers.includes("title") || !headers.includes("issuenumber")) {
-      throw new Error("CSV must include 'title' and 'issueNumber' columns");
+      throw new Error("Your CSV needs 'title' and 'issueNumber' columns. Download the sample template to see the correct format.");
     }
 
     const rows: ParsedRow[] = [];
@@ -190,7 +190,7 @@ export function CSVImport({ onImportComplete, onCancel }: CSVImportProps) {
     if (!selectedFile) return;
 
     if (!selectedFile.name.endsWith(".csv")) {
-      setParseError("Please select a CSV file");
+      setParseError("Please select a CSV file. Other formats like Excel (.xlsx) aren't supported yet.");
       return;
     }
 
@@ -203,7 +203,7 @@ export function CSVImport({ onImportComplete, onCancel }: CSVImportProps) {
       setParsedRows(rows);
       setStep("preview");
     } catch (err) {
-      setParseError(err instanceof Error ? err.message : "Failed to parse CSV");
+      setParseError(err instanceof Error ? err.message : "We couldn't read this CSV file. Please check the format and try again.");
     }
   };
 
@@ -291,7 +291,7 @@ export function CSVImport({ onImportComplete, onCancel }: CSVImportProps) {
       } catch (err) {
         results.push({
           success: false,
-          error: err instanceof Error ? err.message : "Import failed",
+          error: err instanceof Error ? err.message : "Couldn't import this comic",
           row,
         });
       }
@@ -462,7 +462,7 @@ export function CSVImport({ onImportComplete, onCancel }: CSVImportProps) {
           {failCount > 0 && (
             <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
               <p className="text-sm text-yellow-800 font-medium mb-2">
-                {failCount} comics failed to import:
+                {failCount} {failCount === 1 ? "comic" : "comics"} couldn&apos;t be imported:
               </p>
               <ul className="text-sm text-yellow-700 space-y-1">
                 {importResults
