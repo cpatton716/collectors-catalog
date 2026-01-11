@@ -1,9 +1,95 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
+import { lookupEbaySoldPrices, isFindingApiConfigured } from "@/lib/ebayFinding";
+import { lookupCertification } from "@/lib/certLookup";
+import { supabase } from "@/lib/supabase";
+import { PriceData } from "@/types/comic";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
+
+// eBay price cache TTL: 24 hours
+const EBAY_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Generate cache key for eBay price lookup
+ */
+function generateEbayCacheKey(
+  title: string,
+  issueNumber: string,
+  grade: number,
+  isSlabbed: boolean,
+  gradingCompany?: string
+): string {
+  return [
+    title.toLowerCase().trim(),
+    issueNumber.toLowerCase().trim(),
+    grade.toString(),
+    isSlabbed ? "slabbed" : "raw",
+    gradingCompany?.toLowerCase() || "",
+  ].join("|");
+}
+
+/**
+ * Get cached eBay price from database
+ * Returns: { found: true, data: PriceData | null } if cache hit
+ *          { found: false } if cache miss
+ */
+async function getCachedEbayPrice(cacheKey: string): Promise<{ found: boolean; data: PriceData | null }> {
+  try {
+    const { data, error } = await supabase
+      .from("ebay_price_cache")
+      .select("price_data, created_at")
+      .eq("cache_key", cacheKey)
+      .single();
+
+    if (error || !data) return { found: false, data: null };
+
+    const cacheAge = Date.now() - new Date(data.created_at).getTime();
+    if (cacheAge > EBAY_CACHE_TTL_MS) {
+      // Cache expired
+      await supabase.from("ebay_price_cache").delete().eq("cache_key", cacheKey);
+      return { found: false, data: null };
+    }
+
+    // Cache hit - data may be null if eBay had no results
+    return { found: true, data: data.price_data as PriceData | null };
+  } catch {
+    return { found: false, data: null };
+  }
+}
+
+/**
+ * Save eBay price to cache
+ */
+async function setCachedEbayPrice(
+  cacheKey: string,
+  priceData: PriceData | null,
+  title: string,
+  issueNumber: string,
+  grade: number,
+  isSlabbed: boolean,
+  gradingCompany?: string
+): Promise<void> {
+  try {
+    await supabase.from("ebay_price_cache").upsert(
+      {
+        cache_key: cacheKey,
+        title,
+        issue_number: issueNumber,
+        grade,
+        is_graded: isSlabbed,
+        grading_company: gradingCompany || null,
+        price_data: priceData,
+        created_at: new Date().toISOString(),
+      },
+      { onConflict: "cache_key", ignoreDuplicates: false }
+    );
+  } catch (error) {
+    console.error("[analyze] Cache save error:", error);
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -67,6 +153,7 @@ Look carefully at:
    - A numeric grade (e.g., 9.8, 9.6, 9.4, 9.0, etc.)
    - "Signature Series" or "SS" indicating it's signed
    - The name of who signed it (often on the label)
+   - THE CERTIFICATION NUMBER - This is a long number (usually 7-10 digits) on the label, often near a barcode
 
 Return your findings as a JSON object with this exact structure:
 {
@@ -82,6 +169,7 @@ Return your findings as a JSON object with this exact structure:
   "isSlabbed": true or false - whether the comic is in a graded slab/case,
   "gradingCompany": "CGC" or "CBCS" or "PGX" or "Other" or null if not slabbed,
   "grade": "the numeric grade as a string (e.g., '9.8', '9.0') or null if not slabbed",
+  "certificationNumber": "the certification/serial number from the label (7-10 digit number) or null if not visible/not slabbed",
   "isSignatureSeries": true or false - whether it's a Signature Series (signed and authenticated),
   "signedBy": "name of person who signed it or null if not signed/not visible"
 }
@@ -129,6 +217,57 @@ Important:
       console.error("Failed to parse Claude response:", textContent.text);
       console.error("Parse error:", parseError);
       throw new Error("We had trouble reading the comic details. Please try a different photo with the cover clearly visible.");
+    }
+
+    // If this is a slabbed comic with a certification number, look up from grading company
+    if (comicDetails.isSlabbed && comicDetails.certificationNumber && comicDetails.gradingCompany) {
+      console.log(`[analyze] Slabbed comic detected, looking up cert ${comicDetails.certificationNumber} from ${comicDetails.gradingCompany}...`);
+
+      try {
+        const certResult = await lookupCertification(
+          comicDetails.gradingCompany,
+          comicDetails.certificationNumber
+        );
+
+        if (certResult.success && certResult.data) {
+          console.log("[analyze] Cert lookup successful:", certResult.data);
+
+          // Merge cert data with AI data (cert takes priority for overlapping fields)
+          if (certResult.data.title) {
+            comicDetails.title = certResult.data.title;
+          }
+          if (certResult.data.issueNumber) {
+            comicDetails.issueNumber = certResult.data.issueNumber;
+          }
+          if (certResult.data.publisher) {
+            comicDetails.publisher = certResult.data.publisher;
+          }
+          if (certResult.data.releaseYear) {
+            comicDetails.releaseYear = certResult.data.releaseYear;
+          }
+          if (certResult.data.grade) {
+            comicDetails.grade = certResult.data.grade;
+          }
+          if (certResult.data.variant) {
+            comicDetails.variant = certResult.data.variant;
+          }
+          // Store label type and page quality in notes or as additional fields
+          if (certResult.data.labelType) {
+            comicDetails.labelType = certResult.data.labelType;
+          }
+          if (certResult.data.pageQuality) {
+            comicDetails.pageQuality = certResult.data.pageQuality;
+          }
+
+          console.log("[analyze] Merged comic details after cert lookup:", comicDetails);
+        } else {
+          console.log("[analyze] Cert lookup failed or returned no data:", certResult.error);
+          // Continue with AI-detected data
+        }
+      } catch (certError) {
+        console.error("[analyze] Cert lookup error:", certError);
+        // Continue with AI-detected data
+      }
     }
 
     // If we have title and issue but missing creator info, look it up
@@ -372,28 +511,107 @@ Return ONLY the JSON object.`,
       }
     }
 
-    // Price/Value lookup
+    // Price/Value lookup - Try eBay first, fall back to AI
     if (comicDetails.title && comicDetails.issueNumber) {
       console.log("Performing price lookup...");
 
-      try {
-        const gradeInfo = comicDetails.grade
-          ? `Grade: ${comicDetails.grade}`
-          : "Raw/Ungraded";
-        const signatureInfo = comicDetails.isSignatureSeries
-          ? `Signature Series signed by ${comicDetails.signedBy || "unknown"}`
-          : "";
-        const gradingCompanyInfo = comicDetails.gradingCompany
-          ? `Graded by ${comicDetails.gradingCompany}`
-          : "";
+      const isSlabbed = comicDetails.isSlabbed || false;
+      const grade = comicDetails.grade ? parseFloat(comicDetails.grade) : 9.4;
+      let priceDataFound = false;
 
-        const priceResponse = await anthropic.messages.create({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1024,
-          messages: [
-            {
-              role: "user",
-              content: `You are a comic book market expert with knowledge of recent comic book sales and values.
+      // 1. Try eBay Finding API first (real sold listings) - with caching
+      if (isFindingApiConfigured()) {
+        console.log("[analyze] Trying eBay Finding API...");
+        try {
+          const cacheKey = generateEbayCacheKey(
+            comicDetails.title,
+            comicDetails.issueNumber,
+            grade,
+            isSlabbed,
+            comicDetails.gradingCompany || undefined
+          );
+
+          // Check cache first
+          const cacheResult = await getCachedEbayPrice(cacheKey);
+          if (cacheResult.found) {
+            if (cacheResult.data) {
+              console.log("[analyze] eBay price found in cache");
+              comicDetails.priceData = {
+                ...cacheResult.data,
+                priceSource: "ebay",
+              };
+              priceDataFound = true;
+            } else {
+              console.log("[analyze] Cache hit but no eBay data available (previously checked)");
+              // priceDataFound stays false, will fall back to AI
+            }
+          } else {
+            // Fetch from eBay API
+            const ebayPriceData = await lookupEbaySoldPrices(
+              comicDetails.title,
+              comicDetails.issueNumber,
+              grade,
+              isSlabbed,
+              comicDetails.gradingCompany || undefined
+            );
+
+            if (ebayPriceData && ebayPriceData.estimatedValue) {
+              console.log("[analyze] eBay price data found");
+              comicDetails.priceData = {
+                ...ebayPriceData,
+                priceSource: "ebay",
+              };
+              priceDataFound = true;
+
+              // Cache the result for 24 hours
+              await setCachedEbayPrice(
+                cacheKey,
+                ebayPriceData,
+                comicDetails.title,
+                comicDetails.issueNumber,
+                grade,
+                isSlabbed,
+                comicDetails.gradingCompany || undefined
+              );
+            } else {
+              // Cache the "no results" to avoid repeated API calls
+              await setCachedEbayPrice(
+                cacheKey,
+                null,
+                comicDetails.title,
+                comicDetails.issueNumber,
+                grade,
+                isSlabbed,
+                comicDetails.gradingCompany || undefined
+              );
+            }
+          }
+        } catch (ebayError) {
+          console.error("[analyze] eBay lookup failed:", ebayError);
+        }
+      }
+
+      // 2. Fall back to AI estimates if eBay didn't return results
+      if (!priceDataFound) {
+        console.log("[analyze] Falling back to AI price estimates...");
+        try {
+          const gradeInfo = comicDetails.grade
+            ? `Grade: ${comicDetails.grade}`
+            : "Raw/Ungraded";
+          const signatureInfo = comicDetails.isSignatureSeries
+            ? `Signature Series signed by ${comicDetails.signedBy || "unknown"}`
+            : "";
+          const gradingCompanyInfo = comicDetails.gradingCompany
+            ? `Graded by ${comicDetails.gradingCompany}`
+            : "";
+
+          const priceResponse = await anthropic.messages.create({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 1024,
+            messages: [
+              {
+                role: "user",
+                content: `You are a comic book market expert with knowledge of recent comic book sales and values.
 
 I need estimated recent sale prices for this comic:
 - Title: ${comicDetails.title}
@@ -441,109 +659,109 @@ Important:
   - Raw copies typically 70-90% of equivalent slabbed value
   - Lower grades (2.0-4.0) may be affordable entry points for expensive keys
 - Be realistic with actual market pricing behavior`,
-            },
-          ],
-        });
-
-        const priceTextContent = priceResponse.content.find((block) => block.type === "text");
-        if (priceTextContent && priceTextContent.type === "text") {
-          let priceJson = priceTextContent.text.trim();
-          console.log("Price lookup response:", priceJson);
-
-          // Clean markdown if present
-          if (priceJson.startsWith("```json")) {
-            priceJson = priceJson.slice(7);
-          }
-          if (priceJson.startsWith("```")) {
-            priceJson = priceJson.slice(3);
-          }
-          if (priceJson.endsWith("```")) {
-            priceJson = priceJson.slice(0, -3);
-          }
-
-          const priceInfo = JSON.parse(priceJson.trim());
-          console.log("Parsed price info:", priceInfo);
-
-          // Process the sales data according to business rules
-          const now = new Date();
-          const sixMonthsAgo = new Date(now.getTime() - (180 * 24 * 60 * 60 * 1000));
-
-          const processedSales = priceInfo.recentSales.map((sale: { price: number; date: string; source: string; daysAgo?: number }) => {
-            const saleDate = new Date(sale.date);
-            return {
-              price: sale.price,
-              date: sale.date,
-              source: sale.source || "eBay",
-              isOlderThan6Months: saleDate < sixMonthsAgo
-            };
+              },
+            ],
           });
 
-          // Filter to recent sales (within 6 months)
-          const recentSales = processedSales.filter((s: { isOlderThan6Months: boolean }) => !s.isOlderThan6Months);
+          const priceTextContent = priceResponse.content.find((block) => block.type === "text");
+          if (priceTextContent && priceTextContent.type === "text") {
+            let priceJson = priceTextContent.text.trim();
+            console.log("AI Price lookup response:", priceJson);
 
-          let estimatedValue: number | null = null;
-          let isAveraged = false;
-          let disclaimer: string | null = null;
-          let mostRecentSaleDate: string | null = null;
+            // Clean markdown if present
+            if (priceJson.startsWith("```json")) {
+              priceJson = priceJson.slice(7);
+            }
+            if (priceJson.startsWith("```")) {
+              priceJson = priceJson.slice(3);
+            }
+            if (priceJson.endsWith("```")) {
+              priceJson = priceJson.slice(0, -3);
+            }
 
-          // Sort by date to find most recent
-          const sortedSales = [...processedSales].sort((a: { date: string }, b: { date: string }) =>
-            new Date(b.date).getTime() - new Date(a.date).getTime()
-          );
+            const priceInfo = JSON.parse(priceJson.trim());
+            console.log("Parsed AI price info:", priceInfo);
 
-          if (sortedSales.length > 0) {
-            mostRecentSaleDate = sortedSales[0].date;
+            // Process the sales data according to business rules
+            const now = new Date();
+            const sixMonthsAgo = new Date(now.getTime() - (180 * 24 * 60 * 60 * 1000));
+
+            const processedSales = priceInfo.recentSales.map((sale: { price: number; date: string; source: string; daysAgo?: number }) => {
+              const saleDate = new Date(sale.date);
+              return {
+                price: sale.price,
+                date: sale.date,
+                source: sale.source || "eBay",
+                isOlderThan6Months: saleDate < sixMonthsAgo
+              };
+            });
+
+            // Filter to recent sales (within 6 months)
+            const recentSales = processedSales.filter((s: { isOlderThan6Months: boolean }) => !s.isOlderThan6Months);
+
+            let estimatedValue: number | null = null;
+            let isAveraged = false;
+            let disclaimer: string | null = null;
+            let mostRecentSaleDate: string | null = null;
+
+            // Sort by date to find most recent
+            const sortedSales = [...processedSales].sort((a: { date: string }, b: { date: string }) =>
+              new Date(b.date).getTime() - new Date(a.date).getTime()
+            );
+
+            if (sortedSales.length > 0) {
+              mostRecentSaleDate = sortedSales[0].date;
+            }
+
+            if (recentSales.length >= 3) {
+              // Average of last 3 recent sales
+              const last3 = recentSales.slice(0, 3);
+              estimatedValue = last3.reduce((sum: number, s: { price: number }) => sum + s.price, 0) / 3;
+              isAveraged = true;
+              disclaimer = "AI estimate - actual prices may vary.";
+            } else if (recentSales.length > 0) {
+              // Average of available recent sales
+              estimatedValue = recentSales.reduce((sum: number, s: { price: number }) => sum + s.price, 0) / recentSales.length;
+              isAveraged = recentSales.length > 1;
+              disclaimer = "AI estimate - actual prices may vary.";
+            } else if (processedSales.length > 0) {
+              // Only older sales available - use most recent only
+              estimatedValue = sortedSales[0].price;
+              isAveraged = false;
+              disclaimer = "AI estimate - actual prices may vary.";
+            }
+
+            // Process grade estimates if available
+            let gradeEstimates = undefined;
+            if (priceInfo.gradeEstimates && Array.isArray(priceInfo.gradeEstimates)) {
+              gradeEstimates = priceInfo.gradeEstimates.map((ge: { grade: number; label: string; rawValue: number; slabbedValue: number }) => ({
+                grade: ge.grade,
+                label: ge.label,
+                rawValue: Math.round(ge.rawValue * 100) / 100,
+                slabbedValue: Math.round(ge.slabbedValue * 100) / 100,
+              }));
+            }
+
+            // Determine base grade for the estimate
+            const baseGrade = comicDetails.grade ? parseFloat(comicDetails.grade) : 9.4;
+
+            comicDetails.priceData = {
+              estimatedValue: estimatedValue ? Math.round(estimatedValue * 100) / 100 : null,
+              recentSales: processedSales,
+              mostRecentSaleDate,
+              isAveraged,
+              disclaimer,
+              gradeEstimates,
+              baseGrade,
+              priceSource: "ai",
+            };
+
+            console.log("Final AI price data:", comicDetails.priceData);
           }
-
-          if (recentSales.length >= 3) {
-            // Average of last 3 recent sales
-            const last3 = recentSales.slice(0, 3);
-            estimatedValue = last3.reduce((sum: number, s: { price: number }) => sum + s.price, 0) / 3;
-            isAveraged = true;
-            disclaimer = "Value is the average of the 3 most recent sales within the last 6 months.";
-          } else if (recentSales.length > 0) {
-            // Average of available recent sales
-            estimatedValue = recentSales.reduce((sum: number, s: { price: number }) => sum + s.price, 0) / recentSales.length;
-            isAveraged = recentSales.length > 1;
-            disclaimer = recentSales.length > 1
-              ? `Value is the average of ${recentSales.length} sales within the last 6 months.`
-              : "Value based on the most recent sale within the last 6 months.";
-          } else if (processedSales.length > 0) {
-            // Only older sales available - use most recent only
-            estimatedValue = sortedSales[0].price;
-            isAveraged = false;
-            disclaimer = "Value based on most recent sale (older than 6 months - recent data unavailable).";
-          }
-
-          // Process grade estimates if available
-          let gradeEstimates = undefined;
-          if (priceInfo.gradeEstimates && Array.isArray(priceInfo.gradeEstimates)) {
-            gradeEstimates = priceInfo.gradeEstimates.map((ge: { grade: number; label: string; rawValue: number; slabbedValue: number }) => ({
-              grade: ge.grade,
-              label: ge.label,
-              rawValue: Math.round(ge.rawValue * 100) / 100,
-              slabbedValue: Math.round(ge.slabbedValue * 100) / 100,
-            }));
-          }
-
-          // Determine base grade for the estimate
-          const baseGrade = comicDetails.grade ? parseFloat(comicDetails.grade) : 9.4;
-
-          comicDetails.priceData = {
-            estimatedValue: estimatedValue ? Math.round(estimatedValue * 100) / 100 : null,
-            recentSales: processedSales,
-            mostRecentSaleDate,
-            isAveraged,
-            disclaimer,
-            gradeEstimates,
-            baseGrade,
-          };
-
-          console.log("Final price data:", comicDetails.priceData);
+        } catch (priceError) {
+          console.error("AI Price lookup failed:", priceError);
+          comicDetails.priceData = null;
         }
-      } catch (priceError) {
-        console.error("Price lookup failed:", priceError);
-        comicDetails.priceData = null;
       }
     } else {
       comicDetails.priceData = null;

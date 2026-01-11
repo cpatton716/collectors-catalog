@@ -290,6 +290,9 @@ export default function ScanPage() {
       signedBy: null,
       priceData: null,
       keyInfo: [],
+      certificationNumber: null,
+      labelType: null,
+      pageQuality: null,
     });
     setState("review");
   };
@@ -334,6 +337,9 @@ export default function ScanPage() {
         signedBy: null,
         priceData: data.priceData || null,
         keyInfo: data.keyInfo || [],
+        certificationNumber: null,
+        labelType: null,
+        pageQuality: null,
       });
 
       setShowBarcodeScanner(false);

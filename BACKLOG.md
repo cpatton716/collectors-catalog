@@ -106,6 +106,116 @@ Create a marketplace page where users can browse and purchase comics listed for 
 
 ---
 
+### Auction Feature (Shop)
+**Priority:** High
+**Status:** COMPLETE (January 10, 2026)
+
+Add eBay-style auction functionality to the Shop, allowing users to list comics for competitive bidding.
+
+**Implementation Summary:**
+- Database migration: `/supabase/migrations/20260110_create_auctions.sql`
+- Types: `/src/types/auction.ts`
+- Database helpers: `/src/lib/auctionDb.ts`
+- API routes: `/src/app/api/auctions/`, `/src/app/api/watchlist/`, `/src/app/api/notifications/`, `/src/app/api/sellers/[id]/ratings/`
+- UI components: `/src/components/auction/` (AuctionCard, BidForm, BidHistory, etc.)
+- Pages: `/src/app/shop/`, `/src/app/my-auctions/`, `/src/app/watchlist/`
+- Stripe integration: `/src/app/api/checkout/`, `/src/app/api/webhooks/stripe/`
+- Cron job: `/vercel.json` + `/src/app/api/cron/process-auctions/`
+
+**Post-Implementation Notes:**
+- Run migration in Supabase before using
+- Configure Stripe API keys for payment processing
+- Add CRON_SECRET env var for secure cron execution
+
+#### Core Auction Settings
+| Setting | Value |
+|---------|-------|
+| Duration | Flexible 1-14 days (seller chooses) |
+| Starting Bid | Minimum $0.99, whole dollars only |
+| Buy It Now | Optional - seller can set BIN price |
+| Reserve Price | None - starting price is minimum acceptable |
+| End Time | Hard end time (no auto-extend for v1) |
+| Bid Increments | Whole dollars, minimum $1, bidder chooses amount |
+| Proxy Bidding | Yes - system auto-bids up to user's max |
+
+#### Participation & Access
+- **Sellers:** Registered users only
+- **Bidders:** Registered users only
+- **Location:** Separate "Auctions" tab in Shop page
+
+#### Listing Features
+- Cover image (required)
+- Up to 4 additional detail photos (condition, back cover, etc.)
+- Flat-rate shipping set by seller
+- Standard comic metadata (title, issue, grade, etc.)
+
+#### Bidding & Bid History
+- Bid history shown with anonymized bidders (Bidder 1, Bidder 2, etc.)
+- Current high bid and bid count displayed
+- Proxy bidding auto-increments to user's max bid
+
+#### Auction Watchlist
+- Users can add auctions to watchlist
+- Ending-soon notifications for watched auctions
+
+#### Notifications
+- **Bidders:** Outbid notification, Won auction notification
+- **Sellers:** Auction ended notification
+
+#### Post-Auction Flow
+- Winner has 48 hours to complete Stripe checkout
+- If no payment: Seller decides (relist, offer to 2nd place, etc.)
+
+#### Cancellation Policy
+- Sellers cannot cancel once any bid is placed
+- Sellers can cancel before first bid
+
+#### Seller Reputation System
+- Hero mask icon (blue/red) for positive feedback (thumbs up)
+- Villain helmet icon (maroon/purple) for negative feedback (thumbs down)
+- Optional comment with each rating
+- Comments filtered for inappropriate language
+
+#### Implementation Phases
+
+**Phase 1: Core Auction Infrastructure**
+- Database schema for auctions, bids, watchlist
+- Auction creation flow (from collection item)
+- Auction listing page with countdown timer
+- Basic bidding functionality
+
+**Phase 2: Proxy Bidding & Notifications**
+- Proxy bid system (auto-increment to max)
+- Email notifications (outbid, won, ended)
+- Bid history display (anonymized)
+
+**Phase 3: Watchlist & Search**
+- Auction watchlist functionality
+- Search/filter auctions in Shop
+- Ending-soon sorting
+
+**Phase 4: Payment & Completion**
+- Stripe checkout integration for winners
+- 48-hour payment window enforcement
+- Seller dashboard for auction management
+
+**Phase 5: Reputation System**
+- Hero/villain rating icons
+- Comment system with content filtering
+- Seller reputation display on listings
+
+#### Database Tables Needed
+- `auctions` - Auction listings with settings
+- `bids` - All bids including proxy max amounts
+- `auction_watchlist` - User watchlist
+- `seller_ratings` - Reputation feedback
+
+#### Backlog Items (Low Priority)
+- [ ] Revisit auto-extend feature for last-minute bids
+- [ ] Determine auction monetization (listing fees, final value fees, etc.)
+
+---
+
 ### Admin Role & Permissions
 **Priority:** Medium
 **Status:** Pending

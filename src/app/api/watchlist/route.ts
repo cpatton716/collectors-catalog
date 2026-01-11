@@ -1,0 +1,97 @@
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
+import { getProfileByClerkId } from "@/lib/db";
+import {
+  getUserWatchlist,
+  addToWatchlist,
+  removeFromWatchlist,
+} from "@/lib/auctionDb";
+
+// GET - Get user's watchlist
+export async function GET() {
+  try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const profile = await getProfileByClerkId(userId);
+    if (!profile) {
+      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+    }
+
+    const watchlist = await getUserWatchlist(profile.id);
+
+    return NextResponse.json({ watchlist });
+  } catch (error) {
+    console.error("Error fetching watchlist:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch watchlist" },
+      { status: 500 }
+    );
+  }
+}
+
+// POST - Add to watchlist
+export async function POST(request: NextRequest) {
+  try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const profile = await getProfileByClerkId(userId);
+    if (!profile) {
+      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+    }
+
+    const body = await request.json();
+    const { auctionId } = body;
+
+    if (!auctionId) {
+      return NextResponse.json({ error: "Auction ID is required" }, { status: 400 });
+    }
+
+    await addToWatchlist(profile.id, auctionId);
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error adding to watchlist:", error);
+    return NextResponse.json(
+      { error: "Failed to add to watchlist" },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE - Remove from watchlist
+export async function DELETE(request: NextRequest) {
+  try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const profile = await getProfileByClerkId(userId);
+    if (!profile) {
+      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+    }
+
+    const body = await request.json();
+    const { auctionId } = body;
+
+    if (!auctionId) {
+      return NextResponse.json({ error: "Auction ID is required" }, { status: 400 });
+    }
+
+    await removeFromWatchlist(profile.id, auctionId);
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error removing from watchlist:", error);
+    return NextResponse.json(
+      { error: "Failed to remove from watchlist" },
+      { status: 500 }
+    );
+  }
+}

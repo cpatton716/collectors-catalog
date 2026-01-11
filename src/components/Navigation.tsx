@@ -4,7 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
-import { Camera, BookOpen, Home, LogIn, Archive, BarChart3, Brain, X, ChevronDown, ChevronUp } from "lucide-react";
+import { Camera, BookOpen, Home, LogIn, Archive, BarChart3, Brain, X, ChevronDown, ChevronUp, ShoppingBag } from "lucide-react";
+import { NotificationBell } from "./NotificationBell";
 
 // FAQ content for Ask the Professor
 const faqs = [
@@ -54,6 +55,7 @@ export function Navigation() {
     { href: "/", label: "Home", icon: Home },
     { href: "/scan", label: "Scan Book", icon: Camera },
     { href: "/collection", label: "My Collection", icon: BookOpen },
+    { href: "/shop", label: "Shop", icon: ShoppingBag },
     { href: "/stats", label: "Stats", icon: BarChart3 },
   ];
 
@@ -94,12 +96,17 @@ export function Navigation() {
               })}
             </div>
 
-            {/* Right side: Professor + Auth */}
+            {/* Right side: Notifications + Professor + Auth */}
             <div className="flex items-center gap-2">
+              {/* Notifications (signed in only) */}
+              <SignedIn>
+                <NotificationBell />
+              </SignedIn>
+
               {/* Ask the Professor button */}
               <button
                 onClick={() => setShowProfessor(true)}
-                className="p-2 mr-6 rounded-full bg-gradient-to-br from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 transition-all duration-200 shadow-sm"
+                className="p-2 mr-4 rounded-full bg-gradient-to-br from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 transition-all duration-200 shadow-sm"
                 aria-label="Ask the Professor"
               >
                 <Brain className="w-5 h-5 text-yellow-400" />

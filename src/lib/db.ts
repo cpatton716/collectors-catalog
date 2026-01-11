@@ -289,6 +289,7 @@ export interface ComicMetadata {
       slabbedValue: number;
     }[];
     disclaimer: string;
+    priceSource?: "ebay" | "ai";
   } | null;
   lookupCount: number;
   createdAt: string;
@@ -411,6 +412,9 @@ function transformDbComicToCollectionItem(dbComic: Record<string, unknown>): Col
       signedBy: dbComic.signed_by as string | null,
       priceData: dbComic.price_data as CollectionItem["comic"]["priceData"],
       keyInfo: (dbComic.key_info as string[]) || [],
+      certificationNumber: dbComic.certification_number as string | null,
+      labelType: dbComic.label_type as string | null,
+      pageQuality: dbComic.page_quality as string | null,
     },
     coverImageUrl: dbComic.cover_image_url as string,
     conditionGrade: dbComic.condition_grade as number | null,

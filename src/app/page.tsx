@@ -31,6 +31,48 @@ import {
 // Duration filter options
 type DurationDays = 30 | 60 | 90;
 
+// Hottest books client-side cache (24 hours)
+const HOT_BOOKS_CACHE_KEY = "hottest_books_cache";
+const HOT_BOOKS_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours in ms
+
+interface HotBooksCache {
+  books: HotBook[];
+  timestamp: number;
+}
+
+function getCachedHotBooks(): HotBook[] | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const cached = localStorage.getItem(HOT_BOOKS_CACHE_KEY);
+    if (!cached) return null;
+
+    const { books, timestamp }: HotBooksCache = JSON.parse(cached);
+    const age = Date.now() - timestamp;
+
+    if (age < HOT_BOOKS_CACHE_TTL) {
+      return books;
+    }
+    // Cache expired, remove it
+    localStorage.removeItem(HOT_BOOKS_CACHE_KEY);
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function setCachedHotBooks(books: HotBook[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    const cache: HotBooksCache = {
+      books,
+      timestamp: Date.now(),
+    };
+    localStorage.setItem(HOT_BOOKS_CACHE_KEY, JSON.stringify(cache));
+  } catch {
+    // localStorage might be full or disabled
+  }
+}
+
 interface InsightBook {
   item: CollectionItem;
   change: number;
@@ -97,9 +139,18 @@ export default function Home() {
     }
   }, [isLoaded, isSignedIn]);
 
-  // Fetch hottest books for all users
+  // Fetch hottest books for all users (with client-side caching)
   useEffect(() => {
     const fetchHotBooks = async () => {
+      // Check client-side cache first (prevents unnecessary API calls)
+      const cached = getCachedHotBooks();
+      if (cached && cached.length > 0) {
+        console.log("Using cached hottest books from localStorage");
+        setHotBooks(cached);
+        setHotBooksLoading(false);
+        return;
+      }
+
       setHotBooksLoading(true);
       setHotBooksError(null);
       try {
@@ -108,7 +159,13 @@ export default function Home() {
         if (data.error) {
           setHotBooksError(data.error);
         } else {
-          setHotBooks(data.books || []);
+          const books = data.books || [];
+          setHotBooks(books);
+          // Cache the result in localStorage for 24 hours
+          if (books.length > 0) {
+            setCachedHotBooks(books);
+            console.log("Cached hottest books to localStorage");
+          }
         }
       } catch (err) {
         console.error("Error fetching hot books:", err);

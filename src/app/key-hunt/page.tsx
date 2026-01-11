@@ -56,6 +56,7 @@ interface LookupResult {
   coverImageUrl?: string | null;
   keyInfo?: string[];
   fromCache?: boolean;
+  source?: "database" | "ebay" | "ai";
 }
 
 export default function KeyHuntPage() {
@@ -289,6 +290,7 @@ export default function KeyHuntPage() {
         coverImageUrl: data.coverImageUrl || pendingComic?.coverImageUrl,
         keyInfo: data.keyInfo,
         fromCache: false,
+        source: data.source,
       };
 
       // Cache the result for offline use
@@ -386,6 +388,9 @@ export default function KeyHuntPage() {
         isSignatureSeries: false,
         signedBy: null,
         keyInfo: result.keyInfo || [],
+        certificationNumber: null,
+        labelType: null,
+        pageQuality: null,
         priceData: result.averagePrice
           ? {
               estimatedValue: result.averagePrice,
@@ -485,6 +490,9 @@ export default function KeyHuntPage() {
         isSignatureSeries: false,
         signedBy: null,
         keyInfo: [],
+        certificationNumber: null,
+        labelType: null,
+        pageQuality: null,
         priceData: entry.priceResult.rawPrice
           ? {
               estimatedValue: entry.priceResult.rawPrice,
@@ -748,6 +756,7 @@ export default function KeyHuntPage() {
           coverImageUrl={result.coverImageUrl}
           fromCache={result.fromCache}
           isOffline={isOfflineMode}
+          source={result.source}
         />
       )}
 

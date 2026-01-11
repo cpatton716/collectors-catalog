@@ -138,6 +138,9 @@ function createCollectionItemFromAction(action: OfflineAction): CollectionItem {
       isSignatureSeries: false,
       signedBy: null,
       keyInfo: data.keyInfo || [],
+      certificationNumber: null,
+      labelType: null,
+      pageQuality: null,
       priceData: data.averagePrice
         ? {
             estimatedValue: data.averagePrice,

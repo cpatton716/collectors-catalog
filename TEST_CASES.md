@@ -150,11 +150,31 @@ A guide for testing the main and secondary features of the application.
 
 | Test Case | Steps | Expected Result |
 |-----------|-------|-----------------|
-| View estimated value | Check comic detail modal | Shows AI-estimated value |
+| View estimated value | Check comic detail modal | Shows estimated value |
 | View key info | Check comic detail modal | Shows key facts (first appearances, etc.) |
 | Profit/loss tracking | Add purchase price to comic | Home page shows profit/loss calculation |
 | View grade breakdown | Click "Value By Grade" in comic details | Expandable table shows prices for 6 grades (9.8 to 2.0) |
 | Raw vs slabbed prices | View grade breakdown | Shows both raw and slabbed values per grade |
+
+### 12a. eBay Price Integration
+
+**Price data now comes from eBay sold listings when available, with AI fallback.**
+
+| Test Case | Steps | Expected Result |
+|-----------|-------|-----------------|
+| eBay price lookup | Scan a popular comic (e.g., Amazing Spider-Man #300) | Console shows "[ebay-finding] Searching for..." and returns price data |
+| eBay source indicator | View price on comic with eBay data | Should show "eBay Data" badge or similar indicator |
+| AI fallback | Scan an obscure comic with no eBay sales | Console shows "Falling back to AI price estimates", price shows with AI warning |
+| AI price warning | View price from AI fallback | Yellow/orange alert: "Price estimate based on AI - may not reflect current market" |
+| For Sale Now link | View Key Hunt result | "For Sale Now on eBay" button opens eBay search |
+| Key Hunt eBay first | Use Key Hunt to look up a comic | eBay data attempted first, AI fallback if no results |
+| Add Book eBay first | Use Add Book to scan a comic | eBay data attempted first, AI fallback if no results |
+
+**Debugging eBay Issues:**
+- Check browser console for `[ebay-finding]` log messages
+- Verify `EBAY_APP_ID` is set in `.env.local`
+- Ensure `EBAY_SANDBOX` is NOT set (or set to "false") for production
+- Check that comic has title AND issue number (required for price lookup)
 
 ### 13. Key Hunt (Mobile Quick Lookup)
 
@@ -219,11 +239,12 @@ A guide for testing the main and secondary features of the application.
 
 ## Known Limitations
 
-1. **Price estimates are AI-generated** - Not based on real-time market data (eBay integration pending)
+1. **eBay prices require title + issue** - Price lookup needs both fields; AI fallback used otherwise
 2. **CSV import desktop only** - Better UX on larger screens for file management
 3. **Guest scan limit** - Guests limited to 10 scans to encourage registration
 4. **First lookups are slower** - Comics not in database require AI lookup (~1-2s); subsequent lookups are fast (~50ms)
 5. **Database caching is shared** - All users benefit from lookups made by other users
+6. **eBay may have no results** - Obscure comics may not have recent sales; AI fallback provides estimate
 
 ---
 
@@ -237,4 +258,4 @@ If you encounter bugs or unexpected behavior:
 
 ---
 
-*Last Updated: January 9, 2026*
+*Last Updated: January 10, 2026*

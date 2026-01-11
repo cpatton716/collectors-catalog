@@ -13,6 +13,9 @@ export interface ComicDetails {
   isSlabbed: boolean;
   gradingCompany: GradingCompany | null;
   grade: string | null;
+  certificationNumber: string | null; // CGC/CBCS/PGX cert number
+  labelType: string | null; // e.g., "Universal", "Signature Series"
+  pageQuality: string | null; // e.g., "White", "Off-white to white"
   isSignatureSeries: boolean;
   signedBy: string | null;
   // Price/Value info
@@ -30,6 +33,8 @@ export interface PriceData {
   // Grade-aware pricing
   gradeEstimates?: GradeEstimate[];
   baseGrade?: number; // The grade the estimatedValue is based on (default 9.4 for raw estimates)
+  // Price source indicator
+  priceSource?: "ebay" | "ai"; // Where the price data came from
 }
 
 export interface GradeEstimate {

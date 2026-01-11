@@ -1,0 +1,418 @@
+import { CollectionItem } from "./comic";
+
+// ============================================================================
+// AUCTION TYPES
+// ============================================================================
+
+export type AuctionStatus = "active" | "ended" | "sold" | "cancelled";
+export type PaymentStatus = "pending" | "paid" | "shipped" | "completed";
+export type RatingType = "positive" | "negative";
+export type NotificationType =
+  | "outbid"
+  | "won"
+  | "ended"
+  | "payment_reminder"
+  | "rating_request"
+  | "auction_sold"
+  | "payment_received";
+
+export interface Auction {
+  id: string;
+  sellerId: string;
+  comicId: string;
+
+  // Pricing
+  startingPrice: number;
+  currentBid: number | null;
+  buyItNowPrice: number | null;
+
+  // Timing
+  startTime: string;
+  endTime: string;
+
+  // Status
+  status: AuctionStatus;
+
+  // Winner
+  winnerId: string | null;
+  winningBid: number | null;
+
+  // Shipping
+  shippingCost: number;
+
+  // Additional content
+  detailImages: string[];
+  description: string | null;
+
+  // Denormalized counts
+  bidCount: number;
+
+  // Payment
+  paymentStatus: PaymentStatus | null;
+  paymentDeadline: string | null;
+
+  // Timestamps
+  createdAt: string;
+  updatedAt: string;
+
+  // Joined data (optional, populated when needed)
+  comic?: CollectionItem;
+  seller?: SellerProfile;
+  isWatching?: boolean;
+  userBid?: Bid | null;
+}
+
+export interface CreateAuctionInput {
+  comicId: string;
+  startingPrice: number;
+  buyItNowPrice?: number | null;
+  durationDays: number;
+  shippingCost: number;
+  detailImages?: string[];
+  description?: string;
+}
+
+export interface UpdateAuctionInput {
+  buyItNowPrice?: number | null;
+  description?: string;
+  detailImages?: string[];
+}
+
+// ============================================================================
+// BID TYPES
+// ============================================================================
+
+export interface Bid {
+  id: string;
+  auctionId: string;
+  bidderId: string;
+
+  // Amounts
+  bidAmount: number;
+  maxBid: number;
+
+  // Anonymization
+  bidderNumber: number;
+
+  // Status
+  isWinning: boolean;
+
+  // Timestamps
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PlaceBidInput {
+  auctionId: string;
+  maxBid: number;
+}
+
+export interface PlaceBidResult {
+  success: boolean;
+  message: string;
+  bid?: Bid;
+  currentBid?: number;
+  isHighBidder?: boolean;
+  outbidAmount?: number; // If outbid, the amount needed to be high bidder
+}
+
+export interface BidHistoryItem {
+  bidderNumber: number;
+  bidAmount: number;
+  createdAt: string;
+  isWinning: boolean;
+}
+
+// ============================================================================
+// WATCHLIST TYPES
+// ============================================================================
+
+export interface WatchlistItem {
+  id: string;
+  userId: string;
+  auctionId: string;
+  createdAt: string;
+  auction?: Auction;
+}
+
+// ============================================================================
+// SELLER REPUTATION TYPES
+// ============================================================================
+
+export interface SellerRating {
+  id: string;
+  sellerId: string;
+  buyerId: string;
+  auctionId: string;
+  ratingType: RatingType;
+  comment: string | null;
+  createdAt: string;
+}
+
+export interface SellerProfile {
+  id: string;
+  displayName: string | null;
+  publicDisplayName: string | null;
+  positiveRatings: number;
+  negativeRatings: number;
+  sellerSince: string | null;
+  // Computed
+  totalRatings: number;
+  positivePercentage: number;
+  reputation: "hero" | "villain" | "neutral";
+}
+
+export interface SubmitRatingInput {
+  sellerId: string;
+  auctionId: string;
+  ratingType: RatingType;
+  comment?: string;
+}
+
+// ============================================================================
+// NOTIFICATION TYPES
+// ============================================================================
+
+export interface Notification {
+  id: string;
+  userId: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  auctionId: string | null;
+  isRead: boolean;
+  createdAt: string;
+}
+
+// ============================================================================
+// FILTER & SORT TYPES
+// ============================================================================
+
+export interface AuctionFilters {
+  status?: AuctionStatus;
+  sellerId?: string;
+  publisher?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  endingSoon?: boolean; // Within 24 hours
+  hasBuyItNow?: boolean;
+}
+
+export type AuctionSortBy =
+  | "ending_soonest"
+  | "ending_latest"
+  | "price_low"
+  | "price_high"
+  | "most_bids"
+  | "newest";
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Calculate minimum bid based on tiered increments
+ * - Under $100: $1 increment
+ * - $100-$999: $5 increment
+ * - $1000+: $25 increment
+ */
+export function calculateMinimumBid(
+  currentBid: number | null,
+  startingPrice: number
+): number {
+  const basePrice = currentBid ?? startingPrice;
+
+  // If no current bid, minimum is starting price
+  if (currentBid === null) {
+    return startingPrice;
+  }
+
+  // Tiered bid increments
+  let increment: number;
+  if (basePrice < 100) {
+    increment = 1;
+  } else if (basePrice < 1000) {
+    increment = 5;
+  } else {
+    increment = 25;
+  }
+
+  return basePrice + increment;
+}
+
+/**
+ * Get the bid increment for a given price level
+ */
+export function getBidIncrement(currentPrice: number): number {
+  if (currentPrice < 100) {
+    return 1;
+  } else if (currentPrice < 1000) {
+    return 5;
+  } else {
+    return 25;
+  }
+}
+
+/**
+ * Validate that a bid amount follows the tiered increment rules
+ */
+export function isValidBidAmount(
+  bidAmount: number,
+  currentBid: number | null,
+  startingPrice: number
+): { valid: boolean; message?: string } {
+  const minimumBid = calculateMinimumBid(currentBid, startingPrice);
+
+  if (bidAmount < minimumBid) {
+    return {
+      valid: false,
+      message: `Minimum bid is $${minimumBid.toFixed(2)}`,
+    };
+  }
+
+  // Check whole dollar amounts only
+  if (!Number.isInteger(bidAmount)) {
+    return {
+      valid: false,
+      message: "Bids must be whole dollar amounts",
+    };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Calculate time remaining for an auction
+ */
+export function calculateTimeRemaining(endTime: string): {
+  days: number;
+  hours: number;
+  minutes: number;
+  seconds: number;
+  totalMs: number;
+  isEnded: boolean;
+  isEndingSoon: boolean; // Within 1 hour
+  isUrgent: boolean; // Within 10 minutes
+} {
+  const now = new Date().getTime();
+  const end = new Date(endTime).getTime();
+  const totalMs = end - now;
+
+  if (totalMs <= 0) {
+    return {
+      days: 0,
+      hours: 0,
+      minutes: 0,
+      seconds: 0,
+      totalMs: 0,
+      isEnded: true,
+      isEndingSoon: false,
+      isUrgent: false,
+    };
+  }
+
+  const days = Math.floor(totalMs / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((totalMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const minutes = Math.floor((totalMs % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((totalMs % (1000 * 60)) / 1000);
+
+  const oneHour = 60 * 60 * 1000;
+  const tenMinutes = 10 * 60 * 1000;
+
+  return {
+    days,
+    hours,
+    minutes,
+    seconds,
+    totalMs,
+    isEnded: false,
+    isEndingSoon: totalMs <= oneHour,
+    isUrgent: totalMs <= tenMinutes,
+  };
+}
+
+/**
+ * Format time remaining as a human-readable string
+ */
+export function formatTimeRemaining(endTime: string): string {
+  const { days, hours, minutes, seconds, isEnded } =
+    calculateTimeRemaining(endTime);
+
+  if (isEnded) {
+    return "Ended";
+  }
+
+  if (days > 0) {
+    return `${days}d ${hours}h`;
+  }
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+
+  if (minutes > 0) {
+    return `${minutes}m ${seconds}s`;
+  }
+
+  return `${seconds}s`;
+}
+
+/**
+ * Calculate seller reputation from ratings
+ */
+export function calculateSellerReputation(
+  positiveRatings: number,
+  negativeRatings: number
+): { percentage: number; reputation: "hero" | "villain" | "neutral" } {
+  const total = positiveRatings + negativeRatings;
+
+  if (total === 0) {
+    return { percentage: 0, reputation: "neutral" };
+  }
+
+  const percentage = Math.round((positiveRatings / total) * 100);
+
+  // Hero: 80%+ positive
+  // Villain: <50% positive
+  // Neutral: 50-79% positive
+  let reputation: "hero" | "villain" | "neutral";
+  if (percentage >= 80) {
+    reputation = "hero";
+  } else if (percentage < 50) {
+    reputation = "villain";
+  } else {
+    reputation = "neutral";
+  }
+
+  return { percentage, reputation };
+}
+
+/**
+ * Format price as currency
+ */
+export function formatPrice(amount: number | null): string {
+  if (amount === null) {
+    return "-";
+  }
+  return `$${amount.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+// ============================================================================
+// CONSTANTS
+// ============================================================================
+
+export const AUCTION_DURATION_OPTIONS = [
+  { value: 1, label: "1 day" },
+  { value: 3, label: "3 days" },
+  { value: 5, label: "5 days" },
+  { value: 7, label: "7 days" },
+  { value: 10, label: "10 days" },
+  { value: 14, label: "14 days" },
+];
+
+export const MIN_STARTING_PRICE = 0.99;
+export const MAX_DETAIL_IMAGES = 4;
+export const PAYMENT_WINDOW_HOURS = 48;

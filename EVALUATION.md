@@ -61,7 +61,7 @@ Collectors Chest is a comic book collection tracking app with AI-powered cover r
 | Issue | Status | Notes |
 |-------|--------|-------|
 | Every lookup hits AI | ✅ Fixed | Hybrid caching: Memory → DB → AI |
-| Prices are fabricated | ⏳ Ready | eBay integration code ready (waiting approval) |
+| Prices are fabricated | ✅ Fixed | eBay Finding API live with AI fallback |
 | No validation on AI | ⚠️ Unchanged | Still minimal validation |
 | Single points of failure | ⚠️ Partial | Graceful fallback exists |
 | Memory cache per-instance | ❌ Missing | Needs Redis for serverless |
@@ -91,7 +91,7 @@ Collectors Chest is a comic book collection tracking app with AI-powered cover r
 | AI Cover Recognition | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Offline Mode | ✅ | ✅ | ✅ | ❌ | ❌ |
 | Collection Stats | ✅ | ✅ | ⚠️ | ✅ | ⚠️ |
-| Real Price Data | ⏳ | ❌ | ✅ | ✅ | ❌ |
+| Real Price Data | ✅ | ❌ | ✅ | ✅ | ❌ |
 | Public Profiles | ✅ | ❌ | ❌ | ❌ | ✅ |
 | PWA/Installable | ✅ | ❌ | ✅ | ❌ | ❌ |
 | Price Alerts | ❌ | ❌ | ✅ | ✅ | ❌ |
@@ -122,7 +122,7 @@ Collectors Chest is a comic book collection tracking app with AI-powered cover r
 | Public Sharing | ✅ Complete |
 | Offline Support | ✅ Complete |
 | PWA/Installable | ✅ Complete |
-| Real eBay Prices | ⏳ Code Ready |
+| Real eBay Prices | ✅ Complete |
 | Want List Alerts | ❌ Not Started |
 | Social Features | ❌ Not Started |
 | Marketplace | ❌ Not Started |
@@ -145,7 +145,7 @@ Collectors Chest is a comic book collection tracking app with AI-powered cover r
 - CSV export
 - Offline Key Hunt
 - Priority lookups
-- (Soon) Real eBay prices
+- Real eBay prices
 
 ### Future Revenue Streams
 - Premium subscriptions ($5-10/month)
@@ -246,7 +246,7 @@ Collectors Chest is a comic book collection tracking app with AI-powered cover r
 4. **Deploy** - Push to production
 
 ### Short-Term (First 2 Weeks)
-5. **Activate eBay** - When approval comes through
+5. ~~**Activate eBay**~~ ✅ Complete (Jan 10) - eBay Finding API integrated with AI fallback
 6. **Add Upstash Redis** - Distributed caching for serverless
 7. **Monitor & fix** - Address issues found via Sentry
 

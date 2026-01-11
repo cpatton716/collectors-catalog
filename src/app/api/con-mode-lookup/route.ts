@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
 import { getComicMetadata, saveComicMetadata, incrementComicLookupCount } from "@/lib/db";
+import { lookupEbaySoldPrices, isFindingApiConfigured } from "@/lib/ebayFinding";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -26,7 +27,7 @@ interface ConModeLookupResult {
   }>;
   keyInfo: string[];
   coverImageUrl: string | null;
-  source: "database" | "ai";
+  source: "database" | "ebay" | "ai";
   disclaimer: string;
 }
 
@@ -92,8 +93,89 @@ export async function POST(request: NextRequest) {
       // Continue to AI lookup
     }
 
-    // 3. Fall back to Claude API (slower ~1-2s)
-    console.log(`[con-mode-lookup] Database miss for ${normalizedTitle} #${normalizedIssue}${seriesYears ? ` (${seriesYears})` : ""}, calling AI...`);
+    // 3. Try eBay Finding API for real sold listing data
+    if (isFindingApiConfigured()) {
+      console.log(`[con-mode-lookup] Trying eBay Finding API for ${normalizedTitle} #${normalizedIssue}...`);
+      try {
+        const ebayPriceData = await lookupEbaySoldPrices(
+          normalizedTitle,
+          normalizedIssue,
+          selectedGrade,
+          false // raw comics by default for Key Hunt
+        );
+
+        if (ebayPriceData && ebayPriceData.estimatedValue) {
+          console.log(`[con-mode-lookup] eBay hit for ${normalizedTitle} #${normalizedIssue}`);
+
+          // Get the price for the selected grade
+          const gradeEstimate = ebayPriceData.gradeEstimates?.find(
+            (g) => g.grade === selectedGrade
+          );
+
+          // Try to fetch a cover image (non-blocking)
+          let coverImageUrl: string | null = null;
+          try {
+            coverImageUrl = await fetchCoverImage(normalizedTitle, normalizedIssue);
+          } catch {
+            // Ignore cover fetch errors
+          }
+
+          // We need key info from AI since eBay doesn't provide that
+          let keyInfo: string[] = [];
+          try {
+            keyInfo = await fetchKeyInfoFromAI(normalizedTitle, normalizedIssue);
+          } catch {
+            // Ignore key info errors
+          }
+
+          const result: ConModeLookupResult = {
+            title: normalizedTitle,
+            issueNumber: normalizedIssue,
+            publisher: null, // eBay doesn't provide this reliably
+            releaseYear: null,
+            grade: selectedGrade,
+            averagePrice: gradeEstimate?.rawValue || ebayPriceData.estimatedValue,
+            recentSale: ebayPriceData.recentSales?.[0] || null,
+            gradeEstimates: ebayPriceData.gradeEstimates || [],
+            keyInfo,
+            coverImageUrl,
+            source: "ebay",
+            disclaimer: ebayPriceData.disclaimer || "Based on recent eBay sold listings",
+          };
+
+          // Save to database for future lookups
+          saveComicMetadata({
+            title: normalizedTitle,
+            issueNumber: normalizedIssue,
+            publisher: null,
+            releaseYear: null,
+            coverImageUrl,
+            keyInfo,
+            priceData: {
+              estimatedValue: ebayPriceData.estimatedValue,
+              mostRecentSaleDate: ebayPriceData.mostRecentSaleDate,
+              recentSales: ebayPriceData.recentSales || [],
+              gradeEstimates: ebayPriceData.gradeEstimates || [],
+              disclaimer: ebayPriceData.disclaimer || "Based on recent eBay sold listings",
+              priceSource: "ebay",
+            },
+          }).catch((err) => {
+            console.error("[con-mode-lookup] Failed to save eBay data to database:", err);
+          });
+
+          // Cache in memory
+          memoryCache.set(memoryCacheKey, { data: result, timestamp: Date.now() });
+
+          return NextResponse.json(result);
+        }
+      } catch (ebayError) {
+        console.error("[con-mode-lookup] eBay lookup failed:", ebayError);
+        // Continue to AI fallback
+      }
+    }
+
+    // 4. Fall back to Claude API (slower ~1-2s)
+    console.log(`[con-mode-lookup] ${isFindingApiConfigured() ? "eBay miss" : "eBay not configured"} for ${normalizedTitle} #${normalizedIssue}${seriesYears ? ` (${seriesYears})` : ""}, calling AI...`);
 
     if (!process.env.ANTHROPIC_API_KEY) {
       return NextResponse.json(
@@ -275,4 +357,46 @@ async function fetchCoverImage(
   }
 
   return null;
+}
+
+/**
+ * Fetch key collector information from AI
+ * Used when eBay provides pricing but we still need key facts
+ */
+async function fetchKeyInfoFromAI(
+  title: string,
+  issueNumber: string
+): Promise<string[]> {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return [];
+  }
+
+  try {
+    const response = await anthropic.messages.create({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 256,
+      messages: [
+        {
+          role: "user",
+          content: `For "${title}" issue #${issueNumber}, list ONLY major key collector facts (first appearances, deaths, major storyline events). Return a JSON array of strings. If this is not a key issue, return an empty array []. Return ONLY the JSON array, no other text.`,
+        },
+      ],
+    });
+
+    const textContent = response.content.find((block) => block.type === "text");
+    if (!textContent || textContent.type !== "text") {
+      return [];
+    }
+
+    let jsonText = textContent.text.trim();
+    if (jsonText.startsWith("```json")) jsonText = jsonText.slice(7);
+    if (jsonText.startsWith("```")) jsonText = jsonText.slice(3);
+    if (jsonText.endsWith("```")) jsonText = jsonText.slice(0, -3);
+
+    const parsed = JSON.parse(jsonText.trim());
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    console.log("[con-mode-lookup] Key info AI lookup failed");
+    return [];
+  }
 }

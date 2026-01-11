@@ -261,6 +261,9 @@ export function CSVImport({ onImportComplete, onCancel }: CSVImportProps) {
           signedBy: row.signedBy || null,
           priceData,
           keyInfo,
+          certificationNumber: null,
+          labelType: null,
+          pageQuality: null,
         };
 
         // Determine list IDs based on slabbed status

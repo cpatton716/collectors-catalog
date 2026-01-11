@@ -9,7 +9,7 @@ import {
   GRADE_SCALE,
   GradingCompany,
 } from "@/types/comic";
-import { AlertCircle, CheckCircle, Loader2, DollarSign, TrendingUp, Info, Search, ExternalLink, Plus, X, KeyRound, RefreshCw } from "lucide-react";
+import { AlertCircle, AlertTriangle, CheckCircle, Loader2, DollarSign, TrendingUp, Info, Search, ExternalLink, Plus, X, KeyRound, RefreshCw } from "lucide-react";
 import { TitleAutocomplete } from "./TitleAutocomplete";
 import { GradePricingBreakdown } from "./GradePricingBreakdown";
 import { calculateValueAtGrade } from "@/lib/gradePrice";
@@ -50,6 +50,8 @@ export function ComicDetailsForm({
     initialComic.isSignatureSeries || false
   );
   const [signedBy, setSignedBy] = useState(initialComic.signedBy || "");
+  const [certificationNumber, setCertificationNumber] = useState(initialComic.certificationNumber || "");
+  const [isLookingUpCert, setIsLookingUpCert] = useState(false);
 
   // Other form state - initialized from existing item in edit mode
   const [purchasePrice, setPurchasePrice] = useState<string>(
@@ -285,6 +287,47 @@ export function ComicDetailsForm({
     setComic((prev) => ({ ...prev, [field]: value }));
   };
 
+  // Handle certification number lookup
+  const handleCertLookup = async () => {
+    if (!certificationNumber || !gradingCompany) return;
+
+    setIsLookingUpCert(true);
+    try {
+      const response = await fetch("/api/cert-lookup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          certNumber: certificationNumber,
+          gradingCompany,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data) {
+          // Update comic details with cert data
+          setComic((prev) => ({
+            ...prev,
+            title: data.data.title || prev.title,
+            issueNumber: data.data.issueNumber || prev.issueNumber,
+            publisher: data.data.publisher || prev.publisher,
+            releaseYear: data.data.releaseYear || prev.releaseYear,
+            variant: data.data.variant || prev.variant,
+            labelType: data.data.labelType || prev.labelType,
+            pageQuality: data.data.pageQuality || prev.pageQuality,
+          }));
+          if (data.data.grade) {
+            setGrade(data.data.grade);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error looking up certification:", error);
+    } finally {
+      setIsLookingUpCert(false);
+    }
+  };
+
   const handleSearchCover = async () => {
     if (!comic.title) return;
 
@@ -387,7 +430,7 @@ export function ComicDetailsForm({
       {/* Basic Info */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className={`block text-sm font-medium mb-1 ${!comic.title && comic.issueNumber ? "text-red-600" : "text-gray-700"}`}>
             Title *
           </label>
           <TitleAutocomplete
@@ -404,24 +447,40 @@ export function ComicDetailsForm({
             }}
             placeholder="e.g., Amazing Spider-Man"
             required
+            className={!comic.title && comic.issueNumber ? "border-red-300 bg-red-50" : ""}
           />
-          <p className="text-xs text-gray-500 mt-1">
-            Start typing for suggestions
+          <p className={`text-xs mt-1 ${!comic.title && comic.issueNumber ? "text-red-600" : "text-gray-500"}`}>
+            {!comic.title && comic.issueNumber ? (
+              <span className="flex items-center gap-1">
+                <AlertTriangle className="w-3 h-3" />
+                Required for price lookup
+              </span>
+            ) : (
+              "Start typing for suggestions"
+            )}
           </p>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className={`block text-sm font-medium mb-1 ${!comic.issueNumber && comic.title ? "text-red-600" : "text-gray-700"}`}>
             Issue Number *
           </label>
           <input
             type="text"
             value={comic.issueNumber || ""}
             onChange={(e) => updateComic("issueNumber", e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white text-gray-900"
+            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white text-gray-900 ${
+              !comic.issueNumber && comic.title ? "border-red-300 bg-red-50" : "border-gray-300"
+            }`}
             placeholder="e.g., 300"
             required
           />
+          {!comic.issueNumber && comic.title && (
+            <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+              <AlertTriangle className="w-3 h-3" />
+              Required for price lookup
+            </p>
+          )}
         </div>
 
         <div>
@@ -866,6 +925,47 @@ export function ComicDetailsForm({
               </div>
             </div>
 
+            {/* Certification Number */}
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Certification Number
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={certificationNumber}
+                  onChange={(e) => setCertificationNumber(e.target.value)}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white text-gray-900"
+                  placeholder="e.g., 3904837001"
+                />
+                <button
+                  type="button"
+                  onClick={handleCertLookup}
+                  disabled={!certificationNumber || !gradingCompany || isLookingUpCert}
+                  className="px-3 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
+                >
+                  {isLookingUpCert ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Search className="w-4 h-4" />
+                  )}
+                  Lookup
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Enter the cert number from the label to fetch details from {gradingCompany || "the grading company"}
+              </p>
+            </div>
+
+            {/* Page Quality - if detected from cert lookup */}
+            {comic.pageQuality && (
+              <div className="mt-3 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-700">
+                  <span className="font-medium">Page Quality:</span> {comic.pageQuality}
+                </p>
+              </div>
+            )}
+
             {/* Signature Series */}
             <div className="mt-4 space-y-3">
               <label className="flex items-center gap-2">
@@ -959,8 +1059,32 @@ export function ComicDetailsForm({
               )}
             </div>
 
-            {/* Disclaimer */}
-            {comic.priceData.disclaimer && (
+            {/* AI Price Warning */}
+            {comic.priceData.priceSource === "ai" && (
+              <div className="mt-3 pt-3 border-t border-amber-200 bg-amber-50 -mx-4 -mb-4 px-4 py-3 rounded-b-lg">
+                <p className="text-xs text-amber-700 flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <span>
+                    <span className="font-semibold">AI Estimate:</span> No eBay sales data found for this comic. This price is an AI estimate and may not be accurate. Use caution when making buying or selling decisions.
+                  </span>
+                </p>
+              </div>
+            )}
+
+            {/* Signature Series Price Note */}
+            {isSignatureSeries && (
+              <div className={`mt-3 pt-3 border-t border-blue-200 bg-blue-50 ${comic.priceData.priceSource === "ai" ? "" : "-mx-4 -mb-4 px-4 py-3 rounded-b-lg"}`}>
+                <p className="text-xs text-blue-700 flex items-start gap-2">
+                  <Info className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <span>
+                    <span className="font-semibold">Signature Series:</span> Price based on unsigned copies. Signed/authenticated comics often command a premium depending on the signer.
+                  </span>
+                </p>
+              </div>
+            )}
+
+            {/* Disclaimer - only show for eBay data */}
+            {comic.priceData.disclaimer && comic.priceData.priceSource !== "ai" && (
               <div className="mt-3 pt-3 border-t border-green-200">
                 <p className="text-xs text-gray-500 flex items-start gap-1">
                   <Info className="w-3 h-3 mt-0.5 flex-shrink-0" />

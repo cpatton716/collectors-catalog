@@ -1,6 +1,6 @@
 "use client";
 
-import { X, Plus, RotateCcw, TrendingUp, TrendingDown, Minus, Database, CloudOff } from "lucide-react";
+import { X, Plus, RotateCcw, TrendingUp, TrendingDown, Minus, Database, CloudOff, ExternalLink, AlertTriangle } from "lucide-react";
 
 interface RecentSale {
   price: number;
@@ -20,6 +20,7 @@ interface KeyHuntPriceResultProps {
   coverImageUrl?: string | null;
   fromCache?: boolean;
   isOffline?: boolean;
+  source?: "database" | "ebay" | "ai";
 }
 
 export function KeyHuntPriceResult({
@@ -35,7 +36,17 @@ export function KeyHuntPriceResult({
   coverImageUrl,
   fromCache = false,
   isOffline = false,
+  source = "ai",
 }: KeyHuntPriceResultProps) {
+  // Build eBay search URL for "For Sale Now" link
+  const buildEbaySearchUrl = () => {
+    let query = title.trim();
+    const cleanIssue = issueNumber.replace(/^#/, "").trim();
+    query += ` #${cleanIssue}`;
+    const encodedQuery = encodeURIComponent(query);
+    // Comic book category, sorted by best match, Buy It Now
+    return `https://www.ebay.com/sch/i.html?_nkw=${encodedQuery}&_sacat=259104&_sop=12&LH_BIN=1`;
+  };
   if (!isOpen) return null;
 
   // Calculate if recent sale differs significantly from average
@@ -99,15 +110,20 @@ export function KeyHuntPriceResult({
           <X className="w-5 h-5 text-white" />
         </button>
 
-        {/* Cached Badge */}
-        {fromCache && (
-          <div className="absolute top-4 left-4 z-10">
+        {/* Source Badge */}
+        <div className="absolute top-4 left-4 z-10 flex gap-1.5">
+          {source === "ebay" && (
+            <span className="flex items-center gap-1 px-2 py-1 bg-blue-500 rounded-full text-xs font-medium text-white">
+              eBay Data
+            </span>
+          )}
+          {fromCache && (
             <span className="flex items-center gap-1 px-2 py-1 bg-amber-500 rounded-full text-xs font-medium text-white">
               <Database className="w-3 h-3" />
               Cached
             </span>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Cover Image Header */}
         <div className="relative h-40 bg-gradient-to-br from-primary-500 to-primary-700 overflow-hidden">
@@ -157,7 +173,7 @@ export function KeyHuntPriceResult({
           </div>
 
           {/* Average Price */}
-          <div className="text-center mb-6">
+          <div className="text-center mb-4">
             <p className="text-sm text-gray-500 mb-1">Average Price (Last 5 Sales)</p>
             <p className="text-4xl font-bold text-gray-900">
               {formatPrice(averagePrice)}
@@ -168,6 +184,16 @@ export function KeyHuntPriceResult({
               </p>
             )}
           </div>
+
+          {/* AI Price Warning */}
+          {source === "ai" && averagePrice && (
+            <div className="mb-4 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-amber-700">
+                <span className="font-medium">AI Estimate:</span> No eBay sales data found. This price is an AI estimate and may not be accurate.
+              </p>
+            </div>
+          )}
 
           {/* Recent Sale */}
           {recentSale && (
@@ -256,6 +282,17 @@ export function KeyHuntPriceResult({
               </p>
             </div>
           )}
+
+          {/* For Sale Now Link */}
+          <a
+            href={buildEbaySearchUrl()}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full mb-4 py-2.5 px-4 bg-[#0064D2] text-white rounded-xl font-medium hover:bg-[#004BA0] transition-colors flex items-center justify-center gap-2 text-sm"
+          >
+            <ExternalLink className="w-4 h-4" />
+            For Sale Now on eBay
+          </a>
 
           {/* Action Buttons */}
           <div className="flex gap-3">

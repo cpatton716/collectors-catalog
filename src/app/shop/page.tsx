@@ -1,0 +1,249 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useAuth } from "@clerk/nextjs";
+import {
+  Gavel,
+  Tag,
+  Filter,
+  Clock,
+  TrendingUp,
+  SortAsc,
+  ChevronDown,
+  Search,
+} from "lucide-react";
+import { Auction, AuctionSortBy } from "@/types/auction";
+import { AuctionCard, AuctionDetailModal } from "@/components/auction";
+
+type ShopTab = "buy-now" | "auctions";
+
+const SORT_OPTIONS: { value: AuctionSortBy; label: string }[] = [
+  { value: "ending_soonest", label: "Ending Soonest" },
+  { value: "ending_latest", label: "Ending Latest" },
+  { value: "price_low", label: "Price: Low to High" },
+  { value: "price_high", label: "Price: High to Low" },
+  { value: "most_bids", label: "Most Bids" },
+  { value: "newest", label: "Newest Listed" },
+];
+
+export default function ShopPage() {
+  const { isSignedIn } = useAuth();
+  const [activeTab, setActiveTab] = useState<ShopTab>("auctions");
+  const [auctions, setAuctions] = useState<Auction[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedAuctionId, setSelectedAuctionId] = useState<string | null>(null);
+
+  // Filters
+  const [sortBy, setSortBy] = useState<AuctionSortBy>("ending_soonest");
+  const [showFilters, setShowFilters] = useState(false);
+  const [endingSoonOnly, setEndingSoonOnly] = useState(false);
+  const [hasBuyItNow, setHasBuyItNow] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    if (activeTab === "auctions") {
+      loadAuctions();
+    }
+  }, [activeTab, sortBy, endingSoonOnly, hasBuyItNow]);
+
+  const loadAuctions = async () => {
+    setIsLoading(true);
+    try {
+      const params = new URLSearchParams({
+        sortBy,
+        ...(endingSoonOnly && { endingSoon: "true" }),
+        ...(hasBuyItNow && { hasBuyItNow: "true" }),
+      });
+
+      const response = await fetch(`/api/auctions?${params}`);
+      if (response.ok) {
+        const data = await response.json();
+        setAuctions(data.auctions || []);
+      }
+    } catch (error) {
+      console.error("Error loading auctions:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleWatchlistChange = (auctionId: string, isWatching: boolean) => {
+    setAuctions((prev) =>
+      prev.map((a) =>
+        a.id === auctionId ? { ...a, isWatching } : a
+      )
+    );
+  };
+
+  // Filter auctions by search query (client-side)
+  const filteredAuctions = auctions.filter((auction) => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase();
+    const title = auction.comic?.comic?.title?.toLowerCase() || "";
+    const publisher = auction.comic?.comic?.publisher?.toLowerCase() || "";
+    return title.includes(query) || publisher.includes(query);
+  });
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b">
+        <div className="container mx-auto px-4 py-6">
+          <h1 className="text-2xl font-bold text-gray-900">Shop</h1>
+          <p className="text-gray-600 mt-1">
+            Find your next addition to the collection
+          </p>
+        </div>
+
+        {/* Tabs */}
+        <div className="container mx-auto px-4">
+          <div className="flex border-b">
+            <button
+              onClick={() => setActiveTab("buy-now")}
+              className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${
+                activeTab === "buy-now"
+                  ? "border-blue-600 text-blue-600"
+                  : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              <Tag className="w-4 h-4" />
+              Buy Now
+            </button>
+            <button
+              onClick={() => setActiveTab("auctions")}
+              className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${
+                activeTab === "auctions"
+                  ? "border-blue-600 text-blue-600"
+                  : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              <Gavel className="w-4 h-4" />
+              Auctions
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="container mx-auto px-4 py-6">
+        {activeTab === "buy-now" ? (
+          <div className="text-center py-12 text-gray-500">
+            <Tag className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+            <p className="text-lg font-medium">Buy Now listings coming soon!</p>
+            <p className="mt-2">
+              Check out the Auctions tab in the meantime.
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* Search & Filters */}
+            <div className="mb-6 space-y-4">
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search auctions..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              {/* Filter/Sort Bar */}
+              <div className="flex flex-wrap items-center gap-3">
+                {/* Sort Dropdown */}
+                <div className="relative">
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as AuctionSortBy)}
+                    className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-10 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    {SORT_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                </div>
+
+                {/* Filter Toggles */}
+                <button
+                  onClick={() => setEndingSoonOnly(!endingSoonOnly)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
+                    endingSoonOnly
+                      ? "bg-orange-100 border-orange-300 text-orange-700"
+                      : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  <Clock className="w-4 h-4" />
+                  Ending Soon
+                </button>
+
+                <button
+                  onClick={() => setHasBuyItNow(!hasBuyItNow)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
+                    hasBuyItNow
+                      ? "bg-green-100 border-green-300 text-green-700"
+                      : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  <Tag className="w-4 h-4" />
+                  Buy It Now
+                </button>
+              </div>
+            </div>
+
+            {/* Auctions Grid */}
+            {isLoading ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                {[...Array(10)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="bg-white rounded-xl shadow-md overflow-hidden animate-pulse"
+                  >
+                    <div className="aspect-[2/3] bg-gray-200" />
+                    <div className="p-3 space-y-2">
+                      <div className="h-4 bg-gray-200 rounded w-3/4" />
+                      <div className="h-3 bg-gray-200 rounded w-1/2" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : filteredAuctions.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
+                <Gavel className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                <p className="text-lg font-medium">No auctions found</p>
+                <p className="mt-2">
+                  {searchQuery
+                    ? "Try adjusting your search"
+                    : "Check back soon for new listings"}
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                {filteredAuctions.map((auction) => (
+                  <AuctionCard
+                    key={auction.id}
+                    auction={auction}
+                    onClick={() => setSelectedAuctionId(auction.id)}
+                    onWatchlistChange={handleWatchlistChange}
+                  />
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Auction Detail Modal */}
+      <AuctionDetailModal
+        auctionId={selectedAuctionId || ""}
+        isOpen={!!selectedAuctionId}
+        onClose={() => setSelectedAuctionId(null)}
+        onAuctionUpdated={loadAuctions}
+      />
+    </div>
+  );
+}

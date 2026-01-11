@@ -25,6 +25,7 @@ import {
   KeyRound,
   Layers,
   ZoomIn,
+  AlertTriangle,
 } from "lucide-react";
 
 interface ComicDetailModalProps {
@@ -385,7 +386,32 @@ export function ComicDetailModal({
                     </div>
                   )}
                 </div>
-                {comic.priceData.disclaimer && (
+                {/* AI Price Warning */}
+                {comic.priceData.priceSource === "ai" && (
+                  <div className="mt-3 pt-3 border-t border-amber-200 bg-amber-50 -mx-4 -mb-4 px-4 py-3 rounded-b-lg">
+                    <p className="text-xs text-amber-700 flex items-start gap-2">
+                      <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                      <span>
+                        <span className="font-semibold">AI Estimate:</span> No eBay sales data found. This price is an AI estimate and may not be accurate.
+                      </span>
+                    </p>
+                  </div>
+                )}
+
+                {/* Signature Series Price Note */}
+                {comic.isSignatureSeries && (
+                  <div className={`mt-3 pt-3 border-t border-blue-200 bg-blue-50 ${comic.priceData.priceSource === "ai" ? "" : "-mx-4 -mb-4 px-4 py-3 rounded-b-lg"}`}>
+                    <p className="text-xs text-blue-700 flex items-start gap-2">
+                      <Info className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                      <span>
+                        <span className="font-semibold">Signature Series:</span> Price based on unsigned copies. Signed/authenticated comics often command a premium depending on the signer.
+                      </span>
+                    </p>
+                  </div>
+                )}
+
+                {/* Disclaimer - only show for eBay data */}
+                {comic.priceData.disclaimer && comic.priceData.priceSource !== "ai" && (
                   <div className="mt-3 pt-3 border-t border-green-200">
                     <p className="text-xs text-gray-500 flex items-start gap-1">
                       <Info className="w-3 h-3 mt-0.5 flex-shrink-0" />
