@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
 import { X, Package, ChevronLeft, ChevronRight, ShoppingCart, AlertCircle, Check, Tag, Loader2 } from "lucide-react";
 import { Auction, formatPrice } from "@/types/auction";
@@ -294,9 +295,9 @@ export function ListingDetailModal({
 
                   {!isSignedIn && listing.status === "active" && (
                     <p className="text-center text-sm text-gray-500">
-                      <a href="/sign-in" className="text-green-600 hover:underline">
+                      <Link href="/sign-in" className="text-green-600 hover:underline">
                         Sign in
-                      </a>{" "}
+                      </Link>{" "}
                       to make a purchase
                     </p>
                   )}
