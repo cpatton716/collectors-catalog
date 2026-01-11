@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { X, Cloud, Sparkles, AlertTriangle, Infinity, Shield, Smartphone } from "lucide-react";
 import type { MilestoneType } from "@/hooks/useGuestScans";
+import { analytics } from "@/components/PostHogProvider";
 
 // Non-null milestone type for the modal (modal should only be shown with a valid milestone)
 type ValidMilestone = Exclude<MilestoneType, null>;
@@ -111,6 +112,11 @@ export function SignUpPromptModal({ milestone, scanCount, onClose }: SignUpPromp
     };
   }, []);
 
+  // Track when milestone modal is shown
+  useEffect(() => {
+    analytics.trackGuestMilestone(milestone, scanCount);
+  }, [milestone, scanCount]);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
@@ -167,6 +173,7 @@ export function SignUpPromptModal({ milestone, scanCount, onClose }: SignUpPromp
         <div className="px-6 pb-8 space-y-3">
           <Link
             href="/sign-up"
+            onClick={() => analytics.trackSignUpStarted()}
             className="flex items-center justify-center gap-2 w-full py-3 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition-colors"
           >
             <Sparkles className="w-5 h-5" />
@@ -182,6 +189,7 @@ export function SignUpPromptModal({ milestone, scanCount, onClose }: SignUpPromp
             </button>
             <Link
               href="/sign-in"
+              onClick={() => analytics.trackSignUpStarted()}
               className="flex-1 py-3 text-center text-primary-600 hover:text-primary-700 font-medium transition-colors"
             >
               Already have an account?

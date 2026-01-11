@@ -4,6 +4,8 @@ import { lookupEbaySoldPrices, isFindingApiConfigured } from "@/lib/ebayFinding"
 import { lookupCertification } from "@/lib/certLookup";
 import { supabase } from "@/lib/supabase";
 import { PriceData } from "@/types/comic";
+import { rateLimiters, checkRateLimit, getRateLimitIdentifier } from "@/lib/rateLimit";
+import { cacheGet, cacheSet, generateEbayPriceCacheKey } from "@/lib/cache";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -11,25 +13,6 @@ const anthropic = new Anthropic({
 
 // eBay price cache TTL: 24 hours
 const EBAY_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
-
-/**
- * Generate cache key for eBay price lookup
- */
-function generateEbayCacheKey(
-  title: string,
-  issueNumber: string,
-  grade: number,
-  isSlabbed: boolean,
-  gradingCompany?: string
-): string {
-  return [
-    title.toLowerCase().trim(),
-    issueNumber.toLowerCase().trim(),
-    grade.toString(),
-    isSlabbed ? "slabbed" : "raw",
-    gradingCompany?.toLowerCase() || "",
-  ].join("|");
-}
 
 /**
  * Get cached eBay price from database
@@ -93,6 +76,14 @@ async function setCachedEbayPrice(
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit check - protect expensive AI endpoint
+    const identifier = getRateLimitIdentifier(null, request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip"));
+    const { success: rateLimitSuccess, response: rateLimitResponse } = await checkRateLimit(
+      rateLimiters.analyze,
+      identifier
+    );
+    if (!rateLimitSuccess) return rateLimitResponse;
+
     const { image, mediaType } = await request.json();
 
     console.log("Received image request, mediaType:", mediaType);
@@ -251,12 +242,32 @@ Important:
           if (certResult.data.variant) {
             comicDetails.variant = certResult.data.variant;
           }
-          // Store label type and page quality in notes or as additional fields
+          // Store label type and page quality
           if (certResult.data.labelType) {
             comicDetails.labelType = certResult.data.labelType;
           }
           if (certResult.data.pageQuality) {
             comicDetails.pageQuality = certResult.data.pageQuality;
+          }
+          // Store new grading-specific fields
+          if (certResult.data.gradeDate) {
+            comicDetails.gradeDate = certResult.data.gradeDate;
+          }
+          if (certResult.data.graderNotes) {
+            comicDetails.graderNotes = certResult.data.graderNotes;
+          }
+          // Map signatures to signedBy
+          if (certResult.data.signatures) {
+            comicDetails.signedBy = certResult.data.signatures;
+            comicDetails.isSignatureSeries = true;
+          }
+          // Map keyComments to keyInfo (authoritative source, skip AI lookup)
+          if (certResult.data.keyComments) {
+            // Split by periods or newlines to create array of key facts
+            comicDetails.keyInfo = certResult.data.keyComments
+              .split(/[.\n]+/)
+              .map(s => s.trim())
+              .filter(s => s.length > 0);
           }
 
           console.log("[analyze] Merged comic details after cert lookup:", comicDetails);
@@ -519,11 +530,11 @@ Return ONLY the JSON object.`,
       const grade = comicDetails.grade ? parseFloat(comicDetails.grade) : 9.4;
       let priceDataFound = false;
 
-      // 1. Try eBay Finding API first (real sold listings) - with caching
+      // 1. Try eBay Finding API first (real sold listings) - with Redis + Supabase caching
       if (isFindingApiConfigured()) {
         console.log("[analyze] Trying eBay Finding API...");
         try {
-          const cacheKey = generateEbayCacheKey(
+          const cacheKey = generateEbayPriceCacheKey(
             comicDetails.title,
             comicDetails.issueNumber,
             grade,
@@ -531,59 +542,82 @@ Return ONLY the JSON object.`,
             comicDetails.gradingCompany || undefined
           );
 
-          // Check cache first
-          const cacheResult = await getCachedEbayPrice(cacheKey);
-          if (cacheResult.found) {
-            if (cacheResult.data) {
-              console.log("[analyze] eBay price found in cache");
-              comicDetails.priceData = {
-                ...cacheResult.data,
-                priceSource: "ebay",
-              };
-              priceDataFound = true;
-            } else {
-              console.log("[analyze] Cache hit but no eBay data available (previously checked)");
+          // 1a. Check Redis cache first (fastest)
+          const redisResult = await cacheGet<PriceData | { noData: true }>(cacheKey, "ebayPrice");
+          if (redisResult !== null) {
+            if ("noData" in redisResult) {
+              console.log("[analyze] Redis cache indicates no eBay data available");
               // priceDataFound stays false, will fall back to AI
-            }
-          } else {
-            // Fetch from eBay API
-            const ebayPriceData = await lookupEbaySoldPrices(
-              comicDetails.title,
-              comicDetails.issueNumber,
-              grade,
-              isSlabbed,
-              comicDetails.gradingCompany || undefined
-            );
-
-            if (ebayPriceData && ebayPriceData.estimatedValue) {
-              console.log("[analyze] eBay price data found");
+            } else {
+              console.log("[analyze] eBay price found in Redis cache");
               comicDetails.priceData = {
-                ...ebayPriceData,
+                ...redisResult,
                 priceSource: "ebay",
               };
               priceDataFound = true;
+            }
+          }
 
-              // Cache the result for 24 hours
-              await setCachedEbayPrice(
-                cacheKey,
-                ebayPriceData,
-                comicDetails.title,
-                comicDetails.issueNumber,
-                grade,
-                isSlabbed,
-                comicDetails.gradingCompany || undefined
-              );
+          if (!priceDataFound && redisResult === null) {
+            // 1b. Check Supabase cache (fallback, still faster than API)
+            const supabaseResult = await getCachedEbayPrice(cacheKey);
+            if (supabaseResult.found) {
+              if (supabaseResult.data) {
+                console.log("[analyze] eBay price found in Supabase cache");
+                comicDetails.priceData = {
+                  ...supabaseResult.data,
+                  priceSource: "ebay",
+                };
+                priceDataFound = true;
+                // Backfill Redis cache for next time
+                cacheSet(cacheKey, supabaseResult.data, "ebayPrice");
+              } else {
+                console.log("[analyze] Cache hit but no eBay data available (previously checked)");
+                // Cache the "no data" marker in Redis too
+                cacheSet(cacheKey, { noData: true }, "ebayPrice");
+              }
             } else {
-              // Cache the "no results" to avoid repeated API calls
-              await setCachedEbayPrice(
-                cacheKey,
-                null,
+              // 1c. Fetch from eBay API (slowest)
+              const ebayPriceData = await lookupEbaySoldPrices(
                 comicDetails.title,
                 comicDetails.issueNumber,
                 grade,
                 isSlabbed,
                 comicDetails.gradingCompany || undefined
               );
+
+              if (ebayPriceData && ebayPriceData.estimatedValue) {
+                console.log("[analyze] eBay price data found");
+                comicDetails.priceData = {
+                  ...ebayPriceData,
+                  priceSource: "ebay",
+                };
+                priceDataFound = true;
+
+                // Cache in both Redis and Supabase
+                cacheSet(cacheKey, ebayPriceData, "ebayPrice");
+                await setCachedEbayPrice(
+                  cacheKey,
+                  ebayPriceData,
+                  comicDetails.title,
+                  comicDetails.issueNumber,
+                  grade,
+                  isSlabbed,
+                  comicDetails.gradingCompany || undefined
+                );
+              } else {
+                // Cache the "no results" to avoid repeated API calls
+                cacheSet(cacheKey, { noData: true }, "ebayPrice");
+                await setCachedEbayPrice(
+                  cacheKey,
+                  null,
+                  comicDetails.title,
+                  comicDetails.issueNumber,
+                  grade,
+                  isSlabbed,
+                  comicDetails.gradingCompany || undefined
+                );
+              }
             }
           }
         } catch (ebayError) {

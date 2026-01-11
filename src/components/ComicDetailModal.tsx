@@ -26,7 +26,25 @@ import {
   Layers,
   ZoomIn,
   AlertTriangle,
+  ExternalLink,
+  FileCheck,
 } from "lucide-react";
+
+// Helper to generate certification verification URLs
+function getCertVerificationUrl(certNumber: string, gradingCompany: string): string | null {
+  if (!certNumber || !gradingCompany) return null;
+
+  switch (gradingCompany.toUpperCase()) {
+    case "CGC":
+      return `https://www.cgccomics.com/certlookup/${certNumber}`;
+    case "CBCS":
+      return `https://cbcscomics.com/grading-notes/${certNumber}`;
+    case "PGX":
+      return `https://www.pgxcomics.com/certverification/pgxlabel.aspx?CertNo=${certNumber}`;
+    default:
+      return null;
+  }
+}
 
 interface ComicDetailModalProps {
   item: CollectionItem;
@@ -270,6 +288,62 @@ export function ComicDetailModal({
                 </span>
               )}
             </div>
+
+            {/* Grading Details Section - only show for graded books */}
+            {item.isGraded && (comic.certificationNumber || comic.pageQuality || comic.gradeDate || comic.graderNotes) && (
+              <div className="mb-6 p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                  <FileCheck className="w-4 h-4" />
+                  Grading Details
+                </h3>
+                <div className="space-y-3">
+                  {/* Certification Number with Link */}
+                  {comic.certificationNumber && item.gradingCompany && (
+                    <div>
+                      <p className="text-xs font-medium text-slate-500 mb-1">Certification #</p>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-mono text-slate-700">{comic.certificationNumber}</span>
+                        {getCertVerificationUrl(comic.certificationNumber, item.gradingCompany) && (
+                          <a
+                            href={getCertVerificationUrl(comic.certificationNumber, item.gradingCompany) || "#"}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 hover:underline"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            Verify
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Page Quality */}
+                  {comic.pageQuality && (
+                    <div>
+                      <p className="text-xs font-medium text-slate-500 mb-1">Page Quality</p>
+                      <p className="text-sm text-slate-700">{comic.pageQuality}</p>
+                    </div>
+                  )}
+
+                  {/* Grade Date */}
+                  {comic.gradeDate && (
+                    <div>
+                      <p className="text-xs font-medium text-slate-500 mb-1">Grade Date</p>
+                      <p className="text-sm text-slate-700">{comic.gradeDate}</p>
+                    </div>
+                  )}
+
+                  {/* Grader Notes */}
+                  {comic.graderNotes && (
+                    <div>
+                      <p className="text-xs font-medium text-slate-500 mb-1">Grader Notes</p>
+                      <p className="text-sm text-slate-700 whitespace-pre-wrap">{comic.graderNotes}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Info Grid */}
             <div className="grid grid-cols-2 gap-4 mb-6">

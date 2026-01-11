@@ -16,6 +16,8 @@ export interface ComicDetails {
   certificationNumber: string | null; // CGC/CBCS/PGX cert number
   labelType: string | null; // e.g., "Universal", "Signature Series"
   pageQuality: string | null; // e.g., "White", "Off-white to white"
+  gradeDate: string | null; // Date the comic was graded (CGC only)
+  graderNotes: string | null; // Grader notes about defects (CGC: "Grader Notes", CBCS: "Notes")
   isSignatureSeries: boolean;
   signedBy: string | null;
   // Price/Value info

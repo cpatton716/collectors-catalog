@@ -4,6 +4,7 @@ import { CollectionItem } from "./comic";
 // AUCTION TYPES
 // ============================================================================
 
+export type ListingType = "auction" | "fixed_price";
 export type AuctionStatus = "active" | "ended" | "sold" | "cancelled";
 export type PaymentStatus = "pending" | "paid" | "shipped" | "completed";
 export type RatingType = "positive" | "negative";
@@ -21,8 +22,11 @@ export interface Auction {
   sellerId: string;
   comicId: string;
 
+  // Listing type
+  listingType: ListingType;
+
   // Pricing
-  startingPrice: number;
+  startingPrice: number; // For fixed_price, this is the sale price
   currentBid: number | null;
   buyItNowPrice: number | null;
 
@@ -64,9 +68,18 @@ export interface Auction {
 
 export interface CreateAuctionInput {
   comicId: string;
+  listingType?: ListingType; // Defaults to "auction"
   startingPrice: number;
   buyItNowPrice?: number | null;
   durationDays: number;
+  shippingCost: number;
+  detailImages?: string[];
+  description?: string;
+}
+
+export interface CreateFixedPriceListingInput {
+  comicId: string;
+  price: number;
   shippingCost: number;
   detailImages?: string[];
   description?: string;
@@ -190,6 +203,7 @@ export interface Notification {
 
 export interface AuctionFilters {
   status?: AuctionStatus;
+  listingType?: ListingType;
   sellerId?: string;
   publisher?: string;
   minPrice?: number;
@@ -204,6 +218,11 @@ export type AuctionSortBy =
   | "price_low"
   | "price_high"
   | "most_bids"
+  | "newest";
+
+export type ListingSortBy =
+  | "price_low"
+  | "price_high"
   | "newest";
 
 // ============================================================================
@@ -414,5 +433,6 @@ export const AUCTION_DURATION_OPTIONS = [
 ];
 
 export const MIN_STARTING_PRICE = 0.99;
+export const MIN_FIXED_PRICE = 0.99;
 export const MAX_DETAIL_IMAGES = 4;
 export const PAYMENT_WINDOW_HOURS = 48;

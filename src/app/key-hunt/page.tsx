@@ -391,6 +391,8 @@ export default function KeyHuntPage() {
         certificationNumber: null,
         labelType: null,
         pageQuality: null,
+        gradeDate: null,
+        graderNotes: null,
         priceData: result.averagePrice
           ? {
               estimatedValue: result.averagePrice,
@@ -493,6 +495,8 @@ export default function KeyHuntPage() {
         certificationNumber: null,
         labelType: null,
         pageQuality: null,
+        gradeDate: null,
+        graderNotes: null,
         priceData: entry.priceResult.rawPrice
           ? {
               estimatedValue: entry.priceResult.rawPrice,

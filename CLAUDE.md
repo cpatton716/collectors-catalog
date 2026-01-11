@@ -43,16 +43,62 @@ open -a TextEdit "/Users/chrispatton/Coding for Dummies/Comic Tracker/.env.local
 
 When the user says **"Close up shop"**, perform the following steps:
 
-1. **Commit all changes** - Stage and commit with a descriptive message summarizing the session's work
-2. **Update DEV_LOG.md** - Add an entry with:
+1. **Review and optimize code** - Review the session's changes for:
+   - Remove debugging code (console.logs, commented-out code)
+   - Remove unused imports and variables
+   - Consolidate any duplicate logic
+   - Address any TODO comments created during the session
+   - Ensure code follows project patterns and conventions
+2. **Update TEST_CASES.md** - Add test cases for any new features added during the session
+3. **Run tests** - Execute `npm run lint` and `npm run build` to ensure nothing is broken before committing
+4. **Commit all changes** - Stage and commit with a descriptive message summarizing the session's work
+5. **Update DEV_LOG.md** - Add an entry with:
    - Date
    - Session summary (what was accomplished)
    - Files added/modified (key ones only)
    - Any issues encountered and resolved
-3. **Highlight last item worked on** - Brief high-level summary of the main feature/fix
-4. **Evaluation status review** - Read EVALUATION.md and provide:
+6. **Update "Changes Since Last Deploy"** - Add session's changes to the tracking section in DEV_LOG.md
+7. **Highlight last item worked on** - Brief high-level summary of the main feature/fix
+8. **Evaluation status review** - Read EVALUATION.md and provide:
    - Current status of priority items
    - Recommended next steps for the next session
 
 The Dev Log is stored at: `DEV_LOG.md` in the project root.
+
+**Important:** Close up shop does NOT deploy. Deploys are limited and should be done strategically using the Deploy command.
+
+## Deploy Command
+
+When the user says **"Deploy"**, perform the following steps:
+
+1. **Run full quality check:**
+   - `npm run lint` - Check for linting errors
+   - `npm test` - Run all tests
+   - `npm run build` - Ensure build succeeds
+
+2. **Review Deploy Checklist** - Confirm with user:
+   - [ ] All tests passing
+   - [ ] Manual smoke test completed
+   - [ ] No console errors
+   - [ ] Mobile responsiveness tested
+   - [ ] Priority features working as expected
+
+3. **Show "Changes Since Last Deploy"** - Display accumulated changes from DEV_LOG.md so user can confirm it's worth a deploy
+
+4. **Get explicit confirmation** - Ask user to confirm they want to use a deploy
+
+5. **After successful deploy:**
+   - Clear the "Changes Since Last Deploy" section in DEV_LOG.md
+   - Log the deploy date and summary in DEV_LOG.md
+
+**Deploy Budget:** User has limited deploys remaining. Always remind them of this and confirm the deploy is worth it.
+
+## Changes Since Last Deploy Tracking
+
+Maintain a "Changes Since Last Deploy" section at the top of DEV_LOG.md with:
+- List of features/fixes added since last deploy
+- Running count of sessions since last deploy
+- Assessment of deploy readiness (Ready / Needs Testing / Has Issues)
+
+This helps batch work strategically and avoid wasting deploys on small changes.
 

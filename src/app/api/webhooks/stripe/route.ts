@@ -99,10 +99,3 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session) {
 
   console.log(`Payment completed for auction ${auctionId}`);
 }
-
-// Stripe webhooks need the raw body, so we disable the body parser
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};

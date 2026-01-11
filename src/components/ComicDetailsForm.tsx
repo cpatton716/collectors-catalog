@@ -14,6 +14,22 @@ import { TitleAutocomplete } from "./TitleAutocomplete";
 import { GradePricingBreakdown } from "./GradePricingBreakdown";
 import { calculateValueAtGrade } from "@/lib/gradePrice";
 
+// Helper to generate certification verification URLs
+function getCertVerificationUrl(certNumber: string, gradingCompany: string): string | null {
+  if (!certNumber || !gradingCompany) return null;
+
+  switch (gradingCompany.toUpperCase()) {
+    case "CGC":
+      return `https://www.cgccomics.com/certlookup/${certNumber}`;
+    case "CBCS":
+      return `https://cbcscomics.com/grading-notes/${certNumber}`;
+    case "PGX":
+      return `https://www.pgxcomics.com/certverification/pgxlabel.aspx?CertNo=${certNumber}`;
+    default:
+      return null;
+  }
+}
+
 interface ComicDetailsFormProps {
   comic: ComicDetails;
   coverImageUrl: string;
@@ -186,7 +202,6 @@ export function ComicDetailsForm({
 
   // Update form when initialComic changes (e.g., when API returns data)
   useEffect(() => {
-    console.log("ComicDetailsForm received initialComic:", initialComic);
     setComic({
       ...initialComic,
       keyInfo: initialComic.keyInfo || [],
@@ -264,8 +279,6 @@ export function ComicDetailsForm({
     setPendingRelookup(null);
   };
 
-  console.log("ComicDetailsForm rendering with comic:", comic);
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -315,9 +328,24 @@ export function ComicDetailsForm({
             variant: data.data.variant || prev.variant,
             labelType: data.data.labelType || prev.labelType,
             pageQuality: data.data.pageQuality || prev.pageQuality,
+            gradeDate: data.data.gradeDate || prev.gradeDate,
+            graderNotes: data.data.graderNotes || prev.graderNotes,
+            certificationNumber: certificationNumber,
+            // Map signatures to signedBy if present
+            signedBy: data.data.signatures || prev.signedBy,
+            isSignatureSeries: data.data.signatures ? true : prev.isSignatureSeries,
+            // Map keyComments to keyInfo if present
+            keyInfo: data.data.keyComments
+              ? data.data.keyComments.split(/[.\n]+/).map((s: string) => s.trim()).filter((s: string) => s.length > 0)
+              : prev.keyInfo,
           }));
           if (data.data.grade) {
             setGrade(data.data.grade);
+          }
+          // Update signature series state
+          if (data.data.signatures) {
+            setIsSignatureSeries(true);
+            setSignedBy(data.data.signatures);
           }
         }
       }
@@ -955,14 +983,54 @@ export function ComicDetailsForm({
               <p className="text-xs text-gray-500 mt-1">
                 Enter the cert number from the label to fetch details from {gradingCompany || "the grading company"}
               </p>
+              {/* Clickable link to verification page */}
+              {certificationNumber && gradingCompany && getCertVerificationUrl(certificationNumber, gradingCompany) && (
+                <a
+                  href={getCertVerificationUrl(certificationNumber, gradingCompany) || "#"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 mt-2 text-sm text-primary-600 hover:text-primary-700 hover:underline"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  View on {gradingCompany} website
+                </a>
+              )}
             </div>
 
-            {/* Page Quality - if detected from cert lookup */}
-            {comic.pageQuality && (
-              <div className="mt-3 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-sm text-blue-700">
-                  <span className="font-medium">Page Quality:</span> {comic.pageQuality}
-                </p>
+            {/* Grading Details Section - from cert lookup */}
+            {(comic.pageQuality || comic.gradeDate || comic.graderNotes) && (
+              <div className="mt-4 p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-3">
+                <h4 className="text-sm font-medium text-slate-700">Grading Details</h4>
+
+                {/* Page Quality */}
+                {comic.pageQuality && (
+                  <div>
+                    <label className="block text-xs font-medium text-slate-500 mb-1">
+                      Page Quality
+                    </label>
+                    <p className="text-sm text-slate-700">{comic.pageQuality}</p>
+                  </div>
+                )}
+
+                {/* Grade Date */}
+                {comic.gradeDate && (
+                  <div>
+                    <label className="block text-xs font-medium text-slate-500 mb-1">
+                      Grade Date
+                    </label>
+                    <p className="text-sm text-slate-700">{comic.gradeDate}</p>
+                  </div>
+                )}
+
+                {/* Grader Notes */}
+                {comic.graderNotes && (
+                  <div>
+                    <label className="block text-xs font-medium text-slate-500 mb-1">
+                      Grader Notes
+                    </label>
+                    <p className="text-sm text-slate-700 whitespace-pre-wrap">{comic.graderNotes}</p>
+                  </div>
+                )}
               </div>
             )}
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getProfileByClerkId } from "@/lib/db";
 import { placeBid } from "@/lib/auctionDb";
+import { rateLimiters, checkRateLimit } from "@/lib/rateLimit";
 
 // POST - Place a bid
 export async function POST(
@@ -13,6 +14,13 @@ export async function POST(
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    // Rate limit check - prevent bid flooding/sniping bots
+    const { success: rateLimitSuccess, response: rateLimitResponse } = await checkRateLimit(
+      rateLimiters.bidding,
+      userId
+    );
+    if (!rateLimitSuccess) return rateLimitResponse;
 
     const profile = await getProfileByClerkId(userId);
     if (!profile) {

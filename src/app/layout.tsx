@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
@@ -7,6 +7,7 @@ import { Providers } from "@/components/Providers";
 import { MobileUtilitiesFAB } from "@/components/MobileUtilitiesFAB";
 import { ServiceWorkerProvider } from "@/components/ServiceWorkerProvider";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
+import { PostHogProvider } from "@/components/PostHogProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -15,7 +16,6 @@ export const metadata: Metadata = {
   description:
     "The all-in-one comic collector's companion. Scan covers with AI recognition, track your collection's value, and buy or sell with fellow collectors.",
   manifest: "/manifest.json",
-  themeColor: "#1e40af",
   icons: {
     icon: [
       { url: "/icons/icon-192x192.svg", type: "image/svg+xml" },
@@ -31,15 +31,17 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
     title: "Collectors Chest",
   },
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
   other: {
     "mobile-web-app-capable": "yes",
   },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: "#1e40af",
 };
 
 export default function RootLayout({
@@ -51,16 +53,18 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <body className={inter.className}>
-          <ServiceWorkerProvider>
-            <Providers>
-              <div className="min-h-screen bg-gray-50 pb-20 md:pb-0">
-                <Navigation />
-                <main className="container mx-auto px-4 py-8">{children}</main>
-                <MobileUtilitiesFAB />
-                <PWAInstallPrompt />
-              </div>
-            </Providers>
-          </ServiceWorkerProvider>
+          <PostHogProvider>
+            <ServiceWorkerProvider>
+              <Providers>
+                <div className="min-h-screen bg-gray-50 pb-20 md:pb-0">
+                  <Navigation />
+                  <main className="container mx-auto px-4 py-8">{children}</main>
+                  <MobileUtilitiesFAB />
+                  <PWAInstallPrompt />
+                </div>
+              </Providers>
+            </ServiceWorkerProvider>
+          </PostHogProvider>
         </body>
       </html>
     </ClerkProvider>

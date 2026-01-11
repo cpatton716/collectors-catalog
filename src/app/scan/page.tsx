@@ -15,6 +15,7 @@ import { ComicDetails, CollectionItem } from "@/types/comic";
 import { useToast } from "@/components/Toast";
 import { useGuestScans, MilestoneType } from "@/hooks/useGuestScans";
 import { Loader2, AlertCircle, ArrowLeft, Wand2, Check, Camera, Sparkles, ClipboardCheck, Save, ScanBarcode, PenLine, FileSpreadsheet, ZoomIn, X } from "lucide-react";
+import { analytics } from "@/components/PostHogProvider";
 
 type ScanState = "upload" | "analyzing" | "review" | "saved" | "error";
 
@@ -191,12 +192,18 @@ export default function ScanPage() {
       console.log("Setting comicDetails to:", comicWithId);
       setComicDetails(comicWithId);
       setState("review");
+
+      // Track successful scan
+      analytics.trackScan("upload", true);
     } catch (err) {
       console.error("Error analyzing comic:", err);
       setError(
         err instanceof Error ? err.message : "We couldn't recognize this comic. Please try a clearer photo or enter the details manually."
       );
       setState("error");
+
+      // Track failed scan
+      analytics.trackScan("upload", false);
     }
   };
 
@@ -241,6 +248,9 @@ export default function ScanPage() {
       }
 
       showToast(`"${newItem.comic.title}" added to collection!`, "success");
+
+      // Track comic added to collection
+      analytics.trackAddToCollection(newItem.comic.title || "Unknown", listIds[0]);
     } catch (err) {
       console.error("Error saving comic:", err);
       if (err instanceof StorageQuotaError) {
@@ -293,6 +303,8 @@ export default function ScanPage() {
       certificationNumber: null,
       labelType: null,
       pageQuality: null,
+      gradeDate: null,
+      graderNotes: null,
     });
     setState("review");
   };
@@ -340,6 +352,8 @@ export default function ScanPage() {
         certificationNumber: null,
         labelType: null,
         pageQuality: null,
+        gradeDate: null,
+        graderNotes: null,
       });
 
       setShowBarcodeScanner(false);

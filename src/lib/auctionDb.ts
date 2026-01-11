@@ -7,6 +7,8 @@ import {
   Bid,
   BidHistoryItem,
   CreateAuctionInput,
+  CreateFixedPriceListingInput,
+  ListingType,
   Notification,
   NotificationType,
   PlaceBidResult,
@@ -31,6 +33,7 @@ export async function createAuction(
   sellerId: string,
   input: CreateAuctionInput
 ): Promise<Auction> {
+  const listingType = input.listingType || "auction";
   const endTime = new Date();
   endTime.setDate(endTime.getDate() + input.durationDays);
 
@@ -39,6 +42,7 @@ export async function createAuction(
     .insert({
       seller_id: sellerId,
       comic_id: input.comicId,
+      listing_type: listingType,
       starting_price: input.startingPrice,
       buy_it_now_price: input.buyItNowPrice || null,
       end_time: endTime.toISOString(),
@@ -51,7 +55,46 @@ export async function createAuction(
 
   if (error) throw error;
 
-  // Set seller_since if first auction
+  // Set seller_since if first listing
+  await supabase
+    .from("profiles")
+    .update({ seller_since: new Date().toISOString() })
+    .eq("id", sellerId)
+    .is("seller_since", null);
+
+  return transformDbAuction(data);
+}
+
+/**
+ * Create a fixed-price listing
+ */
+export async function createFixedPriceListing(
+  sellerId: string,
+  input: CreateFixedPriceListingInput
+): Promise<Auction> {
+  // Fixed-price listings don't expire by default (set to 30 days)
+  const endTime = new Date();
+  endTime.setDate(endTime.getDate() + 30);
+
+  const { data, error } = await supabase
+    .from("auctions")
+    .insert({
+      seller_id: sellerId,
+      comic_id: input.comicId,
+      listing_type: "fixed_price",
+      starting_price: input.price,
+      buy_it_now_price: null, // Not applicable for fixed-price
+      end_time: endTime.toISOString(),
+      shipping_cost: input.shippingCost,
+      detail_images: input.detailImages || [],
+      description: input.description || null,
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  // Set seller_since if first listing
   await supabase
     .from("profiles")
     .update({ seller_since: new Date().toISOString() })
@@ -134,14 +177,26 @@ export async function getActiveAuctions(
     .eq("status", "active");
 
   // Apply filters
+  if (filters.listingType) {
+    query = query.eq("listing_type", filters.listingType);
+  }
   if (filters.sellerId) {
     query = query.eq("seller_id", filters.sellerId);
   }
   if (filters.minPrice !== undefined) {
-    query = query.gte("current_bid", filters.minPrice);
+    // For fixed_price, use starting_price; for auctions, use current_bid
+    if (filters.listingType === "fixed_price") {
+      query = query.gte("starting_price", filters.minPrice);
+    } else {
+      query = query.gte("current_bid", filters.minPrice);
+    }
   }
   if (filters.maxPrice !== undefined) {
-    query = query.lte("current_bid", filters.maxPrice);
+    if (filters.listingType === "fixed_price") {
+      query = query.lte("starting_price", filters.maxPrice);
+    } else {
+      query = query.lte("current_bid", filters.maxPrice);
+    }
   }
   if (filters.hasBuyItNow) {
     query = query.not("buy_it_now_price", "is", null);
@@ -161,10 +216,19 @@ export async function getActiveAuctions(
       query = query.order("end_time", { ascending: false });
       break;
     case "price_low":
-      query = query.order("current_bid", { ascending: true, nullsFirst: true });
+      // For fixed-price listings, sort by starting_price
+      if (filters.listingType === "fixed_price") {
+        query = query.order("starting_price", { ascending: true });
+      } else {
+        query = query.order("current_bid", { ascending: true, nullsFirst: true });
+      }
       break;
     case "price_high":
-      query = query.order("current_bid", { ascending: false });
+      if (filters.listingType === "fixed_price") {
+        query = query.order("starting_price", { ascending: false });
+      } else {
+        query = query.order("current_bid", { ascending: false });
+      }
       break;
     case "most_bids":
       query = query.order("bid_count", { ascending: false });
@@ -585,6 +649,57 @@ export async function executeBuyItNow(
   return { success: true };
 }
 
+/**
+ * Purchase a fixed-price listing
+ */
+export async function purchaseFixedPriceListing(
+  listingId: string,
+  buyerId: string
+): Promise<{ success: boolean; error?: string }> {
+  const { data: listing } = await supabase
+    .from("auctions")
+    .select("*")
+    .eq("id", listingId)
+    .eq("status", "active")
+    .eq("listing_type", "fixed_price")
+    .single();
+
+  if (!listing) {
+    return { success: false, error: "Listing not found or no longer available" };
+  }
+
+  if (listing.seller_id === buyerId) {
+    return { success: false, error: "You cannot buy your own item" };
+  }
+
+  // Complete the purchase
+  const paymentDeadline = new Date();
+  paymentDeadline.setHours(paymentDeadline.getHours() + 48);
+
+  const { error } = await supabase
+    .from("auctions")
+    .update({
+      status: "sold",
+      winner_id: buyerId,
+      winning_bid: listing.starting_price, // The fixed price
+      payment_status: "pending",
+      payment_deadline: paymentDeadline.toISOString(),
+    })
+    .eq("id", listingId);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  // Notify seller
+  await createNotification(listing.seller_id, "auction_sold", listingId);
+
+  // Notify buyer
+  await createNotification(buyerId, "won", listingId);
+
+  return { success: true };
+}
+
 // ============================================================================
 // WATCHLIST
 // ============================================================================
@@ -986,6 +1101,7 @@ function transformDbAuction(data: Record<string, unknown>): Auction {
     id: data.id as string,
     sellerId: data.seller_id as string,
     comicId: data.comic_id as string,
+    listingType: (data.listing_type as ListingType) || "auction",
     startingPrice: Number(data.starting_price),
     currentBid: data.current_bid ? Number(data.current_bid) : null,
     buyItNowPrice: data.buy_it_now_price ? Number(data.buy_it_now_price) : null,
@@ -1029,6 +1145,8 @@ function transformDbAuction(data: Record<string, unknown>): Auction {
         signedBy: comics.signed_by as string | null,
         priceData: comics.price_data as PriceData | null,
         keyInfo: (comics.key_info as string[]) || [],
+        gradeDate: comics.grade_date as string | null,
+        graderNotes: comics.grader_notes as string | null,
       },
       coverImageUrl: comics.cover_image_url as string,
       conditionGrade: comics.condition_grade as number | null,

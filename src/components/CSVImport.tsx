@@ -264,6 +264,8 @@ export function CSVImport({ onImportComplete, onCancel }: CSVImportProps) {
           certificationNumber: null,
           labelType: null,
           pageQuality: null,
+          gradeDate: null,
+          graderNotes: null,
         };
 
         // Determine list IDs based on slabbed status

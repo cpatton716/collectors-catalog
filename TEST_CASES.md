@@ -211,6 +211,87 @@ A guide for testing the main and secondary features of the application.
 | Repeat lookup (cache hit) | Look up same comic again | Near-instant response (~50ms), console shows "Database hit" |
 | CSV import seeds database | Import CSV with new comics → search one | Second search is fast (database hit) |
 
+### 16. Auctions
+
+**Location:** Navigation → "Shop" → Auctions tab, or "My Auctions"
+
+| Test Case | Steps | Expected Result |
+|-----------|-------|-----------------|
+| View active auctions | Navigate to Shop → Auctions tab | List of active auctions displays with current bid, time remaining |
+| View auction details | Click on any auction | Detail page shows comic info, bid history, current bid, time left |
+| Place a bid | Enter bid amount → Click "Place Bid" | Bid accepted, shown as current high bid (proxy bidding applies) |
+| Bid too low | Enter bid below current + increment | Error message: "Bid must be at least $X" |
+| Outbid notification | Get outbid by another user | Notification appears in bell icon |
+| Watch auction | Click "Watch" button on auction | Auction added to watchlist |
+| View watchlist | Navigate to Watchlist page | Shows all watched auctions with status |
+| Create auction | My Auctions → "Create Auction" → Fill form | Auction created, appears in Shop |
+| Set reserve price | When creating, set reserve price | Auction shows "Reserve not met" until bid exceeds reserve |
+| Set Buy Now price | When creating, set Buy Now price | "Buy Now" button appears on auction |
+| End auction (seller) | My Auctions → End auction early | Auction ends, highest bidder wins (if reserve met) |
+| Auction timer | Watch auction with < 1 hour remaining | Timer shows minutes/seconds, updates live |
+
+### 17. Buy Now (Fixed-Price Listings)
+
+**Location:** Navigation → "Shop" → Buy Now tab
+
+| Test Case | Steps | Expected Result |
+|-----------|-------|-----------------|
+| View Buy Now listings | Navigate to Shop → Buy Now tab | List of fixed-price listings displays |
+| View listing details | Click on any listing | Detail page shows comic info, price, seller info |
+| Purchase item | Click "Buy Now" → Confirm | Stripe checkout opens |
+| Complete purchase | Complete Stripe payment | Success page, item removed from shop |
+| Seller receives notification | After purchase completes | Seller gets notification of sale |
+
+### 18. Seller Ratings & Reputation
+
+**Location:** Shop → Any listing → Seller info, or Profile
+
+| Test Case | Steps | Expected Result |
+|-----------|-------|-----------------|
+| View seller rating | Click seller name on listing | Shows positive %, total ratings, member since |
+| Leave positive rating | After purchase, rate seller positive | Rating recorded, seller % updates |
+| Leave negative rating | After purchase, rate seller negative | Rating recorded, seller % updates |
+| View rating breakdown | On seller profile | Shows positive/negative counts |
+
+### 19. CGC/CBCS/PGX Cert Lookup
+
+**Location:** Scan page (graded comic) or Edit comic → Certification Number
+
+| Test Case | Steps | Expected Result |
+|-----------|-------|-----------------|
+| Auto-detect graded comic | Scan photo of slabbed comic | Detects grading company, grade, cert number |
+| Manual cert lookup | Enter cert number → Click "Lookup" | Fetches data from CGC/CBCS/PGX website |
+| Cert verification link | After lookup, click verification link | Opens grading company website with cert details |
+| View grading details | Check comic detail modal for graded book | Shows Page Quality, Grade Date, Grader Notes (if available) |
+| Signatures detected | Scan/lookup signed comic | "Signed By" field populated, Signature Series checked |
+| Key comments captured | Lookup comic with key info on cert | Key Info populated from cert data |
+| CBCS alphanumeric cert | Enter CBCS cert like "20-1F9AC96-004" | Correctly identified as CBCS, lookup succeeds |
+
+### 20. Con Mode (Convention Quick Lookup)
+
+**Location:** Key Hunt → Toggle "Con Mode" or Settings
+
+| Test Case | Steps | Expected Result |
+|-----------|-------|-----------------|
+| Enable Con Mode | Toggle Con Mode switch | Interface optimized for speed |
+| Quick price check | Scan comic in Con Mode | Shows price immediately, minimal UI |
+| Grade selector | After scan, select grade | Price updates for selected grade |
+| Offline capability | Enable Con Mode while online, go offline | Previously cached lookups still work |
+| Add to collection | Tap "Add" on Con Mode result | Comic queued for sync when online |
+
+### 21. Notifications
+
+**Location:** Bell icon in navigation header
+
+| Test Case | Steps | Expected Result |
+|-----------|-------|-----------------|
+| View notifications | Click bell icon | Dropdown shows recent notifications |
+| Unread indicator | Have unread notifications | Bell shows red dot/count |
+| Mark as read | Click notification | Notification marked as read |
+| Outbid notification | Get outbid on auction | "You've been outbid" notification appears |
+| Auction won notification | Win an auction | "You won!" notification appears |
+| Sale notification (seller) | Someone buys your item | "Your item sold" notification appears |
+
 ---
 
 ## Mobile Responsiveness
@@ -258,4 +339,4 @@ If you encounter bugs or unexpected behavior:
 
 ---
 
-*Last Updated: January 10, 2026*
+*Last Updated: January 11, 2026*

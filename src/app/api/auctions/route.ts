@@ -3,17 +3,21 @@ import { auth } from "@clerk/nextjs/server";
 import { getProfileByClerkId } from "@/lib/db";
 import {
   createAuction,
+  createFixedPriceListing,
   getActiveAuctions,
 } from "@/lib/auctionDb";
-import { AuctionFilters, AuctionSortBy, MIN_STARTING_PRICE } from "@/types/auction";
+import { AuctionFilters, AuctionSortBy, ListingType, MIN_STARTING_PRICE, MIN_FIXED_PRICE } from "@/types/auction";
 
-// GET - List active auctions with filters
+// GET - List active auctions/listings with filters
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
 
     // Parse filters
     const filters: AuctionFilters = {};
+    if (searchParams.get("listingType")) {
+      filters.listingType = searchParams.get("listingType") as ListingType;
+    }
     if (searchParams.get("sellerId")) {
       filters.sellerId = searchParams.get("sellerId")!;
     }
@@ -30,8 +34,9 @@ export async function GET(request: NextRequest) {
       filters.endingSoon = true;
     }
 
-    // Parse sorting
-    const sortBy = (searchParams.get("sortBy") || "ending_soonest") as AuctionSortBy;
+    // Parse sorting - default to "newest" for fixed_price, "ending_soonest" for auctions
+    const defaultSort = filters.listingType === "fixed_price" ? "newest" : "ending_soonest";
+    const sortBy = (searchParams.get("sortBy") || defaultSort) as AuctionSortBy;
 
     // Parse pagination
     const limit = Number(searchParams.get("limit")) || 50;
@@ -54,7 +59,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Create a new auction
+// POST - Create a new auction or fixed-price listing
 export async function POST(request: NextRequest) {
   try {
     const { userId } = await auth();
@@ -70,7 +75,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const {
       comicId,
+      listingType = "auction",
       startingPrice,
+      price, // For fixed-price listings
       buyItNowPrice,
       durationDays,
       shippingCost,
@@ -78,11 +85,48 @@ export async function POST(request: NextRequest) {
       description,
     } = body;
 
-    // Validation
+    // Common validation
     if (!comicId) {
       return NextResponse.json({ error: "Comic ID is required" }, { status: 400 });
     }
 
+    if (typeof shippingCost !== "number" || shippingCost < 0) {
+      return NextResponse.json(
+        { error: "Shipping cost must be a positive number" },
+        { status: 400 }
+      );
+    }
+
+    if (detailImages && (!Array.isArray(detailImages) || detailImages.length > 4)) {
+      return NextResponse.json(
+        { error: "Maximum 4 detail images allowed" },
+        { status: 400 }
+      );
+    }
+
+    // Handle fixed-price listing
+    if (listingType === "fixed_price") {
+      const listingPrice = price || startingPrice;
+
+      if (typeof listingPrice !== "number" || listingPrice < MIN_FIXED_PRICE) {
+        return NextResponse.json(
+          { error: `Price must be at least $${MIN_FIXED_PRICE}` },
+          { status: 400 }
+        );
+      }
+
+      const listing = await createFixedPriceListing(profile.id, {
+        comicId,
+        price: listingPrice,
+        shippingCost,
+        detailImages: detailImages || [],
+        description: description || "",
+      });
+
+      return NextResponse.json({ auction: listing }, { status: 201 });
+    }
+
+    // Handle auction
     if (typeof startingPrice !== "number" || startingPrice < MIN_STARTING_PRICE) {
       return NextResponse.json(
         { error: `Starting price must be at least $${MIN_STARTING_PRICE}` },
@@ -113,22 +157,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (typeof shippingCost !== "number" || shippingCost < 0) {
-      return NextResponse.json(
-        { error: "Shipping cost must be a positive number" },
-        { status: 400 }
-      );
-    }
-
-    if (detailImages && (!Array.isArray(detailImages) || detailImages.length > 4)) {
-      return NextResponse.json(
-        { error: "Maximum 4 detail images allowed" },
-        { status: 400 }
-      );
-    }
-
     const auction = await createAuction(profile.id, {
       comicId,
+      listingType: "auction",
       startingPrice,
       buyItNowPrice: buyItNowPrice || null,
       durationDays,
@@ -139,9 +170,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ auction }, { status: 201 });
   } catch (error) {
-    console.error("Error creating auction:", error);
+    console.error("Error creating listing:", error);
     return NextResponse.json(
-      { error: "Failed to create auction" },
+      { error: "Failed to create listing" },
       { status: 500 }
     );
   }

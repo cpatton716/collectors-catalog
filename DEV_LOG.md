@@ -4,6 +4,21 @@ This log tracks session-by-session progress on Collectors Chest.
 
 ---
 
+## Changes Since Last Deploy
+
+**Sessions since last deploy:** 1
+**Deploy Readiness:** Needs Testing
+
+### Accumulated Changes:
+- Auction Feature with eBay-style bidding and Stripe integration
+- Mobile UX improvements, auto-hide nav, and hottest books fallback
+- Con Mode, grade-aware pricing, and mobile camera enhancements
+
+### Known Issues:
+- None currently identified
+
+---
+
 ## January 10, 2026
 
 ### Session Summary

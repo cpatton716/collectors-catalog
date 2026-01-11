@@ -1,14 +1,11 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
 import { getComicMetadata, saveComicMetadata, incrementComicLookupCount } from "@/lib/db";
+import { cacheGet, cacheSet, generateComicMetadataCacheKey } from "@/lib/cache";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
-
-// In-memory cache for very fast repeated lookups (same session)
-const memoryCache = new Map<string, { data: ComicLookupResult; timestamp: number }>();
-const MEMORY_CACHE_TTL = 1000 * 60 * 5; // 5 minutes
 
 interface GradeEstimate {
   grade: number;
@@ -57,15 +54,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Issue number is required for full lookup." }, { status: 400 });
     }
 
-    // 1. Check in-memory cache first (fastest)
-    const memoryCacheKey = `${normalizedTitle.toLowerCase()}-${normalizedIssue.toLowerCase()}`;
-    const memoryCached = memoryCache.get(memoryCacheKey);
-    if (memoryCached && Date.now() - memoryCached.timestamp < MEMORY_CACHE_TTL) {
-      console.log(`[comic-lookup] Memory cache hit for ${normalizedTitle} #${normalizedIssue}`);
-      return NextResponse.json(memoryCached.data);
+    const cacheKey = generateComicMetadataCacheKey(normalizedTitle, normalizedIssue);
+
+    // 1. Check Redis cache first (fastest, works across serverless invocations)
+    try {
+      const redisCached = await cacheGet<ComicLookupResult>(cacheKey, "comicMetadata");
+      if (redisCached) {
+        console.log(`[comic-lookup] Redis cache hit for ${normalizedTitle} #${normalizedIssue}`);
+        return NextResponse.json({ ...redisCached, source: "cache" });
+      }
+    } catch (redisError) {
+      console.error("[comic-lookup] Redis cache check failed:", redisError);
     }
 
-    // 2. Check database (fast ~50ms)
+    // 2. Check database (fast ~50ms, long-term storage)
     try {
       const dbResult = await getComicMetadata(normalizedTitle, normalizedIssue);
       if (dbResult) {
@@ -87,8 +89,8 @@ export async function POST(request: NextRequest) {
           result.priceData.disclaimer = "Values are estimates based on market knowledge. Actual prices may vary.";
         }
 
-        // Cache in memory and increment lookup count (non-blocking)
-        memoryCache.set(memoryCacheKey, { data: result, timestamp: Date.now() });
+        // Backfill Redis cache and increment lookup count (non-blocking)
+        cacheSet(cacheKey, result, "comicMetadata");
         incrementComicLookupCount(normalizedTitle, normalizedIssue).catch(() => {});
 
         return NextResponse.json(result);
@@ -110,7 +112,8 @@ export async function POST(request: NextRequest) {
 
     const result = await fetchFromClaudeAPI(normalizedTitle, normalizedIssue);
 
-    // 4. Save to database for future lookups (non-blocking)
+    // 4. Save to Redis and database for future lookups (non-blocking)
+    cacheSet(cacheKey, result, "comicMetadata");
     saveComicMetadata({
       title: normalizedTitle,
       issueNumber: normalizedIssue,
@@ -124,9 +127,6 @@ export async function POST(request: NextRequest) {
     }).catch((err) => {
       console.error("[comic-lookup] Failed to save to database:", err);
     });
-
-    // Cache in memory
-    memoryCache.set(memoryCacheKey, { data: result, timestamp: Date.now() });
 
     return NextResponse.json({ ...result, source: "ai" });
   } catch (error) {

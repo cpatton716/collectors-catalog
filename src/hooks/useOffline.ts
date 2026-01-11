@@ -141,6 +141,8 @@ function createCollectionItemFromAction(action: OfflineAction): CollectionItem {
       certificationNumber: null,
       labelType: null,
       pageQuality: null,
+      gradeDate: null,
+      graderNotes: null,
       priceData: data.averagePrice
         ? {
             estimatedValue: data.averagePrice,
