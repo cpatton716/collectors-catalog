@@ -44,6 +44,7 @@ open -a TextEdit "/Users/chrispatton/Coding for Dummies/Comic Tracker/.env.local
 When the user says **"Close up shop"**, perform the following steps:
 
 1. **Review and optimize code** - Review the session's changes for:
+   - Run `npm run lint` and fix any **errors** (warnings can be deferred)
    - Remove debugging code (console.logs, commented-out code)
    - Remove unused imports and variables
    - Consolidate any duplicate logic
