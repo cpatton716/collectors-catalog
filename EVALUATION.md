@@ -192,7 +192,7 @@ Collectors Chest is a comic book collection tracking app with AI-powered cover r
 | Anthropic API | Pay-per-use | Variable | ~$0.015 per scan (Claude Haiku) |
 | Supabase | Free | $0 | 500MB DB, 1GB storage |
 | Clerk | Free | $0 | Up to 10K MAU |
-| Vercel | Hobby | $0 | Limited deploys |
+| Netlify | Free | $0 | 300 build minutes/month |
 | Stripe | Standard | 2.9% + $0.30 | Per transaction |
 | eBay API | Free | $0 | Rate limited |
 | Upstash Redis | Free | $0 | 10K commands/day |
@@ -205,7 +205,7 @@ Collectors Chest is a comic book collection tracking app with AI-powered cover r
 |------|----------|------------|
 | AI costs scale with users | 🟡 Medium | ✅ Redis caching implemented |
 | Supabase limits | 🟡 Medium | Monitor usage, upgrade path ready |
-| Vercel deploy limits | 🟡 Medium | Strategic batching |
+| Netlify build minutes | 🟡 Medium | Strategic batching |
 | eBay rate limits | 🟡 Medium | AI fallback in place |
 
 ### Recommendations
@@ -406,7 +406,7 @@ Collectors Chest is a comic book collection tracking app with AI-powered cover r
 - **Auth:** Clerk
 - **Payments:** Stripe
 - **AI:** Anthropic Claude (cover recognition)
-- **Hosting:** Vercel
+- **Hosting:** Netlify
 
 ### Database Tables
 - `profiles` - User accounts

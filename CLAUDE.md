@@ -70,6 +70,8 @@ The Dev Log is stored at: `DEV_LOG.md` in the project root.
 
 ## Deploy Command
 
+**Hosting Platform:** Netlify (NOT Vercel)
+
 When the user says **"Deploy"**, perform the following steps:
 
 1. **Run full quality check:**
@@ -92,7 +94,7 @@ When the user says **"Deploy"**, perform the following steps:
    - Clear the "Changes Since Last Deploy" section in DEV_LOG.md
    - Log the deploy date and summary in DEV_LOG.md
 
-**Deploy Budget:** User has limited deploys remaining. Always remind them of this and confirm the deploy is worth it.
+**Deploy Budget:** User has limited Netlify build minutes. Always remind them of this and confirm the deploy is worth it.
 
 ## Changes Since Last Deploy Tracking
 
