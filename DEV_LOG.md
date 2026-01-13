@@ -6,24 +6,32 @@ This log tracks session-by-session progress on Collectors Chest.
 
 ## Changes Since Last Deploy
 
-**Sessions since last deploy:** 2
-**Deploy Readiness:** Ready for Testing
+**Sessions since last deploy:** 0
+**Deploy Readiness:** Fresh Deploy
 
 ### Accumulated Changes:
+(None yet)
+
+---
+
+## Deploy Log - January 13, 2026
+
+**Deployed to Netlify**
+
+### Changes Included:
 - Auction Feature with eBay-style bidding and Stripe integration
 - Mobile UX improvements, auto-hide nav, and hottest books fallback
 - Con Mode, grade-aware pricing, and mobile camera enhancements
-- **Sentry error tracking** (client, server, edge)
-- **PostHog analytics integration**
-- **Upstash rate limiting** on AI & bid routes
-- **Redis caching** for AI/eBay price lookups
-- **Buy Now** fixed-price listings in Shop
-- **Enhanced CGC/CBCS/PGX cert lookup** with grading details
+- Sentry error tracking (client, server, edge)
+- PostHog analytics integration
+- Upstash rate limiting on AI & bid routes
+- Redis caching for AI/eBay price lookups
+- Buy Now fixed-price listings in Shop
+- Enhanced CGC/CBCS/PGX cert lookup with grading details
 - Fixed viewport metadata (Next.js 16 migration)
 - Fixed deprecated Stripe webhook config
-
-### Known Issues:
-- 1 lint error in ListingDetailModal.tsx (pre-existing, using `<a>` instead of `<Link />`)
+- Added "Let's get started" daily standup skill
+- Updated docs to reflect Netlify hosting
 
 ---
 
