@@ -28,9 +28,14 @@ export async function POST(request: NextRequest) {
 
     // If no API key or audience ID, log and return success (for testing)
     if (!process.env.RESEND_API_KEY || !WAITLIST_AUDIENCE_ID) {
-      console.log(`[Waitlist] Would add email: ${email} (Resend not configured)`);
+      console.log(`[Waitlist] Would add email: ${email} (Resend not configured)`, {
+        hasApiKey: !!process.env.RESEND_API_KEY,
+        hasAudienceId: !!WAITLIST_AUDIENCE_ID,
+      });
       return NextResponse.json({ success: true, message: "Added to waitlist" });
     }
+
+    console.log(`[Waitlist] Attempting to add ${email} to audience ${WAITLIST_AUDIENCE_ID}`);
 
     // Add contact to Resend audience
     const { data, error } = await resend.contacts.create({
@@ -46,7 +51,29 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: true, message: "Already on waitlist" });
       }
 
-      console.error(`[Waitlist] Failed to add ${email}:`, error);
+      // Log detailed error info for debugging
+      console.error(`[Waitlist] Failed to add ${email}:`, {
+        errorName: error.name,
+        errorMessage: error.message,
+        audienceId: WAITLIST_AUDIENCE_ID,
+        hasApiKey: !!process.env.RESEND_API_KEY,
+      });
+
+      // Return more specific error messages based on error type
+      if (error.message?.includes("Invalid API key") || error.message?.includes("Unauthorized")) {
+        return NextResponse.json(
+          { error: "Waitlist service is temporarily unavailable. Please try again later." },
+          { status: 500 }
+        );
+      }
+
+      if (error.message?.includes("not found") || error.message?.includes("audience")) {
+        return NextResponse.json(
+          { error: "Waitlist configuration error. Please contact support." },
+          { status: 500 }
+        );
+      }
+
       return NextResponse.json(
         { error: "Failed to join waitlist. Please try again." },
         { status: 500 }

@@ -97,6 +97,47 @@ Enhance the comic search and lookup experience with additional optimizations.
 
 ---
 
+### GoCollect API Integration
+**Priority:** Medium
+**Status:** Pending
+
+Investigate using GoCollect as a data provider for price data and hot books list.
+
+**Current Data Sources:**
+- Professor's Hottest Books: Claude AI (Anthropic) + Comic Vine for covers
+- Price Estimates: AI-generated + eBay Browse API
+
+**GoCollect Potential Benefits:**
+- Real sales data from eBay/auctions (more accurate than AI estimates)
+- Hot 50 list based on actual market activity
+- Collectible Price Index (CPI) for market trends
+- Historical price tracking
+
+**GoCollect API Access:**
+| Tier | Cost | API Calls/Day |
+|------|------|---------------|
+| Free | $0 | 50 |
+| Pro | $9/mo or $89/yr | 100 |
+| Enterprise | Custom | Custom |
+
+**Integration Options:**
+1. Replace AI price estimates with GoCollect real data
+2. Use GoCollect Hot 50 for Professor's Hottest Books
+3. Add price trend graphs using historical data
+4. Consolidate from multiple providers to single source
+
+**Research Needed:**
+- [ ] Test GoCollect API with free tier
+- [ ] Compare data quality vs current sources
+- [ ] Evaluate if 100 calls/day is sufficient
+- [ ] Determine which features to migrate first
+
+**Links:**
+- [GoCollect Pricing](https://gocollect.com/pricing)
+- [GoCollect API Docs](https://gocollect.com/api-docs)
+
+---
+
 ### eBay API Integration for Price History
 **Priority:** Medium
 **Status:** Pending

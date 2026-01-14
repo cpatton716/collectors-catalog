@@ -34,5 +34,4 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 netlify.env
-*.png
 netlify-env-vars-to-add.txt
