@@ -1,7 +1,7 @@
 "use client";
 
 import { Auction, formatPrice } from "@/types/auction";
-import { Gavel, ShoppingCart, Package } from "lucide-react";
+import { Gavel, ShoppingCart, Package, Clock } from "lucide-react";
 import { AuctionCountdown } from "./AuctionCountdown";
 import { WatchlistButton } from "./WatchlistButton";
 import { SellerBadgeCompact } from "./SellerBadge";
@@ -11,6 +11,25 @@ interface AuctionCardProps {
   onClick?: () => void;
   onWatchlistChange?: (auctionId: string, isWatching: boolean) => void;
   showSeller?: boolean;
+}
+
+// Helper to format upcoming start time
+function formatStartTime(startTime: string): string {
+  const start = new Date(startTime);
+  const now = new Date();
+  const diffMs = start.getTime() - now.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+
+  if (diffDays > 1) {
+    return `Starts in ${diffDays} days`;
+  } else if (diffDays === 1) {
+    return `Starts tomorrow`;
+  } else if (diffHours > 0) {
+    return `Starts in ${diffHours}h`;
+  } else {
+    return `Starting soon`;
+  }
 }
 
 export function AuctionCard({
@@ -24,6 +43,7 @@ export function AuctionCard({
     currentBid,
     startingPrice,
     buyItNowPrice,
+    startTime,
     endTime,
     bidCount,
     shippingCost,
@@ -31,6 +51,9 @@ export function AuctionCard({
     seller,
     isWatching,
   } = auction;
+
+  // Check if auction is scheduled for the future (Coming Soon)
+  const isComingSoon = new Date(startTime) > new Date();
 
   const coverImageUrl = comic?.coverImageUrl;
   const title = comic?.comic?.title || "Unknown Title";
@@ -70,13 +93,19 @@ export function AuctionCard({
 
         {/* Badges */}
         <div className="absolute top-2 left-2 flex flex-col gap-1">
-          {buyItNowPrice && (
+          {isComingSoon && (
+            <span className="px-2 py-1 bg-purple-500 text-white text-xs font-semibold rounded-full flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              Coming Soon
+            </span>
+          )}
+          {!isComingSoon && buyItNowPrice && (
             <span className="px-2 py-1 bg-green-500 text-white text-xs font-semibold rounded-full flex items-center gap-1">
               <ShoppingCart className="w-3 h-3" />
               Buy Now
             </span>
           )}
-          {bidCount > 0 && (
+          {!isComingSoon && bidCount > 0 && (
             <span className="px-2 py-1 bg-blue-500 text-white text-xs font-semibold rounded-full flex items-center gap-1">
               <Gavel className="w-3 h-3" />
               {bidCount} bid{bidCount !== 1 ? "s" : ""}
@@ -87,14 +116,20 @@ export function AuctionCard({
         {/* Price Badge */}
         <div className="absolute bottom-2 right-2">
           <span className="px-2 py-1 bg-black/70 text-white text-sm font-bold rounded-lg">
-            {formatPrice(displayPrice)}
+            {isComingSoon ? `Starting at ${formatPrice(startingPrice)}` : formatPrice(displayPrice)}
           </span>
         </div>
 
-        {/* Countdown */}
+        {/* Countdown or Start Time */}
         <div className="absolute bottom-2 left-2">
-          <div className="px-2 py-1 bg-white/90 rounded-lg">
-            <AuctionCountdown endTime={endTime} size="sm" />
+          <div className={`px-2 py-1 rounded-lg ${isComingSoon ? "bg-purple-100" : "bg-white/90"}`}>
+            {isComingSoon ? (
+              <span className="text-xs font-medium text-purple-700">
+                {formatStartTime(startTime)}
+              </span>
+            ) : (
+              <AuctionCountdown endTime={endTime} size="sm" />
+            )}
           </div>
         </div>
 

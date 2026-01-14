@@ -83,6 +83,11 @@ export async function POST(request: NextRequest) {
       shippingCost,
       detailImages,
       description,
+      // Fixed-price offer support
+      acceptsOffers,
+      minOfferAmount,
+      // Scheduled auction support
+      startDate,
     } = body;
 
     // Common validation
@@ -115,12 +120,30 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      // Validate minOfferAmount if acceptsOffers is true
+      if (acceptsOffers && minOfferAmount !== undefined) {
+        if (typeof minOfferAmount !== "number" || minOfferAmount < MIN_FIXED_PRICE) {
+          return NextResponse.json(
+            { error: `Minimum offer must be at least $${MIN_FIXED_PRICE}` },
+            { status: 400 }
+          );
+        }
+        if (minOfferAmount >= listingPrice) {
+          return NextResponse.json(
+            { error: "Minimum offer must be less than asking price" },
+            { status: 400 }
+          );
+        }
+      }
+
       const listing = await createFixedPriceListing(profile.id, {
         comicId,
         price: listingPrice,
         shippingCost,
         detailImages: detailImages || [],
         description: description || "",
+        acceptsOffers: acceptsOffers || false,
+        minOfferAmount: acceptsOffers ? minOfferAmount : undefined,
       });
 
       return NextResponse.json({ auction: listing }, { status: 201 });
@@ -157,6 +180,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate startDate if provided
+    if (startDate) {
+      const selectedDate = new Date(startDate);
+      const now = new Date();
+      if (selectedDate <= now) {
+        return NextResponse.json(
+          { error: "Start date must be in the future" },
+          { status: 400 }
+        );
+      }
+    }
+
     const auction = await createAuction(profile.id, {
       comicId,
       listingType: "auction",
@@ -166,6 +201,7 @@ export async function POST(request: NextRequest) {
       shippingCost,
       detailImages: detailImages || [],
       description: description || "",
+      startDate: startDate || undefined,
     });
 
     return NextResponse.json({ auction }, { status: 201 });

@@ -1,0 +1,221 @@
+import { Resend } from "resend";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+const FROM_EMAIL = "Collectors Chest <notifications@collectors-chest.com>";
+
+// Email templates for different notification types
+type EmailTemplate = {
+  subject: string;
+  html: string;
+  text: string;
+};
+
+interface OfferEmailData {
+  buyerName: string;
+  sellerName: string;
+  comicTitle: string;
+  issueNumber: string;
+  amount: number;
+  counterAmount?: number;
+  listingUrl: string;
+}
+
+interface ListingEmailData {
+  sellerName: string;
+  comicTitle: string;
+  issueNumber: string;
+  price: number;
+  expiresIn?: string;
+  listingUrl: string;
+}
+
+function formatPrice(amount: number): string {
+  return `$${amount.toFixed(2)}`;
+}
+
+// ============================================================================
+// EMAIL TEMPLATES
+// ============================================================================
+
+function offerReceivedTemplate(data: OfferEmailData): EmailTemplate {
+  return {
+    subject: `New offer on ${data.comicTitle} #${data.issueNumber}`,
+    html: `
+      <h2>You've received a new offer!</h2>
+      <p><strong>${data.buyerName}</strong> has offered <strong>${formatPrice(data.amount)}</strong> for your listing:</p>
+      <p style="font-size: 18px; font-weight: bold;">${data.comicTitle} #${data.issueNumber}</p>
+      <p>You have 48 hours to respond to this offer.</p>
+      <p><a href="${data.listingUrl}" style="display: inline-block; padding: 12px 24px; background-color: #16a34a; color: white; text-decoration: none; border-radius: 8px;">View Offer</a></p>
+    `,
+    text: `You've received a new offer!\n\n${data.buyerName} has offered ${formatPrice(data.amount)} for ${data.comicTitle} #${data.issueNumber}.\n\nYou have 48 hours to respond.\n\nView offer: ${data.listingUrl}`,
+  };
+}
+
+function offerAcceptedTemplate(data: OfferEmailData): EmailTemplate {
+  return {
+    subject: `Your offer on ${data.comicTitle} #${data.issueNumber} was accepted!`,
+    html: `
+      <h2>Great news! Your offer was accepted!</h2>
+      <p><strong>${data.sellerName}</strong> has accepted your offer of <strong>${formatPrice(data.amount)}</strong> for:</p>
+      <p style="font-size: 18px; font-weight: bold;">${data.comicTitle} #${data.issueNumber}</p>
+      <p>Please complete your payment within 48 hours to secure this purchase.</p>
+      <p><a href="${data.listingUrl}" style="display: inline-block; padding: 12px 24px; background-color: #16a34a; color: white; text-decoration: none; border-radius: 8px;">Complete Payment</a></p>
+    `,
+    text: `Great news! Your offer was accepted!\n\n${data.sellerName} accepted your offer of ${formatPrice(data.amount)} for ${data.comicTitle} #${data.issueNumber}.\n\nComplete payment: ${data.listingUrl}`,
+  };
+}
+
+function offerRejectedTemplate(data: OfferEmailData): EmailTemplate {
+  return {
+    subject: `Update on your offer for ${data.comicTitle} #${data.issueNumber}`,
+    html: `
+      <h2>Your offer was declined</h2>
+      <p>Unfortunately, <strong>${data.sellerName}</strong> has declined your offer of <strong>${formatPrice(data.amount)}</strong> for:</p>
+      <p style="font-size: 18px; font-weight: bold;">${data.comicTitle} #${data.issueNumber}</p>
+      <p>You can submit a new offer or browse other listings in the shop.</p>
+      <p><a href="${data.listingUrl}" style="display: inline-block; padding: 12px 24px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 8px;">View Listing</a></p>
+    `,
+    text: `Your offer was declined.\n\n${data.sellerName} declined your offer of ${formatPrice(data.amount)} for ${data.comicTitle} #${data.issueNumber}.\n\nView listing: ${data.listingUrl}`,
+  };
+}
+
+function offerCounteredTemplate(data: OfferEmailData): EmailTemplate {
+  return {
+    subject: `Counter-offer on ${data.comicTitle} #${data.issueNumber}`,
+    html: `
+      <h2>You've received a counter-offer!</h2>
+      <p><strong>${data.sellerName}</strong> has countered your offer on:</p>
+      <p style="font-size: 18px; font-weight: bold;">${data.comicTitle} #${data.issueNumber}</p>
+      <p>Your offer: ${formatPrice(data.amount)}</p>
+      <p><strong>Counter-offer: ${formatPrice(data.counterAmount || 0)}</strong></p>
+      <p>You have 48 hours to respond to this counter-offer.</p>
+      <p><a href="${data.listingUrl}" style="display: inline-block; padding: 12px 24px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 8px;">Respond to Offer</a></p>
+    `,
+    text: `You've received a counter-offer!\n\n${data.sellerName} countered your offer on ${data.comicTitle} #${data.issueNumber}.\n\nYour offer: ${formatPrice(data.amount)}\nCounter-offer: ${formatPrice(data.counterAmount || 0)}\n\nRespond: ${data.listingUrl}`,
+  };
+}
+
+function offerExpiredTemplate(data: OfferEmailData): EmailTemplate {
+  return {
+    subject: `Your offer on ${data.comicTitle} #${data.issueNumber} has expired`,
+    html: `
+      <h2>Offer Expired</h2>
+      <p>Your offer of <strong>${formatPrice(data.amount)}</strong> for the following item has expired:</p>
+      <p style="font-size: 18px; font-weight: bold;">${data.comicTitle} #${data.issueNumber}</p>
+      <p>The seller did not respond within 48 hours. You can submit a new offer if the listing is still active.</p>
+      <p><a href="${data.listingUrl}" style="display: inline-block; padding: 12px 24px; background-color: #6b7280; color: white; text-decoration: none; border-radius: 8px;">View Listing</a></p>
+    `,
+    text: `Your offer has expired.\n\nYour offer of ${formatPrice(data.amount)} for ${data.comicTitle} #${data.issueNumber} expired.\n\nView listing: ${data.listingUrl}`,
+  };
+}
+
+function listingExpiringTemplate(data: ListingEmailData): EmailTemplate {
+  return {
+    subject: `Your listing for ${data.comicTitle} #${data.issueNumber} expires soon`,
+    html: `
+      <h2>Listing Expiring Soon</h2>
+      <p>Your listing will expire ${data.expiresIn || "within 24 hours"}:</p>
+      <p style="font-size: 18px; font-weight: bold;">${data.comicTitle} #${data.issueNumber}</p>
+      <p>Price: ${formatPrice(data.price)}</p>
+      <p>If you'd like to keep this listing active, you can relist it before it expires.</p>
+      <p><a href="${data.listingUrl}" style="display: inline-block; padding: 12px 24px; background-color: #f59e0b; color: white; text-decoration: none; border-radius: 8px;">View Listing</a></p>
+    `,
+    text: `Your listing is expiring soon!\n\n${data.comicTitle} #${data.issueNumber} (${formatPrice(data.price)}) will expire ${data.expiresIn || "within 24 hours"}.\n\nView listing: ${data.listingUrl}`,
+  };
+}
+
+function listingExpiredTemplate(data: ListingEmailData): EmailTemplate {
+  return {
+    subject: `Your listing for ${data.comicTitle} #${data.issueNumber} has expired`,
+    html: `
+      <h2>Listing Expired</h2>
+      <p>Your listing has expired and is no longer visible in the shop:</p>
+      <p style="font-size: 18px; font-weight: bold;">${data.comicTitle} #${data.issueNumber}</p>
+      <p>Price: ${formatPrice(data.price)}</p>
+      <p>You can relist this item from your collection if you'd like to sell it.</p>
+      <p><a href="${process.env.NEXT_PUBLIC_APP_URL}/collection" style="display: inline-block; padding: 12px 24px; background-color: #6b7280; color: white; text-decoration: none; border-radius: 8px;">View Collection</a></p>
+    `,
+    text: `Your listing has expired.\n\n${data.comicTitle} #${data.issueNumber} (${formatPrice(data.price)}) is no longer visible.\n\nView collection: ${process.env.NEXT_PUBLIC_APP_URL}/collection`,
+  };
+}
+
+// ============================================================================
+// SEND EMAIL FUNCTION
+// ============================================================================
+
+export type NotificationEmailType =
+  | "offer_received"
+  | "offer_accepted"
+  | "offer_rejected"
+  | "offer_countered"
+  | "offer_expired"
+  | "listing_expiring"
+  | "listing_expired";
+
+interface SendNotificationEmailParams {
+  to: string;
+  type: NotificationEmailType;
+  data: OfferEmailData | ListingEmailData;
+}
+
+export async function sendNotificationEmail({
+  to,
+  type,
+  data,
+}: SendNotificationEmailParams): Promise<{ success: boolean; error?: string }> {
+  // Skip if no API key configured
+  if (!process.env.RESEND_API_KEY) {
+    console.log(`[Email] Skipping email (no API key): ${type} to ${to}`);
+    return { success: true };
+  }
+
+  let template: EmailTemplate;
+
+  switch (type) {
+    case "offer_received":
+      template = offerReceivedTemplate(data as OfferEmailData);
+      break;
+    case "offer_accepted":
+      template = offerAcceptedTemplate(data as OfferEmailData);
+      break;
+    case "offer_rejected":
+      template = offerRejectedTemplate(data as OfferEmailData);
+      break;
+    case "offer_countered":
+      template = offerCounteredTemplate(data as OfferEmailData);
+      break;
+    case "offer_expired":
+      template = offerExpiredTemplate(data as OfferEmailData);
+      break;
+    case "listing_expiring":
+      template = listingExpiringTemplate(data as ListingEmailData);
+      break;
+    case "listing_expired":
+      template = listingExpiredTemplate(data as ListingEmailData);
+      break;
+    default:
+      return { success: false, error: `Unknown email type: ${type}` };
+  }
+
+  try {
+    const { error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to,
+      subject: template.subject,
+      html: template.html,
+      text: template.text,
+    });
+
+    if (error) {
+      console.error(`[Email] Failed to send ${type} to ${to}:`, error);
+      return { success: false, error: error.message };
+    }
+
+    console.log(`[Email] Sent ${type} to ${to}`);
+    return { success: true };
+  } catch (err) {
+    console.error(`[Email] Error sending ${type} to ${to}:`, err);
+    return { success: false, error: String(err) };
+  }
+}

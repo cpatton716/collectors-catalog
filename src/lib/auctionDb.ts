@@ -6,12 +6,17 @@ import {
   AuctionSortBy,
   Bid,
   BidHistoryItem,
+  CancelReason,
   CreateAuctionInput,
   CreateFixedPriceListingInput,
+  CreateOfferInput,
   ListingType,
   Notification,
   NotificationType,
+  Offer,
+  OfferStatus,
   PlaceBidResult,
+  RespondToOfferInput,
   SellerProfile,
   SellerRating,
   SubmitRatingInput,
@@ -34,7 +39,10 @@ export async function createAuction(
   input: CreateAuctionInput
 ): Promise<Auction> {
   const listingType = input.listingType || "auction";
-  const endTime = new Date();
+
+  // Support scheduled auctions with custom start date
+  const startTime = input.startDate ? new Date(input.startDate) : new Date();
+  const endTime = new Date(startTime);
   endTime.setDate(endTime.getDate() + input.durationDays);
 
   const { data, error } = await supabase
@@ -45,6 +53,7 @@ export async function createAuction(
       listing_type: listingType,
       starting_price: input.startingPrice,
       buy_it_now_price: input.buyItNowPrice || null,
+      start_time: startTime.toISOString(),
       end_time: endTime.toISOString(),
       shipping_cost: input.shippingCost,
       detail_images: input.detailImages || [],
@@ -72,9 +81,9 @@ export async function createFixedPriceListing(
   sellerId: string,
   input: CreateFixedPriceListingInput
 ): Promise<Auction> {
-  // Fixed-price listings don't expire by default (set to 30 days)
-  const endTime = new Date();
-  endTime.setDate(endTime.getDate() + 30);
+  // Fixed-price listings expire after 30 days
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + 30);
 
   const { data, error } = await supabase
     .from("auctions")
@@ -84,10 +93,13 @@ export async function createFixedPriceListing(
       listing_type: "fixed_price",
       starting_price: input.price,
       buy_it_now_price: null, // Not applicable for fixed-price
-      end_time: endTime.toISOString(),
+      end_time: expiresAt.toISOString(), // Use same time for end_time
+      expires_at: expiresAt.toISOString(),
       shipping_cost: input.shippingCost,
       detail_images: input.detailImages || [],
       description: input.description || null,
+      accepts_offers: input.acceptsOffers || false,
+      min_offer_amount: input.minOfferAmount || null,
     })
     .select()
     .single();
@@ -330,36 +342,96 @@ export async function updateAuction(
 }
 
 /**
- * Cancel auction (only if no bids)
+ * Cancel auction/listing (only if no bids for auctions)
  */
 export async function cancelAuction(
   auctionId: string,
-  sellerId: string
+  sellerId: string,
+  reason?: CancelReason
 ): Promise<{ success: boolean; error?: string }> {
   // Check for existing bids
   const { data: auction } = await supabase
     .from("auctions")
-    .select("bid_count")
+    .select("bid_count, listing_type")
     .eq("id", auctionId)
     .eq("seller_id", sellerId)
     .single();
 
   if (!auction) {
-    return { success: false, error: "Auction not found" };
+    return { success: false, error: "Listing not found" };
   }
 
-  if (auction.bid_count > 0) {
+  // For auctions, check that there are no bids
+  if (auction.listing_type === "auction" && auction.bid_count > 0) {
     return { success: false, error: "Cannot cancel auction with bids" };
   }
 
   const { error } = await supabase
     .from("auctions")
-    .update({ status: "cancelled" })
+    .update({
+      status: "cancelled",
+      cancel_reason: reason || null,
+    })
     .eq("id", auctionId)
     .eq("seller_id", sellerId);
 
   if (error) {
     return { success: false, error: error.message };
+  }
+
+  return { success: true };
+}
+
+/**
+ * Mark a listing as sold outside the app
+ * This removes the listing and the comic from collection
+ */
+export async function markSoldOutsideApp(
+  auctionId: string,
+  sellerId: string,
+  salePrice: number
+): Promise<{ success: boolean; error?: string }> {
+  // Get the auction details first
+  const { data: auction } = await supabase
+    .from("auctions")
+    .select("comic_id, bid_count, listing_type")
+    .eq("id", auctionId)
+    .eq("seller_id", sellerId)
+    .single();
+
+  if (!auction) {
+    return { success: false, error: "Listing not found" };
+  }
+
+  // For auctions, check that there are no bids
+  if (auction.listing_type === "auction" && auction.bid_count > 0) {
+    return { success: false, error: "Cannot mark auction with bids as sold outside app" };
+  }
+
+  // Mark listing as sold
+  const { error: auctionError } = await supabase
+    .from("auctions")
+    .update({
+      status: "sold",
+      winning_bid: salePrice,
+      cancel_reason: "sold_elsewhere",
+    })
+    .eq("id", auctionId)
+    .eq("seller_id", sellerId);
+
+  if (auctionError) {
+    return { success: false, error: auctionError.message };
+  }
+
+  // Delete the comic from collection
+  const { error: comicError } = await supabase
+    .from("comics")
+    .delete()
+    .eq("id", auction.comic_id);
+
+  if (comicError) {
+    // Note: Listing is already marked sold, but comic deletion failed
+    console.error("Failed to delete comic after marking sold:", comicError);
   }
 
   return { success: true };
@@ -782,6 +854,310 @@ export async function isWatching(
 }
 
 // ============================================================================
+// OFFERS
+// ============================================================================
+
+/**
+ * Create a new offer on a fixed-price listing
+ */
+export async function createOffer(
+  buyerId: string,
+  input: CreateOfferInput
+): Promise<{ success: boolean; offer?: Offer; error?: string }> {
+  // Get the listing
+  const { data: listing } = await supabase
+    .from("auctions")
+    .select("*, profiles!auctions_seller_id_fkey(id)")
+    .eq("id", input.listingId)
+    .eq("status", "active")
+    .eq("listing_type", "fixed_price")
+    .single();
+
+  if (!listing) {
+    return { success: false, error: "Listing not found or no longer available" };
+  }
+
+  if (listing.seller_id === buyerId) {
+    return { success: false, error: "You cannot make an offer on your own listing" };
+  }
+
+  if (!listing.accepts_offers) {
+    return { success: false, error: "This listing does not accept offers" };
+  }
+
+  // Check if offer is below minimum
+  if (listing.min_offer_amount && input.amount < listing.min_offer_amount) {
+    // Auto-reject without notifying seller
+    return { success: false, error: "Your offer is too low for this listing" };
+  }
+
+  // Check for existing pending offer from this buyer
+  const { data: existingOffer } = await supabase
+    .from("offers")
+    .select("id, status, round_number")
+    .eq("listing_id", input.listingId)
+    .eq("buyer_id", buyerId)
+    .in("status", ["pending", "countered"])
+    .single();
+
+  if (existingOffer) {
+    return { success: false, error: "You already have an active offer on this listing" };
+  }
+
+  // Create the offer
+  const expiresAt = new Date();
+  expiresAt.setHours(expiresAt.getHours() + 48);
+
+  const { data, error } = await supabase
+    .from("offers")
+    .insert({
+      listing_id: input.listingId,
+      buyer_id: buyerId,
+      seller_id: listing.seller_id,
+      amount: input.amount,
+      status: "pending",
+      round_number: 1,
+      expires_at: expiresAt.toISOString(),
+    })
+    .select()
+    .single();
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  // Notify seller
+  await createNotification(listing.seller_id, "offer_received", input.listingId, data.id);
+
+  return { success: true, offer: transformOffer(data) };
+}
+
+/**
+ * Respond to an offer (accept, reject, or counter)
+ */
+export async function respondToOffer(
+  sellerId: string,
+  input: RespondToOfferInput
+): Promise<{ success: boolean; offer?: Offer; error?: string }> {
+  // Get the offer
+  const { data: offer } = await supabase
+    .from("offers")
+    .select("*, auctions(*)")
+    .eq("id", input.offerId)
+    .eq("seller_id", sellerId)
+    .single();
+
+  if (!offer) {
+    return { success: false, error: "Offer not found" };
+  }
+
+  if (offer.status !== "pending" && offer.status !== "countered") {
+    return { success: false, error: "This offer can no longer be modified" };
+  }
+
+  const now = new Date().toISOString();
+
+  if (input.action === "accept") {
+    // Accept the offer - complete the sale
+    const paymentDeadline = new Date();
+    paymentDeadline.setHours(paymentDeadline.getHours() + 48);
+
+    // Update offer status
+    await supabase
+      .from("offers")
+      .update({ status: "accepted", responded_at: now })
+      .eq("id", input.offerId);
+
+    // Update listing to sold
+    await supabase
+      .from("auctions")
+      .update({
+        status: "sold",
+        winner_id: offer.buyer_id,
+        winning_bid: offer.amount,
+        payment_status: "pending",
+        payment_deadline: paymentDeadline.toISOString(),
+      })
+      .eq("id", offer.listing_id);
+
+    // Notify buyer
+    await createNotification(offer.buyer_id, "offer_accepted", offer.listing_id, input.offerId);
+
+    return { success: true };
+  }
+
+  if (input.action === "reject") {
+    await supabase
+      .from("offers")
+      .update({ status: "rejected", responded_at: now })
+      .eq("id", input.offerId);
+
+    // Notify buyer
+    await createNotification(offer.buyer_id, "offer_rejected", offer.listing_id, input.offerId);
+
+    return { success: true };
+  }
+
+  if (input.action === "counter") {
+    if (!input.counterAmount) {
+      return { success: false, error: "Counter amount is required" };
+    }
+
+    if (offer.round_number >= 3) {
+      return { success: false, error: "Maximum negotiation rounds reached (3)" };
+    }
+
+    // Update offer with counter
+    const newExpiresAt = new Date();
+    newExpiresAt.setHours(newExpiresAt.getHours() + 48);
+
+    const { data: updatedOffer, error } = await supabase
+      .from("offers")
+      .update({
+        status: "countered",
+        counter_amount: input.counterAmount,
+        round_number: offer.round_number + 1,
+        expires_at: newExpiresAt.toISOString(),
+        responded_at: now,
+      })
+      .eq("id", input.offerId)
+      .select()
+      .single();
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    // Notify buyer
+    await createNotification(offer.buyer_id, "offer_countered", offer.listing_id, input.offerId);
+
+    return { success: true, offer: transformOffer(updatedOffer) };
+  }
+
+  return { success: false, error: "Invalid action" };
+}
+
+/**
+ * Respond to a counter-offer (buyer accepts or rejects)
+ */
+export async function respondToCounterOffer(
+  buyerId: string,
+  offerId: string,
+  action: "accept" | "reject"
+): Promise<{ success: boolean; error?: string }> {
+  // Get the offer
+  const { data: offer } = await supabase
+    .from("offers")
+    .select("*")
+    .eq("id", offerId)
+    .eq("buyer_id", buyerId)
+    .eq("status", "countered")
+    .single();
+
+  if (!offer) {
+    return { success: false, error: "Counter-offer not found" };
+  }
+
+  const now = new Date().toISOString();
+
+  if (action === "accept") {
+    // Accept the counter-offer
+    const paymentDeadline = new Date();
+    paymentDeadline.setHours(paymentDeadline.getHours() + 48);
+
+    await supabase
+      .from("offers")
+      .update({ status: "accepted", amount: offer.counter_amount, responded_at: now })
+      .eq("id", offerId);
+
+    // Update listing to sold
+    await supabase
+      .from("auctions")
+      .update({
+        status: "sold",
+        winner_id: buyerId,
+        winning_bid: offer.counter_amount,
+        payment_status: "pending",
+        payment_deadline: paymentDeadline.toISOString(),
+      })
+      .eq("id", offer.listing_id);
+
+    // Notify seller
+    await createNotification(offer.seller_id, "offer_accepted", offer.listing_id, offerId);
+
+    return { success: true };
+  }
+
+  if (action === "reject") {
+    await supabase
+      .from("offers")
+      .update({ status: "rejected", responded_at: now })
+      .eq("id", offerId);
+
+    // Notify seller
+    await createNotification(offer.seller_id, "offer_rejected", offer.listing_id, offerId);
+
+    return { success: true };
+  }
+
+  return { success: false, error: "Invalid action" };
+}
+
+/**
+ * Get offers for a listing (seller view)
+ */
+export async function getOffersForListing(
+  listingId: string,
+  sellerId: string
+): Promise<Offer[]> {
+  const { data, error } = await supabase
+    .from("offers")
+    .select("*, profiles!offers_buyer_id_fkey(id, display_name, public_display_name)")
+    .eq("listing_id", listingId)
+    .eq("seller_id", sellerId)
+    .order("created_at", { ascending: false });
+
+  if (error || !data) return [];
+
+  return data.map(transformOffer);
+}
+
+/**
+ * Get offers made by a buyer
+ */
+export async function getBuyerOffers(buyerId: string): Promise<Offer[]> {
+  const { data, error } = await supabase
+    .from("offers")
+    .select("*, auctions(*)")
+    .eq("buyer_id", buyerId)
+    .order("created_at", { ascending: false });
+
+  if (error || !data) return [];
+
+  return data.map(transformOffer);
+}
+
+/**
+ * Transform database offer to Offer type
+ */
+function transformOffer(data: Record<string, unknown>): Offer {
+  return {
+    id: data.id as string,
+    listingId: data.listing_id as string,
+    buyerId: data.buyer_id as string,
+    sellerId: data.seller_id as string,
+    amount: Number(data.amount),
+    counterAmount: data.counter_amount ? Number(data.counter_amount) : null,
+    status: data.status as OfferStatus,
+    roundNumber: Number(data.round_number),
+    createdAt: data.created_at as string,
+    updatedAt: data.updated_at as string,
+    expiresAt: data.expires_at as string,
+    respondedAt: (data.responded_at as string) || null,
+  };
+}
+
+// ============================================================================
 // NOTIFICATIONS
 // ============================================================================
 
@@ -791,7 +1167,8 @@ export async function isWatching(
 export async function createNotification(
   userId: string,
   type: NotificationType,
-  auctionId?: string
+  auctionId?: string,
+  offerId?: string
 ): Promise<void> {
   const titles: Record<NotificationType, string> = {
     outbid: "You've been outbid!",
@@ -801,6 +1178,15 @@ export async function createNotification(
     rating_request: "Leave feedback",
     auction_sold: "Your item sold!",
     payment_received: "Payment received",
+    // Offer notifications
+    offer_received: "New offer received!",
+    offer_accepted: "Your offer was accepted!",
+    offer_rejected: "Offer declined",
+    offer_countered: "Counter-offer received!",
+    offer_expired: "Offer expired",
+    // Listing expiration notifications
+    listing_expiring: "Listing expiring soon",
+    listing_expired: "Listing has expired",
   };
 
   const messages: Record<NotificationType, string> = {
@@ -811,6 +1197,15 @@ export async function createNotification(
     rating_request: "Please leave feedback for your recent purchase.",
     auction_sold: "Your auction has ended with a winning bidder!",
     payment_received: "Payment has been received for your sold item.",
+    // Offer messages
+    offer_received: "Someone has made an offer on your listing. Review and respond.",
+    offer_accepted: "The seller has accepted your offer! Complete payment within 48 hours.",
+    offer_rejected: "Unfortunately, your offer was not accepted.",
+    offer_countered: "The seller has made a counter-offer. Review and respond.",
+    offer_expired: "Your offer has expired without a response.",
+    // Listing expiration messages
+    listing_expiring: "Your listing will expire in 24 hours. Consider renewing.",
+    listing_expired: "Your listing has expired. Relist to continue selling.",
   };
 
   await supabase.from("notifications").insert({
@@ -819,6 +1214,7 @@ export async function createNotification(
     title: titles[type],
     message: messages[type],
     auction_id: auctionId || null,
+    offer_id: offerId || null,
   });
 }
 
@@ -1116,6 +1512,10 @@ function transformDbAuction(data: Record<string, unknown>): Auction {
     bidCount: Number(data.bid_count || 0),
     paymentStatus: (data.payment_status as Auction["paymentStatus"]) || null,
     paymentDeadline: (data.payment_deadline as string) || null,
+    acceptsOffers: (data.accepts_offers as boolean) || false,
+    minOfferAmount: data.min_offer_amount ? Number(data.min_offer_amount) : null,
+    expiresAt: (data.expires_at as string) || null,
+    cancelReason: (data.cancel_reason as Auction["cancelReason"]) || null,
     createdAt: data.created_at as string,
     updatedAt: data.updated_at as string,
   };
@@ -1202,4 +1602,138 @@ function transformDbBid(data: Record<string, unknown>): Bid {
     createdAt: data.created_at as string,
     updatedAt: data.updated_at as string,
   };
+}
+
+// ============================================================================
+// EXPIRATION FUNCTIONS (called by cron job)
+// ============================================================================
+
+/**
+ * Expire old offers (48 hour expiration)
+ * Also creates notifications and sends emails for expired offers
+ */
+export async function expireOffers(): Promise<{ expired: number; errors: string[] }> {
+  const errors: string[] = [];
+
+  // Get offers that need to expire with related data for emails
+  const { data: expiredOffers, error: fetchError } = await supabase
+    .from("offers")
+    .select(`
+      id, buyer_id, seller_id, listing_id, amount, status,
+      auctions!inner(id, comic_id, collection_items!inner(id, comic))
+    `)
+    .eq("status", "pending")
+    .lt("expires_at", new Date().toISOString());
+
+  if (fetchError) {
+    errors.push(`Failed to fetch expired offers: ${fetchError.message}`);
+    return { expired: 0, errors };
+  }
+
+  if (!expiredOffers || expiredOffers.length === 0) {
+    return { expired: 0, errors };
+  }
+
+  // Update offers to expired status
+  const { error: updateError } = await supabase
+    .from("offers")
+    .update({ status: "expired", updated_at: new Date().toISOString() })
+    .in("id", expiredOffers.map(o => o.id));
+
+  if (updateError) {
+    errors.push(`Failed to update expired offers: ${updateError.message}`);
+    return { expired: 0, errors };
+  }
+
+  // Create notifications for expired offers
+  for (const offer of expiredOffers) {
+    try {
+      // Notify buyer their offer expired
+      await createNotification(offer.buyer_id, "offer_expired", offer.listing_id, offer.id);
+    } catch (err) {
+      errors.push(`Failed to create notification for offer ${offer.id}: ${err}`);
+    }
+  }
+
+  return { expired: expiredOffers.length, errors };
+}
+
+/**
+ * Expire old fixed-price listings (30 day expiration)
+ * Also creates notifications for expiring/expired listings
+ */
+export async function expireListings(): Promise<{ expired: number; expiring: number; errors: string[] }> {
+  const errors: string[] = [];
+  const now = new Date();
+  const oneDayFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
+  // Get listings expiring within 24 hours (for warning notification)
+  const { data: expiringListings } = await supabase
+    .from("auctions")
+    .select("id, seller_id")
+    .eq("listing_type", "fixed_price")
+    .eq("status", "active")
+    .gt("expires_at", now.toISOString())
+    .lt("expires_at", oneDayFromNow.toISOString());
+
+  let expiringCount = 0;
+  if (expiringListings && expiringListings.length > 0) {
+    for (const listing of expiringListings) {
+      try {
+        // Check if we already sent expiring notification
+        const { data: existingNotif } = await supabase
+          .from("notifications")
+          .select("id")
+          .eq("auction_id", listing.id)
+          .eq("type", "listing_expiring")
+          .single();
+
+        if (!existingNotif) {
+          await createNotification(listing.seller_id, "listing_expiring", listing.id);
+          expiringCount++;
+        }
+      } catch (err) {
+        errors.push(`Failed to notify expiring listing ${listing.id}: ${err}`);
+      }
+    }
+  }
+
+  // Get listings that have expired
+  const { data: expiredListings, error: fetchError } = await supabase
+    .from("auctions")
+    .select("id, seller_id")
+    .eq("listing_type", "fixed_price")
+    .eq("status", "active")
+    .lt("expires_at", now.toISOString());
+
+  if (fetchError) {
+    errors.push(`Failed to fetch expired listings: ${fetchError.message}`);
+    return { expired: 0, expiring: expiringCount, errors };
+  }
+
+  if (!expiredListings || expiredListings.length === 0) {
+    return { expired: 0, expiring: expiringCount, errors };
+  }
+
+  // Update listings to cancelled status
+  const { error: updateError } = await supabase
+    .from("auctions")
+    .update({ status: "cancelled", updated_at: now.toISOString() })
+    .in("id", expiredListings.map(l => l.id));
+
+  if (updateError) {
+    errors.push(`Failed to update expired listings: ${updateError.message}`);
+    return { expired: 0, expiring: expiringCount, errors };
+  }
+
+  // Create notifications for expired listings
+  for (const listing of expiredListings) {
+    try {
+      await createNotification(listing.seller_id, "listing_expired", listing.id);
+    } catch (err) {
+      errors.push(`Failed to create notification for listing ${listing.id}: ${err}`);
+    }
+  }
+
+  return { expired: expiredListings.length, expiring: expiringCount, errors };
 }

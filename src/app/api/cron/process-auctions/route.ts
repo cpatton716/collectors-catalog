@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { processEndedAuctions } from "@/lib/auctionDb";
+import { processEndedAuctions, expireOffers, expireListings } from "@/lib/auctionDb";
 
-// POST - Process ended auctions (called by Vercel cron)
+// POST - Process ended auctions and expirations (called by cron)
 export async function POST(request: NextRequest) {
   try {
     // Verify cron secret to prevent unauthorized calls
@@ -12,17 +12,35 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const result = await processEndedAuctions();
+    // Process ended auctions
+    const auctionResult = await processEndedAuctions();
+
+    // Expire old offers (48 hour expiration)
+    const offerResult = await expireOffers();
+
+    // Expire old listings (30 day expiration)
+    const listingResult = await expireListings();
 
     return NextResponse.json({
       success: true,
-      processed: result.processed,
-      errors: result.errors,
+      auctions: {
+        processed: auctionResult.processed,
+        errors: auctionResult.errors,
+      },
+      offers: {
+        expired: offerResult.expired,
+        errors: offerResult.errors,
+      },
+      listings: {
+        expired: listingResult.expired,
+        expiring: listingResult.expiring,
+        errors: listingResult.errors,
+      },
     });
   } catch (error) {
-    console.error("Error processing auctions:", error);
+    console.error("Error processing cron job:", error);
     return NextResponse.json(
-      { error: "Failed to process auctions" },
+      { error: "Failed to process cron job" },
       { status: 500 }
     );
   }
@@ -36,17 +54,35 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const result = await processEndedAuctions();
+    // Process ended auctions
+    const auctionResult = await processEndedAuctions();
+
+    // Expire old offers
+    const offerResult = await expireOffers();
+
+    // Expire old listings
+    const listingResult = await expireListings();
 
     return NextResponse.json({
       success: true,
-      processed: result.processed,
-      errors: result.errors,
+      auctions: {
+        processed: auctionResult.processed,
+        errors: auctionResult.errors,
+      },
+      offers: {
+        expired: offerResult.expired,
+        errors: offerResult.errors,
+      },
+      listings: {
+        expired: listingResult.expired,
+        expiring: listingResult.expiring,
+        errors: listingResult.errors,
+      },
     });
   } catch (error) {
-    console.error("Error processing auctions:", error);
+    console.error("Error processing cron job:", error);
     return NextResponse.json(
-      { error: "Failed to process auctions" },
+      { error: "Failed to process cron job" },
       { status: 500 }
     );
   }

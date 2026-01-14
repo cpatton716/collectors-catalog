@@ -33,6 +33,15 @@ Show each group as a numbered list with titles only, no details.
 1. Always keep mobile responsiveness part of all design decisions
 2. Ensure all design decisions are focused on a streamlined UX for the user
 
+## Clipboard Usage
+**ALWAYS** copy content to the user's clipboard when they need to paste something somewhere (Supabase SQL, API keys, URLs, etc.):
+```bash
+echo "content here" | pbcopy
+# or for file contents:
+cat /path/to/file.sql | pbcopy
+```
+Never make the user manually copy text - use `pbcopy` to do it for them.
+
 ## Environment Variables
 When any environment variable needs to be added or updated, automatically open the .env.local file in TextEdit for the user:
 ```bash
@@ -68,6 +77,37 @@ The Dev Log is stored at: `DEV_LOG.md` in the project root.
 
 **Important:** Close up shop does NOT deploy. Deploys are limited and should be done strategically using the Deploy command.
 
+## Services & Infrastructure
+
+### Domain & Hosting
+| Service | Purpose | Dashboard |
+|---------|---------|-----------|
+| **Netlify** | Hosting, domain, DNS | [app.netlify.com](https://app.netlify.com) |
+| **Domain** | collectors-chest.com | Purchased via Netlify (Jan 2026) |
+| **SSL** | HTTPS certificate | Let's Encrypt (auto-renewed) |
+
+### Core Services
+| Service | Purpose | Dashboard | Env Variable |
+|---------|---------|-----------|--------------|
+| **Supabase** | Database (Postgres) | [supabase.com/dashboard](https://supabase.com/dashboard) | `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` |
+| **Clerk** | Authentication | [dashboard.clerk.com](https://dashboard.clerk.com) | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` |
+| **Stripe** | Payments | [dashboard.stripe.com](https://dashboard.stripe.com) | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` |
+| **Anthropic** | AI (Claude) for cover recognition | [console.anthropic.com](https://console.anthropic.com) | `ANTHROPIC_API_KEY` |
+
+### Supporting Services
+| Service | Purpose | Dashboard | Env Variable |
+|---------|---------|-----------|--------------|
+| **Resend** | Email notifications | [resend.com](https://resend.com) | `RESEND_API_KEY` |
+| **Upstash** | Redis caching & rate limiting | [console.upstash.com](https://console.upstash.com) | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` |
+| **Sentry** | Error tracking | [sentry.io](https://sentry.io) | `SENTRY_DSN` |
+| **PostHog** | Analytics | [app.posthog.com](https://app.posthog.com) | `NEXT_PUBLIC_POSTHOG_KEY` |
+
+### External APIs
+| Service | Purpose | Notes |
+|---------|---------|-------|
+| **eBay Browse API** | Real-time pricing | Free tier, rate limited |
+| **CGC/CBCS** | Cert verification | Web scraping for grade details |
+
 ## Deploy Command
 
 **Hosting Platform:** Netlify (NOT Vercel)
@@ -93,6 +133,7 @@ When the user says **"Deploy"**, perform the following steps:
 5. **After successful deploy:**
    - Clear the "Changes Since Last Deploy" section in DEV_LOG.md
    - Log the deploy date and summary in DEV_LOG.md
+   - **IMPORTANT:** Batch the DEV_LOG update into the same commit OR commit it locally without pushing (to avoid triggering a second Netlify build)
 
 **Deploy Budget:** User has limited Netlify build minutes. Always remind them of this and confirm the deploy is worth it.
 

@@ -28,7 +28,9 @@ import {
   AlertTriangle,
   ExternalLink,
   FileCheck,
+  Store,
 } from "lucide-react";
+import { ListInShopModal } from "./auction/ListInShopModal";
 
 // Helper to generate certification verification URLs
 function getCertVerificationUrl(certNumber: string, gradingCompany: string): string | null {
@@ -59,6 +61,7 @@ interface ComicDetailModalProps {
   onToggleStar: (itemId: string) => void;
   onEdit: (item: CollectionItem) => void;
   onViewItem?: (item: CollectionItem) => void;
+  onListInShop?: () => void; // Called after successfully listing in shop
 }
 
 export function ComicDetailModal({
@@ -74,6 +77,7 @@ export function ComicDetailModal({
   onToggleStar,
   onEdit,
   onViewItem,
+  onListInShop,
 }: ComicDetailModalProps) {
   const [showListMenu, setShowListMenu] = useState(false);
   const [showCreateList, setShowCreateList] = useState(false);
@@ -82,6 +86,7 @@ export function ComicDetailModal({
   const [showSoldConfirm, setShowSoldConfirm] = useState(false);
   const [showVariantsModal, setShowVariantsModal] = useState(false);
   const [showImageLightbox, setShowImageLightbox] = useState(false);
+  const [showListInShopModal, setShowListInShopModal] = useState(false);
   const [salePrice, setSalePrice] = useState<string>(
     item.askingPrice?.toString() || item.comic.priceData?.estimatedValue?.toString() || ""
   );
@@ -581,162 +586,177 @@ export function ComicDetailModal({
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex flex-wrap gap-3 pt-4 border-t">
-              {/* Add to List Button */}
-              <div className="relative">
+            {/* Action Buttons - Mobile-friendly layout */}
+            <div className="pt-4 border-t space-y-3">
+              {/* Primary Actions - Full width on mobile */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {/* List in Shop Button */}
                 <button
-                  onClick={() => setShowListMenu(!showListMenu)}
-                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2"
+                  onClick={() => setShowListInShopModal(true)}
+                  className="w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2 font-medium"
                 >
-                  <ListPlus className="w-4 h-4" />
-                  Add to List
+                  <Store className="w-5 h-5" />
+                  List in Shop
                 </button>
 
-                {/* List Menu Dropdown */}
-                {showListMenu && (
-                  <>
-                    {/* Invisible overlay to close dropdown when clicking outside */}
-                    <div
-                      className="fixed inset-0 z-10"
-                      onClick={() => {
-                        setShowListMenu(false);
-                        setShowCreateList(false);
-                        setNewListName("");
-                      }}
-                    />
-                    <div className="absolute bottom-full left-0 mb-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-20">
-                    {!hasCustomLists && !showCreateList ? (
-                      <div className="px-4 py-3 text-center">
-                        <p className="text-sm text-gray-500 mb-3">
-                          You don&apos;t have any custom lists yet.
-                        </p>
-                        <button
-                          onClick={() => setShowCreateList(true)}
-                          className="px-3 py-1.5 bg-primary-600 text-white rounded-lg text-sm hover:bg-primary-700 transition-colors flex items-center gap-1 mx-auto"
-                        >
-                          <Plus className="w-4 h-4" />
-                          Create New List
-                        </button>
-                      </div>
-                    ) : showCreateList ? (
-                      <div className="px-3 py-2">
-                        <input
-                          type="text"
-                          value={newListName}
-                          onChange={(e) => setNewListName(e.target.value)}
-                          placeholder="List name..."
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm mb-2 bg-white text-gray-900"
-                          autoFocus
-                        />
-                        <div className="flex gap-2">
-                          <button
-                            onClick={handleCreateList}
-                            disabled={!newListName.trim()}
-                            className="flex-1 px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition-colors disabled:opacity-50"
-                          >
-                            Create & Add
-                          </button>
-                          <button
-                            onClick={() => {
-                              setShowCreateList(false);
-                              setNewListName("");
-                            }}
-                            className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition-colors"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        {/* Default Lists */}
-                        <div className="px-3 py-1">
-                          <p className="text-xs text-gray-400 uppercase font-medium mb-1">
-                            Default Lists
+                {/* Edit Details Button */}
+                <button
+                  onClick={() => onEdit(item)}
+                  className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 font-medium"
+                >
+                  <Pencil className="w-5 h-5" />
+                  Edit Details
+                </button>
+              </div>
+
+              {/* Secondary Actions */}
+              <div className="flex flex-wrap gap-2">
+                {/* Add to List Button */}
+                <div className="relative">
+                  <button
+                    onClick={() => setShowListMenu(!showListMenu)}
+                    className="px-3 py-2 bg-primary-100 text-primary-700 rounded-lg hover:bg-primary-200 transition-colors flex items-center gap-2 text-sm font-medium"
+                  >
+                    <ListPlus className="w-4 h-4" />
+                    Add to List
+                  </button>
+
+                  {/* List Menu Dropdown */}
+                  {showListMenu && (
+                    <>
+                      {/* Invisible overlay to close dropdown when clicking outside */}
+                      <div
+                        className="fixed inset-0 z-10"
+                        onClick={() => {
+                          setShowListMenu(false);
+                          setShowCreateList(false);
+                          setNewListName("");
+                        }}
+                      />
+                      <div className="absolute bottom-full left-0 mb-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-20">
+                      {!hasCustomLists && !showCreateList ? (
+                        <div className="px-4 py-3 text-center">
+                          <p className="text-sm text-gray-500 mb-3">
+                            You don&apos;t have any custom lists yet.
                           </p>
-                          {lists
-                            .filter((l) => l.isDefault && l.id !== "collection")
-                            .map((list) => (
-                              <button
-                                key={list.id}
-                                onClick={() => toggleList(list.id)}
-                                className="w-full px-2 py-1.5 text-left text-sm text-gray-900 hover:bg-gray-100 rounded flex items-center justify-between"
-                              >
-                                <span>{list.name}</span>
-                                {isInList(list.id) && (
-                                  <Check className="w-4 h-4 text-green-600" />
-                                )}
-                              </button>
-                            ))}
-                        </div>
-
-                        {/* Custom Lists */}
-                        {customLists.length > 0 && (
-                          <div className="px-3 py-1 border-t mt-1 pt-1">
-                            <p className="text-xs text-gray-400 uppercase font-medium mb-1">
-                              Custom Lists
-                            </p>
-                            {customLists.map((list) => (
-                              <button
-                                key={list.id}
-                                onClick={() => toggleList(list.id)}
-                                className="w-full px-2 py-1.5 text-left text-sm text-gray-900 hover:bg-gray-100 rounded flex items-center justify-between"
-                              >
-                                <span>{list.name}</span>
-                                {isInList(list.id) && (
-                                  <Check className="w-4 h-4 text-green-600" />
-                                )}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-
-                        {/* Create New */}
-                        <div className="border-t mt-1 pt-1 px-3">
                           <button
                             onClick={() => setShowCreateList(true)}
-                            className="w-full px-2 py-1.5 text-left text-sm text-primary-600 hover:bg-primary-50 rounded flex items-center gap-1"
+                            className="px-3 py-1.5 bg-primary-600 text-white rounded-lg text-sm hover:bg-primary-700 transition-colors flex items-center gap-1 mx-auto"
                           >
                             <Plus className="w-4 h-4" />
                             Create New List
                           </button>
                         </div>
-                      </>
-                    )}
-                  </div>
-                  </>
+                      ) : showCreateList ? (
+                        <div className="px-3 py-2">
+                          <input
+                            type="text"
+                            value={newListName}
+                            onChange={(e) => setNewListName(e.target.value)}
+                            placeholder="List name..."
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm mb-2 bg-white text-gray-900"
+                            autoFocus
+                          />
+                          <div className="flex gap-2">
+                            <button
+                              onClick={handleCreateList}
+                              disabled={!newListName.trim()}
+                              className="flex-1 px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition-colors disabled:opacity-50"
+                            >
+                              Create & Add
+                            </button>
+                            <button
+                              onClick={() => {
+                                setShowCreateList(false);
+                                setNewListName("");
+                              }}
+                              className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          {/* Default Lists */}
+                          <div className="px-3 py-1">
+                            <p className="text-xs text-gray-400 uppercase font-medium mb-1">
+                              Default Lists
+                            </p>
+                            {lists
+                              .filter((l) => l.isDefault && l.id !== "collection")
+                              .map((list) => (
+                                <button
+                                  key={list.id}
+                                  onClick={() => toggleList(list.id)}
+                                  className="w-full px-2 py-1.5 text-left text-sm text-gray-900 hover:bg-gray-100 rounded flex items-center justify-between"
+                                >
+                                  <span>{list.name}</span>
+                                  {isInList(list.id) && (
+                                    <Check className="w-4 h-4 text-green-600" />
+                                  )}
+                                </button>
+                              ))}
+                          </div>
+
+                          {/* Custom Lists */}
+                          {customLists.length > 0 && (
+                            <div className="px-3 py-1 border-t mt-1 pt-1">
+                              <p className="text-xs text-gray-400 uppercase font-medium mb-1">
+                                Custom Lists
+                              </p>
+                              {customLists.map((list) => (
+                                <button
+                                  key={list.id}
+                                  onClick={() => toggleList(list.id)}
+                                  className="w-full px-2 py-1.5 text-left text-sm text-gray-900 hover:bg-gray-100 rounded flex items-center justify-between"
+                                >
+                                  <span>{list.name}</span>
+                                  {isInList(list.id) && (
+                                    <Check className="w-4 h-4 text-green-600" />
+                                  )}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Create New */}
+                          <div className="border-t mt-1 pt-1 px-3">
+                            <button
+                              onClick={() => setShowCreateList(true)}
+                              className="w-full px-2 py-1.5 text-left text-sm text-primary-600 hover:bg-primary-50 rounded flex items-center gap-1"
+                            >
+                              <Plus className="w-4 h-4" />
+                              Create New List
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Mark as Sold Button (if for sale) */}
+                {item.forSale && (
+                  <button
+                    onClick={() => setShowSoldConfirm(true)}
+                    className="px-3 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors flex items-center gap-2 text-sm font-medium"
+                  >
+                    <DollarSign className="w-4 h-4" />
+                    Mark as Sold
+                  </button>
                 )}
-              </div>
 
-              {/* Edit Details Button */}
-              <button
-                onClick={() => onEdit(item)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-              >
-                <Pencil className="w-4 h-4" />
-                Edit Details
-              </button>
-
-              {/* Mark as Sold Button (if for sale) */}
-              {item.forSale && (
+                {/* Remove Button */}
                 <button
-                  onClick={() => setShowSoldConfirm(true)}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+                  onClick={() => setShowRemoveConfirm(true)}
+                  className="px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors flex items-center gap-2 text-sm font-medium"
                 >
-                  <DollarSign className="w-4 h-4" />
-                  Mark as Sold
+                  <Trash2 className="w-4 h-4" />
+                  Remove
                 </button>
-              )}
-
-              {/* Remove Button */}
-              <button
-                onClick={() => setShowRemoveConfirm(true)}
-                className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors flex items-center gap-2"
-              >
-                <Trash2 className="w-4 h-4" />
-                Remove from Collection
-              </button>
+              </div>
             </div>
 
             {/* Remove Confirmation */}
@@ -863,6 +883,19 @@ export function ComicDetailModal({
             />
           )}
         </div>
+      )}
+
+      {/* List in Shop Modal */}
+      {showListInShopModal && (
+        <ListInShopModal
+          comic={item}
+          isOpen={showListInShopModal}
+          onClose={() => setShowListInShopModal(false)}
+          onCreated={() => {
+            setShowListInShopModal(false);
+            onListInShop?.();
+          }}
+        />
       )}
     </div>
   );

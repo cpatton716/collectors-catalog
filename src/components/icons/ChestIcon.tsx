@@ -1,0 +1,115 @@
+interface ChestIconProps {
+  className?: string;
+  size?: number;
+}
+
+export function ChestIcon({ className = "", size = 32 }: ChestIconProps) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 192 192"
+      width={size}
+      height={size}
+      className={className}
+    >
+      <defs>
+        <linearGradient id="chestGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" style={{ stopColor: "#8B4513", stopOpacity: 1 }} />
+          <stop offset="100%" style={{ stopColor: "#5D2E0C", stopOpacity: 1 }} />
+        </linearGradient>
+        <linearGradient id="lidGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" style={{ stopColor: "#A0522D", stopOpacity: 1 }} />
+          <stop offset="100%" style={{ stopColor: "#8B4513", stopOpacity: 1 }} />
+        </linearGradient>
+        <linearGradient id="goldGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" style={{ stopColor: "#FFD700", stopOpacity: 1 }} />
+          <stop offset="100%" style={{ stopColor: "#DAA520", stopOpacity: 1 }} />
+        </linearGradient>
+      </defs>
+
+      {/* Background circle */}
+      <circle cx="96" cy="96" r="88" fill="#1e40af" />
+
+      {/* Chest body */}
+      <rect
+        x="36"
+        y="95"
+        width="120"
+        height="65"
+        rx="8"
+        fill="url(#chestGrad)"
+        stroke="#3D1F0D"
+        strokeWidth="3"
+      />
+
+      {/* Chest lid */}
+      <path
+        d="M36 95 Q36 60 96 55 Q156 60 156 95 L156 95 L36 95 Z"
+        fill="url(#lidGrad)"
+        stroke="#3D1F0D"
+        strokeWidth="3"
+      />
+
+      {/* Lid highlight arc */}
+      <path
+        d="M46 90 Q46 68 96 64 Q146 68 146 90"
+        fill="none"
+        stroke="#CD853F"
+        strokeWidth="2"
+        opacity="0.6"
+      />
+
+      {/* Metal bands */}
+      <rect
+        x="36"
+        y="92"
+        width="120"
+        height="8"
+        fill="#DAA520"
+        stroke="#B8860B"
+        strokeWidth="1"
+      />
+      <rect
+        x="36"
+        y="130"
+        width="120"
+        height="6"
+        fill="#DAA520"
+        stroke="#B8860B"
+        strokeWidth="1"
+      />
+
+      {/* Lock plate */}
+      <rect
+        x="80"
+        y="98"
+        width="32"
+        height="28"
+        rx="4"
+        fill="url(#goldGrad)"
+        stroke="#B8860B"
+        strokeWidth="2"
+      />
+
+      {/* Keyhole */}
+      <circle cx="96" cy="108" r="5" fill="#3D1F0D" />
+      <rect x="93" y="108" width="6" height="12" fill="#3D1F0D" />
+
+      {/* Corner accents */}
+      <circle cx="44" cy="100" r="6" fill="#DAA520" stroke="#B8860B" strokeWidth="1" />
+      <circle cx="148" cy="100" r="6" fill="#DAA520" stroke="#B8860B" strokeWidth="1" />
+      <circle cx="44" cy="152" r="6" fill="#DAA520" stroke="#B8860B" strokeWidth="1" />
+      <circle cx="148" cy="152" r="6" fill="#DAA520" stroke="#B8860B" strokeWidth="1" />
+
+      {/* Sparkle effects */}
+      <g fill="#FFFFFF" opacity="0.8">
+        <polygon points="50,45 52,50 57,50 53,54 55,59 50,56 45,59 47,54 43,50 48,50" />
+        <polygon
+          points="142,40 143.5,44 148,44 144.5,47 146,51 142,48.5 138,51 139.5,47 136,44 140.5,44"
+          transform="scale(0.8) translate(30,10)"
+        />
+        <polygon points="130,55 131,58 134,58 131.5,60 132.5,63 130,61 127.5,63 128.5,60 126,58 129,58" />
+      </g>
+    </svg>
+  );
+}

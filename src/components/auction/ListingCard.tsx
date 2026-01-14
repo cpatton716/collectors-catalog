@@ -1,7 +1,7 @@
 "use client";
 
 import { Auction, formatPrice } from "@/types/auction";
-import { Tag, Package, ShoppingCart } from "lucide-react";
+import { Tag, Package, ShoppingCart, MessageSquare } from "lucide-react";
 import { WatchlistButton } from "./WatchlistButton";
 import { SellerBadgeCompact } from "./SellerBadge";
 
@@ -25,6 +25,7 @@ export function ListingCard({
     comic,
     seller,
     isWatching,
+    acceptsOffers,
   } = listing;
 
   const coverImageUrl = comic?.coverImageUrl;
@@ -62,12 +63,18 @@ export function ListingCard({
           />
         </div>
 
-        {/* Buy Now Badge */}
-        <div className="absolute top-2 left-2">
+        {/* Badges */}
+        <div className="absolute top-2 left-2 flex flex-col gap-1">
           <span className="px-2 py-1 bg-green-500 text-white text-xs font-semibold rounded-full flex items-center gap-1">
             <Tag className="w-3 h-3" />
             Buy Now
           </span>
+          {acceptsOffers && (
+            <span className="px-2 py-1 bg-blue-500 text-white text-xs font-semibold rounded-full flex items-center gap-1">
+              <MessageSquare className="w-3 h-3" />
+              Offers
+            </span>
+          )}
         </div>
 
         {/* Price Badge */}

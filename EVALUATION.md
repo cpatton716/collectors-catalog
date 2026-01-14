@@ -379,6 +379,10 @@ Collectors Chest is a comic book collection tracking app with AI-powered cover r
    - Test Stripe webhooks
    - Effort: 0.5 session
 
+4. **Re-enable Clerk bot protection**
+   - Clerk Dashboard → Attack Protection → Bot sign-up protection → ON
+   - Disabled for testing on Jan 13, 2026
+
 ### Post-Launch
 - Price alerts
 - Pull lists

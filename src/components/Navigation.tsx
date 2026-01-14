@@ -4,8 +4,9 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
-import { Camera, BookOpen, Home, LogIn, Archive, BarChart3, Brain, X, ChevronDown, ChevronUp, ShoppingBag } from "lucide-react";
+import { Camera, BookOpen, Home, LogIn, BarChart3, Brain, X, ChevronDown, ChevronUp, ShoppingBag } from "lucide-react";
 import { NotificationBell } from "./NotificationBell";
+import { ChestIcon } from "./icons/ChestIcon";
 
 // FAQ content for Ask the Professor
 const faqs = [
@@ -66,9 +67,7 @@ export function Navigation() {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-                <Archive className="w-5 h-5 text-white" />
-              </div>
+              <ChestIcon size={36} />
               <span className="font-bold text-xl text-gray-900">
                 Collectors Chest
               </span>

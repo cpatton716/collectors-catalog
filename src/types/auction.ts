@@ -15,7 +15,19 @@ export type NotificationType =
   | "payment_reminder"
   | "rating_request"
   | "auction_sold"
-  | "payment_received";
+  | "payment_received"
+  // Offer types
+  | "offer_received"
+  | "offer_accepted"
+  | "offer_rejected"
+  | "offer_countered"
+  | "offer_expired"
+  // Listing expiration types
+  | "listing_expiring"
+  | "listing_expired";
+
+export type OfferStatus = "pending" | "accepted" | "rejected" | "countered" | "expired" | "auto_rejected";
+export type CancelReason = "changed_mind" | "sold_elsewhere" | "price_too_low" | "other";
 
 export interface Auction {
   id: string;
@@ -55,6 +67,16 @@ export interface Auction {
   paymentStatus: PaymentStatus | null;
   paymentDeadline: string | null;
 
+  // Offer support (for fixed_price listings)
+  acceptsOffers: boolean;
+  minOfferAmount: number | null;
+
+  // Expiration (for fixed_price listings - 30 days)
+  expiresAt: string | null;
+
+  // Cancel reason (if cancelled)
+  cancelReason: CancelReason | null;
+
   // Timestamps
   createdAt: string;
   updatedAt: string;
@@ -75,6 +97,8 @@ export interface CreateAuctionInput {
   shippingCost: number;
   detailImages?: string[];
   description?: string;
+  // Scheduled auction support
+  startDate?: string; // ISO date string, defaults to now
 }
 
 export interface CreateFixedPriceListingInput {
@@ -83,6 +107,9 @@ export interface CreateFixedPriceListingInput {
   shippingCost: number;
   detailImages?: string[];
   description?: string;
+  // Offer support
+  acceptsOffers?: boolean;
+  minOfferAmount?: number; // Auto-reject offers below this
 }
 
 export interface UpdateAuctionInput {
@@ -134,6 +161,53 @@ export interface BidHistoryItem {
   bidAmount: number;
   createdAt: string;
   isWinning: boolean;
+}
+
+// ============================================================================
+// OFFER TYPES
+// ============================================================================
+
+export interface Offer {
+  id: string;
+  listingId: string;
+  buyerId: string;
+  sellerId: string;
+
+  // Amounts
+  amount: number;
+  counterAmount: number | null;
+
+  // Status
+  status: OfferStatus;
+  roundNumber: number; // 1-3, max 3 rounds of negotiation
+
+  // Timestamps
+  createdAt: string;
+  updatedAt: string;
+  expiresAt: string;
+  respondedAt: string | null;
+
+  // Joined data (optional)
+  listing?: Auction;
+  buyer?: SellerProfile;
+  seller?: SellerProfile;
+}
+
+export interface CreateOfferInput {
+  listingId: string;
+  amount: number;
+}
+
+export interface RespondToOfferInput {
+  offerId: string;
+  action: "accept" | "reject" | "counter";
+  counterAmount?: number; // Required if action is "counter"
+}
+
+export interface OfferResult {
+  success: boolean;
+  message: string;
+  offer?: Offer;
 }
 
 // ============================================================================
