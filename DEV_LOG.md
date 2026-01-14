@@ -27,6 +27,42 @@ This log tracks session-by-session progress on Collectors Chest.
 
 ---
 
+## January 13, 2026 (Night Session)
+
+### Session Summary
+Risk assessment of live site led to implementing private beta mode. Disabled public registration, converted sign-up to waitlist with Resend integration. Rebranded all user-facing "AI" text to "technopathy" for comic-book theming. Discovered critical issue: signed-in user collections are stored in localStorage only, not synced to cloud.
+
+### Key Accomplishments
+- **Private Beta Mode** - Sign-up page now captures waitlist emails instead of creating accounts
+- **Waitlist API** (`/api/waitlist/route.ts`) - Sends emails to Resend Contacts audience
+- **Technopathy Rebrand** - Changed 12+ files from "AI" to "technopathic/technopathy"
+- **Revert Command** - Documented all technopathy changes in CLAUDE.md for quick rollback
+- **Project Costs** - Added cost tracking to CLAUDE.md (Netlify $9/mo, Domain $13.99/yr, Anthropic ~$0.015/scan)
+- **Cloud Sync Priority** - Identified that collections are localStorage-only, added as #1 Critical priority
+
+### Files Added
+- `src/app/api/waitlist/route.ts` - Waitlist email capture via Resend
+
+### Files Modified
+- `src/app/sign-up/[[...sign-up]]/page.tsx` - Converted to waitlist form
+- `src/components/GuestLimitBanner.tsx` - "Join Waitlist" CTAs
+- `src/components/SignUpPromptModal.tsx` - Private beta messaging
+- `src/app/layout.tsx`, `src/app/page.tsx` - Technopathy text
+- `src/components/Navigation.tsx`, `AskProfessor.tsx` - FAQ updates
+- `src/components/ComicDetailModal.tsx`, `ComicDetailsForm.tsx`, `KeyHuntPriceResult.tsx` - Price warnings
+- `src/app/key-hunt/page.tsx`, `src/hooks/useOffline.ts` - Disclaimer text
+- `src/app/api/analyze/route.ts`, `src/app/api/quick-lookup/route.ts` - API disclaimer
+- `CLAUDE.md` - Revert technopathy command, project costs, services docs
+- `EVALUATION.md` - Cloud sync as #1 priority, updated checklist items
+
+### Issues Discovered
+- **CRITICAL**: Signed-in users' collections stored in localStorage only - NOT synced across devices
+  - Database schema exists (`src/lib/db.ts` has `getUserComics`, etc.)
+  - Collection page uses localStorage (`src/lib/storage.ts`)
+  - Must implement cloud sync before opening registration
+
+---
+
 ## Deploy Log - January 13, 2026 (Evening)
 
 **Deployed to Netlify**

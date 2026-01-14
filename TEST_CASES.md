@@ -56,18 +56,21 @@ A guide for testing the main and secondary features of the application.
 | View variants | If "View Variants (X)" link shows, click it | Variants modal opens showing all variants of same title/issue |
 | Search variants | In variants modal, type in search | Filters variants by name |
 
-### 4. User Authentication
+### 4. User Authentication (Private Beta Mode)
 
-**Location:** Navigation → "Sign In" / "Sign Up"
+**Location:** Navigation → "Sign In" / "Join Waitlist"
+
+**Note:** Public registration is currently DISABLED. Sign-up page shows waitlist form.
 
 | Test Case | Steps | Expected Result |
 |-----------|-------|-----------------|
-| Sign up with email | Click Sign Up → Enter email/password | Account created, redirected to app |
-| Sign up with Google | Click Sign Up → Google button | Google OAuth flow → Account created |
-| Sign up with Apple | Click Sign Up → Apple button | Apple OAuth flow → Account created |
-| Sign in | Click Sign In → Enter credentials | Logged in, see user avatar in nav |
+| Waitlist signup | Click "Join Waitlist" → Enter email | Success message "You're on the list!", email added to Resend audience |
+| Waitlist duplicate | Enter same email twice | Shows "Already on waitlist" message |
+| Waitlist invalid email | Enter invalid email format | Shows validation error |
+| Sign in (existing user) | Click Sign In → Enter credentials | Logged in, see user avatar in nav |
 | Sign out | Click avatar → Sign Out | Logged out, returned to guest state |
 | View profile | Click avatar → "Manage Account" | Profile page opens |
+| Guest limit banner | As guest, hit scan limit | Banner shows "Join Waitlist" instead of "Create Account" |
 
 ### 5. Guest vs Registered Experience
 
