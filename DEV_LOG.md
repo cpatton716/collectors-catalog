@@ -6,11 +6,28 @@ This log tracks session-by-session progress on Collectors Chest.
 
 ## Changes Since Last Deploy
 
-**Sessions since last deploy:** 1
-**Deploy Readiness:** Ready
+**Sessions since last deploy:** 0
+**Deploy Readiness:** Just deployed
 
 ### Accumulated Changes:
-- Launch prep and design review items added to docs
+- None yet
+
+---
+
+## Deploy Log - January 14, 2026 (Afternoon)
+
+**Deployed to Netlify**
+
+### Changes Included:
+- **Currency Formatting Fixed** - All prices now show commas for thousands ($3,000 vs $3000)
+- **Smart Cents Display** - Only shows decimals when not whole dollar ($44 vs $44.00, but $44.22 stays)
+- **White Font Fix** - Comic title now visible in ListInShopModal (was white on gray)
+
+### Files Modified:
+- `src/lib/statsCalculator.ts` - Updated formatCurrency() function
+- `src/app/hottest-books/page.tsx` - Applied formatCurrency to price ranges
+- `src/app/page.tsx` - Applied formatCurrency to hottest books display
+- `src/components/auction/ListInShopModal.tsx` - Added text-gray-900 to title
 
 ---
 
