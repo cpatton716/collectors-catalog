@@ -6,11 +6,44 @@ This log tracks session-by-session progress on Collectors Chest.
 
 ## Changes Since Last Deploy
 
-**Sessions since last deploy:** 0
-**Deploy Readiness:** Fresh Deploy
+**Sessions since last deploy:** 1
+**Deploy Readiness:** Ready
 
 ### Accumulated Changes:
-(None yet)
+- Launch prep and design review items added to docs
+
+---
+
+## January 14, 2026 (Morning Session)
+
+### Session Summary
+Bug fix session addressing 5 user-reported issues from production testing. Fixed critical waitlist API error (restricted Resend API key), deployed missing PWA icon PNG files, added iOS Chrome detection for PWA install prompts, and added GoCollect integration to backlog for future research.
+
+### Key Accomplishments
+- **Waitlist API Fixed** - Root cause was restricted Resend API key (send-only). Created new full-access key for Collectors Chest.
+- **PWA Icons Deployed** - All PNG files were gitignored (`*.png` rule), causing 404s. Removed rule and committed icons.
+- **iOS Chrome Detection** - Added specific UI for Chrome on iOS directing users to Safari for PWA install.
+- **iOS Safari Instructions** - PWA install prompt now shows Share menu instructions for iOS Safari users.
+- **Waitlist Debug Logging** - Added detailed error logging to diagnose API issues.
+- **GoCollect Backlog Item** - Added research item for GoCollect API integration as potential data provider.
+- **Design Review Backlog Item** - Added item to create unique visual identity for app.
+
+### Files Added
+- `public/icons/*.png` - All PWA icon files (7 files)
+
+### Files Modified
+- `.gitignore` - Removed `*.png` rule
+- `src/app/api/waitlist/route.ts` - Added debug error logging
+- `src/components/PWAInstallPrompt.tsx` - Added iOS Chrome detection and Safari redirect
+- `BACKLOG.md` - Added GoCollect integration and design review items
+- `EVALUATION.md` - Added launch prep item to remove debug info
+- `TEST_CASES.md` - Added PWA install prompt test cases
+
+### Issues Resolved
+- Waitlist "Failed to join" error → New Resend API key with full access
+- Android app icon white background → PNG files now in git and deployed
+- Android shortcut icons showing white squares → Same fix as above
+- iOS PWA install prompt not showing → Added iOS Safari/Chrome-specific UIs
 
 ---
 

@@ -319,6 +319,21 @@ A guide for testing the main and secondary features of the application.
 | Empty collection | New user views collection | Empty state with prompt to add comics |
 | Large CSV import | Import 50+ comics via CSV | Progress bar tracks, all comics import |
 
+### PWA Install Prompts
+
+**Location:** Visit site on mobile device
+
+| Test Case | Steps | Expected Result |
+|-----------|-------|-----------------|
+| Android install prompt | Visit site on Android Chrome | After 2 seconds, install prompt appears with "Install" button |
+| Android install action | Tap "Install" on prompt | Native browser install dialog appears |
+| iOS Safari install prompt | Visit site on iOS Safari | After 2 seconds, prompt shows Safari share instructions |
+| iOS Chrome redirect | Visit site on iOS Chrome | Prompt shows "Open in Safari to Install" instructions |
+| Dismiss prompt | Tap "Not now" or "Got it" | Prompt hides, doesn't reappear for 7 days |
+| Already installed | Visit site after PWA installed | No install prompt shown |
+| Android app icon | Install PWA on Android | App icon shows blue background with chest (no white border) |
+| Android shortcuts | Long-press app icon on Android | Shows "Collection" and "Lookup" shortcuts with blue icons |
+
 ---
 
 ## Known Limitations
@@ -342,4 +357,4 @@ If you encounter bugs or unexpected behavior:
 
 ---
 
-*Last Updated: January 11, 2026*
+*Last Updated: January 14, 2026*
