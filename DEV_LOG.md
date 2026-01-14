@@ -14,6 +14,22 @@ This log tracks session-by-session progress on Collectors Chest.
 
 ---
 
+## Deploy Log - January 13, 2026 (Evening)
+
+**Deployed to Netlify**
+
+### Changes Included:
+- PWA icons fixed (no more white border on Android, proper maskable icons)
+- Custom chest icon in header (replaces Archive icon)
+- Shortcut icons for Collection (BookOpen) and Lookup (Search) in Android long-press menu
+- Offers system API routes for offer/counter-offer flow
+- Listing expiration cron job (30-day listings, 48-hour offers)
+- Email notifications via Resend for offers/listings
+- ListInShopModal, MakeOfferModal, OfferResponseModal components
+- Services documentation in CLAUDE.md
+
+---
+
 ## Deploy Log - January 13, 2026
 
 **Deployed to Netlify**
