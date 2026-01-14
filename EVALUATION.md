@@ -2,7 +2,7 @@
 
 > **This document is the guiding light for development priorities. It takes precedence over BACKLOG.md.**
 
-*Last Updated: January 13, 2026 (Evening)*
+*Last Updated: January 13, 2026 (Night)*
 
 ---
 
@@ -41,16 +41,17 @@ Collectors Chest is a comic book collection tracking app with AI-powered cover r
 
 | Item | Status | Notes |
 |------|--------|-------|
+| **Cloud sync for signed-in users** | ❌ Missing | Collections stored in localStorage only - NOT synced across devices. DB schema exists, needs integration. |
 | Premium subscription billing | ❌ Missing | Stripe subscriptions, feature gating |
 | Privacy Policy page | ❌ Missing | Legal requirement for collecting user data |
 | Terms of Service page | ❌ Missing | Legal protection for marketplace |
-| Re-enable Clerk bot protection | ❌ Pending | Disabled for testing Jan 13, 2026 |
+| Re-enable Clerk bot protection | ✅ Done | Re-enabled Jan 13, 2026 |
 
 ### High Priority
 
 | Item | Status | Notes |
 |------|--------|-------|
-| Connect waitlist to Resend | ❌ Not connected | Currently simulated, emails not captured |
+| Connect waitlist to Resend | ✅ Done | API route created, connected to Resend Contacts |
 | Test payment flows end-to-end | ❌ Untested | Auction bids, Buy Now, seller payouts |
 | Database backup strategy | ❌ Unconfirmed | Supabase backups enabled? |
 | Rate limit on registered user scans | ❌ Missing | Currently unlimited for registered users |
