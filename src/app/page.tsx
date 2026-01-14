@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { storage } from "@/lib/storage";
 import { calculateCollectionValue, getComicValue } from "@/lib/gradePrice";
+import { formatCurrency } from "@/lib/statsCalculator";
 import { useGuestScans } from "@/hooks/useGuestScans";
 import { CollectionItem } from "@/types/comic";
 import {
@@ -709,7 +710,7 @@ export default function Home() {
                 </p>
                 <div className="flex items-center gap-1 text-sm">
                   <DollarSign className="w-3 h-3 text-green-600" />
-                  <span className="font-medium text-green-600">${book.priceRange.mid}</span>
+                  <span className="font-medium text-green-600">${formatCurrency(book.priceRange.mid)}</span>
                   <span className="text-gray-400 text-xs">mid</span>
                 </div>
               </Link>

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Flame, TrendingUp, DollarSign, Loader2, RefreshCw, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { formatCurrency } from "@/lib/statsCalculator";
 
 interface HotBook {
   rank: number;
@@ -204,13 +205,13 @@ export default function HottestBooksPage() {
                       <div className="mt-3 flex items-center flex-wrap gap-x-4 gap-y-1 text-sm">
                         <div className="flex items-center gap-1 text-gray-500">
                           <DollarSign className="w-4 h-4" />
-                          <span>Low: ${book.priceRange.low}</span>
+                          <span>Low: ${formatCurrency(book.priceRange.low)}</span>
                         </div>
                         <div className="flex items-center gap-1 text-green-600 font-medium">
-                          <span>Mid: ${book.priceRange.mid}</span>
+                          <span>Mid: ${formatCurrency(book.priceRange.mid)}</span>
                         </div>
                         <div className="flex items-center gap-1 text-gray-500">
-                          <span>High: ${book.priceRange.high}</span>
+                          <span>High: ${formatCurrency(book.priceRange.high)}</span>
                         </div>
                       </div>
                     </div>
@@ -326,19 +327,19 @@ export default function HottestBooksPage() {
                             <div>
                               <p className="text-xs text-gray-500">Low</p>
                               <p className="text-lg font-semibold text-gray-700">
-                                ${selectedBook.priceRange.low}
+                                ${formatCurrency(selectedBook.priceRange.low)}
                               </p>
                             </div>
                             <div className="bg-green-50 rounded-lg py-1">
                               <p className="text-xs text-green-600">Mid</p>
                               <p className="text-lg font-semibold text-green-700">
-                                ${selectedBook.priceRange.mid}
+                                ${formatCurrency(selectedBook.priceRange.mid)}
                               </p>
                             </div>
                             <div>
                               <p className="text-xs text-gray-500">High</p>
                               <p className="text-lg font-semibold text-gray-700">
-                                ${selectedBook.priceRange.high}
+                                ${formatCurrency(selectedBook.priceRange.high)}
                               </p>
                             </div>
                           </div>

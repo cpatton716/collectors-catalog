@@ -266,7 +266,7 @@ export function ListInShopModal({
                   className="w-16 h-20 object-cover rounded"
                 />
                 <div>
-                  <p className="font-medium">{comic.comic.title}</p>
+                  <p className="font-medium text-gray-900">{comic.comic.title}</p>
                   <p className="text-sm text-gray-600">
                     #{comic.comic.issueNumber}
                   </p>

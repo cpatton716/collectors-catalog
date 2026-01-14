@@ -286,11 +286,15 @@ export function calculateKeyComicStats(collection: CollectionItem[], limit: numb
 
 /**
  * Format currency for display
+ * Shows commas for thousands, only shows cents if not a whole dollar
  */
 export function formatCurrency(value: number): string {
+  // Check if value has cents (non-zero decimal part)
+  const hasCents = value % 1 !== 0;
+
   return value.toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    minimumFractionDigits: hasCents ? 2 : 0,
+    maximumFractionDigits: hasCents ? 2 : 0,
   });
 }
 
