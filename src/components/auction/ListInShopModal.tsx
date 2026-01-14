@@ -56,7 +56,7 @@ export function ListInShopModal({
   const [durationDays, setDurationDays] = useState<number>(7);
 
   // Shared state
-  const [shippingCost, setShippingCost] = useState<string>("5");
+  const [shippingCost, setShippingCost] = useState<string>("7");
   const [description, setDescription] = useState<string>("");
 
   const resetForm = () => {
@@ -166,6 +166,7 @@ export function ListInShopModal({
         mode === "sell"
           ? {
               comicId: comic.id,
+              comicData: comic, // Send full comic data for Supabase sync
               listingType: "fixed_price",
               price: parseFloat(price),
               shippingCost: parseFloat(shippingCost),
@@ -177,6 +178,7 @@ export function ListInShopModal({
             }
           : {
               comicId: comic.id,
+              comicData: comic, // Send full comic data for Supabase sync
               listingType: "auction",
               startingPrice: parseFloat(startingBid),
               buyItNowPrice: buyItNowPrice
@@ -235,7 +237,7 @@ export function ListInShopModal({
                 }}
                 className="p-1 hover:bg-gray-100 rounded"
               >
-                <ChevronLeft className="w-5 h-5" />
+                <ChevronLeft className="w-5 h-5 text-gray-600" />
               </button>
             )}
             <h2 className="text-lg font-semibold text-gray-900">
@@ -250,7 +252,7 @@ export function ListInShopModal({
             onClick={handleClose}
             className="p-1 hover:bg-gray-100 rounded-full"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5 text-gray-600" />
           </button>
         </div>
 
@@ -321,7 +323,7 @@ export function ListInShopModal({
               {/* Price */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Asking Price *
+                  Asking Price <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -329,10 +331,10 @@ export function ListInShopModal({
                     type="number"
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
-                    placeholder="0.00"
-                    min={MIN_FIXED_PRICE}
-                    step="0.01"
-                    className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="1.00"
+                    min="1"
+                    step="1"
+                    className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white text-gray-900"
                   />
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
@@ -341,10 +343,14 @@ export function ListInShopModal({
               </div>
 
               {/* Accept Offers Toggle */}
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className={`flex items-center justify-between p-3 rounded-lg border-2 transition-colors ${
+                acceptsOffers
+                  ? "bg-green-50 border-green-500"
+                  : "bg-gray-50 border-transparent"
+              }`}>
                 <div>
-                  <p className="font-medium text-sm">Accept Offers</p>
-                  <p className="text-xs text-gray-500">
+                  <p className={`font-medium text-sm ${acceptsOffers ? "text-green-800" : "text-gray-900"}`} style={{ color: acceptsOffers ? '#166534' : '#111827' }}>Accept Offers</p>
+                  <p className={`text-xs ${acceptsOffers ? "text-green-700" : "text-gray-500"}`}>
                     Allow buyers to make offers
                   </p>
                 </div>
@@ -364,7 +370,7 @@ export function ListInShopModal({
               {acceptsOffers && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Lowest Offer Accepted *
+                    Lowest Offer Accepted <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -372,10 +378,10 @@ export function ListInShopModal({
                       type="number"
                       value={minOfferAmount}
                       onChange={(e) => setMinOfferAmount(e.target.value)}
-                      placeholder="0.00"
-                      min={MIN_FIXED_PRICE}
-                      step="0.01"
-                      className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      placeholder="1.00"
+                      min="1"
+                      step="1"
+                      className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white text-gray-900"
                     />
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
@@ -390,15 +396,15 @@ export function ListInShopModal({
                   Shipping Cost
                 </label>
                 <div className="relative">
-                  <Package className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
                     type="number"
                     value={shippingCost}
                     onChange={(e) => setShippingCost(e.target.value)}
-                    placeholder="0.00"
+                    placeholder="7.00"
                     min="0"
-                    step="0.01"
-                    className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    step="1"
+                    className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white text-gray-900"
                   />
                 </div>
               </div>
@@ -413,7 +419,7 @@ export function ListInShopModal({
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Condition notes, defects, etc."
                   rows={3}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none"
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none bg-white text-gray-900"
                 />
               </div>
             </div>
@@ -425,7 +431,7 @@ export function ListInShopModal({
               {/* Starting Bid */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Starting Bid *
+                  Starting Bid <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -433,10 +439,10 @@ export function ListInShopModal({
                     type="number"
                     value={startingBid}
                     onChange={(e) => setStartingBid(e.target.value)}
-                    placeholder="0.99"
-                    min={MIN_STARTING_PRICE}
-                    step="0.01"
-                    className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="1.00"
+                    min="1"
+                    step="1"
+                    className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900"
                   />
                 </div>
               </div>
@@ -452,10 +458,10 @@ export function ListInShopModal({
                     type="number"
                     value={buyItNowPrice}
                     onChange={(e) => setBuyItNowPrice(e.target.value)}
-                    placeholder="0.00"
-                    min={MIN_STARTING_PRICE}
-                    step="0.01"
-                    className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="10.00"
+                    min="1"
+                    step="1"
+                    className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900"
                   />
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
@@ -466,7 +472,7 @@ export function ListInShopModal({
               {/* Schedule Start Toggle */}
               <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div>
-                  <p className="font-medium text-sm">Schedule Start</p>
+                  <p className="font-medium text-sm text-gray-900">Schedule Start</p>
                   <p className="text-xs text-gray-500">
                     Start auction at a future time
                   </p>
@@ -487,7 +493,7 @@ export function ListInShopModal({
               {scheduledStart && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Start Date *
+                    Start Date <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -497,7 +503,7 @@ export function ListInShopModal({
                       onChange={(e) => setStartDate(e.target.value)}
                       min={minDate}
                       max={maxDate}
-                      className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900"
                     />
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
@@ -509,14 +515,14 @@ export function ListInShopModal({
               {/* Duration */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Auction Duration *
+                  Auction Duration <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <select
                     value={durationDays}
                     onChange={(e) => setDurationDays(parseInt(e.target.value))}
-                    className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none"
+                    className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white text-gray-900"
                   >
                     {AUCTION_DURATION_OPTIONS.filter((opt) => opt.value <= 14).map(
                       (option) => (
@@ -536,15 +542,15 @@ export function ListInShopModal({
                   Shipping Cost
                 </label>
                 <div className="relative">
-                  <Package className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
                     type="number"
                     value={shippingCost}
                     onChange={(e) => setShippingCost(e.target.value)}
-                    placeholder="0.00"
+                    placeholder="7.00"
                     min="0"
-                    step="0.01"
-                    className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    step="1"
+                    className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900"
                   />
                 </div>
               </div>
@@ -559,7 +565,7 @@ export function ListInShopModal({
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Condition notes, defects, etc."
                   rows={3}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none bg-white text-gray-900"
                 />
               </div>
             </div>

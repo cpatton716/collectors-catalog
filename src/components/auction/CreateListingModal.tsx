@@ -142,7 +142,7 @@ export function CreateListingModal({
               onClick={onClose}
               className="p-2 hover:bg-gray-100 rounded-full transition-colors"
             >
-              <X className="w-5 h-5" />
+              <X className="w-5 h-5 text-gray-600" />
             </button>
           </div>
 
@@ -191,17 +191,17 @@ export function CreateListingModal({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Price *
+                    Price <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
                       type="number"
                       min={MIN_FIXED_PRICE}
-                      step="0.01"
+                      step="1"
                       value={price}
                       onChange={(e) => setPrice(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white text-gray-900"
                       placeholder="0.00"
                     />
                   </div>
@@ -219,10 +219,10 @@ export function CreateListingModal({
                     <input
                       type="number"
                       min="0"
-                      step="0.01"
+                      step="1"
                       value={shippingCost}
                       onChange={(e) => setShippingCost(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white text-gray-900"
                       placeholder="5.00"
                     />
                   </div>
@@ -239,7 +239,7 @@ export function CreateListingModal({
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     rows={3}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none bg-white text-gray-900"
                     placeholder="Describe the condition, any defects, or special features..."
                   />
                 </div>

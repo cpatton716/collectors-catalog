@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { CollectionItem, UserList, GRADE_SCALE } from "@/types/comic";
 import { VariantsModal } from "./VariantsModal";
 import { GradePricingBreakdown } from "./GradePricingBreakdown";
@@ -29,6 +29,7 @@ import {
   ExternalLink,
   FileCheck,
   Store,
+  Eye,
 } from "lucide-react";
 import { ListInShopModal } from "./auction/ListInShopModal";
 
@@ -90,8 +91,27 @@ export function ComicDetailModal({
   const [salePrice, setSalePrice] = useState<string>(
     item.askingPrice?.toString() || item.comic.priceData?.estimatedValue?.toString() || ""
   );
+  const [activeListing, setActiveListing] = useState<{ id: string; listingType: string } | null>(null);
 
   const { comic } = item;
+
+  // Check if this comic has an active listing
+  useEffect(() => {
+    async function checkActiveListing() {
+      try {
+        const response = await fetch(`/api/auctions/by-comic/${item.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.listing) {
+            setActiveListing({ id: data.listing.id, listingType: data.listing.listingType });
+          }
+        }
+      } catch {
+        // Ignore errors - just means we can't check listing status
+      }
+    }
+    checkActiveListing();
+  }, [item.id]);
 
   // Find all variants of this title/issue in the collection
   const variants = useMemo(() => {
@@ -588,34 +608,41 @@ export function ComicDetailModal({
 
             {/* Action Buttons - Mobile-friendly layout */}
             <div className="pt-4 border-t space-y-3">
-              {/* Primary Actions - Full width on mobile */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {/* List in Shop Button */}
+              {/* Primary CTA - List in Shop / View Listing */}
+              {activeListing ? (
+                <a
+                  href={`/shop?listing=${activeListing.id}`}
+                  className="w-full px-4 py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2 font-semibold text-lg"
+                >
+                  <Eye className="w-6 h-6" />
+                  View Listing
+                </a>
+              ) : (
                 <button
                   onClick={() => setShowListInShopModal(true)}
-                  className="w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2 font-medium"
+                  className="w-full px-4 py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2 font-semibold text-lg"
                 >
-                  <Store className="w-5 h-5" />
+                  <Store className="w-6 h-6" />
                   List in Shop
                 </button>
+              )}
 
+              {/* Secondary Actions - All same size */}
+              <div className="grid grid-cols-3 gap-2">
                 {/* Edit Details Button */}
                 <button
                   onClick={() => onEdit(item)}
-                  className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 font-medium"
+                  className="px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors flex items-center justify-center gap-1.5 text-sm font-medium"
                 >
-                  <Pencil className="w-5 h-5" />
-                  Edit Details
+                  <Pencil className="w-4 h-4" />
+                  Edit
                 </button>
-              </div>
 
-              {/* Secondary Actions */}
-              <div className="flex flex-wrap gap-2">
                 {/* Add to List Button */}
                 <div className="relative">
                   <button
                     onClick={() => setShowListMenu(!showListMenu)}
-                    className="px-3 py-2 bg-primary-100 text-primary-700 rounded-lg hover:bg-primary-200 transition-colors flex items-center gap-2 text-sm font-medium"
+                    className="w-full px-3 py-2 bg-primary-100 text-primary-700 rounded-lg hover:bg-primary-200 transition-colors flex items-center justify-center gap-1.5 text-sm font-medium"
                   >
                     <ListPlus className="w-4 h-4" />
                     Add to List
@@ -737,26 +764,26 @@ export function ComicDetailModal({
                   )}
                 </div>
 
-                {/* Mark as Sold Button (if for sale) */}
-                {item.forSale && (
-                  <button
-                    onClick={() => setShowSoldConfirm(true)}
-                    className="px-3 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors flex items-center gap-2 text-sm font-medium"
-                  >
-                    <DollarSign className="w-4 h-4" />
-                    Mark as Sold
-                  </button>
-                )}
-
                 {/* Remove Button */}
                 <button
                   onClick={() => setShowRemoveConfirm(true)}
-                  className="px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors flex items-center gap-2 text-sm font-medium"
+                  className="px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors flex items-center justify-center gap-1.5 text-sm font-medium"
                 >
                   <Trash2 className="w-4 h-4" />
                   Remove
                 </button>
               </div>
+
+              {/* Mark as Sold Button (if for sale - legacy flow) */}
+              {item.forSale && !activeListing && (
+                <button
+                  onClick={() => setShowSoldConfirm(true)}
+                  className="w-full px-3 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors flex items-center justify-center gap-2 text-sm font-medium"
+                >
+                  <DollarSign className="w-4 h-4" />
+                  Mark as Sold
+                </button>
+              )}
             </div>
 
             {/* Remove Confirmation */}
@@ -891,8 +918,9 @@ export function ComicDetailModal({
           comic={item}
           isOpen={showListInShopModal}
           onClose={() => setShowListInShopModal(false)}
-          onCreated={() => {
+          onCreated={(listingId: string) => {
             setShowListInShopModal(false);
+            setActiveListing({ id: listingId, listingType: "fixed_price" });
             onListInShop?.();
           }}
         />

@@ -1,4 +1,4 @@
-import { supabase } from "./supabase";
+import { supabase, supabaseAdmin } from "./supabase";
 import { CollectionItem, PriceData, ConditionLabel } from "@/types/comic";
 import {
   Auction,
@@ -45,7 +45,7 @@ export async function createAuction(
   const endTime = new Date(startTime);
   endTime.setDate(endTime.getDate() + input.durationDays);
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("auctions")
     .insert({
       seller_id: sellerId,
@@ -65,7 +65,7 @@ export async function createAuction(
   if (error) throw error;
 
   // Set seller_since if first listing
-  await supabase
+  await supabaseAdmin
     .from("profiles")
     .update({ seller_since: new Date().toISOString() })
     .eq("id", sellerId)
@@ -85,7 +85,7 @@ export async function createFixedPriceListing(
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 30);
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("auctions")
     .insert({
       seller_id: sellerId,
@@ -107,7 +107,7 @@ export async function createFixedPriceListing(
   if (error) throw error;
 
   // Set seller_since if first listing
-  await supabase
+  await supabaseAdmin
     .from("profiles")
     .update({ seller_since: new Date().toISOString() })
     .eq("id", sellerId)
@@ -129,7 +129,7 @@ export async function getAuction(
       `
       *,
       comics(*),
-      profiles!auctions_seller_id_fkey(id, display_name, public_display_name, positive_ratings, negative_ratings, seller_since)
+      profiles!auctions_seller_id_fkey(id, display_name, public_display_name, email, positive_ratings, negative_ratings, seller_since)
     `
     )
     .eq("id", auctionId)
@@ -1572,9 +1572,18 @@ function transformDbAuction(data: Record<string, unknown>): Auction {
       (profile.negative_ratings as number) || 0
     );
 
+    // Generate a fallback display name from email if no name is set
+    let fallbackName: string | null = null;
+    if (!profile.display_name && !profile.public_display_name && profile.email) {
+      const email = profile.email as string;
+      const username = email.split("@")[0];
+      // Show username part of email (will be replaced by actual username later)
+      fallbackName = username;
+    }
+
     auction.seller = {
       id: profile.id as string,
-      displayName: profile.display_name as string | null,
+      displayName: (profile.display_name as string | null) || fallbackName,
       publicDisplayName: profile.public_display_name as string | null,
       positiveRatings: (profile.positive_ratings as number) || 0,
       negativeRatings: (profile.negative_ratings as number) || 0,

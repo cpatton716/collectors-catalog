@@ -1,4 +1,4 @@
-import { supabase } from "./supabase";
+import { supabase, supabaseAdmin } from "./supabase";
 import { CollectionItem, UserList, SaleRecord } from "@/types/comic";
 
 // Profile management
@@ -72,6 +72,39 @@ export async function addComic(profileId: string, item: CollectionItem) {
   }
 
   return data;
+}
+
+/**
+ * Ensure a comic exists in Supabase (sync from localStorage if needed)
+ * Used when creating listings - the comic must exist in Supabase for the foreign key
+ */
+export async function ensureComicInSupabase(profileId: string, item: CollectionItem): Promise<string> {
+  // Check if comic already exists
+  const { data: existing } = await supabaseAdmin
+    .from("comics")
+    .select("id")
+    .eq("id", item.id)
+    .single();
+
+  if (existing) {
+    return existing.id;
+  }
+
+  // Comic doesn't exist, create it with the same ID
+  const dbComic = {
+    id: item.id, // Preserve the localStorage ID
+    ...transformCollectionItemToDbComic(item, profileId),
+  };
+
+  const { data, error } = await supabaseAdmin
+    .from("comics")
+    .insert(dbComic)
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  return data.id;
 }
 
 export async function updateComic(comicId: string, updates: Partial<CollectionItem>) {

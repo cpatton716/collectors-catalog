@@ -38,7 +38,7 @@ export function CreateAuctionModal({
   const [startingPrice, setStartingPrice] = useState<string>("1");
   const [buyItNowPrice, setBuyItNowPrice] = useState<string>("");
   const [durationDays, setDurationDays] = useState<number>(7);
-  const [shippingCost, setShippingCost] = useState<string>("5");
+  const [shippingCost, setShippingCost] = useState<string>("7");
   const [description, setDescription] = useState<string>("");
   const [detailImages, setDetailImages] = useState<string[]>([]);
 
@@ -159,7 +159,7 @@ export function CreateAuctionModal({
               onClick={onClose}
               className="p-2 hover:bg-gray-100 rounded-full transition-colors"
             >
-              <X className="w-5 h-5" />
+              <X className="w-5 h-5 text-gray-600" />
             </button>
           </div>
 
@@ -208,7 +208,7 @@ export function CreateAuctionModal({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Starting Price *
+                    Starting Price <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -218,7 +218,7 @@ export function CreateAuctionModal({
                       step="1"
                       value={startingPrice}
                       onChange={(e) => setStartingPrice(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900"
                       placeholder="1"
                     />
                   </div>
@@ -239,7 +239,7 @@ export function CreateAuctionModal({
                       step="1"
                       value={buyItNowPrice}
                       onChange={(e) => setBuyItNowPrice(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900"
                       placeholder="Optional"
                     />
                   </div>
@@ -257,7 +257,7 @@ export function CreateAuctionModal({
                     <select
                       value={durationDays}
                       onChange={(e) => setDurationDays(Number(e.target.value))}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white"
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white text-gray-900"
                     >
                       {AUCTION_DURATION_OPTIONS.map((option) => (
                         <option key={option.value} value={option.value}>
@@ -280,15 +280,15 @@ export function CreateAuctionModal({
                     Shipping Cost
                   </label>
                   <div className="relative">
-                    <Package className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
                       type="number"
                       min="0"
-                      step="0.01"
+                      step="1"
                       value={shippingCost}
                       onChange={(e) => setShippingCost(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="5.00"
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900"
+                      placeholder="7.00"
                     />
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
@@ -304,7 +304,7 @@ export function CreateAuctionModal({
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     rows={4}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none bg-white text-gray-900"
                     placeholder="Describe the condition, any defects, or special features..."
                   />
                 </div>

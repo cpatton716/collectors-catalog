@@ -125,7 +125,7 @@ export function ListingDetailModal({
             onClick={onClose}
             className="absolute top-4 right-4 z-10 p-2 bg-white/90 rounded-full hover:bg-gray-100 transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5 text-gray-600" />
           </button>
 
           {isLoading ? (
@@ -139,13 +139,13 @@ export function ListingDetailModal({
           ) : (
             <div className="grid md:grid-cols-2 gap-0 max-h-[90vh] overflow-y-auto">
               {/* Left Column - Images */}
-              <div className="relative bg-gray-900 aspect-[3/4] md:aspect-auto md:min-h-[500px]">
+              <div className="relative bg-gray-900 aspect-[3/4] md:aspect-auto md:min-h-[400px] md:max-h-[70vh]">
                 {allImages.length > 0 ? (
                   <>
                     <img
                       src={allImages[selectedImageIndex]}
                       alt={comic?.title || "Comic"}
-                      className="w-full h-full object-contain"
+                      className="w-full h-full object-contain max-w-full"
                     />
 
                     {/* Image Navigation */}

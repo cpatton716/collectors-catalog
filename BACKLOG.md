@@ -48,6 +48,116 @@ Currently using a static list (`USE_STATIC_LIST = true`) to conserve API credits
 
 ## Pending Enhancements
 
+### Marvel Cover Images & Creator Data
+**Priority:** Medium
+**Status:** Pending
+
+Pull Marvel comic cover images and creator information directly from Marvel.com to improve data quality and reduce reliance on user-uploaded images.
+
+**Example Source:** https://www.marvel.com/comics/issue/12415/uncanny_x-men_1963_100
+
+**Approach Options:**
+1. **Marvel API Integration** - Use official Marvel Developer API (requires API key)
+2. **Web Scraping** - Extract data from Marvel.com pages
+3. **Bulk Data Import** - One-time massive pull to store locally in Supabase
+
+**Data to Extract:**
+- High-resolution cover images
+- Creator credits (writer, artist, cover artist, inker, colorist)
+- Publication dates
+- Series information
+- Issue descriptions/summaries
+
+**Benefits:**
+- Higher quality cover images than user photos
+- Accurate creator credits
+- Consistent data format
+- Reduced storage for user-uploaded images
+
+**Considerations:**
+- Marvel API rate limits and terms of service
+- Storage costs for bulk image hosting
+- Need to handle non-Marvel publishers separately
+- Could start with Marvel-only, expand to DC/others later
+
+---
+
+### Username System for Privacy
+**Priority:** Medium
+**Status:** Pending
+
+Add a username system so sellers can display a custom name instead of their email or real name.
+
+**Current Behavior:**
+- Seller name falls back to anonymized email (e.g., "chr...") when no display name is set
+- No way to set a unique username that's distinct from display name
+
+**Proposed Features:**
+1. **Username Field** - Allow users to set a unique username (e.g., "@comicfan42")
+2. **Display Name Options** - Let users choose what name is shown publicly:
+   - Username only
+   - Display name only
+   - Both (display name with @username)
+3. **Privacy Controls** - Option to hide email entirely from public profile
+4. **Username Validation** - Ensure uniqueness, block inappropriate names
+
+**User Flow:**
+1. Profile Settings → Set Username
+2. Choose display preference for marketplace listings
+3. Username shown on listings, seller pages, and transaction history
+
+**Database Changes:**
+- Add `username` column to profiles table (unique, lowercase)
+- Add `display_preference` enum (username_only, display_name_only, both)
+
+---
+
+### Image Optimization & Resizing
+**Priority:** Medium
+**Status:** Pending
+
+Implement image optimization to prevent oversized images from breaking layouts and reduce storage/bandwidth costs.
+
+**Current Issues:**
+- Large cover images (like Marvel.com high-res images) can break modal layouts
+- No image compression on upload
+- External URL images vary wildly in size
+
+**Recommended Solutions:**
+
+1. **Client-Side Resize on Upload**
+   - Resize images to max 800x1200 before uploading to Supabase
+   - Use canvas API or library like `browser-image-compression`
+   - Maintains quality while reducing file size by 70-90%
+
+2. **Server-Side Processing**
+   - Use Sharp or similar library in API routes
+   - Process images on upload before storing
+   - Generate multiple sizes (thumbnail, medium, full)
+
+3. **CDN with Image Transformation** (Recommended for scale)
+   - Cloudinary, imgix, or Cloudflare Images
+   - Transform images on-the-fly with URL parameters
+   - Automatic WebP conversion, lazy loading support
+   - Cost: ~$0-10/mo for current scale
+
+4. **Supabase Image Transformations**
+   - Supabase Storage has built-in image transformations
+   - Add `?width=800&height=1200` to image URLs
+   - Free with Supabase, but limited options
+
+**Implementation Priority:**
+1. Start with client-side resize (free, immediate impact)
+2. Add Supabase transformations for existing images
+3. Consider CDN if scaling beyond free tiers
+
+**Files to Update:**
+- `src/app/api/analyze/route.ts` - Where images are processed
+- `src/components/ImageUpload.tsx` (if exists) - Upload handling
+- Listing/auction modals - Image display
+
+---
+
 ### Project Cost Tracking Dashboard
 **Priority:** Low
 **Status:** Pending

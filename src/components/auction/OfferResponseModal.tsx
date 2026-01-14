@@ -114,7 +114,7 @@ export function OfferResponseModal({
             onClick={handleClose}
             className="p-1 hover:bg-gray-100 rounded-full"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5 text-gray-600" />
           </button>
         </div>
 
@@ -239,7 +239,7 @@ export function OfferResponseModal({
                       min={offer.amount + 1}
                       max={askingPrice}
                       step="0.01"
-                      className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg"
+                      className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg bg-white text-gray-900"
                       autoFocus
                     />
                   </div>

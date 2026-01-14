@@ -459,7 +459,7 @@ export function ComicDetailsForm({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className={`block text-sm font-medium mb-1 ${!comic.title && comic.issueNumber ? "text-red-600" : "text-gray-700"}`}>
-            Title *
+            Title <span className="text-red-500">*</span>
           </label>
           <TitleAutocomplete
             value={comic.title || ""}
@@ -491,7 +491,7 @@ export function ComicDetailsForm({
 
         <div>
           <label className={`block text-sm font-medium mb-1 ${!comic.issueNumber && comic.title ? "text-red-600" : "text-gray-700"}`}>
-            Issue Number *
+            Issue Number <span className="text-red-500">*</span>
           </label>
           <input
             type="text"

@@ -97,7 +97,7 @@ export function AuctionDetailModal({
             onClick={onClose}
             className="absolute top-4 right-4 z-10 p-2 bg-white/90 rounded-full hover:bg-gray-100 transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5 text-gray-600" />
           </button>
 
           {isLoading || !auction ? (
@@ -108,14 +108,14 @@ export function AuctionDetailModal({
           ) : (
             <div className="flex flex-col md:flex-row max-h-[90vh] overflow-auto">
               {/* Left: Image Gallery */}
-              <div className="md:w-1/2 bg-gray-100 relative">
+              <div className="md:w-1/2 flex-shrink-0 bg-gray-100 relative">
                 {/* Main Image */}
-                <div className="aspect-square relative">
+                <div className="aspect-square relative max-h-[60vh] md:max-h-[70vh]">
                   {allImages[selectedImageIndex] ? (
                     <img
                       src={allImages[selectedImageIndex]}
                       alt="Auction item"
-                      className="w-full h-full object-contain"
+                      className="w-full h-full object-contain max-w-full"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-gray-900">
@@ -132,13 +132,13 @@ export function AuctionDetailModal({
                         onClick={prevImage}
                         className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-white/90 rounded-full hover:bg-white transition-colors"
                       >
-                        <ChevronLeft className="w-5 h-5" />
+                        <ChevronLeft className="w-5 h-5 text-gray-600" />
                       </button>
                       <button
                         onClick={nextImage}
                         className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-white/90 rounded-full hover:bg-white transition-colors"
                       >
-                        <ChevronRight className="w-5 h-5" />
+                        <ChevronRight className="w-5 h-5 text-gray-600" />
                       </button>
                     </>
                   )}

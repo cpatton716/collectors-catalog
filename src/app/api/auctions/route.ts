@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { getProfileByClerkId } from "@/lib/db";
+import { getProfileByClerkId, ensureComicInSupabase } from "@/lib/db";
 import {
   createAuction,
   createFixedPriceListing,
@@ -75,6 +75,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const {
       comicId,
+      comicData, // Full comic data from localStorage
       listingType = "auction",
       startingPrice,
       price, // For fixed-price listings
@@ -93,6 +94,11 @@ export async function POST(request: NextRequest) {
     // Common validation
     if (!comicId) {
       return NextResponse.json({ error: "Comic ID is required" }, { status: 400 });
+    }
+
+    // Ensure comic exists in Supabase (sync from localStorage if needed)
+    if (comicData) {
+      await ensureComicInSupabase(profile.id, comicData);
     }
 
     if (typeof shippingCost !== "number" || shippingCost < 0) {
@@ -207,8 +213,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ auction }, { status: 201 });
   } catch (error) {
     console.error("Error creating listing:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
-      { error: "Failed to create listing" },
+      { error: `Failed to create listing: ${errorMessage}` },
       { status: 500 }
     );
   }

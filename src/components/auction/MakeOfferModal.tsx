@@ -87,7 +87,7 @@ export function MakeOfferModal({
             onClick={handleClose}
             className="p-1 hover:bg-gray-100 rounded-full"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5 text-gray-600" />
           </button>
         </div>
 
@@ -149,7 +149,7 @@ export function MakeOfferModal({
                     placeholder="Enter your offer"
                     min={MIN_FIXED_PRICE}
                     step="0.01"
-                    className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-lg"
+                    className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-lg bg-white text-gray-900"
                     autoFocus
                   />
                 </div>
