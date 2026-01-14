@@ -14,6 +14,35 @@ This log tracks session-by-session progress on Collectors Chest.
 
 ---
 
+## Deploy Log - January 14, 2026 (Evening)
+
+**Deployed to Netlify**
+
+### Changes Included:
+- **Listing Creation Fixed** - RLS policy bypass using service role key
+- **Foreign Key Fix** - localStorage comics now sync to Supabase before listing
+- **View Listing Button** - "List in Shop" changes to "View Listing" when comic already listed
+- **Seller Name Display** - Shows email username as fallback when no display name set
+- **Image Sizing** - Auction/listing modal images constrained to prevent oversizing
+- **BidForm White Font** - Input text now visible (text-gray-900)
+- **Button Layout** - Standardized primary/secondary buttons in ComicDetailModal
+- **Backlog Items** - Added Marvel covers, Username system, Image optimization
+
+### Files Added:
+- `src/app/api/auctions/by-comic/[comicId]/route.ts` - Check for active listings
+
+### Files Modified:
+- `src/lib/supabase.ts` - Added supabaseAdmin client
+- `src/lib/db.ts` - Added ensureComicInSupabase function
+- `src/lib/auctionDb.ts` - Use supabaseAdmin, add seller name fallback
+- `src/app/api/auctions/route.ts` - Accept comicData, sync before listing
+- `src/components/ComicDetailModal.tsx` - View Listing button, button layout
+- `src/components/auction/BidForm.tsx` - White font fix
+- `src/components/auction/AuctionDetailModal.tsx` - Image constraints
+- `src/components/auction/ListingDetailModal.tsx` - Image constraints
+
+---
+
 ## Deploy Log - January 14, 2026 (Afternoon)
 
 **Deployed to Netlify**

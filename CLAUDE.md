@@ -2,10 +2,13 @@
 
 ## On Session Start
 
-
 1. Check recent git commits and summarize where we left off last session (1-2 lines)
 2. Show **Priority Action Items from `EVALUATION.md`** - this is the primary guide for what to work on next
-3. Show a brief summary of work completed in the previous session
+3. Show a summary of the last session by reading the most recent entry in DEV_LOG.md. Include:
+  - What was accomplished
+  - Any issues that were encountered
+  - Where we left off
+4. Ask me if I will be testing on Mobile or Web during this session. This will help guide the changes that need to be made via my test results
 
 ## Priority Documents
 

@@ -98,7 +98,10 @@ export async function POST(request: NextRequest) {
 
     // Ensure comic exists in Supabase (sync from localStorage if needed)
     if (comicData) {
+      console.log("DEBUG: Service key present:", !!process.env.SUPABASE_SERVICE_ROLE_KEY);
+      console.log("DEBUG: Syncing comic to Supabase:", comicId);
       await ensureComicInSupabase(profile.id, comicData);
+      console.log("DEBUG: Comic sync complete");
     }
 
     if (typeof shippingCost !== "number" || shippingCost < 0) {
@@ -213,7 +216,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ auction }, { status: 201 });
   } catch (error) {
     console.error("Error creating listing:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error("Error type:", typeof error);
+    console.error("Error stringified:", JSON.stringify(error, Object.getOwnPropertyNames(error || {})));
+    const errorMessage = error instanceof Error ? error.message : JSON.stringify(error);
     return NextResponse.json(
       { error: `Failed to create listing: ${errorMessage}` },
       { status: 500 }
