@@ -6,11 +6,47 @@ This log tracks session-by-session progress on Collectors Chest.
 
 ## Changes Since Last Deploy
 
-**Sessions since last deploy:** 0
-**Deploy Readiness:** Just deployed
+**Sessions since last deploy:** 1
+**Deploy Readiness:** Ready (minor cleanup only)
 
 ### Accumulated Changes:
-- None yet
+- Debug logging removed from auctions API
+- "Let's get started" command added to CLAUDE.md
+- Critical env var check added to deploy process in CLAUDE.md
+- Test cases added for listing features
+
+---
+
+## January 14, 2026 (Evening Session - Continued)
+
+### Session Summary
+Debugging session to fix production listing creation errors. Discovered missing Supabase columns for graded comics and missing env var in Netlify.
+
+### Key Accomplishments
+- **Production Fix** - Added `SUPABASE_SERVICE_ROLE_KEY` to Netlify environment variables
+- **Database Schema Fix** - Added missing columns for graded comics: `certification_number`, `label_type`, `page_quality`, `grade_date`, `grader_notes`, `is_signature_series`, `signed_by`
+- **CLAUDE.md Updates** - Added critical env var check to deploy process, added "Let's get started" command
+- **Test Cases** - Added test cases for listing features
+
+### Issues Encountered
+- Production "Unknown error" on listing creation → Root cause: missing database columns + missing env var in Netlify
+- Debug logging helped identify the actual Supabase error (PGRST204)
+
+### Files Modified
+- `CLAUDE.md` - Added env var deploy check, "Let's get started" command
+- `src/app/api/auctions/route.ts` - Removed debug logging
+- `TEST_CASES.md` - Added listing feature test cases
+
+### Database Changes (Supabase SQL)
+```sql
+ALTER TABLE comics ADD COLUMN IF NOT EXISTS certification_number TEXT;
+ALTER TABLE comics ADD COLUMN IF NOT EXISTS label_type TEXT;
+ALTER TABLE comics ADD COLUMN IF NOT EXISTS page_quality TEXT;
+ALTER TABLE comics ADD COLUMN IF NOT EXISTS grade_date TEXT;
+ALTER TABLE comics ADD COLUMN IF NOT EXISTS grader_notes TEXT;
+ALTER TABLE comics ADD COLUMN IF NOT EXISTS is_signature_series BOOLEAN DEFAULT FALSE;
+ALTER TABLE comics ADD COLUMN IF NOT EXISTS signed_by TEXT;
+```
 
 ---
 

@@ -244,6 +244,11 @@ A guide for testing the main and secondary features of the application.
 | Purchase item | Click "Buy Now" → Confirm | Stripe checkout opens |
 | Complete purchase | Complete Stripe payment | Success page, item removed from shop |
 | Seller receives notification | After purchase completes | Seller gets notification of sale |
+| List from collection | Collection → Comic → "List in Shop" | Modal opens, can create fixed-price listing |
+| View active listing | Collection → Comic with active listing | Button shows "View Listing" instead of "List in Shop" |
+| Seller name displays | View any listing | Seller name shows (username or email prefix, not just "Seller") |
+| Listing image sizing | View listing with large cover image | Image constrained to modal, not oversized |
+| Bid input visible | View auction → Bid form | Bid amount input text is dark/visible (not white) |
 
 ### 18. Seller Ratings & Reputation
 
