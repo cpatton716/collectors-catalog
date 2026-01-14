@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
-import { X, Cloud, Sparkles, AlertTriangle, Infinity, Shield, Smartphone } from "lucide-react";
+import { X, Cloud, Sparkles, AlertTriangle, Infinity, Shield, Smartphone, Mail } from "lucide-react";
 import type { MilestoneType } from "@/hooks/useGuestScans";
 import { analytics } from "@/components/PostHogProvider";
 
@@ -21,11 +21,11 @@ const getSubtitle = (milestone: ValidMilestone, scanCount: number): string => {
 
   switch (milestone) {
     case "fiveRemaining":
-      return `You've scanned ${scanCount} comics. Create a free account to unlock even more features.`;
+      return `You've scanned ${scanCount} comics! We're in private beta - join the waitlist to get early access.`;
     case "threeRemaining":
-      return `Only ${remaining} free scans left! Sign up now to keep scanning and save your collection forever.`;
+      return `Only ${remaining} free scans left! Join the waitlist to be notified when full registration opens.`;
     case "finalScan":
-      return "This is your final free scan. Create a free account to continue building your collection.";
+      return "This is your final free scan. Join our waitlist to get access when we launch.";
   }
 };
 
@@ -60,7 +60,7 @@ const milestoneContent: Record<ValidMilestone, {
       { icon: Infinity, text: "Unlimited comic scans" },
       { icon: Shield, text: "Never lose your collection data" },
     ],
-    ctaText: "Create Free Account",
+    ctaText: "Join Waitlist",
     dismissText: "Maybe later",
   },
   threeRemaining: {
@@ -68,11 +68,11 @@ const milestoneContent: Record<ValidMilestone, {
     iconBg: "bg-amber-100",
     iconColor: "text-amber-600",
     benefits: [
-      { icon: Infinity, text: "Unlimited scanning after sign up" },
+      { icon: Infinity, text: "Unlimited scanning when we launch" },
       { icon: Cloud, text: "Your collection saved to the cloud" },
       { icon: Smartphone, text: "Access from any device" },
     ],
-    ctaText: "Sign Up Now",
+    ctaText: "Join Waitlist",
     dismissText: "Maybe later",
   },
   finalScan: {
@@ -84,7 +84,7 @@ const milestoneContent: Record<ValidMilestone, {
       { icon: Cloud, text: "Cloud-synced collection" },
       { icon: Shield, text: "Your data is always safe" },
     ],
-    ctaText: "Create Free Account",
+    ctaText: "Join Waitlist",
     dismissText: "Use my last scan",
   },
 };
@@ -144,16 +144,17 @@ export function SignUpPromptModal({ milestone, scanCount, onClose }: SignUpPromp
           <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
           <p className="text-gray-600 mt-2">{subtitle}</p>
 
-          {/* Scan count badge */}
-          <div className="inline-flex items-center gap-2 mt-4 px-3 py-1.5 bg-gray-100 rounded-full">
-            <span className="text-sm text-gray-600">
-              {scanCount} of 10 free scans used
+          {/* Beta badge */}
+          <div className="inline-flex items-center gap-2 mt-4 px-3 py-1.5 bg-primary-100 text-primary-700 rounded-full">
+            <span className="text-sm font-medium">
+              Private Beta
             </span>
           </div>
         </div>
 
         {/* Benefits */}
         <div className="px-6 pb-6">
+          <p className="text-sm text-gray-500 mb-3">When we launch, you&apos;ll get:</p>
           <div className="bg-gray-50 rounded-xl p-4 space-y-3">
             {content.benefits.map((benefit, index) => {
               const BenefitIcon = benefit.icon;
@@ -176,7 +177,7 @@ export function SignUpPromptModal({ milestone, scanCount, onClose }: SignUpPromp
             onClick={() => analytics.trackSignUpStarted()}
             className="flex items-center justify-center gap-2 w-full py-3 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition-colors"
           >
-            <Sparkles className="w-5 h-5" />
+            <Mail className="w-5 h-5" />
             {content.ctaText}
           </Link>
 

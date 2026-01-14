@@ -2,15 +2,21 @@
 
 > **This document is the guiding light for development priorities. It takes precedence over BACKLOG.md.**
 
-*Last Updated: January 11, 2026 (Evening)*
+*Last Updated: January 13, 2026 (Evening)*
 
 ---
 
 ## Executive Summary
 
-Collectors Chest is a comic book collection tracking app with AI-powered cover recognition and a new auction marketplace feature. After the January 2026 development sprint, the app is at **~92% launch readiness**. All critical blockers have been resolved.
+Collectors Chest is a comic book collection tracking app with AI-powered cover recognition and a new auction marketplace feature. The app is currently in **Private Beta** with public registration disabled.
 
-**Overall Score: 8.2/10** (up from 6.8/10)
+**Overall Score: 8.2/10**
+
+**Current Status: PRIVATE BETA**
+- Site is live at collectors-chest.com
+- Public registration is DISABLED (waitlist only)
+- Existing accounts (developer) still work
+- Guests can use 10 free scans
 
 **Key Changes Since Last Evaluation:**
 - ✅ Fixed all code quality issues (ESLint, viewport metadata, Stripe webhook)
@@ -20,6 +26,42 @@ Collectors Chest is a comic book collection tracking app with AI-powered cover r
 - ✅ Added Redis caching (Upstash)
 - ✅ Completed "Buy Now" fixed-price listings
 - ✅ Enhanced CGC/CBCS cert lookup with full grading details
+- ✅ PWA icons fixed (maskable icons, shortcut icons)
+- ✅ Offers system API routes
+- ✅ Email notifications via Resend
+- ✅ **DISABLED PUBLIC REGISTRATION** (private beta mode)
+
+---
+
+## 0. Private Beta Checklist (Before Opening Registration)
+
+> **⚠️ DO NOT open registration until these items are complete**
+
+### Critical (Must Have)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Premium subscription billing | ❌ Missing | Stripe subscriptions, feature gating |
+| Privacy Policy page | ❌ Missing | Legal requirement for collecting user data |
+| Terms of Service page | ❌ Missing | Legal protection for marketplace |
+| Re-enable Clerk bot protection | ❌ Pending | Disabled for testing Jan 13, 2026 |
+
+### High Priority
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Connect waitlist to Resend | ❌ Not connected | Currently simulated, emails not captured |
+| Test payment flows end-to-end | ❌ Untested | Auction bids, Buy Now, seller payouts |
+| Database backup strategy | ❌ Unconfirmed | Supabase backups enabled? |
+| Rate limit on registered user scans | ❌ Missing | Currently unlimited for registered users |
+
+### Medium Priority
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Enable live Hottest Books API | ⚠️ Static | `USE_STATIC_LIST = true` in production |
+| Verify Resend DNS | ⚠️ Pending | May still be verifying |
+| Cost monitoring alerts | ❌ Missing | Alert on unusual AI usage |
 
 ---
 
@@ -340,27 +382,20 @@ Collectors Chest is a comic book collection tracking app with AI-powered cover r
 
 > **These items take precedence over BACKLOG.md**
 
-### ✅ Completed This Session
-1. ~~**Fix critical code issues**~~ ✅
-   - ~~ESLint configuration~~ - Working
-   - ~~Viewport metadata migration~~ - Done
-   - ~~Stripe webhook config~~ - Fixed
-
+### ✅ Recently Completed
+1. ~~**Fix critical code issues**~~ ✅ (ESLint, viewport, Stripe webhook)
 2. ~~**Add Sentry error tracking**~~ ✅
-
 3. ~~**Add rate limiting**~~ ✅ (Upstash)
-
 4. ~~**Add analytics**~~ ✅ (PostHog)
-
 5. ~~**Complete Shop "Buy Now"**~~ ✅
-
 6. ~~**Redis caching (Upstash)**~~ ✅
-
 7. ~~**Enhanced CGC/CBCS cert lookup**~~ ✅
-   - Captures signatures, key comments, grade date, grader notes
-   - Clickable cert verification links
+8. ~~**PWA Icons**~~ ✅ (maskable + shortcuts)
+9. ~~**Offers System**~~ ✅ (API routes, modals)
+10. ~~**Email integration**~~ ✅ (Resend setup)
+11. ~~**Disable public registration**~~ ✅ (Private Beta mode)
 
-### Launch Priority (End of January 2026)
+### 🔴 Before Opening Registration (See Section 0)
 
 1. **Premium subscription billing** ⭐ CRITICAL
    - Stripe subscriptions
@@ -368,20 +403,24 @@ Collectors Chest is a comic book collection tracking app with AI-powered cover r
    - No revenue without this
    - Effort: 1-2 sessions
 
-2. **Email capture (Resend)**
-   - Capture non-converting guests
-   - Set up drip campaigns
+2. **Privacy Policy + Terms of Service pages**
+   - Legal requirement
+   - Can use templates
    - Effort: 1 session
 
-3. **Quick payment smoke tests**
+3. **Re-enable Clerk bot protection** ⚡ QUICK WIN
+   - Clerk Dashboard → Attack Protection → Bot sign-up protection → ON
+   - Takes 2 minutes
+
+4. **Connect waitlist to Resend**
+   - Currently simulated - emails not being captured
+   - Effort: 0.5 session
+
+5. **Test payment flows end-to-end**
    - Test auction bid flow
    - Test Buy Now flow
    - Test Stripe webhooks
    - Effort: 0.5 session
-
-4. **Re-enable Clerk bot protection**
-   - Clerk Dashboard → Attack Protection → Bot sign-up protection → ON
-   - Disabled for testing on Jan 13, 2026
 
 ### Post-Launch
 - Price alerts

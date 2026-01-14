@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AlertCircle, Sparkles } from "lucide-react";
+import { AlertCircle, Sparkles, Mail } from "lucide-react";
 import { useGuestScans } from "@/hooks/useGuestScans";
 
 interface GuestLimitBannerProps {
@@ -22,16 +22,15 @@ export function GuestLimitBanner({ variant = "info" }: GuestLimitBannerProps) {
           <div className="flex-1">
             <h3 className="font-semibold text-red-800">Free Scan Limit Reached</h3>
             <p className="text-sm text-red-700 mt-1">
-              You&apos;ve used all 10 free scans. Create a free account to unlock unlimited scanning
-              and save your collection to the cloud.
+              You&apos;ve used all 10 free scans. Join our waitlist to be notified when full registration opens.
             </p>
             <div className="mt-3 flex gap-3">
               <Link
                 href="/sign-up"
                 className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium"
               >
-                <Sparkles className="w-4 h-4" />
-                Create Free Account
+                <Mail className="w-4 h-4" />
+                Join Waitlist
               </Link>
               <Link
                 href="/sign-in"
@@ -56,15 +55,14 @@ export function GuestLimitBanner({ variant = "info" }: GuestLimitBannerProps) {
               {remaining} Free Scan{remaining !== 1 ? "s" : ""} Remaining
             </h3>
             <p className="text-sm text-amber-700 mt-1">
-              Create a free account to unlock unlimited scanning and sync your collection across
-              devices.
+              We&apos;re currently in private beta. Join the waitlist to be first in line when we open registration.
             </p>
             <Link
               href="/sign-up"
               className="inline-flex items-center gap-2 mt-2 text-sm font-medium text-amber-800 hover:text-amber-900"
             >
               <Sparkles className="w-4 h-4" />
-              Create Free Account →
+              Join Waitlist →
             </Link>
           </div>
         </div>
@@ -91,7 +89,7 @@ export function GuestLimitBanner({ variant = "info" }: GuestLimitBannerProps) {
             href="/sign-up"
             className="text-sm font-medium text-primary-600 hover:text-primary-700"
           >
-            Sign up for unlimited →
+            Join waitlist →
           </Link>
         </div>
       </div>
