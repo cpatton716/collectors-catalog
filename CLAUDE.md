@@ -108,6 +108,28 @@ The Dev Log is stored at: `DEV_LOG.md` in the project root.
 | **eBay Browse API** | Real-time pricing | Free tier, rate limited |
 | **CGC/CBCS** | Cert verification | Web scraping for grade details |
 
+### Project Costs
+
+**Fixed Costs:**
+| Item | Cost | Billing Cycle |
+|------|------|---------------|
+| Netlify Personal Plan | $9/mo | 13th of each month |
+| Domain (collectors-chest.com) | $13.99/yr | Renews Jan 13, 2027 ($16.99) |
+
+**Variable Costs:**
+| Service | Cost | Notes |
+|---------|------|-------|
+| Anthropic API | ~$0.015/scan | Prepaid credits ($10 loaded) |
+| Stripe | 2.9% + $0.30 | Per transaction |
+
+**Free Tiers (current usage):**
+- Supabase: 500MB DB, 1GB storage
+- Clerk: 10K MAU
+- Upstash: 10K commands/day
+- Resend: 3K emails/mo
+- PostHog: 1M events/mo
+- Sentry: 5K errors/mo
+
 ## Deploy Command
 
 **Hosting Platform:** Netlify (NOT Vercel)
@@ -145,4 +167,64 @@ Maintain a "Changes Since Last Deploy" section at the top of DEV_LOG.md with:
 - Assessment of deploy readiness (Ready / Needs Testing / Has Issues)
 
 This helps batch work strategically and avoid wasting deploys on small changes.
+
+## Revert Technopathy Command
+
+When the user says **"revert technopathy"**, revert ALL of the following changes back to "AI" terminology:
+
+### Files and Exact Changes to Revert:
+
+**1. `/src/app/layout.tsx` (line ~17 in metadata description)**
+- CURRENT: `"Scan covers with technopathic recognition"`
+- REVERT TO: `"Scan covers with AI recognition"`
+
+**2. `/src/app/page.tsx` (line ~291 in hero section)**
+- CURRENT: `"Scan covers with technopathic recognition"`
+- REVERT TO: `"Scan covers with AI recognition"`
+
+**3. `/src/app/sign-up/[[...sign-up]]/page.tsx` (line ~125 in benefits list)**
+- CURRENT: `"Technopathic comic cover recognition"`
+- REVERT TO: `"AI-powered comic cover recognition"`
+
+**4. `/src/components/Navigation.tsx` - FAQ answers**
+- Line ~16: CURRENT: `"technopathic recognition"` → REVERT TO: `"AI recognition"`
+- Line ~31: CURRENT: `"using technopathy based on"` → REVERT TO: `"by AI based on"`
+
+**5. `/src/components/AskProfessor.tsx` - FAQ answers**
+- Line ~15: CURRENT: `"technopathic recognition"` → REVERT TO: `"AI recognition"`
+- Line ~30: CURRENT: `"using technopathy based on"` → REVERT TO: `"by AI based on"`
+
+**6. `/src/components/ComicDetailModal.tsx` (line ~474)**
+- CURRENT: `"Technopathic Estimate:</span> No eBay sales data found. This price is a technopathic estimate"`
+- REVERT TO: `"AI Estimate:</span> No eBay sales data found. This price is an AI estimate"`
+
+**7. `/src/components/ComicDetailsForm.tsx` (line ~1136)**
+- CURRENT: `"Technopathic Estimate:</span> No eBay sales data found for this comic. This price is a technopathic estimate"`
+- REVERT TO: `"AI Estimate:</span> No eBay sales data found for this comic. This price is an AI estimate"`
+
+**8. `/src/components/KeyHuntPriceResult.tsx` (line ~193)**
+- CURRENT: `"Technopathic Estimate:</span> No eBay sales data found. This price is a technopathic estimate"`
+- REVERT TO: `"AI Estimate:</span> No eBay sales data found. This price is an AI estimate"`
+
+**9. `/src/app/key-hunt/page.tsx` - Multiple locations**
+- All `"Technopathic Estimate"` → `"AI Estimate"`
+- All `"Technopathic estimate"` → `"AI-estimated value"` (in disclaimers)
+
+**10. `/src/hooks/useOffline.ts` - Multiple locations**
+- All `"Technopathic Estimate"` → `"AI Estimate"`
+- All `"Technopathic estimate"` → `"AI-estimated value"`
+
+**11. `/src/app/api/analyze/route.ts` - 3 occurrences (lines ~755, 760, 765)**
+- CURRENT: `disclaimer = "Technopathic estimate - actual prices may vary.";`
+- REVERT TO: `disclaimer = "AI estimate - actual prices may vary.";`
+
+**12. `/src/app/api/quick-lookup/route.ts` (line ~207)**
+- CURRENT: `disclaimer: "Technopathic estimates based on market knowledge."`
+- REVERT TO: `disclaimer: "AI-estimated values based on market knowledge."`
+
+### Revert Process:
+1. Read each file listed above
+2. Use Edit tool with replace_all where multiple occurrences exist
+3. Run `npm run build` to verify changes compile
+4. Commit with message: "Revert technopathy branding back to AI terminology"
 

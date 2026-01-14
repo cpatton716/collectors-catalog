@@ -1133,7 +1133,7 @@ export function ComicDetailsForm({
                 <p className="text-xs text-amber-700 flex items-start gap-2">
                   <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
                   <span>
-                    <span className="font-semibold">AI Estimate:</span> No eBay sales data found for this comic. This price is an AI estimate and may not be accurate. Use caution when making buying or selling decisions.
+                    <span className="font-semibold">Technopathic Estimate:</span> No eBay sales data found for this comic. This price is a technopathic estimate and may not be accurate. Use caution when making buying or selling decisions.
                   </span>
                 </p>
               </div>

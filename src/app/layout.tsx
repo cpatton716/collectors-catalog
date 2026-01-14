@@ -14,7 +14,7 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Collectors Chest - Track, Value & Trade Your Comics",
   description:
-    "The all-in-one comic collector's companion. Scan covers with AI recognition, track your collection's value, and buy or sell with fellow collectors.",
+    "The all-in-one comic collector's companion. Scan covers with technopathic recognition, track your collection's value, and buy or sell with fellow collectors.",
   manifest: "/manifest.json",
   icons: {
     icon: [

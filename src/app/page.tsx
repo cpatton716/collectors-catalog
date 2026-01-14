@@ -288,7 +288,7 @@ export default function Home() {
         <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-8">
           {isLoaded && isSignedIn
             ? "Your collection at a glance. Track value changes, see your best investments, and discover what's hot in the market."
-            : "Scan covers with AI recognition, track your collection's value, discover key issues, and connect with fellow collectors to buy and sell."}
+            : "Scan covers with technopathic recognition, track your collection's value, discover key issues, and connect with fellow collectors to buy and sell."}
         </p>
 
         {/* Scan CTA */}

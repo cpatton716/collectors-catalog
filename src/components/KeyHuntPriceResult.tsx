@@ -190,7 +190,7 @@ export function KeyHuntPriceResult({
             <div className="mb-4 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
               <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
               <p className="text-xs text-amber-700">
-                <span className="font-medium">AI Estimate:</span> No eBay sales data found. This price is an AI estimate and may not be accurate.
+                <span className="font-medium">Technopathic Estimate:</span> No eBay sales data found. This price is a technopathic estimate and may not be accurate.
               </p>
             </div>
           )}

@@ -752,17 +752,17 @@ Important:
               const last3 = recentSales.slice(0, 3);
               estimatedValue = last3.reduce((sum: number, s: { price: number }) => sum + s.price, 0) / 3;
               isAveraged = true;
-              disclaimer = "AI estimate - actual prices may vary.";
+              disclaimer = "Technopathic estimate - actual prices may vary.";
             } else if (recentSales.length > 0) {
               // Average of available recent sales
               estimatedValue = recentSales.reduce((sum: number, s: { price: number }) => sum + s.price, 0) / recentSales.length;
               isAveraged = recentSales.length > 1;
-              disclaimer = "AI estimate - actual prices may vary.";
+              disclaimer = "Technopathic estimate - actual prices may vary.";
             } else if (processedSales.length > 0) {
               // Only older sales available - use most recent only
               estimatedValue = sortedSales[0].price;
               isAveraged = false;
-              disclaimer = "AI estimate - actual prices may vary.";
+              disclaimer = "Technopathic estimate - actual prices may vary.";
             }
 
             // Process grade estimates if available

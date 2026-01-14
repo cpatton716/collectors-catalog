@@ -204,7 +204,7 @@ Rules:
             mostRecentSale: parsed.recentSale || null,
             mostRecentSaleDate: parsed.recentSale?.date || null,
             isAveraged: true,
-            disclaimer: "AI-estimated values based on market knowledge. Actual prices may vary.",
+            disclaimer: "Technopathic estimates based on market knowledge. Actual prices may vary.",
             gradeEstimates: parsed.gradeEstimates,
             baseGrade: 9.4,
           };

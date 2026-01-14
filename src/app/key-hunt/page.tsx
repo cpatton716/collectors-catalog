@@ -397,11 +397,11 @@ export default function KeyHuntPage() {
           ? {
               estimatedValue: result.averagePrice,
               recentSales: result.recentSale
-                ? [{ ...result.recentSale, source: "AI Estimate", isOlderThan6Months: false }]
+                ? [{ ...result.recentSale, source: "Technopathic Estimate", isOlderThan6Months: false }]
                 : [],
               mostRecentSaleDate: result.recentSale?.date || null,
               isAveraged: true,
-              disclaimer: "AI-estimated value",
+              disclaimer: "Technopathic estimate",
             }
           : null,
       },
@@ -501,11 +501,11 @@ export default function KeyHuntPage() {
           ? {
               estimatedValue: entry.priceResult.rawPrice,
               recentSales: entry.priceResult.recentSale
-                ? [{ ...entry.priceResult.recentSale, source: "AI Estimate", isOlderThan6Months: false }]
+                ? [{ ...entry.priceResult.recentSale, source: "Technopathic Estimate", isOlderThan6Months: false }]
                 : [],
               mostRecentSaleDate: entry.priceResult.recentSale?.date || null,
               isAveraged: true,
-              disclaimer: "AI-estimated value",
+              disclaimer: "Technopathic estimate",
             }
           : null,
       },

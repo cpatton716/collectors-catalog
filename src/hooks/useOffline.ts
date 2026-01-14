@@ -147,11 +147,11 @@ function createCollectionItemFromAction(action: OfflineAction): CollectionItem {
         ? {
             estimatedValue: data.averagePrice,
             recentSales: data.recentSale
-              ? [{ ...data.recentSale, source: 'AI Estimate', isOlderThan6Months: false }]
+              ? [{ ...data.recentSale, source: 'Technopathic Estimate', isOlderThan6Months: false }]
               : [],
             mostRecentSaleDate: data.recentSale?.date || null,
             isAveraged: true,
-            disclaimer: 'AI-estimated value',
+            disclaimer: 'Technopathic estimate',
           }
         : null,
     },

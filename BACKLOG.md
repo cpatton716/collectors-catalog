@@ -20,6 +20,30 @@ Currently using a static list (`USE_STATIC_LIST = true`) to conserve API credits
 
 ## Pending Enhancements
 
+### Project Cost Tracking Dashboard
+**Priority:** Low
+**Status:** Pending
+
+Create a unified view of all project costs. Currently tracked across multiple service dashboards.
+
+**Fixed Monthly Costs:**
+- Netlify Personal Plan: $9/mo (charged 13th of each month)
+
+**Annual Costs:**
+- Domain (collectors-chest.com): $13.99/yr (renews Jan 13, 2027 at $16.99)
+
+**Variable/Pay-per-use:**
+- Anthropic API: ~$0.015/scan (prepaid $10 credits)
+- Stripe: 2.9% + $0.30 per transaction
+- All others on free tiers (Supabase, Clerk, Upstash, Resend, PostHog)
+
+**Implementation Options:**
+1. Simple: Add cost summary to CLAUDE.md
+2. Medium: Create spreadsheet for monthly tracking
+3. Advanced: Build admin dashboard with cost aggregation
+
+---
+
 ### Sales Flow - Use Actual Transaction Price
 **Priority:** High
 **Status:** Pending

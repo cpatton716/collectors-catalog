@@ -471,7 +471,7 @@ export function ComicDetailModal({
                     <p className="text-xs text-amber-700 flex items-start gap-2">
                       <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
                       <span>
-                        <span className="font-semibold">AI Estimate:</span> No eBay sales data found. This price is an AI estimate and may not be accurate.
+                        <span className="font-semibold">Technopathic Estimate:</span> No eBay sales data found. This price is a technopathic estimate and may not be accurate.
                       </span>
                     </p>
                   </div>
