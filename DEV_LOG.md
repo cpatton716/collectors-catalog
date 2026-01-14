@@ -14,6 +14,19 @@ This log tracks session-by-session progress on Collectors Chest.
 
 ---
 
+## Deploy Log - January 13, 2026 (Night)
+
+**Deployed to Netlify**
+
+### Changes Included:
+- **Private Beta Mode** - Registration disabled, waitlist email capture instead
+- **Waitlist API** - Connected to Resend Contacts for email collection
+- **Technopathy Rebrand** - All user-facing "AI" references changed to "technopathic/technopathy"
+- **Revert Command** - Added "revert technopathy" command to CLAUDE.md for quick rollback
+- **Project Costs** - Documented fixed/variable costs in CLAUDE.md
+
+---
+
 ## Deploy Log - January 13, 2026 (Evening)
 
 **Deployed to Netlify**
