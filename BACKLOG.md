@@ -1,5 +1,33 @@
 # Collectors Chest Backlog
 
+## Design Review
+
+### Unique Visual Identity
+**Priority:** Medium
+**Status:** Pending
+
+Review and refresh the app's design to create a distinct visual identity that stands out from other projects. Currently, the design follows a generic pattern that looks similar to other apps.
+
+**Areas to Explore:**
+- Color palette - move beyond standard blue/gray
+- Typography - consider comic-book inspired fonts for headers
+- Illustrations/graphics - custom artwork, comic-style elements
+- Micro-interactions and animations
+- Unique card designs for comics
+- Theme options (light/dark/comic themes)
+- Brand personality through UI details
+
+**Inspiration Sources:**
+- Comic book aesthetics (halftone dots, speech bubbles, panel layouts)
+- Vintage collector shop vibes
+- Trading card interfaces
+- Key Collector Comics app
+- CLZ Comics app
+
+**Goal:** Make Collectors Chest instantly recognizable and memorable.
+
+---
+
 ## Pre-Launch Checklist
 
 ### Re-enable Live Hottest Books API

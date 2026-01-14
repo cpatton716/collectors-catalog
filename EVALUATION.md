@@ -63,6 +63,7 @@ Collectors Chest is a comic book collection tracking app with AI-powered cover r
 | Enable live Hottest Books API | ⚠️ Static | `USE_STATIC_LIST = true` in production |
 | Verify Resend DNS | ⚠️ Pending | May still be verifying |
 | Cost monitoring alerts | ❌ Missing | Alert on unusual AI usage |
+| Remove waitlist API debug info | ⚠️ Pending | Debug error details exposed in response (`src/app/api/waitlist/route.ts`) |
 
 ---
 
