@@ -2,6 +2,8 @@
 
 ## On Session Start
 
+These steps run automatically when starting a new conversation, OR can be triggered manually with **"Let's get started"**.
+
 1. Check recent git commits and summarize where we left off last session (1-2 lines)
 2. Show **Priority Action Items from `EVALUATION.md`** - this is the primary guide for what to work on next
 3. Show a summary of the last session by reading the most recent entry in DEV_LOG.md. Include:
@@ -9,6 +11,13 @@
   - Any issues that were encountered
   - Where we left off
 4. Ask me if I will be testing on Mobile or Web during this session. This will help guide the changes that need to be made via my test results
+
+## Let's Get Started Command
+
+When the user says **"Let's get started"**, perform all the steps in "On Session Start" above. This is useful for:
+- Starting a new work session
+- Re-orienting after a context reset or long break
+- Getting a fresh status update on the project
 
 ## Priority Documents
 
