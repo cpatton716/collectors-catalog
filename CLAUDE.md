@@ -2,6 +2,7 @@
 
 ## On Session Start
 
+
 1. Check recent git commits and summarize where we left off last session (1-2 lines)
 2. Show **Priority Action Items from `EVALUATION.md`** - this is the primary guide for what to work on next
 3. Show a brief summary of work completed in the previous session
@@ -43,10 +44,13 @@ cat /path/to/file.sql | pbcopy
 Never make the user manually copy text - use `pbcopy` to do it for them.
 
 ## Environment Variables
-When any environment variable needs to be added or updated, automatically open the .env.local file in TextEdit for the user:
+When any environment variable needs to be added or updated:
+1. Automatically open the .env.local file in TextEdit for the user:
 ```bash
 open -a TextEdit "/Users/chrispatton/Coding for Dummies/Comic Tracker/.env.local"
 ```
+2. **Track the new variable** - Remember that this variable was added during the session
+3. **Remind about Netlify** - When deploying, this variable MUST be added to Netlify environment variables first
 
 ## Close Up Shop Command
 
@@ -141,18 +145,28 @@ When the user says **"Deploy"**, perform the following steps:
    - `npm test` - Run all tests
    - `npm run build` - Ensure build succeeds
 
-2. **Review Deploy Checklist** - Confirm with user:
+2. **CHECK FOR NEW ENVIRONMENT VARIABLES** ⚠️ CRITICAL:
+   - Compare current `.env.local` against known Netlify variables
+   - If ANY new variables were added this session, **STOP** and:
+     - List all new variables that need to be added to Netlify
+     - Copy variable names and values to clipboard for easy pasting
+     - Provide direct link: Netlify → Site settings → Environment variables
+     - **DO NOT PROCEED** until user confirms they've added the variables to Netlify
+   - This prevents production failures from missing env vars
+
+3. **Review Deploy Checklist** - Confirm with user:
    - [ ] All tests passing
    - [ ] Manual smoke test completed
    - [ ] No console errors
    - [ ] Mobile responsiveness tested
    - [ ] Priority features working as expected
+   - [ ] **New environment variables added to Netlify** (if any)
 
-3. **Show "Changes Since Last Deploy"** - Display accumulated changes from DEV_LOG.md so user can confirm it's worth a deploy
+4. **Show "Changes Since Last Deploy"** - Display accumulated changes from DEV_LOG.md so user can confirm it's worth a deploy
 
-4. **Get explicit confirmation** - Ask user to confirm they want to use a deploy
+5. **Get explicit confirmation** - Ask user to confirm they want to use a deploy
 
-5. **After successful deploy:**
+6. **After successful deploy:**
    - Clear the "Changes Since Last Deploy" section in DEV_LOG.md
    - Log the deploy date and summary in DEV_LOG.md
    - **IMPORTANT:** Batch the DEV_LOG update into the same commit OR commit it locally without pushing (to avoid triggering a second Netlify build)
