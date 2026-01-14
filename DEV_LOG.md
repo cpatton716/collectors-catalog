@@ -14,6 +14,23 @@ This log tracks session-by-session progress on Collectors Chest.
 
 ---
 
+## Deploy Log - January 14, 2026
+
+**Deployed to Netlify**
+
+### Changes Included:
+- **PWA Icons Fixed** - Added all PNG icon files (were gitignored, causing 404s on production)
+- **iOS Chrome Detection** - PWA install prompt now detects Chrome on iOS and shows Safari redirect instructions
+- **Waitlist Error Logging** - Added detailed error logging for Resend API debugging
+- **GoCollect Backlog** - Added GoCollect API integration as future enhancement
+
+### Fixes:
+- Android app icon white background → proper blue background
+- Android shortcut icons (Collection/Lookup) → blue circular icons
+- iOS Chrome users now get proper "Open in Safari" instructions
+
+---
+
 ## Deploy Log - January 13, 2026 (Night)
 
 **Deployed to Netlify**
