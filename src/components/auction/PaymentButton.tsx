@@ -54,16 +54,16 @@ export function PaymentButton({
       <div className="bg-gray-50 rounded-lg p-4 space-y-2">
         <div className="flex justify-between text-sm">
           <span className="text-gray-600">Winning Bid</span>
-          <span className="font-medium">{formatPrice(amount)}</span>
+          <span className="font-medium text-gray-900">{formatPrice(amount)}</span>
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-gray-600">Shipping</span>
-          <span className="font-medium">
+          <span className="font-medium text-gray-900">
             {shippingCost > 0 ? formatPrice(shippingCost) : "Free"}
           </span>
         </div>
         <div className="border-t pt-2 flex justify-between">
-          <span className="font-semibold">Total</span>
+          <span className="font-semibold text-gray-900">Total</span>
           <span className="font-bold text-lg">{formatPrice(total)}</span>
         </div>
       </div>

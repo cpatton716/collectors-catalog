@@ -238,7 +238,7 @@ export function ListInShopModal({
                 <ChevronLeft className="w-5 h-5" />
               </button>
             )}
-            <h2 className="text-lg font-semibold">
+            <h2 className="text-lg font-semibold text-gray-900">
               {step === 1
                 ? "List in Shop"
                 : mode === "sell"
@@ -286,7 +286,7 @@ export function ListInShopModal({
                     <Tag className="w-5 h-5 text-green-600" />
                   </div>
                   <div className="text-left">
-                    <p className="font-medium">Sell (Fixed Price)</p>
+                    <p className="font-medium text-gray-900">Sell (Fixed Price)</p>
                     <p className="text-sm text-gray-500">
                       Set a price, sell instantly
                     </p>
@@ -304,7 +304,7 @@ export function ListInShopModal({
                     <Gavel className="w-5 h-5 text-blue-600" />
                   </div>
                   <div className="text-left">
-                    <p className="font-medium">Auction</p>
+                    <p className="font-medium text-gray-900">Auction</p>
                     <p className="text-sm text-gray-500">
                       Let buyers bid, max 14 days
                     </p>

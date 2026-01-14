@@ -136,7 +136,7 @@ export function CreateListingModal({
           <div className="flex items-center justify-between p-4 border-b">
             <div className="flex items-center gap-2">
               <Tag className="w-5 h-5 text-green-600" />
-              <h2 className="text-lg font-semibold">Create Listing</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Create Listing</h2>
             </div>
             <button
               onClick={onClose}
@@ -172,7 +172,7 @@ export function CreateListingModal({
               </div>
             )}
             <div>
-              <h3 className="font-semibold">
+              <h3 className="font-semibold text-gray-900">
                 {comic.comic.title || "Unknown Title"} #
                 {comic.comic.issueNumber || "?"}
               </h3>

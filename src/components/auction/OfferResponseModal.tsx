@@ -109,7 +109,7 @@ export function OfferResponseModal({
       <div className="bg-white rounded-xl w-full max-w-sm overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="text-lg font-semibold">Respond to Offer</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Respond to Offer</h2>
           <button
             onClick={handleClose}
             className="p-1 hover:bg-gray-100 rounded-full"
@@ -164,7 +164,7 @@ export function OfferResponseModal({
               <div className="space-y-2">
                 <div className="flex justify-between items-center py-2 border-b">
                   <span className="text-gray-600">Your Asking Price</span>
-                  <span className="font-medium">{formatPrice(askingPrice)}</span>
+                  <span className="font-medium text-gray-900">{formatPrice(askingPrice)}</span>
                 </div>
                 <div className="flex justify-between items-center py-2 border-b">
                   <span className="text-gray-600">Buyer's Offer</span>
@@ -188,7 +188,7 @@ export function OfferResponseModal({
                   >
                     <div className="flex items-center gap-3">
                       <Check className="w-5 h-5 text-green-600" />
-                      <span className="font-medium">Accept Offer</span>
+                      <span className="font-medium text-gray-900">Accept Offer</span>
                     </div>
                     <span className="text-green-600 font-semibold">
                       {formatPrice(offer.amount)}
@@ -203,7 +203,7 @@ export function OfferResponseModal({
                       <div className="flex items-center gap-3">
                         <ArrowLeftRight className="w-5 h-5 text-blue-600" />
                         <div className="text-left">
-                          <span className="font-medium block">Counter-Offer</span>
+                          <span className="font-medium text-gray-900 block">Counter-Offer</span>
                           <span className="text-xs text-gray-500">
                             {roundsRemaining} round{roundsRemaining !== 1 ? "s" : ""}{" "}
                             remaining
@@ -218,7 +218,7 @@ export function OfferResponseModal({
                     className="w-full flex items-center gap-3 p-3 border-2 border-gray-200 rounded-lg hover:border-red-500 hover:bg-red-50 transition-colors"
                   >
                     <XCircle className="w-5 h-5 text-red-600" />
-                    <span className="font-medium">Decline Offer</span>
+                    <span className="font-medium text-gray-900">Decline Offer</span>
                   </button>
                 </div>
               )}

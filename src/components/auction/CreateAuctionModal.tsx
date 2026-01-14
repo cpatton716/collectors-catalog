@@ -154,7 +154,7 @@ export function CreateAuctionModal({
         <div className="relative bg-white rounded-2xl shadow-xl max-w-lg w-full">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b">
-            <h2 className="text-lg font-semibold">Create Auction</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Create Auction</h2>
             <button
               onClick={onClose}
               className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -189,7 +189,7 @@ export function CreateAuctionModal({
               </div>
             )}
             <div>
-              <h3 className="font-semibold">
+              <h3 className="font-semibold text-gray-900">
                 {comic.comic.title || "Unknown Title"} #
                 {comic.comic.issueNumber || "?"}
               </h3>
@@ -357,25 +357,25 @@ export function CreateAuctionModal({
 
                 {/* Summary */}
                 <div className="mt-6 p-4 bg-gray-50 rounded-lg space-y-2">
-                  <h4 className="font-medium">Auction Summary</h4>
+                  <h4 className="font-medium text-gray-900">Auction Summary</h4>
                   <div className="text-sm space-y-1">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Starting Price:</span>
-                      <span className="font-medium">${startingPrice}</span>
+                      <span className="font-medium text-gray-900">${startingPrice}</span>
                     </div>
                     {buyItNowPrice && (
                       <div className="flex justify-between">
                         <span className="text-gray-600">Buy It Now:</span>
-                        <span className="font-medium">${buyItNowPrice}</span>
+                        <span className="font-medium text-gray-900">${buyItNowPrice}</span>
                       </div>
                     )}
                     <div className="flex justify-between">
                       <span className="text-gray-600">Duration:</span>
-                      <span className="font-medium">{durationDays} days</span>
+                      <span className="font-medium text-gray-900">{durationDays} days</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Shipping:</span>
-                      <span className="font-medium">
+                      <span className="font-medium text-gray-900">
                         {parseFloat(shippingCost) === 0
                           ? "Free"
                           : `$${shippingCost}`}

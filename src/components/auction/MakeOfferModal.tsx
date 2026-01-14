@@ -82,7 +82,7 @@ export function MakeOfferModal({
       <div className="bg-white rounded-xl w-full max-w-sm overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="text-lg font-semibold">Make an Offer</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Make an Offer</h2>
           <button
             onClick={handleClose}
             className="p-1 hover:bg-gray-100 rounded-full"
