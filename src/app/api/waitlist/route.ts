@@ -74,8 +74,15 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      // Include debug info in response for troubleshooting
       return NextResponse.json(
-        { error: "Failed to join waitlist. Please try again." },
+        {
+          error: "Failed to join waitlist. Please try again.",
+          debug: {
+            errorName: error.name,
+            errorMessage: error.message,
+          }
+        },
         { status: 500 }
       );
     }
