@@ -6,21 +6,32 @@ This log tracks session-by-session progress on Collectors Chest.
 
 ## Changes Since Last Deploy
 
-**Sessions since last deploy:** 2
-**Deploy Readiness:** Ready
+**Sessions since last deploy:** 0
+**Deploy Readiness:** Just deployed
 
 ### Accumulated Changes:
-- Debug logging removed from auctions API
-- "Let's get started" command added to CLAUDE.md
-- Critical env var check added to deploy process in CLAUDE.md
-- Test cases added for listing features
-- Fixed "Pull off the Shelf" not working (RLS bypass with supabaseAdmin)
-- Fixed React hydration mismatch in MobileNav
-- Added Privacy Policy page structure (`/privacy`)
-- Added Terms of Service page structure (`/terms`)
-- Added footer with legal links to homepage
-- Updated EVALUATION.md with LLC requirement
-- Updated BACKLOG.md with LLC formation task
+(none yet)
+
+---
+
+## Deploy Log - January 14, 2026 (Late Evening)
+
+**Deployed to Netlify**
+
+### Changes Included:
+- **Bug Fix: Pull off the Shelf** - Fixed RLS blocking issue using `supabaseAdmin`
+- **Bug Fix: Hydration Mismatch** - Added `hasMounted` state to MobileNav
+- **Legal Pages** - Added `/privacy` and `/terms` page structure with CCPA compliance
+- **Homepage Footer** - Added Privacy Policy and Terms of Service links
+- **Documentation** - Added ARCHITECTURE.md, updated EVALUATION.md with LLC requirement
+- **CLAUDE.md Updates** - Added "Let's get started" command, env var deploy check
+
+### Files Added:
+- `src/app/privacy/page.tsx`
+- `src/app/terms/page.tsx`
+- `src/hooks/useCollection.ts`
+- `src/app/api/comics/[id]/route.ts`
+- `ARCHITECTURE.md`
 
 ---
 
