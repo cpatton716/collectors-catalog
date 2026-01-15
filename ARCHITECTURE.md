@@ -155,6 +155,18 @@
 
 ---
 
+### Legal Pages (`/privacy`, `/terms`)
+
+| Feature | Services | Notes |
+|---------|----------|-------|
+| Privacy Policy | — | CCPA compliance, data practices |
+| Terms of Service | — | Marketplace terms, liability |
+| Footer Links | — | Available from homepage footer |
+
+**Status:** Page structure complete. Content pending LLC formation for official business name.
+
+---
+
 ## API Routes
 
 ### AI & Recognition
