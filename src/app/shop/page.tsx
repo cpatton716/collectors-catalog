@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useAuth } from "@clerk/nextjs";
+import { useSearchParams } from "next/navigation";
 import {
   Gavel,
   Tag,
@@ -30,8 +31,60 @@ const LISTING_SORT_OPTIONS: { value: ListingSortBy; label: string }[] = [
 ];
 
 export default function ShopPage() {
+  return (
+    <Suspense fallback={<ShopPageSkeleton />}>
+      <ShopPageContent />
+    </Suspense>
+  );
+}
+
+function ShopPageSkeleton() {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-white border-b py-6">
+        <div className="container mx-auto px-4">
+          <div className="h-8 w-32 bg-gray-200 rounded animate-pulse" />
+        </div>
+      </div>
+      <div className="container mx-auto px-4 py-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="bg-white rounded-xl shadow-md overflow-hidden animate-pulse">
+              <div className="aspect-[2/3] bg-gray-200" />
+              <div className="p-3 space-y-2">
+                <div className="h-4 bg-gray-200 rounded w-3/4" />
+                <div className="h-3 bg-gray-200 rounded w-1/2" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ShopPageContent() {
   const { isSignedIn } = useAuth();
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<ShopTab>("buy-now");
+
+  // Handle URL params for tab and listing selection
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    const listingParam = searchParams.get("listing");
+
+    if (tabParam === "auctions") {
+      setActiveTab("auctions");
+      if (listingParam) {
+        setSelectedAuctionId(listingParam);
+      }
+    } else if (tabParam === "buy-now" || !tabParam) {
+      setActiveTab("buy-now");
+      if (listingParam) {
+        setSelectedListingId(listingParam);
+      }
+    }
+  }, [searchParams]);
 
   // Auctions state
   const [auctions, setAuctions] = useState<Auction[]>([]);
@@ -211,7 +264,7 @@ export default function ShopPage() {
                   placeholder="Search listings..."
                   value={listingSearchQuery}
                   onChange={(e) => setListingSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white text-gray-900"
                 />
               </div>
 
@@ -272,7 +325,7 @@ export default function ShopPage() {
                   placeholder="Search auctions..."
                   value={auctionSearchQuery}
                   onChange={(e) => setAuctionSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900"
                 />
               </div>
 

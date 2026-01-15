@@ -30,6 +30,8 @@ import {
   FileCheck,
   Store,
   Eye,
+  CheckCircle,
+  PackageMinus,
 } from "lucide-react";
 import { ListInShopModal } from "./auction/ListInShopModal";
 
@@ -57,7 +59,7 @@ interface ComicDetailModalProps {
   onRemove: (id: string) => void;
   onAddToList: (itemId: string, listId: string) => void;
   onRemoveFromList: (itemId: string, listId: string) => void;
-  onCreateList: (name: string) => UserList;
+  onCreateList: (name: string) => UserList | Promise<UserList>;
   onMarkSold: (itemId: string, salePrice: number, buyerId?: string) => void;
   onToggleStar: (itemId: string) => void;
   onEdit: (item: CollectionItem) => void;
@@ -91,7 +93,10 @@ export function ComicDetailModal({
   const [salePrice, setSalePrice] = useState<string>(
     item.askingPrice?.toString() || item.comic.priceData?.estimatedValue?.toString() || ""
   );
-  const [activeListing, setActiveListing] = useState<{ id: string; listingType: string } | null>(null);
+  const [activeListing, setActiveListing] = useState<{ id: string; listingType: string; bidCount?: number } | null>(null);
+  const [showSellerAction, setShowSellerAction] = useState<"mark_as_sold" | "pull_off_shelf" | null>(null);
+  const [isProcessingAction, setIsProcessingAction] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const { comic } = item;
 
@@ -103,7 +108,11 @@ export function ComicDetailModal({
         if (response.ok) {
           const data = await response.json();
           if (data.listing) {
-            setActiveListing({ id: data.listing.id, listingType: data.listing.listingType });
+            setActiveListing({
+              id: data.listing.id,
+              listingType: data.listing.listingType,
+              bidCount: data.listing.bidCount || 0,
+            });
           }
         }
       } catch {
@@ -112,6 +121,39 @@ export function ComicDetailModal({
     }
     checkActiveListing();
   }, [item.id]);
+
+  // Handle seller actions (Mark as Sold, Pull off Shelf)
+  const handleSellerAction = async (action: "mark_as_sold" | "pull_off_shelf") => {
+    if (!activeListing) return;
+
+    setIsProcessingAction(true);
+    setActionError(null);
+    try {
+      // Cancel/remove the listing
+      const reason = action === "mark_as_sold" ? "sold_elsewhere" : "changed_mind";
+      const response = await fetch(`/api/auctions/${activeListing.id}?reason=${reason}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to process request");
+      }
+
+      // If "Mark as Sold", also remove the comic from collection
+      if (action === "mark_as_sold") {
+        onRemove(item.id);
+      }
+
+      setShowSellerAction(null);
+      setActiveListing(null);
+      onClose();
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "Failed to process request");
+    } finally {
+      setIsProcessingAction(false);
+    }
+  };
 
   // Find all variants of this title/issue in the collection
   const variants = useMemo(() => {
@@ -135,9 +177,9 @@ export function ComicDetailModal({
       `${item.conditionGrade}`
     : null;
 
-  const handleCreateList = () => {
+  const handleCreateList = async () => {
     if (newListName.trim()) {
-      const newList = onCreateList(newListName.trim());
+      const newList = await onCreateList(newListName.trim());
       onAddToList(item.id, newList.id);
       setNewListName("");
       setShowCreateList(false);
@@ -610,13 +652,92 @@ export function ComicDetailModal({
             <div className="pt-4 border-t space-y-3">
               {/* Primary CTA - List in Shop / View Listing */}
               {activeListing ? (
-                <a
-                  href={`/shop?listing=${activeListing.id}`}
-                  className="w-full px-4 py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2 font-semibold text-lg"
-                >
-                  <Eye className="w-6 h-6" />
-                  View Listing
-                </a>
+                <>
+                  <a
+                    href={`/shop?listing=${activeListing.id}&tab=${activeListing.listingType === 'auction' ? 'auctions' : 'buy-now'}`}
+                    className="w-full px-4 py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2 font-semibold text-lg"
+                  >
+                    <Eye className="w-6 h-6" />
+                    View Listing
+                  </a>
+
+                  {/* Seller Controls for active listing */}
+                  <div className="flex gap-2">
+                    {/* Mark as Sold - only for fixed_price */}
+                    {activeListing.listingType === "fixed_price" && (
+                      <button
+                        onClick={() => setShowSellerAction("mark_as_sold")}
+                        className="flex-1 px-3 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors flex items-center justify-center gap-1.5 text-sm font-medium"
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                        Mark as Sold
+                      </button>
+                    )}
+                    {/* Pull off the Shelf */}
+                    <button
+                      onClick={() => setShowSellerAction("pull_off_shelf")}
+                      disabled={activeListing.listingType === "auction" && (activeListing.bidCount || 0) > 0}
+                      className={`flex-1 px-3 py-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 text-sm font-medium ${
+                        activeListing.listingType === "auction" && (activeListing.bidCount || 0) > 0
+                          ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      }`}
+                      title={activeListing.listingType === "auction" && (activeListing.bidCount || 0) > 0 ? "Cannot remove auction with bids" : undefined}
+                    >
+                      <PackageMinus className="w-4 h-4" />
+                      Pull off Shelf
+                    </button>
+                  </div>
+
+                  {/* Seller Action Confirmation */}
+                  {showSellerAction && (
+                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                      <div className="flex items-start gap-3">
+                        <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                          <h5 className="font-medium text-amber-800">
+                            {showSellerAction === "mark_as_sold" ? "Mark as Sold?" : "Pull off the Shelf?"}
+                          </h5>
+                          <p className="text-sm text-amber-700 mt-1">
+                            {showSellerAction === "mark_as_sold"
+                              ? "This will remove the listing from the shop AND remove the comic from your collection."
+                              : "This will remove the listing from the shop. The comic will remain in your collection."}
+                          </p>
+                          {actionError && (
+                            <p className="text-sm text-red-600 mt-2">{actionError}</p>
+                          )}
+                          <div className="flex gap-2 mt-3">
+                            <button
+                              onClick={() => handleSellerAction(showSellerAction)}
+                              disabled={isProcessingAction}
+                              className={`px-4 py-1.5 rounded text-sm font-medium transition-colors ${
+                                showSellerAction === "mark_as_sold"
+                                  ? "bg-green-600 text-white hover:bg-green-700"
+                                  : "bg-blue-600 text-white hover:bg-blue-700"
+                              } disabled:opacity-50`}
+                            >
+                              {isProcessingAction
+                                ? "Processing..."
+                                : showSellerAction === "mark_as_sold"
+                                ? "Yes, Mark as Sold"
+                                : "Yes, Pull it"}
+                            </button>
+                            <button
+                              onClick={() => {
+                                setShowSellerAction(null);
+                                setActionError(null);
+                              }}
+                              disabled={isProcessingAction}
+                              className="px-4 py-1.5 bg-gray-200 text-gray-700 rounded text-sm font-medium hover:bg-gray-300 transition-colors disabled:opacity-50"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
               ) : (
                 <button
                   onClick={() => setShowListInShopModal(true)}

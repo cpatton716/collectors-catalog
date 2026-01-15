@@ -3,8 +3,10 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
-import { X, Package, ChevronLeft, ChevronRight, ShoppingCart, AlertCircle, Check, Tag, Loader2 } from "lucide-react";
+import { X, Package, ChevronLeft, ChevronRight, ShoppingCart, AlertCircle, Check, Tag, Loader2, CheckCircle, PackageMinus, AlertTriangle } from "lucide-react";
 import { Auction, formatPrice } from "@/types/auction";
+
+type SellerAction = "mark_as_sold" | "pull_off_shelf";
 import { SellerBadge } from "./SellerBadge";
 import { WatchlistButton } from "./WatchlistButton";
 
@@ -28,6 +30,9 @@ export function ListingDetailModal({
   const [purchaseError, setPurchaseError] = useState<string | null>(null);
   const [purchaseSuccess, setPurchaseSuccess] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [showActionConfirm, setShowActionConfirm] = useState<SellerAction | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen && listingId) {
@@ -79,6 +84,43 @@ export function ListingDetailModal({
       setPurchaseError("Failed to complete purchase. Please try again.");
     } finally {
       setIsPurchasing(false);
+    }
+  };
+
+  const handleSellerAction = async (action: SellerAction) => {
+    if (!listing) return;
+
+    setIsProcessing(true);
+    setActionError(null);
+    try {
+      // Cancel/remove the listing
+      const reason = action === "mark_as_sold" ? "sold_elsewhere" : "changed_mind";
+      const response = await fetch(`/api/auctions/${listingId}?reason=${reason}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to process request");
+      }
+
+      // If "Mark as Sold", also remove the comic from collection
+      if (action === "mark_as_sold" && listing.comicId) {
+        const deleteResponse = await fetch(`/api/comics/${listing.comicId}`, {
+          method: "DELETE",
+        });
+        if (!deleteResponse.ok) {
+          console.warn("Listing removed but comic deletion failed");
+        }
+      }
+
+      setShowActionConfirm(null);
+      onListingUpdated?.();
+      onClose();
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "Failed to process request");
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -302,6 +344,82 @@ export function ListingDetailModal({
                     </p>
                   )}
                 </div>
+
+                {/* Seller Controls */}
+                {listing.isSeller && listing.status === "active" && (
+                  <div className="pt-4 border-t">
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">
+                      Manage Listing
+                    </h4>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setShowActionConfirm("mark_as_sold")}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                        Mark as Sold
+                      </button>
+                      <button
+                        onClick={() => setShowActionConfirm("pull_off_shelf")}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm"
+                      >
+                        <PackageMinus className="w-4 h-4" />
+                        Pull off the Shelf
+                      </button>
+                    </div>
+
+                    {/* Action Confirmation Dialog */}
+                    {showActionConfirm && (
+                      <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                        <div className="flex items-start gap-3">
+                          <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                          <div className="flex-1">
+                            <h5 className="font-medium text-amber-800">
+                              {showActionConfirm === "mark_as_sold"
+                                ? "Mark as Sold?"
+                                : "Pull off the Shelf?"}
+                            </h5>
+                            <p className="text-sm text-amber-700 mt-1">
+                              {showActionConfirm === "mark_as_sold"
+                                ? "This will remove the listing from the shop AND remove the comic from your collection."
+                                : "This will remove the listing from the shop. The comic will remain in your collection."}
+                            </p>
+                            {actionError && (
+                              <p className="text-sm text-red-600 mt-2">{actionError}</p>
+                            )}
+                            <div className="flex gap-2 mt-3">
+                              <button
+                                onClick={() => handleSellerAction(showActionConfirm)}
+                                disabled={isProcessing}
+                                className={`px-4 py-1.5 rounded text-sm font-medium transition-colors ${
+                                  showActionConfirm === "mark_as_sold"
+                                    ? "bg-green-600 text-white hover:bg-green-700"
+                                    : "bg-blue-600 text-white hover:bg-blue-700"
+                                } disabled:opacity-50`}
+                              >
+                                {isProcessing
+                                  ? "Processing..."
+                                  : showActionConfirm === "mark_as_sold"
+                                  ? "Yes, Mark as Sold"
+                                  : "Yes, Pull it"}
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setShowActionConfirm(null);
+                                  setActionError(null);
+                                }}
+                                disabled={isProcessing}
+                                className="px-4 py-1.5 bg-gray-200 text-gray-700 rounded text-sm font-medium hover:bg-gray-300 transition-colors disabled:opacity-50"
+                              >
+                                No, Keep Listing
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Description */}
                 {listing.description && (

@@ -30,6 +30,34 @@ Review and refresh the app's design to create a distinct visual identity that st
 
 ## Pre-Launch Checklist
 
+### Form LLC Business Entity
+**Priority:** Critical
+**Status:** Pending
+
+Form an LLC to protect personal assets before opening the marketplace to the public. Required before finalizing Privacy Policy and Terms of Service.
+
+**Why It's Important:**
+- Marketplace handles money between users - higher liability risk
+- Protects personal assets from potential lawsuits
+- Required for professional ToS & Privacy Policy
+- Enables business banking and cleaner Stripe setup
+
+**Steps:**
+1. Choose LLC formation service (ZenBusiness, LegalZoom, or state website)
+2. File LLC in your state (~$50-500 depending on state)
+3. Obtain EIN from IRS (free, online)
+4. Open business bank account (optional but recommended)
+5. Update Stripe account to business entity (optional)
+
+**Estimated Cost:** $100-300 filing + potential annual fees (CA has $800/yr franchise tax)
+**Time:** Can be done online in 30 minutes, processing takes 1-2 weeks
+
+**Blocked Items:**
+- Privacy Policy (needs official business name)
+- Terms of Service (needs official business name)
+
+---
+
 ### Re-enable Live Hottest Books API
 **Priority:** Critical
 **Status:** Pending

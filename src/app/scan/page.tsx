@@ -14,6 +14,7 @@ import { storage, StorageQuotaError } from "@/lib/storage";
 import { ComicDetails, CollectionItem } from "@/types/comic";
 import { useToast } from "@/components/Toast";
 import { useGuestScans, MilestoneType } from "@/hooks/useGuestScans";
+import { useCollection } from "@/hooks/useCollection";
 import { Loader2, AlertCircle, ArrowLeft, Wand2, Check, Camera, Sparkles, ClipboardCheck, Save, ScanBarcode, PenLine, FileSpreadsheet, ZoomIn, X } from "lucide-react";
 import { analytics } from "@/components/PostHogProvider";
 
@@ -116,6 +117,7 @@ export default function ScanPage() {
   const { isSignedIn } = useUser();
   const { showToast } = useToast();
   const { isLimitReached, isGuest, incrementScan, count, markMilestoneShown } = useGuestScans();
+  const { addToCollection } = useCollection();
   const [state, setState] = useState<ScanState>("upload");
   const [imagePreview, setImagePreview] = useState<string>("");
   const [comicDetails, setComicDetails] = useState<ComicDetails | null>(null);
@@ -207,7 +209,7 @@ export default function ScanPage() {
     }
   };
 
-  const handleSave = (itemData: Partial<CollectionItem>) => {
+  const handleSave = async (itemData: Partial<CollectionItem>) => {
     setIsSaving(true);
 
     try {
@@ -234,7 +236,7 @@ export default function ScanPage() {
         isStarred: false,
       };
 
-      storage.addToCollection(newItem);
+      await addToCollection(newItem);
       setSavedComic(newItem);
       setState("saved");
 
@@ -752,11 +754,11 @@ export default function ScanPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
           <div className="w-full max-w-2xl">
             <CSVImport
-              onImportComplete={(items) => {
+              onImportComplete={async (items) => {
                 // Save all items to collection
-                items.forEach((item) => {
-                  storage.addToCollection(item);
-                });
+                for (const item of items) {
+                  await addToCollection(item);
+                }
                 showToast(`Successfully imported ${items.length} comics!`, "success");
                 setShowCSVImport(false);
                 router.push("/collection");

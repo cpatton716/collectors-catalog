@@ -76,16 +76,20 @@ When the user says **"Close up shop"**, perform the following steps:
    - Address any TODO comments created during the session
    - Ensure code follows project patterns and conventions
 2. **Update TEST_CASES.md** - Add test cases for any new features added during the session
-3. **Run tests** - Execute `npm run lint` and `npm run build` to ensure nothing is broken before committing
-4. **Commit all changes** - Stage and commit with a descriptive message summarizing the session's work
-5. **Update DEV_LOG.md** - Add an entry with:
+3. **Review ARCHITECTURE.md** - If the session added/modified pages, API routes, or service integrations:
+   - Update relevant sections to reflect changes
+   - Add new routes, features, or service dependencies
+   - Keep the document accurate as a living reference
+4. **Run tests** - Execute `npm run lint` and `npm run build` to ensure nothing is broken before committing
+5. **Commit all changes** - Stage and commit with a descriptive message summarizing the session's work
+6. **Update DEV_LOG.md** - Add an entry with:
    - Date
    - Session summary (what was accomplished)
    - Files added/modified (key ones only)
    - Any issues encountered and resolved
-6. **Update "Changes Since Last Deploy"** - Add session's changes to the tracking section in DEV_LOG.md
-7. **Highlight last item worked on** - Brief high-level summary of the main feature/fix
-8. **Evaluation status review** - Read EVALUATION.md and provide:
+7. **Update "Changes Since Last Deploy"** - Add session's changes to the tracking section in DEV_LOG.md
+8. **Highlight last item worked on** - Brief high-level summary of the main feature/fix
+9. **Evaluation status review** - Read EVALUATION.md and provide:
    - Current status of priority items
    - Recommended next steps for the next session
 

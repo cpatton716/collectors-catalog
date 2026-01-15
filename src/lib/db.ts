@@ -173,7 +173,107 @@ export async function getUserLists(profileId: string): Promise<UserList[]> {
   }));
 }
 
+export async function createList(profileId: string, name: string): Promise<UserList> {
+  const { data, error } = await supabase
+    .from("lists")
+    .insert({
+      user_id: profileId,
+      name,
+      description: "",
+      is_default: false,
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  return {
+    id: data.id,
+    name: data.name,
+    description: data.description,
+    isDefault: data.is_default,
+    createdAt: data.created_at,
+  };
+}
+
+export async function deleteList(listId: string): Promise<void> {
+  // First remove all comics from this list
+  await supabase.from("comic_lists").delete().eq("list_id", listId);
+
+  // Then delete the list (only if not default)
+  const { error } = await supabase
+    .from("lists")
+    .delete()
+    .eq("id", listId)
+    .eq("is_default", false);
+
+  if (error) throw error;
+}
+
+export async function addComicToList(comicId: string, listId: string): Promise<void> {
+  const { error } = await supabase
+    .from("comic_lists")
+    .insert({ comic_id: comicId, list_id: listId });
+
+  // Ignore duplicate key errors (comic already in list)
+  if (error && !error.message.includes("duplicate")) throw error;
+}
+
+export async function removeComicFromList(comicId: string, listId: string): Promise<void> {
+  const { error } = await supabase
+    .from("comic_lists")
+    .delete()
+    .eq("comic_id", comicId)
+    .eq("list_id", listId);
+
+  if (error) throw error;
+}
+
 // Sales
+export async function getUserSales(profileId: string): Promise<SaleRecord[]> {
+  const { data, error } = await supabase
+    .from("sales")
+    .select("*")
+    .eq("user_id", profileId)
+    .order("sale_date", { ascending: false });
+
+  if (error) throw error;
+
+  return (data || []).map((sale) => ({
+    id: sale.id,
+    comic: {
+      id: sale.id,
+      title: sale.comic_title,
+      issueNumber: sale.comic_issue_number,
+      variant: sale.comic_variant,
+      publisher: sale.comic_publisher,
+      coverArtist: null,
+      writer: null,
+      interiorArtist: null,
+      releaseYear: null,
+      confidence: "medium" as const,
+      isSlabbed: false,
+      gradingCompany: null,
+      grade: null,
+      certificationNumber: null,
+      labelType: null,
+      pageQuality: null,
+      gradeDate: null,
+      graderNotes: null,
+      isSignatureSeries: false,
+      signedBy: null,
+      priceData: null,
+      keyInfo: [],
+    },
+    coverImageUrl: sale.cover_image_url || "",
+    purchasePrice: sale.purchase_price,
+    salePrice: sale.sale_price,
+    saleDate: sale.sale_date,
+    profit: sale.profit,
+    buyerId: sale.buyer_id,
+  }));
+}
+
 export async function recordSale(
   profileId: string,
   item: CollectionItem,

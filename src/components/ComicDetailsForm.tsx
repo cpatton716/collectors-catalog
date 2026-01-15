@@ -1194,48 +1194,6 @@ export function ComicDetailsForm({
         </div>
       </div>
 
-      {/* For Sale */}
-      <div>
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={forSale}
-            onChange={(e) => {
-              const isChecked = e.target.checked;
-              setForSale(isChecked);
-              // Default asking price to estimated value when checking "For Sale"
-              if (isChecked && !askingPrice && comic.priceData?.estimatedValue) {
-                setAskingPrice(comic.priceData.estimatedValue.toFixed(2));
-              }
-            }}
-            className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
-          />
-          <span className="text-sm text-gray-700">List for Sale</span>
-        </label>
-
-        {forSale && (
-          <div className="mt-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Asking Price ($)
-            </label>
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              value={askingPrice}
-              onChange={(e) => setAskingPrice(e.target.value)}
-              className="w-full md:w-48 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white text-gray-900"
-              placeholder="e.g., 50.00"
-            />
-            {comic.priceData?.estimatedValue && (
-              <p className="text-xs text-gray-500 mt-1">
-                Estimated value: ${comic.priceData.estimatedValue.toFixed(2)}
-              </p>
-            )}
-          </div>
-        )}
-      </div>
-
       {/* Notes */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">

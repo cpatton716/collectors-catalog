@@ -2,7 +2,7 @@
 
 > **This document is the guiding light for development priorities. It takes precedence over BACKLOG.md.**
 
-*Last Updated: January 13, 2026 (Night)*
+*Last Updated: January 14, 2026 (Evening)*
 
 ---
 
@@ -41,10 +41,11 @@ Collectors Chest is a comic book collection tracking app with AI-powered cover r
 
 | Item | Status | Notes |
 |------|--------|-------|
-| **Cloud sync for signed-in users** | ❌ Missing | Collections stored in localStorage only - NOT synced across devices. DB schema exists, needs integration. |
+| **Cloud sync for signed-in users** | ✅ Done | Signed-in users now sync to Supabase; guests use localStorage |
+| **Form LLC business entity** | ❌ Missing | Required for liability protection & legal pages |
+| Privacy Policy page | ⏳ Blocked | Page structure done; waiting on LLC for official business name |
+| Terms of Service page | ⏳ Blocked | Page structure done; waiting on LLC for official business name |
 | Premium subscription billing | ❌ Missing | Stripe subscriptions, feature gating |
-| Privacy Policy page | ❌ Missing | Legal requirement for collecting user data |
-| Terms of Service page | ❌ Missing | Legal protection for marketplace |
 | Re-enable Clerk bot protection | ✅ Done | Re-enabled Jan 13, 2026 |
 
 ### High Priority
@@ -53,7 +54,7 @@ Collectors Chest is a comic book collection tracking app with AI-powered cover r
 |------|--------|-------|
 | Connect waitlist to Resend | ✅ Done | API route created, connected to Resend Contacts |
 | Test payment flows end-to-end | ❌ Untested | Auction bids, Buy Now, seller payouts |
-| Database backup strategy | ❌ Unconfirmed | Supabase backups enabled? |
+| Database backup strategy | ⚠️ Planned | **Upgrade to Supabase Pro ($25/mo) before opening registration** - daily backups + 7-day retention |
 | Rate limit on registered user scans | ❌ Missing | Currently unlimited for registered users |
 
 ### Medium Priority
@@ -63,7 +64,7 @@ Collectors Chest is a comic book collection tracking app with AI-powered cover r
 | Enable live Hottest Books API | ⚠️ Static | `USE_STATIC_LIST = true` in production |
 | Verify Resend DNS | ⚠️ Pending | May still be verifying |
 | Cost monitoring alerts | ❌ Missing | Alert on unusual AI usage |
-| Remove waitlist API debug info | ⚠️ Pending | Debug error details exposed in response (`src/app/api/waitlist/route.ts`) |
+| Remove waitlist API debug info | ✅ Done | Removed debug object from error responses |
 
 ---
 
@@ -399,26 +400,25 @@ Collectors Chest is a comic book collection tracking app with AI-powered cover r
 
 ### 🔴 Before Opening Registration (See Section 0)
 
-1. **Premium subscription billing** ⭐ CRITICAL
+1. **Form LLC Business Entity** ⭐ CRITICAL (DO FIRST)
+   - Protects personal assets for marketplace liability
+   - Required before finalizing ToS & Privacy Policy
+   - ~$100-300 filing fee + potential annual fees
+   - Effort: 30 min online, 1-2 weeks processing
+
+2. **Privacy Policy + Terms of Service pages** (BLOCKED BY #1)
+   - ✅ Page structure created (`/privacy`, `/terms`)
+   - ⏳ Waiting on LLC formation for official business name
+   - Generate final content via Termly after LLC
+   - Effort: 0.5 session after LLC
+
+3. **Premium subscription billing** ⭐ CRITICAL
    - Stripe subscriptions
    - Feature gating
    - No revenue without this
    - Effort: 1-2 sessions
 
-2. **Privacy Policy + Terms of Service pages**
-   - Legal requirement
-   - Can use templates
-   - Effort: 1 session
-
-3. **Re-enable Clerk bot protection** ⚡ QUICK WIN
-   - Clerk Dashboard → Attack Protection → Bot sign-up protection → ON
-   - Takes 2 minutes
-
-4. **Connect waitlist to Resend**
-   - Currently simulated - emails not being captured
-   - Effort: 0.5 session
-
-5. **Test payment flows end-to-end**
+4. **Test payment flows end-to-end**
    - Test auction bid flow
    - Test Buy Now flow
    - Test Stripe webhooks

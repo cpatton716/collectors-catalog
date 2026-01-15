@@ -6,14 +6,51 @@ This log tracks session-by-session progress on Collectors Chest.
 
 ## Changes Since Last Deploy
 
-**Sessions since last deploy:** 1
-**Deploy Readiness:** Ready (minor cleanup only)
+**Sessions since last deploy:** 2
+**Deploy Readiness:** Ready
 
 ### Accumulated Changes:
 - Debug logging removed from auctions API
 - "Let's get started" command added to CLAUDE.md
 - Critical env var check added to deploy process in CLAUDE.md
 - Test cases added for listing features
+- Fixed "Pull off the Shelf" not working (RLS bypass with supabaseAdmin)
+- Fixed React hydration mismatch in MobileNav
+- Added Privacy Policy page structure (`/privacy`)
+- Added Terms of Service page structure (`/terms`)
+- Added footer with legal links to homepage
+- Updated EVALUATION.md with LLC requirement
+- Updated BACKLOG.md with LLC formation task
+
+---
+
+## January 14, 2026 (Late Evening Session)
+
+### Session Summary
+Fixed production bugs with listing cancellation and hydration errors. Created legal page structure for Privacy Policy and Terms of Service. Researched LLC requirements for marketplace operation.
+
+### Key Accomplishments
+- **Bug Fix: Pull off the Shelf** - Fixed RLS blocking issue by using `supabaseAdmin` instead of `supabase` in `cancelAuction` function
+- **Bug Fix: Hydration Mismatch** - Added `hasMounted` state to MobileNav to prevent server/client render differences
+- **Legal Page Structure** - Created `/privacy` and `/terms` pages with placeholder content tailored to Collectors Chest
+- **Homepage Footer** - Added footer with Privacy Policy and Terms of Service links
+- **LLC Research** - Determined LLC formation is recommended for marketplace liability protection
+- **Documentation Updates** - Updated EVALUATION.md and BACKLOG.md to reflect LLC requirement and legal page dependencies
+
+### Issues Encountered
+- "Pull off the Shelf" returning 200 but not actually cancelling → Root cause: RLS policy blocking the update when using regular `supabase` client
+- React hydration error in MobileNav → Root cause: `isSignedIn` value differing between server and client
+
+### Files Added
+- `src/app/privacy/page.tsx` - Privacy Policy page with CCPA section
+- `src/app/terms/page.tsx` - Terms of Service page with marketplace terms
+
+### Files Modified
+- `src/components/MobileNav.tsx` - Added hasMounted state for hydration fix
+- `src/lib/auctionDb.ts` - Changed cancelAuction to use supabaseAdmin
+- `src/app/page.tsx` - Added footer with legal links
+- `EVALUATION.md` - Added LLC requirement, updated priorities
+- `BACKLOG.md` - Added LLC formation section
 
 ---
 

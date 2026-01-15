@@ -106,7 +106,12 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    const result = await cancelAuction(id, profile.id);
+
+    // Get reason from query params (optional)
+    const { searchParams } = new URL(request.url);
+    const reason = searchParams.get("reason") as "changed_mind" | "sold_elsewhere" | "price_too_low" | "other" | null;
+
+    const result = await cancelAuction(id, profile.id, reason || undefined);
 
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 400 });

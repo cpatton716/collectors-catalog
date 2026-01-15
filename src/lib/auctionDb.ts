@@ -139,8 +139,10 @@ export async function getAuction(
 
   const auction = transformDbAuction(data);
 
-  // Check if user is watching
+  // Check if user is the seller or watching
   if (userId) {
+    auction.isSeller = auction.sellerId === userId;
+
     const { data: watchData } = await supabase
       .from("auction_watchlist")
       .select("id")
@@ -185,15 +187,19 @@ export async function getActiveAuctions(
       comics(*)
     `,
       { count: "exact" }
-    )
-    .eq("status", "active");
+    );
+
+  // When filtering by sellerId, show all statuses (for My Listings page)
+  // Otherwise, only show active listings (for Shop page)
+  if (filters.sellerId) {
+    query = query.eq("seller_id", filters.sellerId);
+  } else {
+    query = query.eq("status", "active");
+  }
 
   // Apply filters
   if (filters.listingType) {
     query = query.eq("listing_type", filters.listingType);
-  }
-  if (filters.sellerId) {
-    query = query.eq("seller_id", filters.sellerId);
   }
   if (filters.minPrice !== undefined) {
     // For fixed_price, use starting_price; for auctions, use current_bid
@@ -352,7 +358,7 @@ export async function cancelAuction(
   // Check for existing bids
   const { data: auction } = await supabase
     .from("auctions")
-    .select("bid_count, listing_type")
+    .select("bid_count, listing_type, status")
     .eq("id", auctionId)
     .eq("seller_id", sellerId)
     .single();
@@ -361,12 +367,18 @@ export async function cancelAuction(
     return { success: false, error: "Listing not found" };
   }
 
+  // Already cancelled - return success
+  if (auction.status === "cancelled") {
+    return { success: true };
+  }
+
   // For auctions, check that there are no bids
   if (auction.listing_type === "auction" && auction.bid_count > 0) {
     return { success: false, error: "Cannot cancel auction with bids" };
   }
 
-  const { error } = await supabase
+  // Use supabaseAdmin to bypass RLS
+  const { error } = await supabaseAdmin
     .from("auctions")
     .update({
       status: "cancelled",

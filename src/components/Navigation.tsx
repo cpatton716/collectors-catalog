@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
-import { Camera, BookOpen, Home, LogIn, BarChart3, Brain, X, ChevronDown, ChevronUp, ShoppingBag } from "lucide-react";
+import { Camera, BookOpen, Home, LogIn, BarChart3, Brain, X, ChevronDown, ChevronUp, ShoppingBag, Gavel } from "lucide-react";
 import { NotificationBell } from "./NotificationBell";
 import { ChestIcon } from "./icons/ChestIcon";
 
@@ -93,6 +93,20 @@ export function Navigation() {
                   </Link>
                 );
               })}
+              {/* My Listings - signed in only */}
+              <SignedIn>
+                <Link
+                  href="/my-auctions"
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+                    pathname === "/my-auctions"
+                      ? "bg-primary-100 text-primary-700"
+                      : "text-gray-600 hover:bg-gray-100"
+                  }`}
+                >
+                  <Gavel className="w-5 h-5" />
+                  <span>My Listings</span>
+                </Link>
+              </SignedIn>
             </div>
 
             {/* Right side: Notifications + Professor + Auth */}

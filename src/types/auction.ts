@@ -85,6 +85,7 @@ export interface Auction {
   comic?: CollectionItem;
   seller?: SellerProfile;
   isWatching?: boolean;
+  isSeller?: boolean;
   userBid?: Bid | null;
 }
 

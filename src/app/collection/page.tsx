@@ -6,6 +6,7 @@ import { useUser } from "@clerk/nextjs";
 import { storage } from "@/lib/storage";
 import { calculateCollectionValue, getComicValue } from "@/lib/gradePrice";
 import { CollectionItem, UserList } from "@/types/comic";
+import { useCollection } from "@/hooks/useCollection";
 import { ComicCard } from "@/components/ComicCard";
 import { ComicListItem } from "@/components/ComicListItem";
 import { ComicDetailModal } from "@/components/ComicDetailModal";
@@ -48,38 +49,38 @@ export default function CollectionPage() {
   const router = useRouter();
   const { isSignedIn, isLoaded: authLoaded } = useUser();
   const { showToast } = useToast();
+
+  // Use the collection hook for cloud sync
+  const {
+    collection,
+    lists,
+    sales,
+    isLoading: collectionLoading,
+    isCloudEnabled,
+    addToCollection,
+    updateCollectionItem: updateItem,
+    removeFromCollection,
+    createList: createNewList,
+    addItemToList,
+    removeItemFromList,
+    recordSale,
+    getCollectionStats,
+    getSalesStats,
+  } = useCollection();
+
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
-  const [collection, setCollection] = useState<CollectionItem[]>([]);
-  const [lists, setLists] = useState<UserList[]>([]);
   const [selectedList, setSelectedList] = useState<string>("collection");
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState<SortOption>("date");
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [sortBy, setSortBy] = useState<SortOption>("issue");
   const [selectedItem, setSelectedItem] = useState<CollectionItem | null>(null);
   const [showStarredOnly, setShowStarredOnly] = useState(false);
   const [editingItem, setEditingItem] = useState<CollectionItem | null>(null);
   const [publisherFilter, setPublisherFilter] = useState<FilterOption>("all");
   const [titleFilter, setTitleFilter] = useState<FilterOption>("all");
-
-  const [salesStats, setSalesStats] = useState({ totalSales: 0, totalRevenue: 0, totalProfit: 0 });
   const [showShareModal, setShowShareModal] = useState(false);
 
-  useEffect(() => {
-    // Only load collection data for signed-in users
-    if (authLoaded && isSignedIn) {
-      setCollection(storage.getCollection());
-      setLists(storage.getLists());
-      setSalesStats(storage.getSalesStats());
-    } else if (authLoaded && !isSignedIn) {
-      // Clear data for logged-out users
-      setCollection([]);
-      setLists([]);
-      setSalesStats({ totalSales: 0, totalRevenue: 0, totalProfit: 0 });
-    }
-    if (authLoaded) {
-      setIsLoaded(true);
-    }
-  }, [authLoaded, isSignedIn]);
+  const salesStats = getSalesStats();
+  const isLoaded = authLoaded && !collectionLoading;
 
   // Get unique publishers and titles for filters
   const uniquePublishers = Array.from(new Set(collection.map(item => item.comic.publisher).filter((p): p is string => Boolean(p)))).sort();
@@ -172,74 +173,89 @@ export default function CollectionPage() {
     setSelectedItem(null);
   };
 
-  const handleRemove = (id: string) => {
+  const handleRemove = async (id: string) => {
     const item = collection.find((c) => c.id === id);
-    const updatedCollection = storage.removeFromCollection(id);
-    setCollection(updatedCollection);
-    showToast(`"${item?.comic.title}" removed from collection`, "success");
-  };
-
-  const handleAddToList = (itemId: string, listId: string) => {
-    const updatedCollection = storage.addItemToList(itemId, listId);
-    setCollection(updatedCollection);
-    const list = lists.find((l) => l.id === listId);
-    const item = updatedCollection.find((i) => i.id === itemId);
-    showToast(`Added to "${list?.name}"`, "success");
-    // Update the selected item to reflect the change
-    if (item) {
-      setSelectedItem(item);
+    try {
+      await removeFromCollection(id);
+      showToast(`"${item?.comic.title}" removed from collection`, "success");
+    } catch {
+      showToast("Failed to remove comic", "error");
     }
   };
 
-  const handleRemoveFromList = (itemId: string, listId: string) => {
-    const updatedCollection = storage.removeItemFromList(itemId, listId);
-    setCollection(updatedCollection);
+  const handleAddToList = async (itemId: string, listId: string) => {
     const list = lists.find((l) => l.id === listId);
-    showToast(`Removed from "${list?.name}"`, "info");
-    // Update the selected item to reflect the change
-    const updatedItem = updatedCollection.find((item) => item.id === itemId);
-    if (updatedItem) {
-      setSelectedItem(updatedItem);
+    try {
+      await addItemToList(itemId, listId);
+      showToast(`Added to "${list?.name}"`, "success");
+      // Update selected item view
+      const item = collection.find((i) => i.id === itemId);
+      if (item) {
+        setSelectedItem({ ...item, listIds: [...item.listIds, listId] });
+      }
+    } catch {
+      showToast("Failed to add to list", "error");
     }
   };
 
-  const handleCreateList = (name: string) => {
-    const newList = storage.createList(name);
-    setLists(storage.getLists());
-    showToast(`List "${name}" created`, "success");
-    return newList;
+  const handleRemoveFromList = async (itemId: string, listId: string) => {
+    const list = lists.find((l) => l.id === listId);
+    try {
+      await removeItemFromList(itemId, listId);
+      showToast(`Removed from "${list?.name}"`, "info");
+      // Update selected item view
+      const item = collection.find((i) => i.id === itemId);
+      if (item) {
+        setSelectedItem({ ...item, listIds: item.listIds.filter(id => id !== listId) });
+      }
+    } catch {
+      showToast("Failed to remove from list", "error");
+    }
   };
 
-  const handleMarkSold = (itemId: string, salePrice: number) => {
+  const handleCreateList = async (name: string) => {
+    try {
+      const newList = await createNewList(name);
+      showToast(`List "${name}" created`, "success");
+      return newList;
+    } catch {
+      showToast("Failed to create list", "error");
+      throw new Error("Failed to create list");
+    }
+  };
+
+  const handleMarkSold = async (itemId: string, salePrice: number) => {
     const item = collection.find((c) => c.id === itemId);
     if (item) {
       const profit = salePrice - (item.purchasePrice || 0);
-      storage.recordSale(item, salePrice);
-      setCollection(storage.getCollection());
-      setSalesStats(storage.getSalesStats());
-      setSelectedItem(null);
-      showToast(
-        `Sale recorded! ${profit >= 0 ? "Profit" : "Loss"}: $${Math.abs(profit).toFixed(2)}`,
-        profit >= 0 ? "success" : "info"
-      );
+      try {
+        await recordSale(item, salePrice);
+        setSelectedItem(null);
+        showToast(
+          `Sale recorded! ${profit >= 0 ? "Profit" : "Loss"}: $${Math.abs(profit).toFixed(2)}`,
+          profit >= 0 ? "success" : "info"
+        );
+      } catch {
+        showToast("Failed to record sale", "error");
+      }
     }
   };
 
-  const handleToggleStar = (itemId: string) => {
+  const handleToggleStar = async (itemId: string) => {
     const item = collection.find((c) => c.id === itemId);
     if (item) {
-      const updatedCollection = storage.updateCollectionItem(itemId, {
-        isStarred: !item.isStarred,
-      });
-      setCollection(updatedCollection);
-      showToast(
-        item.isStarred ? "Removed from favorites" : "Added to favorites",
-        "success"
-      );
-      // Update selected item if it's the one being toggled
-      const updatedItem = updatedCollection.find((c) => c.id === itemId);
-      if (updatedItem && selectedItem?.id === itemId) {
-        setSelectedItem(updatedItem);
+      try {
+        await updateItem(itemId, { isStarred: !item.isStarred });
+        showToast(
+          item.isStarred ? "Removed from favorites" : "Added to favorites",
+          "success"
+        );
+        // Update selected item if it's the one being toggled
+        if (selectedItem?.id === itemId) {
+          setSelectedItem({ ...item, isStarred: !item.isStarred });
+        }
+      } catch {
+        showToast("Failed to update", "error");
       }
     }
   };
@@ -249,15 +265,18 @@ export default function CollectionPage() {
     setEditingItem(item);
   };
 
-  const handleSaveEdit = (itemData: Partial<CollectionItem>) => {
+  const handleSaveEdit = async (itemData: Partial<CollectionItem>) => {
     if (editingItem) {
-      const updatedCollection = storage.updateCollectionItem(editingItem.id, {
-        ...itemData,
-        comic: itemData.comic || editingItem.comic,
-      });
-      setCollection(updatedCollection);
-      setEditingItem(null);
-      showToast("Changes saved", "success");
+      try {
+        await updateItem(editingItem.id, {
+          ...itemData,
+          comic: itemData.comic || editingItem.comic,
+        });
+        setEditingItem(null);
+        showToast("Changes saved", "success");
+      } catch {
+        showToast("Failed to save changes", "error");
+      }
     }
   };
 

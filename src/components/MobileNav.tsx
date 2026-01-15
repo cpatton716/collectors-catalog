@@ -4,15 +4,21 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import { Home, BookOpen, ShoppingBag, KeyRound } from "lucide-react";
+import { Home, BookOpen, ShoppingBag, KeyRound, Gavel } from "lucide-react";
 
 export function MobileNav() {
   const pathname = usePathname();
   const { isSignedIn } = useUser();
   const [showComingSoon, setShowComingSoon] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
+  const [hasMounted, setHasMounted] = useState(false);
   const lastScrollY = useRef(0);
   const scrollThreshold = 10; // Minimum scroll distance to trigger hide/show
+
+  // Track when component has mounted to avoid hydration mismatch
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -46,12 +52,16 @@ export function MobileNav() {
   const baseItems = [
     { href: "/", icon: Home, label: "Home" },
     { href: "/collection", icon: BookOpen, label: "Collection" },
-    { href: "/shop", icon: ShoppingBag, label: "Shop", comingSoon: true },
+    { href: "/shop", icon: ShoppingBag, label: "Shop" },
   ];
 
-  // Add Key Hunt for signed-in users (on right for thumb access)
-  const navItems = isSignedIn
-    ? [...baseItems, { href: "/key-hunt", icon: KeyRound, label: "Key Hunt" }]
+  // Add My Listings and Key Hunt for signed-in users (only after mount to avoid hydration mismatch)
+  const navItems = hasMounted && isSignedIn
+    ? [
+        ...baseItems,
+        { href: "/my-auctions", icon: Gavel, label: "Listings" },
+        { href: "/key-hunt", icon: KeyRound, label: "Key Hunt" },
+      ]
     : baseItems;
 
   const handleNavClick = (e: React.MouseEvent, item: typeof navItems[0]) => {

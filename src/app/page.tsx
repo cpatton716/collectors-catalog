@@ -979,6 +979,21 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {/* Footer */}
+      <footer className="mt-16 pt-8 border-t border-gray-200">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-gray-500">
+          <p>&copy; {new Date().getFullYear()} Collectors Chest. All rights reserved.</p>
+          <div className="flex items-center gap-6">
+            <Link href="/privacy" className="hover:text-gray-700 transition-colors">
+              Privacy Policy
+            </Link>
+            <Link href="/terms" className="hover:text-gray-700 transition-colors">
+              Terms of Service
+            </Link>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

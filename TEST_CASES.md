@@ -96,7 +96,20 @@ A guide for testing the main and secondary features of the application.
 | Remove from list | Click "Add to List" → Click checkmark on list | Comic removed from that list |
 | Slabbed auto-list | Add comic marked as "Professionally Graded" | Automatically added to "Slabbed" list |
 
-### 7. Mark as Sold
+### 7. Legal Pages
+
+**Location:** Footer links or direct URLs
+
+| Test Case | Steps | Expected Result |
+|-----------|-------|-----------------|
+| View Privacy Policy | Click "Privacy Policy" in footer or visit /privacy | Privacy Policy page loads with all sections |
+| View Terms of Service | Click "Terms of Service" in footer or visit /terms | Terms of Service page loads with all sections |
+| Navigate back from Privacy | On Privacy page, click "Back to Home" | Returns to homepage |
+| Navigate back from Terms | On Terms page, click "Back to Home" | Returns to homepage |
+| Cross-link between legal pages | On Privacy page, click "Terms of Service" in footer | Navigates to Terms page |
+| Cross-link between legal pages | On Terms page, click "Privacy Policy" in footer | Navigates to Privacy page |
+
+### 8. Mark as Sold
 
 **Location:** Collection → Comic Detail → "Mark as Sold"
 

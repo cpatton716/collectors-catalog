@@ -19,7 +19,19 @@ export async function GET(request: NextRequest) {
       filters.listingType = searchParams.get("listingType") as ListingType;
     }
     if (searchParams.get("sellerId")) {
-      filters.sellerId = searchParams.get("sellerId")!;
+      const sellerIdParam = searchParams.get("sellerId")!;
+      // Handle "me" to get current user's listings
+      if (sellerIdParam === "me") {
+        const { userId } = await auth();
+        if (userId) {
+          const profile = await getProfileByClerkId(userId);
+          if (profile) {
+            filters.sellerId = profile.id;
+          }
+        }
+      } else {
+        filters.sellerId = sellerIdParam;
+      }
     }
     if (searchParams.get("minPrice")) {
       filters.minPrice = Number(searchParams.get("minPrice"));
