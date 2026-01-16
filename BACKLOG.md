@@ -204,47 +204,15 @@ Add a username system so sellers can display a custom name instead of their emai
 
 ### Image Optimization & Resizing
 **Priority:** Medium
-**Status:** Pending
+**Status:** ✅ Complete (Jan 2026)
 
-Implement image optimization to prevent oversized images from breaking layouts and reduce storage/bandwidth costs.
+Client-side image compression implemented in ImageUpload component.
 
-**Current Issues:**
-- Large cover images (like Marvel.com high-res images) can break modal layouts
-- No image compression on upload
-- External URL images vary wildly in size
-
-**Recommended Solutions:**
-
-1. **Client-Side Resize on Upload**
-   - Resize images to max 800x1200 before uploading to Supabase
-   - Use canvas API or library like `browser-image-compression`
-   - Maintains quality while reducing file size by 70-90%
-
-2. **Server-Side Processing**
-   - Use Sharp or similar library in API routes
-   - Process images on upload before storing
-   - Generate multiple sizes (thumbnail, medium, full)
-
-3. **CDN with Image Transformation** (Recommended for scale)
-   - Cloudinary, imgix, or Cloudflare Images
-   - Transform images on-the-fly with URL parameters
-   - Automatic WebP conversion, lazy loading support
-   - Cost: ~$0-10/mo for current scale
-
-4. **Supabase Image Transformations**
-   - Supabase Storage has built-in image transformations
-   - Add `?width=800&height=1200` to image URLs
-   - Free with Supabase, but limited options
-
-**Implementation Priority:**
-1. Start with client-side resize (free, immediate impact)
-2. Add Supabase transformations for existing images
-3. Consider CDN if scaling beyond free tiers
-
-**Files to Update:**
-- `src/app/api/analyze/route.ts` - Where images are processed
-- `src/components/ImageUpload.tsx` (if exists) - Upload handling
-- Listing/auction modals - Image display
+**Implementation:**
+- `src/components/ImageUpload.tsx` - compressImage function
+- Max size: 15MB input, ~1.5MB target after compression
+- Max dimension: 2048px (resizes larger images)
+- Canvas-based compression maintains quality
 
 ---
 
@@ -285,27 +253,15 @@ Currently, when marking a comic as sold, users manually enter the sale price. On
 
 ### Custom SVG Icons & Branding
 **Priority:** High
-**Status:** Pending
+**Status:** ✅ Complete (Jan 2026)
 
-Replace default Lucide icons with custom SVG icons for brand identity, including a treasure chest logo.
+Custom treasure chest icon and full favicon set implemented.
 
-**Requirements:**
-- Custom treasure chest icon for header logo and favicon
-- Favicon set (16x16, 32x32, 180x180, 192x192, 512x512)
-- Icons should match Lucide style (24x24 viewBox, stroke-based, 2px stroke width)
-- Store in `/src/components/icons/` and `/public/icons/`
-
-**Files Ready:**
-- `/src/components/icons/index.tsx` - Template with specs created
-- `/public/icons/` - Directory created for favicon variants
-
-**Icon Sizes Used in App:**
-- w-3 h-3 (12px) - Tiny indicators
-- w-4 h-4 (16px) - Small UI elements
-- w-5 h-5 (20px) - Standard (most common)
-- w-6 h-6 (24px) - Navigation
-- w-8 h-8 (32px) - Modal titles
-- w-16 h-16 (64px) - Large modal icons
+**Implementation:**
+- `src/components/icons/ChestIcon.tsx` - Custom SVG treasure chest
+- Used in Navigation header and Sign-up page
+- Full favicon set in `public/icons/` (192x192, 512x512, maskable variants)
+- PWA shortcuts with custom icons
 
 ---
 
@@ -368,34 +324,36 @@ Investigate using GoCollect as a data provider for price data and hot books list
 
 ### eBay API Integration for Price History
 **Priority:** Medium
-**Status:** Pending
+**Status:** ✅ Complete (Jan 2026)
 
-Replace AI-generated price estimates with real market data from eBay's API. This will provide:
+Real market data from eBay's Browse API is now integrated:
 - Actual recent sales data for specific comics (title, issue, grade)
 - More accurate estimated values based on real transactions
-- Historical price trends over time
-- Better confidence in valuations for buying/selling decisions
+- AI fallback when no eBay data available
+- Redis caching to minimize API calls
 
-**Requirements:**
-- eBay Developer Account and API credentials
-- API integration for completed listings search
-- Caching layer to minimize API calls
-- Fallback to AI estimates when no eBay data available
+**Implementation:**
+- `src/app/api/ebay-prices/route.ts` - eBay Browse API integration
+- `src/lib/ebayPriceCache.ts` - Redis caching layer
+- Console logs show `[ebay-finding]` for debugging
 
 ---
 
 ### Shop Page for Books For Sale
 **Priority:** High
-**Status:** Pending
+**Status:** ✅ Complete (Jan 2026)
 
-Create a marketplace page where users can browse and purchase comics listed for sale by other users.
+Marketplace page where users can browse and purchase comics listed for sale.
 
-**Features:**
-- Grid view of all available listings
+**Features Implemented:**
+- Grid view of all available listings (Auctions + Buy Now tabs)
 - Search and filter by title, publisher, price range
 - Comic detail view with seller info
-- Secure checkout via Stripe Connect
-- Seller ratings/reviews (future)
+- Secure checkout via Stripe
+- Seller ratings/reviews system
+- Watchlist functionality
+
+**Files:** `/src/app/shop/page.tsx`, `/src/components/auction/*`
 
 ---
 
@@ -719,16 +677,14 @@ When converting to native mobile apps (iOS/Android), the cover image search feat
 
 ### Custom Chest SVG Icon
 **Priority:** Low
-**Status:** Pending
+**Status:** ✅ Complete (Jan 2026)
 
-Design and implement a custom treasure chest icon for the Collectors Chest branding.
+Custom treasure chest SVG implemented.
 
-**Requirements:**
-- Clean, simple design suitable for favicon and nav
-- Evokes treasure/collecting theme
-- Works at small sizes (16x16, 32x32)
-- SVG format for scalability
-- Consider animated version for loading states
+**Implementation:**
+- `src/components/icons/ChestIcon.tsx` - Full SVG with gradients
+- Used in Navigation and Sign-up pages
+- Works at all sizes (16px to 64px)
 
 ---
 

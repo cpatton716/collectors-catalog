@@ -81,7 +81,7 @@ Collectors Chest is a comic book collection tracking app with AI-powered cover r
 
 | Issue | Severity | Status |
 |-------|----------|--------|
-| No test suite (`npm test` fails) | 🟡 Medium | Missing |
+| Test suite (Jest) | 🟢 Added | 43 tests passing |
 | ESLint config | 🟢 Fixed | Working with Next.js defaults |
 | Viewport/themeColor metadata | 🟢 Fixed | Migrated to `export const viewport` |
 | Stripe webhook config export | 🟢 Fixed | Deprecated config removed |
@@ -92,13 +92,7 @@ Collectors Chest is a comic book collection tracking app with AI-powered cover r
 
 ### Remaining Work
 
-1. **Add test suite** - Important for preventing regressions
-   ```
-   npm install -D jest @testing-library/react @testing-library/jest-dom
-   ```
-   - Test auction bid logic
-   - Test authentication flows
-   - Test payment webhooks
+1. ~~**Add test suite**~~ ✅ Done - 43 tests covering auction helpers, guest scans, subscription constants
 
 ---
 

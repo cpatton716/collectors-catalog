@@ -6,11 +6,42 @@ This log tracks session-by-session progress on Collectors Chest.
 
 ## Changes Since Last Deploy
 
-**Sessions since last deploy:** 0
-**Deploy Readiness:** Just deployed
+**Sessions since last deploy:** 1
+**Deploy Readiness:** Ready
 
 ### Accumulated Changes:
-(none yet)
+- **Design system skill** - Created `.claude/skills/design-system.md` to prevent white-on-white text issues
+- **CLAUDE.md design standards** - Added quick reference table for safe text/background color combinations
+- **BACKLOG.md cleanup** - Marked 5 items as complete (eBay API, Shop Page, SVG Icons, Image Optimization, Custom Chest Icon)
+
+---
+
+## January 15, 2026 (Evening Session)
+
+### Session Summary
+Created a custom Claude Code design skill to prevent ongoing white-on-white text issues. Audited backlog and marked completed items.
+
+### Key Accomplishments
+- **Design System Skill** - Created `.claude/skills/design-system.md` with:
+  - Complete color palette documentation (primary, accent, neutrals)
+  - Critical rules for text/background combinations
+  - Safe color combinations quick reference table
+  - Component patterns (cards, buttons, form inputs)
+  - Dark mode vs light mode guidance
+  - Pre-commit UI checklist
+- **CLAUDE.md Updates** - Added design standards quick reference with explicit rules against white-on-white
+- **Backlog Audit** - Marked 5 items as complete that were already implemented
+
+### Files Added/Modified
+- `.claude/skills/design-system.md` (new)
+- `CLAUDE.md` (updated design standards section)
+- `BACKLOG.md` (marked completed items)
+
+### Issues Encountered
+None
+
+### Where We Left Off
+Design skill complete and ready for next deploy. User noted this needs to be deployed to Netlify at a later date.
 
 ---
 

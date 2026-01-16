@@ -82,8 +82,30 @@ describe('calculateNewPrice', () => {
 ```
 
 ## Design Standards
+
+**See `.claude/skills/design-system.md` for complete color palette and patterns.**
+
+### Core Rules
 1. Always keep mobile responsiveness part of all design decisions
 2. Ensure all design decisions are focused on a streamlined UX for the user
+3. **NEVER use `text-white` on light backgrounds** (`bg-white`, `bg-gray-50`, `bg-gray-100`)
+4. **NEVER use dark text on dark backgrounds** (`bg-gray-800`, `bg-gray-900`)
+
+### Quick Reference: Safe Text Colors
+| Background | Use These Text Colors |
+|------------|----------------------|
+| `bg-white` / `bg-gray-50` | `text-gray-900` (headings), `text-gray-600` (body), `text-gray-500` (muted) |
+| `bg-gray-800` / `bg-gray-900` | `text-white` (headings), `text-gray-300` (body), `text-gray-400` (muted) |
+| `bg-primary-600` / `bg-amber-600` | `text-white` only |
+
+### Before Completing Any UI Work
+Run a mental checklist:
+- [ ] No white text on white/light backgrounds
+- [ ] No dark text on dark backgrounds
+- [ ] Buttons have visible text contrast
+- [ ] Form labels and inputs are readable
+
+**Trigger "design check" to review the full design system.**
 
 ## Clipboard Usage
 **ALWAYS** copy content to the user's clipboard when they need to paste something somewhere (Supabase SQL, API keys, URLs, etc.):
