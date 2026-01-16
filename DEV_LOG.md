@@ -14,6 +14,35 @@ This log tracks session-by-session progress on Collectors Chest.
 
 ---
 
+## Deploy Log - January 15, 2026
+
+**Deployed to Netlify**
+
+### Changes Included:
+- **Email capture for guests** - Bonus scans in exchange for email (Resend integration)
+- **Basic test coverage** - Jest setup with 43 tests (auction, subscription, guest scans)
+- **Premium subscription billing** - Code complete (pending Stripe account setup)
+- **Feature gating** - Key Hunt, CSV Export, Stats, Listings gated by tier
+- **Pricing page** - Tier comparison with upgrade CTAs
+- **Scan limit enforcement** - Guest 5, Free 10/month, Premium unlimited
+- **CLAUDE.md updates** - Test requirements, Close Up Shop runs npm test
+
+### Files Added:
+- `jest.config.js`, `jest.setup.js` - Test framework
+- `src/types/__tests__/auction.test.ts` - 29 auction helper tests
+- `src/hooks/__tests__/useGuestScans.test.ts` - 9 guest scan tests
+- `src/lib/__tests__/subscription.test.ts` - 5 subscription tests
+- `src/components/EmailCaptureModal.tsx` - Email capture UI
+- `src/app/api/email-capture/route.ts` - Resend integration
+- `src/lib/subscription.ts` - Subscription logic
+- `src/hooks/useSubscription.ts` - Client subscription hook
+- `src/components/FeatureGate.tsx`, `UpgradeModal.tsx`, `TrialPrompt.tsx`
+- `src/components/ScanLimitBanner.tsx` - Scan usage display
+- `src/app/api/billing/*` - Checkout, portal, status routes
+- `src/app/pricing/page.tsx` - Pricing page
+
+---
+
 ## Deploy Log - January 14, 2026 (Late Evening)
 
 **Deployed to Netlify**
