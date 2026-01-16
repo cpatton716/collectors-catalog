@@ -38,9 +38,48 @@ When displaying the backlog (only when specifically requested), group items by s
 
 Show each group as a numbered list with titles only, no details.
 
-## New Feature Inteview
+## New Feature Interview
 1. Always interview me using the AskUserQuestionTool when a new feature is added
-2. always provide the full "Implementation Plan" before adding a new feature
+2. Always provide the full "Implementation Plan" before adding a new feature
+
+## Test Requirements
+
+**When adding new features, ALWAYS write unit tests for:**
+- Pure helper functions (calculations, formatting, validation)
+- Business logic (pricing, limits, permissions, state transitions)
+- Constants that affect user experience (scan limits, pricing tiers, thresholds)
+
+**Test file locations:**
+- `src/types/__tests__/` - Type helper tests (e.g., auction calculations)
+- `src/lib/__tests__/` - Library function tests (e.g., subscription logic)
+- `src/hooks/__tests__/` - Hook helper tests (e.g., guest scan tracking)
+
+**Test commands:**
+```bash
+npm test              # Run all tests
+npm test -- --watch   # Watch mode during development
+npm test -- [file]    # Run specific test file
+```
+
+**What to test:**
+- Edge cases and boundary conditions
+- Error states and validation failures
+- Happy path scenarios
+- Any function that handles money, limits, or permissions
+
+**What NOT to test (for now):**
+- React components (defer to manual testing)
+- API routes with database calls (require complex mocking)
+- Third-party integrations (Stripe, Clerk, Supabase)
+
+**Example:** When adding a new pricing calculation, write tests like:
+```typescript
+describe('calculateNewPrice', () => {
+  it('handles zero input', () => { ... });
+  it('handles boundary at $100', () => { ... });
+  it('returns correct value for typical input', () => { ... });
+});
+```
 
 ## Design Standards
 1. Always keep mobile responsiveness part of all design decisions
@@ -80,7 +119,7 @@ When the user says **"Close up shop"**, perform the following steps:
    - Update relevant sections to reflect changes
    - Add new routes, features, or service dependencies
    - Keep the document accurate as a living reference
-4. **Run tests** - Execute `npm run lint` and `npm run build` to ensure nothing is broken before committing
+4. **Run tests** - Execute `npm test`, `npm run lint`, and `npm run build` to ensure nothing is broken before committing
 5. **Commit all changes** - Stage and commit with a descriptive message summarizing the session's work
 6. **Update DEV_LOG.md** - Add an entry with:
    - Date

@@ -10,6 +10,7 @@ import { ComicDetailModal } from "@/components/ComicDetailModal";
 import { CollectionPageSkeleton } from "@/components/Skeleton";
 import { useToast } from "@/components/Toast";
 import { ArrowLeft, BarChart3, RefreshCw } from "lucide-react";
+import { FeatureGate } from "@/components/FeatureGate";
 
 export default function StatsPage() {
   const router = useRouter();
@@ -157,8 +158,10 @@ export default function StatsPage() {
         </button>
       </div>
 
-      {/* Stats Content */}
-      <CollectionStats collection={collection} onComicClick={handleComicClick} />
+      {/* Stats Content - Premium Feature */}
+      <FeatureGate feature="fullStats">
+        <CollectionStats collection={collection} onComicClick={handleComicClick} />
+      </FeatureGate>
 
       {/* Comic Detail Modal */}
       {selectedItem && (

@@ -40,6 +40,8 @@ import {
 } from "lucide-react";
 import { exportCollectionToCSV } from "@/lib/csvExport";
 import { ShareCollectionModal } from "@/components/ShareCollectionModal";
+import { FeatureButton, PremiumBadge } from "@/components/FeatureGate";
+import { useSubscription } from "@/hooks/useSubscription";
 
 type ViewMode = "grid" | "list";
 type SortOption = "date" | "title" | "value" | "issue";
@@ -49,6 +51,7 @@ export default function CollectionPage() {
   const router = useRouter();
   const { isSignedIn, isLoaded: authLoaded } = useUser();
   const { showToast } = useToast();
+  const { features } = useSubscription();
 
   // Use the collection hook for cloud sync
   const {
@@ -599,15 +602,15 @@ export default function CollectionPage() {
               </select>
             </div>
 
-            {/* Export CSV */}
-            <button
+            {/* Export CSV - Premium Feature */}
+            <FeatureButton
+              feature="csvExport"
               onClick={handleExportCSV}
-              title="Export current view to CSV"
               className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-700 transition-colors text-sm"
             >
               <Download className="w-4 h-4" />
               <span className="hidden sm:inline">Export CSV</span>
-            </button>
+            </FeatureButton>
 
             {/* Clear Filters */}
             {(publisherFilter !== "all" || titleFilter !== "all" || showStarredOnly || searchQuery || selectedList !== "collection") && (

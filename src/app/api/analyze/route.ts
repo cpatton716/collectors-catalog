@@ -1,11 +1,19 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { lookupEbaySoldPrices, isFindingApiConfigured } from "@/lib/ebayFinding";
 import { lookupCertification } from "@/lib/certLookup";
 import { supabase } from "@/lib/supabase";
+import { getProfileByClerkId } from "@/lib/db";
 import { PriceData } from "@/types/comic";
 import { rateLimiters, checkRateLimit, getRateLimitIdentifier } from "@/lib/rateLimit";
 import { cacheGet, cacheSet, generateEbayPriceCacheKey } from "@/lib/cache";
+import {
+  canUserScan,
+  incrementScanCount,
+  getSubscriptionStatus,
+  GUEST_SCAN_LIMIT,
+} from "@/lib/subscription";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -75,6 +83,9 @@ async function setCachedEbayPrice(
 }
 
 export async function POST(request: NextRequest) {
+  // Track profile for scan counting at the end
+  let profileId: string | null = null;
+
   try {
     // Rate limit check - protect expensive AI endpoint
     const identifier = getRateLimitIdentifier(null, request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip"));
@@ -83,6 +94,50 @@ export async function POST(request: NextRequest) {
       identifier
     );
     if (!rateLimitSuccess) return rateLimitResponse;
+
+    // ============================================
+    // Scan Limit Enforcement
+    // ============================================
+    const { userId } = await auth();
+
+    if (userId) {
+      // Registered user - check subscription limits
+      const profile = await getProfileByClerkId(userId);
+      if (profile) {
+        profileId = profile.id;
+        const canScan = await canUserScan(profile.id);
+
+        if (!canScan) {
+          const status = await getSubscriptionStatus(profile.id);
+          return NextResponse.json(
+            {
+              error: "scan_limit_reached",
+              message: "You've used all your scans for this month.",
+              scansUsed: status?.scansUsed || 0,
+              monthResetDate: status?.monthResetDate.toISOString(),
+              tier: status?.tier || "free",
+              canStartTrial: status?.tier === "free" && !status?.isTrialing,
+            },
+            { status: 403 }
+          );
+        }
+      }
+    } else {
+      // Guest user - check client-provided guest scan count
+      // Note: This is validated client-side, but we add server awareness for analytics
+      const guestScans = parseInt(request.headers.get("x-guest-scan-count") || "0");
+      if (guestScans >= GUEST_SCAN_LIMIT) {
+        return NextResponse.json(
+          {
+            error: "guest_limit_reached",
+            message: "You've used all your free scans. Create an account to continue.",
+            scansUsed: guestScans,
+            limit: GUEST_SCAN_LIMIT,
+          },
+          { status: 403 }
+        );
+      }
+    }
 
     const { image, mediaType } = await request.json();
 
@@ -799,6 +854,16 @@ Important:
       }
     } else {
       comicDetails.priceData = null;
+    }
+
+    // ============================================
+    // Increment Scan Count (after successful analysis)
+    // ============================================
+    if (profileId) {
+      // Fire and forget - don't block the response
+      incrementScanCount(profileId, "scan").catch((err) => {
+        console.error("Failed to increment scan count:", err);
+      });
     }
 
     return NextResponse.json(comicDetails);

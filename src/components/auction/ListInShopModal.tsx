@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   X,
   DollarSign,
@@ -15,6 +15,8 @@ import {
   Package,
   ToggleLeft,
   ToggleRight,
+  Crown,
+  ShoppingBag,
 } from "lucide-react";
 import { CollectionItem } from "@/types/comic";
 import {
@@ -22,6 +24,7 @@ import {
   MIN_STARTING_PRICE,
   AUCTION_DURATION_OPTIONS,
 } from "@/types/auction";
+import { useSubscription } from "@/hooks/useSubscription";
 
 type ListingMode = "sell" | "auction";
 
@@ -38,10 +41,35 @@ export function ListInShopModal({
   onClose,
   onCreated,
 }: ListInShopModalProps) {
+  const { features, startCheckout, isLoading: subscriptionLoading } = useSubscription();
   const [step, setStep] = useState(1);
   const [mode, setMode] = useState<ListingMode | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [listingLimitInfo, setListingLimitInfo] = useState<{
+    canCreate: boolean;
+    currentCount: number;
+    limit: number;
+  } | null>(null);
+  const [checkingLimit, setCheckingLimit] = useState(false);
+
+  // Check listing limit when modal opens
+  useEffect(() => {
+    if (isOpen && !features.unlimitedListings) {
+      setCheckingLimit(true);
+      fetch("/api/billing/status")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.listingInfo) {
+            setListingLimitInfo(data.listingInfo);
+          }
+        })
+        .catch(console.error)
+        .finally(() => setCheckingLimit(false));
+    } else if (isOpen && features.unlimitedListings) {
+      setListingLimitInfo({ canCreate: true, currentCount: 0, limit: 999999 });
+    }
+  }, [isOpen, features.unlimitedListings]);
 
   // Sell form state
   const [price, setPrice] = useState<string>("");
@@ -258,8 +286,54 @@ export function ListInShopModal({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4">
+          {/* Listing Limit Reached */}
+          {step === 1 && listingLimitInfo && !listingLimitInfo.canCreate && (
+            <div className="text-center py-6">
+              <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <ShoppingBag className="w-8 h-8 text-amber-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Listing Limit Reached
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Free accounts can have up to {listingLimitInfo.limit} active listings.
+                <br />
+                You currently have {listingLimitInfo.currentCount} listings.
+              </p>
+              <p className="text-sm text-gray-500 mb-6">
+                Upgrade to Premium for unlimited listings and lower fees!
+              </p>
+              <div className="space-y-3">
+                <button
+                  onClick={async () => {
+                    const url = await startCheckout("monthly", true);
+                    if (url) window.location.href = url;
+                  }}
+                  disabled={subscriptionLoading}
+                  className="w-full py-3 px-4 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  <Crown className="w-5 h-5" />
+                  Upgrade to Premium
+                </button>
+                <button
+                  onClick={handleClose}
+                  className="w-full py-2 text-gray-500 hover:text-gray-700 text-sm"
+                >
+                  Maybe later
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Loading listing limit check */}
+          {step === 1 && checkingLimit && (
+            <div className="flex items-center justify-center py-12">
+              <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+            </div>
+          )}
+
           {/* Step 1: Choose Mode */}
-          {step === 1 && (
+          {step === 1 && !checkingLimit && listingLimitInfo?.canCreate && (
             <div className="space-y-4">
               <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                 <img

@@ -14,6 +14,7 @@ import { OfflineIndicator, SyncNotification } from "@/components/OfflineIndicato
 import { KeyHuntOfflineSearch } from "@/components/KeyHuntOfflineSearch";
 import { KeyHuntHistoryList } from "@/components/KeyHuntHistoryList";
 import { KeyHuntHistoryDetail } from "@/components/KeyHuntHistoryDetail";
+import { FeatureGate } from "@/components/FeatureGate";
 import { ComicDetails, CollectionItem } from "@/types/comic";
 import { storage } from "@/lib/storage";
 import {
@@ -537,6 +538,7 @@ export default function KeyHuntPage() {
   };
 
   return (
+    <FeatureGate feature="keyHunt">
     <div className="min-h-screen bg-gray-900">
       {/* Offline Indicator */}
       {isOfflineMode && (
@@ -773,5 +775,6 @@ export default function KeyHuntPage() {
         />
       )}
     </div>
+    </FeatureGate>
   );
 }

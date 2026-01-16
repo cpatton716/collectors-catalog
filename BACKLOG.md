@@ -58,6 +58,68 @@ Form an LLC to protect personal assets before opening the marketplace to the pub
 
 ---
 
+### Create Stripe Account & Configure Billing
+**Priority:** Critical
+**Status:** Pending
+
+Set up Stripe account for subscription billing and marketplace payments.
+
+**Steps:**
+
+1. **Create Stripe Account**
+   - Go to [stripe.com](https://stripe.com) and sign up
+   - Complete business verification (can use personal info initially, update to LLC later)
+   - Get API keys from Dashboard → Developers → API keys
+
+2. **Create Subscription Products**
+   In Stripe Dashboard → Products, create:
+
+   | Product | Price | Type | Notes |
+   |---------|-------|------|-------|
+   | Premium Monthly | $4.99/month | Recurring | 7-day free trial enabled |
+   | Premium Annual | $49.99/year | Recurring | 7-day free trial enabled |
+   | Scan Pack (10 scans) | $1.99 | One-time | For free users who hit limit |
+
+3. **Add Environment Variables**
+   Add these to `.env.local` AND Netlify Environment Variables:
+   ```
+   STRIPE_SECRET_KEY=sk_live_xxx (or sk_test_xxx for testing)
+   STRIPE_WEBHOOK_SECRET=whsec_xxx
+   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_xxx (or pk_test_xxx)
+   STRIPE_PRICE_PREMIUM_MONTHLY=price_xxx
+   STRIPE_PRICE_PREMIUM_ANNUAL=price_xxx
+   STRIPE_PRICE_SCAN_PACK=price_xxx
+   ```
+
+4. **Configure Stripe Webhook**
+   - Go to Developers → Webhooks → Add endpoint
+   - URL: `https://collectors-chest.com/api/webhooks/stripe`
+   - Events to listen for:
+     - `checkout.session.completed`
+     - `checkout.session.expired`
+     - `customer.subscription.created`
+     - `customer.subscription.updated`
+     - `customer.subscription.deleted`
+     - `invoice.payment_succeeded`
+     - `invoice.payment_failed`
+   - Copy the signing secret to `STRIPE_WEBHOOK_SECRET`
+
+5. **Test Mode First**
+   - Use test API keys initially (`sk_test_`, `pk_test_`)
+   - Test with Stripe test cards (4242 4242 4242 4242)
+   - Verify webhook events are received
+   - Switch to live keys when ready for production
+
+**Related Code:**
+- Billing API routes: `src/app/api/billing/`
+- Webhook handler: `src/app/api/webhooks/stripe/route.ts`
+- Subscription logic: `src/lib/subscription.ts`
+
+**Blocked By:** None (can use test mode before LLC formation)
+**Blocks:** Live subscription billing, marketplace payments
+
+---
+
 ### Re-enable Live Hottest Books API
 **Priority:** Critical
 **Status:** Pending

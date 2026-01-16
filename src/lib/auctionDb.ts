@@ -26,6 +26,7 @@ import {
   calculateSellerReputation,
   getBidIncrement,
 } from "@/types/auction";
+import { getTransactionFeePercent, getSubscriptionStatus } from "./subscription";
 
 // ============================================================================
 // AUCTION CRUD
@@ -39,6 +40,12 @@ export async function createAuction(
   input: CreateAuctionInput
 ): Promise<Auction> {
   const listingType = input.listingType || "auction";
+
+  // Get seller's subscription tier and fee at time of listing
+  const subscriptionStatus = await getSubscriptionStatus(sellerId);
+  const sellerTier = subscriptionStatus?.tier || "free";
+  const isTrialing = subscriptionStatus?.isTrialing || false;
+  const feePercent = await getTransactionFeePercent(sellerId);
 
   // Support scheduled auctions with custom start date
   const startTime = input.startDate ? new Date(input.startDate) : new Date();
@@ -58,6 +65,8 @@ export async function createAuction(
       shipping_cost: input.shippingCost,
       detail_images: input.detailImages || [],
       description: input.description || null,
+      seller_tier: isTrialing ? "premium" : sellerTier, // Treat trialing as premium for fees
+      platform_fee_percent: feePercent,
     })
     .select()
     .single();
@@ -81,6 +90,12 @@ export async function createFixedPriceListing(
   sellerId: string,
   input: CreateFixedPriceListingInput
 ): Promise<Auction> {
+  // Get seller's subscription tier and fee at time of listing
+  const subscriptionStatus = await getSubscriptionStatus(sellerId);
+  const sellerTier = subscriptionStatus?.tier || "free";
+  const isTrialing = subscriptionStatus?.isTrialing || false;
+  const feePercent = await getTransactionFeePercent(sellerId);
+
   // Fixed-price listings expire after 30 days
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 30);
@@ -100,6 +115,8 @@ export async function createFixedPriceListing(
       description: input.description || null,
       accepts_offers: input.acceptsOffers || false,
       min_offer_amount: input.minOfferAmount || null,
+      seller_tier: isTrialing ? "premium" : sellerTier, // Treat trialing as premium for fees
+      platform_fee_percent: feePercent,
     })
     .select()
     .single();

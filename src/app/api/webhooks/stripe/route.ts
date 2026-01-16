@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { createNotification } from "@/lib/auctionDb";
+import {
+  getProfileByStripeCustomerId,
+  upgradeToPremium,
+  downgradeToFree,
+  updateSubscriptionStatus,
+  addPurchasedScans,
+  startTrial,
+  SCAN_PACK_AMOUNT,
+} from "@/lib/subscription";
 import Stripe from "stripe";
 
 // Initialize Stripe (conditionally)
@@ -43,15 +52,54 @@ export async function POST(request: NextRequest) {
 
     // Handle the event
     switch (event.type) {
+      // ============================================
+      // Checkout Events
+      // ============================================
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
-        await handleSuccessfulPayment(session);
+        await handleCheckoutCompleted(session);
         break;
       }
 
       case "checkout.session.expired": {
         const session = event.data.object as Stripe.Checkout.Session;
         console.log("Checkout session expired:", session.id);
+        break;
+      }
+
+      // ============================================
+      // Subscription Events
+      // ============================================
+      case "customer.subscription.created": {
+        const subscription = event.data.object as Stripe.Subscription;
+        await handleSubscriptionCreated(subscription);
+        break;
+      }
+
+      case "customer.subscription.updated": {
+        const subscription = event.data.object as Stripe.Subscription;
+        await handleSubscriptionUpdated(subscription);
+        break;
+      }
+
+      case "customer.subscription.deleted": {
+        const subscription = event.data.object as Stripe.Subscription;
+        await handleSubscriptionDeleted(subscription);
+        break;
+      }
+
+      // ============================================
+      // Invoice Events
+      // ============================================
+      case "invoice.payment_succeeded": {
+        const invoice = event.data.object as Stripe.Invoice;
+        await handleInvoicePaymentSucceeded(invoice);
+        break;
+      }
+
+      case "invoice.payment_failed": {
+        const invoice = event.data.object as Stripe.Invoice;
+        await handleInvoicePaymentFailed(invoice);
         break;
       }
 
@@ -69,13 +117,40 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function handleSuccessfulPayment(session: Stripe.Checkout.Session) {
-  const { auctionId, sellerId, buyerId } = session.metadata || {};
+// ============================================
+// Checkout Handlers
+// ============================================
 
-  if (!auctionId || !sellerId || !buyerId) {
-    console.error("Missing metadata in checkout session");
+async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+  const metadata = session.metadata || {};
+
+  // Check if this is a scan pack purchase
+  if (metadata.isScanPack === "true" && metadata.profileId) {
+    await handleScanPackPurchase(metadata.profileId);
     return;
   }
+
+  // Check if this is an auction payment (legacy flow)
+  if (metadata.auctionId && metadata.sellerId && metadata.buyerId) {
+    await handleAuctionPayment(metadata);
+    return;
+  }
+
+  // Subscription checkout is handled by subscription.created event
+  console.log("Checkout completed:", session.id, "mode:", session.mode);
+}
+
+async function handleScanPackPurchase(profileId: string) {
+  const result = await addPurchasedScans(profileId, SCAN_PACK_AMOUNT);
+  if (result.success) {
+    console.log(`Added ${SCAN_PACK_AMOUNT} scans to profile ${profileId}. Total: ${result.totalPurchased}`);
+  } else {
+    console.error(`Failed to add scans to profile ${profileId}`);
+  }
+}
+
+async function handleAuctionPayment(metadata: Record<string, string>) {
+  const { auctionId, sellerId, buyerId } = metadata;
 
   // Update auction payment status
   const { error: updateError } = await supabase
@@ -94,8 +169,130 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session) {
   // Notify seller
   await createNotification(sellerId, "payment_received", auctionId);
 
-  // Request rating from buyer (after a delay in production you'd use a scheduled job)
+  // Request rating from buyer
   await createNotification(buyerId, "rating_request", auctionId);
 
   console.log(`Payment completed for auction ${auctionId}`);
+}
+
+// ============================================
+// Subscription Handlers
+// ============================================
+
+async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
+  const customerId = subscription.customer as string;
+  const profile = await getProfileByStripeCustomerId(customerId);
+
+  if (!profile) {
+    console.error("No profile found for Stripe customer:", customerId);
+    return;
+  }
+
+  // Access current_period_end - may be on subscription directly or first item
+  const periodEnd = (subscription as unknown as { current_period_end?: number }).current_period_end
+    || subscription.items?.data?.[0]?.current_period_end
+    || Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60; // Default to 30 days
+  const currentPeriodEnd = new Date(periodEnd * 1000);
+
+  // Check if this is a trial
+  if (subscription.status === "trialing") {
+    await startTrial(profile.id);
+    console.log(`Trial started for profile ${profile.id}`);
+  }
+
+  // Upgrade to premium
+  await upgradeToPremium(profile.id, subscription.id, currentPeriodEnd);
+  console.log(`Subscription created for profile ${profile.id}`);
+}
+
+async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
+  const customerId = subscription.customer as string;
+  const profile = await getProfileByStripeCustomerId(customerId);
+
+  if (!profile) {
+    console.error("No profile found for Stripe customer:", customerId);
+    return;
+  }
+
+  // Access current_period_end - may be on subscription directly or first item
+  const periodEnd = (subscription as unknown as { current_period_end?: number }).current_period_end
+    || subscription.items?.data?.[0]?.current_period_end
+    || Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60;
+  const currentPeriodEnd = new Date(periodEnd * 1000);
+
+  // Map Stripe status to our status
+  let status: "active" | "trialing" | "past_due" | "canceled" = "active";
+  switch (subscription.status) {
+    case "trialing":
+      status = "trialing";
+      break;
+    case "past_due":
+      status = "past_due";
+      break;
+    case "canceled":
+    case "unpaid":
+      status = "canceled";
+      break;
+    default:
+      status = "active";
+  }
+
+  await updateSubscriptionStatus(profile.id, status, currentPeriodEnd);
+  console.log(`Subscription updated for profile ${profile.id}: ${status}`);
+}
+
+async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
+  const customerId = subscription.customer as string;
+  const profile = await getProfileByStripeCustomerId(customerId);
+
+  if (!profile) {
+    console.error("No profile found for Stripe customer:", customerId);
+    return;
+  }
+
+  // Downgrade to free tier
+  await downgradeToFree(profile.id);
+  console.log(`Subscription canceled for profile ${profile.id}, downgraded to free`);
+}
+
+// ============================================
+// Invoice Handlers
+// ============================================
+
+async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
+  // Only process subscription invoices
+  const subscriptionId = (invoice as unknown as { subscription?: string | null }).subscription;
+  if (!subscriptionId) return;
+
+  const customerId = invoice.customer as string;
+  const profile = await getProfileByStripeCustomerId(customerId);
+
+  if (!profile) {
+    console.error("No profile found for Stripe customer:", customerId);
+    return;
+  }
+
+  // Update subscription status to active (in case it was past_due)
+  await updateSubscriptionStatus(profile.id, "active");
+  console.log(`Invoice payment succeeded for profile ${profile.id}`);
+}
+
+async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
+  // Only process subscription invoices
+  const subscriptionId = (invoice as unknown as { subscription?: string | null }).subscription;
+  if (!subscriptionId) return;
+
+  const customerId = invoice.customer as string;
+  const profile = await getProfileByStripeCustomerId(customerId);
+
+  if (!profile) {
+    console.error("No profile found for Stripe customer:", customerId);
+    return;
+  }
+
+  // Mark subscription as past_due
+  await updateSubscriptionStatus(profile.id, "past_due");
+  console.log(`Invoice payment failed for profile ${profile.id}, marked as past_due`);
+
+  // TODO: Send email notification about failed payment via Resend
 }

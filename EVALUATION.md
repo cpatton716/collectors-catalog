@@ -2,7 +2,7 @@
 
 > **This document is the guiding light for development priorities. It takes precedence over BACKLOG.md.**
 
-*Last Updated: January 14, 2026 (Evening)*
+*Last Updated: January 15, 2026*
 
 ---
 
@@ -10,13 +10,13 @@
 
 Collectors Chest is a comic book collection tracking app with AI-powered cover recognition and a new auction marketplace feature. The app is currently in **Private Beta** with public registration disabled.
 
-**Overall Score: 8.2/10**
+**Overall Score: 8.4/10**
 
 **Current Status: PRIVATE BETA**
 - Site is live at collectors-chest.com
 - Public registration is DISABLED (waitlist only)
 - Existing accounts (developer) still work
-- Guests can use 10 free scans
+- Guests can use 5 free scans (sign up for 10/month)
 
 **Key Changes Since Last Evaluation:**
 - ✅ Fixed all code quality issues (ESLint, viewport metadata, Stripe webhook)
@@ -30,6 +30,11 @@ Collectors Chest is a comic book collection tracking app with AI-powered cover r
 - ✅ Offers system API routes
 - ✅ Email notifications via Resend
 - ✅ **DISABLED PUBLIC REGISTRATION** (private beta mode)
+- ⏳ **Premium subscription billing** (code complete, pending Stripe setup)
+- ✅ Scan limits for registered users (10/month free, unlimited premium)
+- ✅ Feature gating (Key Hunt, CSV Export, Stats, Listings)
+- ✅ Pricing page with tier comparison
+- ✅ Upgrade modals and trial prompts
 
 ---
 
@@ -45,7 +50,7 @@ Collectors Chest is a comic book collection tracking app with AI-powered cover r
 | **Form LLC business entity** | ❌ Missing | Required for liability protection & legal pages |
 | Privacy Policy page | ⏳ Blocked | Page structure done; waiting on LLC for official business name |
 | Terms of Service page | ⏳ Blocked | Page structure done; waiting on LLC for official business name |
-| Premium subscription billing | ❌ Missing | Stripe subscriptions, feature gating |
+| Premium subscription billing | ⏳ Code complete | Waiting on Stripe account setup |
 | Re-enable Clerk bot protection | ✅ Done | Re-enabled Jan 13, 2026 |
 
 ### High Priority
@@ -55,14 +60,14 @@ Collectors Chest is a comic book collection tracking app with AI-powered cover r
 | Connect waitlist to Resend | ✅ Done | API route created, connected to Resend Contacts |
 | Test payment flows end-to-end | ❌ Untested | Auction bids, Buy Now, seller payouts |
 | Database backup strategy | ⚠️ Planned | **Upgrade to Supabase Pro ($25/mo) before opening registration** - daily backups + 7-day retention |
-| Rate limit on registered user scans | ❌ Missing | Currently unlimited for registered users |
+| Rate limit on registered user scans | ✅ Done | Free: 10/month, Premium: unlimited |
 
 ### Medium Priority
 
 | Item | Status | Notes |
 |------|--------|-------|
 | Enable live Hottest Books API | ⚠️ Static | `USE_STATIC_LIST = true` in production |
-| Verify Resend DNS | ⚠️ Pending | May still be verifying |
+| Verify Resend DNS | ✅ Done | Verified Jan 15, 2026 |
 | Cost monitoring alerts | ❌ Missing | Alert on unusual AI usage |
 | Remove waitlist API debug info | ✅ Done | Removed debug object from error responses |
 
@@ -163,8 +168,8 @@ Collectors Chest is a comic book collection tracking app with AI-powered cover r
 ### Guest Experience Flow
 1. Land on home page → see features & "How It Works"
 2. Scan first comic → immediate value visibility
-3. Milestone prompts at scans 5, 7, 9 → conversion nudges
-4. Hit limit at 10 → sign-up wall
+3. Milestone prompts at scans 2, 3, 4 → conversion nudges
+4. Hit limit at 5 → sign-up wall (free account gets 10/month)
 
 ### What's Working
 - Clear value proposition on homepage
@@ -176,7 +181,7 @@ Collectors Chest is a comic book collection tracking app with AI-powered cover r
 
 | Issue | Status | Impact |
 |-------|--------|--------|
-| No email capture | ❌ Missing | Lose 100% of drop-offs |
+| Email capture | ✅ Done | Bonus scans for email at limit |
 | No re-engagement | ❌ Missing | Can't recover churned guests |
 | No social proof | ⚠️ Partial | No reviews/testimonials |
 | No demo mode | ❌ Missing | Can't explore without scanning |
@@ -214,7 +219,7 @@ Collectors Chest is a comic book collection tracking app with AI-powered cover r
 ### Our Unique Advantages
 1. **AI Cover Recognition** - No competitor has this
 2. **Built-in Marketplace** - Auction system is unique
-3. **Free tier generosity** - 10 scans vs 7-day trials
+3. **Free tier generosity** - 5 guest + 10/month free vs 7-day trials
 4. **Modern PWA** - Better mobile experience
 5. **Key Hunt mode** - Convention-optimized lookup
 
@@ -279,7 +284,7 @@ Collectors Chest is a comic book collection tracking app with AI-powered cover r
 
 ## 8. Feature Completeness
 
-**Score: 8/10** (up from 7/10)
+**Score: 8.5/10** (up from 8/10)
 
 | Feature | Status |
 |---------|--------|
@@ -299,6 +304,9 @@ Collectors Chest is a comic book collection tracking app with AI-powered cover r
 | Analytics (PostHog) | ✅ Complete |
 | Redis Caching | ✅ Complete |
 | Rate Limiting | ✅ Complete |
+| Subscription Billing | ⏳ Code Complete (needs Stripe) |
+| Feature Gating | ✅ Complete |
+| Pricing Page | ✅ Complete |
 | Price Alerts | ❌ Not Started |
 | Pull Lists | ❌ Not Started |
 | Email Notifications | ❌ Not Started |
@@ -307,12 +315,15 @@ Collectors Chest is a comic book collection tracking app with AI-powered cover r
 
 ## 9. Monetization Readiness
 
-**Score: 5/10**
+**Score: 7/10** (up from 5/10)
 
 ### Current State
-- Free tier with 10 scan limit
-- Auction marketplace (5% transaction fee potential)
-- No premium subscription implemented
+- Guest tier: 5 scans (localStorage)
+- Free tier: 10 scans/month (cloud sync)
+- Premium tier: Unlimited ($4.99/mo or $49.99/yr)
+- Scan packs: $1.99 for 10 scans
+- Auction marketplace (8% free / 5% premium transaction fee)
+- ⏳ Stripe account setup pending
 
 ### Premium Tier Value Props (Ready)
 - Unlimited scans
@@ -327,8 +338,9 @@ Collectors Chest is a comic book collection tracking app with AI-powered cover r
 ### Revenue Projection
 | Stream | Potential | Implementation |
 |--------|-----------|----------------|
-| Premium subscription ($5/mo) | High | Not started |
-| Auction fees (5%) | Medium | Ready |
+| Premium subscription ($4.99/mo) | High | ⏳ Code ready, needs Stripe |
+| Scan packs ($1.99/10 scans) | Medium | ⏳ Code ready, needs Stripe |
+| Auction fees (8%/5%) | Medium | ✅ Ready |
 | eBay affiliate links | Low | Not started |
 
 ---
@@ -363,12 +375,12 @@ Collectors Chest is a comic book collection tracking app with AI-powered cover r
 - [x] ~~Add error tracking (Sentry)~~ ✅ Done
 - [x] ~~Fix ESLint configuration~~ ✅ Done
 - [x] ~~Fix deprecated viewport metadata~~ ✅ Done
-- [ ] Add basic test coverage for critical paths
+- [x] ~~Add basic test coverage for critical paths~~ ✅ Done
 - [x] ~~Rate limiting on API routes~~ ✅ Done
 
 #### Should Have for Launch 🟡
 - [x] ~~Analytics (PostHog)~~ ✅ Done
-- [ ] Email capture for non-converting guests (Resend)
+- [x] ~~Email capture for non-converting guests (Resend)~~ ✅ Done
 - [x] ~~Complete "Buy Now" listings in Shop~~ ✅ Done
 - [x] ~~Redis caching (Upstash)~~ ✅ Done
 
@@ -377,7 +389,6 @@ Collectors Chest is a comic book collection tracking app with AI-powered cover r
 - [ ] Pull lists
 - [ ] Sales trend graphs
 - [ ] Shipping integration
-- [ ] Premium subscription billing
 
 ---
 
@@ -412,11 +423,16 @@ Collectors Chest is a comic book collection tracking app with AI-powered cover r
    - Generate final content via Termly after LLC
    - Effort: 0.5 session after LLC
 
-3. **Premium subscription billing** ⭐ CRITICAL
-   - Stripe subscriptions
-   - Feature gating
-   - No revenue without this
-   - Effort: 1-2 sessions
+3. **Premium subscription billing** ⏳ CODE COMPLETE
+   - ✅ Database migration (subscription fields, scan tracking, fee columns)
+   - ✅ Core logic (`src/lib/subscription.ts`)
+   - ✅ Billing API routes (checkout, portal, status)
+   - ✅ Stripe webhook handlers
+   - ✅ Scan enforcement (guest 5, free 10/month)
+   - ✅ Feature gating (Key Hunt, CSV Export, Stats, Listings)
+   - ✅ UI components (pricing page, upgrade modal, trial prompts)
+   - ✅ Transaction fees (8% free, 5% premium)
+   - ⏳ **Waiting on:** Stripe account setup (see BACKLOG.md)
 
 4. **Test payment flows end-to-end**
    - Test auction bid flow
@@ -440,6 +456,7 @@ Collectors Chest is a comic book collection tracking app with AI-powered cover r
 | Jan 9, 2026 (PM) | 6.6/10 | +Stats, +Export, +Offline, +Sharing, +PWA, +RLS |
 | Jan 11, 2026 (AM) | 6.8/10 | +Auctions, +Payments, -Code quality issues identified |
 | Jan 11, 2026 (PM) | 8.2/10 | +Sentry, +PostHog, +Rate limiting, +Redis cache, +Buy Now, +CGC/CBCS enhancements, Fixed all code quality issues |
+| Jan 15, 2026 | 8.4/10 | +Premium subscription billing (code complete), +Scan limits for registered users, +Feature gating, +Pricing page |
 
 ---
 
@@ -454,18 +471,19 @@ Collectors Chest is a comic book collection tracking app with AI-powered cover r
 - **Hosting:** Netlify
 
 ### Database Tables
-- `profiles` - User accounts
+- `profiles` - User accounts (+ subscription fields)
 - `comics` - Collection items
 - `lists` - Custom lists
 - `comic_lists` - Junction table
 - `sales` - Sale records
 - `comic_metadata` - Shared lookup cache
 - `ebay_price_cache` - eBay price cache
-- `auctions` - Auction listings (NEW)
-- `bids` - Bid history (NEW)
-- `auction_watchlist` - User watchlists (NEW)
-- `seller_ratings` - Reputation system (NEW)
-- `notifications` - In-app notifications (NEW)
+- `auctions` - Auction listings (+ seller_tier, platform_fee_percent)
+- `bids` - Bid history
+- `auction_watchlist` - User watchlists
+- `seller_ratings` - Reputation system
+- `notifications` - In-app notifications
+- `scan_usage` - Scan tracking for analytics (NEW)
 
 ### API Routes (30 total)
 - 9 core routes (analyze, lookup, import, etc.)
