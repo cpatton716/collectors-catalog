@@ -539,7 +539,7 @@ export default function KeyHuntPage() {
 
   return (
     <FeatureGate feature="keyHunt">
-    <div className="min-h-screen bg-gray-900">
+    <div className="min-h-screen bg-cc-ink">
       {/* Offline Indicator */}
       {isOfflineMode && (
         <OfflineIndicator
@@ -549,22 +549,22 @@ export default function KeyHuntPage() {
       )}
 
       {/* Header */}
-      <div className="bg-gradient-to-b from-amber-500 to-amber-600 px-4 py-6 safe-area-inset-top">
+      <div className="bg-gradient-to-b from-cc-gold to-cc-gold/80 px-4 py-6 safe-area-inset-top">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-              <KeyRound className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 bg-cc-ink/20 rounded-full flex items-center justify-center">
+              <KeyRound className="w-6 h-6 text-cc-ink" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white">Key Hunt</h1>
-              <p className="text-sm text-white/80">Quick Price Lookup</p>
+              <h1 className="font-display text-2xl text-cc-ink tracking-wide">KEY HUNT</h1>
+              <p className="text-sm text-cc-ink/70">Quick Price Lookup</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             {isOfflineMode && (
               <button
                 onClick={() => setFlow("offline-search")}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-white/20 rounded-full text-white text-sm"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-cc-ink/20 rounded-lg text-cc-ink text-sm font-medium"
               >
                 <Database className="w-4 h-4" />
                 Cached
@@ -572,7 +572,7 @@ export default function KeyHuntPage() {
             )}
             <button
               onClick={() => setFlow("history")}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/20 rounded-full text-white text-sm"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-cc-ink/20 rounded-lg text-cc-ink text-sm font-medium"
             >
               <History className="w-4 h-4" />
               Recent
@@ -584,12 +584,12 @@ export default function KeyHuntPage() {
       {/* Offline Search View */}
       {flow === "offline-search" && (
         <div className="flex-1">
-          <div className="p-4 border-b border-gray-700">
+          <div className="p-4 border-b border-cc-cream/10">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-medium text-white">Cached Lookups</h2>
+              <h2 className="text-lg font-medium text-cc-cream">Cached Lookups</h2>
               <button
                 onClick={() => setFlow("options")}
-                className="text-amber-400 text-sm"
+                className="text-cc-gold text-sm font-medium"
               >
                 Back
               </button>
@@ -620,10 +620,10 @@ export default function KeyHuntPage() {
 
       {/* Main content area for cover scan */}
       {flow === "cover-scan" && (
-        <div className="p-4">
+        <div className="p-4 bg-cc-cream rounded-t-2xl mt-4">
           <div className="text-center mb-4">
-            <p className="text-lg font-medium text-gray-900">Take a photo of the cover</p>
-            <p className="text-sm text-gray-600">We&apos;ll identify the comic and check if it&apos;s graded</p>
+            <p className="text-lg font-medium text-cc-ink">Take a photo of the cover</p>
+            <p className="text-sm text-cc-ink/60">We&apos;ll identify the comic and check if it&apos;s graded</p>
           </div>
           <ImageUpload
             onImageSelect={handleCoverImageSelect}
@@ -631,7 +631,7 @@ export default function KeyHuntPage() {
           />
           <button
             onClick={() => setFlow("options")}
-            className="mt-4 w-full py-3 text-gray-600 hover:text-gray-900 transition-colors"
+            className="mt-4 w-full py-3 text-cc-ink/60 hover:text-cc-ink transition-colors"
           >
             Cancel
           </button>
@@ -641,10 +641,10 @@ export default function KeyHuntPage() {
       {/* Analyzing state */}
       {flow === "cover-analyzing" && (
         <div className="flex-1 flex items-center justify-center p-8">
-          <div className="text-center text-white">
-            <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-amber-400" />
+          <div className="text-center text-cc-cream">
+            <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-cc-gold" />
             <p className="text-lg font-medium">Analyzing cover...</p>
-            <p className="text-sm text-gray-400 mt-2">Identifying comic and checking for grade</p>
+            <p className="text-sm text-cc-cream/60 mt-2">Identifying comic and checking for grade</p>
           </div>
         </div>
       )}
@@ -652,10 +652,10 @@ export default function KeyHuntPage() {
       {/* Barcode lookup state */}
       {flow === "barcode-lookup" && (
         <div className="flex-1 flex items-center justify-center p-8">
-          <div className="text-center text-white">
-            <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-amber-400" />
+          <div className="text-center text-cc-cream">
+            <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-cc-gold" />
             <p className="text-lg font-medium">Looking up comic...</p>
-            <p className="text-sm text-gray-400 mt-2">Finding details from barcode</p>
+            <p className="text-sm text-cc-cream/60 mt-2">Finding details from barcode</p>
           </div>
         </div>
       )}
@@ -663,10 +663,10 @@ export default function KeyHuntPage() {
       {/* Loading state */}
       {flow === "loading" && (
         <div className="flex-1 flex items-center justify-center p-8">
-          <div className="text-center text-white">
-            <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-amber-400" />
+          <div className="text-center text-cc-cream">
+            <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-cc-gold" />
             <p className="text-lg font-medium">Getting price...</p>
-            <p className="text-sm text-gray-400 mt-2">
+            <p className="text-sm text-cc-cream/60 mt-2">
               {pendingComic?.title} #{pendingComic?.issueNumber}
             </p>
           </div>

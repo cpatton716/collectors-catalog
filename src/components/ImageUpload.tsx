@@ -219,7 +219,7 @@ export function ImageUpload({ onImageSelect, disabled }: ImageUploadProps) {
     <div className="w-full">
       {preview ? (
         <div className="relative">
-          <div className="relative aspect-[2/3] max-w-sm mx-auto rounded-lg overflow-hidden shadow-lg">
+          <div className="relative aspect-[2/3] max-w-sm mx-auto rounded-lg overflow-hidden shadow-retro border-2 border-cc-ink/10">
             <img
               src={preview}
               alt="Comic cover preview"
@@ -228,7 +228,7 @@ export function ImageUpload({ onImageSelect, disabled }: ImageUploadProps) {
             {!disabled && (
               <button
                 onClick={clearImage}
-                className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-md"
+                className="absolute top-2 right-2 p-2 bg-cc-red text-white rounded-lg hover:bg-cc-red/80 transition-colors shadow-md"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -244,19 +244,19 @@ export function ImageUpload({ onImageSelect, disabled }: ImageUploadProps) {
             disabled={disabled}
             className={`
               w-full border-2 border-dashed rounded-xl p-8 text-center
-              transition-all duration-200 border-primary-400 bg-primary-50 hover:bg-primary-100
+              transition-all duration-200 border-cc-scanner/50 bg-cc-scanner/10 hover:bg-cc-scanner/20
               ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
             `}
           >
             <div className="flex flex-col items-center space-y-4">
-              <div className="p-4 rounded-full bg-primary-100">
-                <Camera className="w-10 h-10 text-primary-600" />
+              <div className="p-4 rounded-full bg-cc-scanner/20 glow-scanner">
+                <Camera className="w-10 h-10 text-cc-scanner" />
               </div>
               <div>
-                <p className="text-lg font-medium text-primary-700">
+                <p className="text-lg font-medium text-cc-scanner">
                   Take a Photo
                 </p>
-                <p className="text-sm text-primary-600 mt-1">
+                <p className="text-sm text-cc-ink/60 mt-1">
                   Opens your camera
                 </p>
               </div>
@@ -269,13 +269,13 @@ export function ImageUpload({ onImageSelect, disabled }: ImageUploadProps) {
             disabled={disabled}
             className={`
               w-full border-2 border-dashed rounded-xl p-6 text-center
-              transition-all duration-200 border-gray-400 hover:border-gray-500 hover:bg-gray-100
+              transition-all duration-200 border-cc-ink/20 hover:border-cc-ink/40 hover:bg-cc-ink/5
               ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
             `}
           >
             <div className="flex items-center justify-center gap-3">
-              <FolderOpen className="w-6 h-6 text-gray-600" />
-              <span className="text-gray-800 font-medium">Choose from Gallery</span>
+              <FolderOpen className="w-6 h-6 text-cc-ink/60" />
+              <span className="text-cc-ink font-medium">Choose from Gallery</span>
             </div>
           </button>
 
@@ -298,7 +298,7 @@ export function ImageUpload({ onImageSelect, disabled }: ImageUploadProps) {
             disabled={disabled}
           />
 
-          <p className="text-xs text-gray-400 text-center">
+          <p className="text-xs text-cc-ink/40 text-center">
             Supports: JPEG, JPG, PNG (max 10MB)
           </p>
         </div>
@@ -312,7 +312,7 @@ export function ImageUpload({ onImageSelect, disabled }: ImageUploadProps) {
           className={`
             drop-zone relative border-2 border-dashed rounded-xl p-8 text-center cursor-pointer
             transition-all duration-200
-            ${isDragging ? "dragging border-primary-500 bg-primary-50" : "border-gray-300 hover:border-primary-400 hover:bg-gray-50"}
+            ${isDragging ? "dragging border-cc-scanner bg-cc-scanner/10" : "border-cc-ink/20 hover:border-cc-scanner/50 hover:bg-cc-scanner/5"}
             ${disabled ? "opacity-50 cursor-not-allowed" : ""}
           `}
         >
@@ -327,25 +327,25 @@ export function ImageUpload({ onImageSelect, disabled }: ImageUploadProps) {
 
           <div className="flex flex-col items-center space-y-4">
             <div
-              className={`p-4 rounded-full ${isDragging ? "bg-primary-100" : "bg-gray-100"}`}
+              className={`p-4 rounded-full transition-all duration-200 ${isDragging ? "bg-cc-scanner/20 glow-scanner" : "bg-cc-ink/5"}`}
             >
               {isDragging ? (
-                <ImageIcon className="w-10 h-10 text-primary-600" />
+                <ImageIcon className="w-10 h-10 text-cc-scanner" />
               ) : (
-                <Upload className="w-10 h-10 text-gray-400" />
+                <Upload className="w-10 h-10 text-cc-ink/40" />
               )}
             </div>
 
             <div>
-              <p className="text-lg font-medium text-gray-700">
+              <p className="text-lg font-medium text-cc-ink">
                 {isDragging
                   ? "Drop your comic cover here"
                   : "Upload a comic book cover"}
               </p>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-cc-ink/60 mt-1">
                 Drag and drop or click to select
               </p>
-              <p className="text-xs text-gray-400 mt-2">
+              <p className="text-xs text-cc-ink/40 mt-2">
                 Supports: JPEG, JPG, PNG (max 10MB)
               </p>
             </div>
@@ -354,8 +354,8 @@ export function ImageUpload({ onImageSelect, disabled }: ImageUploadProps) {
       )}
 
       {error && (
-        <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-sm text-red-600">{error}</p>
+        <div className="mt-4 p-3 bg-cc-red/10 border-2 border-cc-red/30 rounded-lg">
+          <p className="text-sm text-cc-red">{error}</p>
         </div>
       )}
 

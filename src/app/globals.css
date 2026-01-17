@@ -2,29 +2,74 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================
+   RETRO-FUTURISTIC DESIGN SYSTEM
+   "Comic Book Era Meets AI Technology"
+   ============================================ */
+
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 249, 250, 251;
+  /* Core palette CSS variables */
+  --cc-ink: #0a0f1a;
+  --cc-cream: #faf6f1;
+  --cc-scanner: #00d4ff;
+  --cc-gold: #f59e0b;
+  --cc-red: #dc2626;
+  --cc-mint: #34d399;
+  --cc-purple: #8b5cf6;
+
+  /* Foreground/background for compatibility */
+  --foreground-rgb: 10, 15, 26;
+  --background-start-rgb: 250, 246, 241;
   --background-end-rgb: 255, 255, 255;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 17, 24, 39;
-    --background-end-rgb: 31, 41, 55;
+    --foreground-rgb: 250, 246, 241;
+    --background-start-rgb: 10, 15, 26;
+    --background-end-rgb: 26, 39, 68;
   }
 }
 
+/* ============================================
+   BASE STYLES
+   ============================================ */
+
 body {
   color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+  background: var(--cc-cream);
   min-height: 100vh;
+  font-feature-settings: "ss01", "ss02";
+}
+
+/* Subtle halftone texture overlay on main content areas */
+.halftone-bg {
+  position: relative;
+}
+
+.halftone-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(10, 15, 26, 0.04) 1px, transparent 1px);
+  background-size: 6px 6px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Noise texture for depth */
+.noise-texture {
+  position: relative;
+}
+
+.noise-texture::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 1;
 }
 
 @layer utilities {
@@ -33,30 +78,54 @@ body {
   }
 }
 
-/* Custom scrollbar */
+/* ============================================
+   TYPOGRAPHY UTILITIES
+   ============================================ */
+
+/* Display headings with comic book energy */
+.heading-display {
+  font-family: var(--font-bebas-neue), Impact, sans-serif;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+/* Price/data display with tech feel */
+.text-data {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================
+   SCROLLBAR STYLING
+   ============================================ */
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: var(--cc-cream);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
+  background: rgba(10, 15, 26, 0.2);
   border-radius: 4px;
+  border: 2px solid var(--cc-cream);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #a1a1a1;
+  background: rgba(10, 15, 26, 0.35);
 }
 
-/* Animation for loading states */
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+/* Loading pulse */
 @keyframes pulse {
-  0%,
-  100% {
+  0%, 100% {
     opacity: 1;
   }
   50% {
@@ -68,24 +137,65 @@ body {
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-/* Card hover effect */
-.comic-card {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+/* Scanner line sweep effect */
+@keyframes scanner-line {
+  0% {
+    top: -10%;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    top: 110%;
+    opacity: 0;
+  }
 }
 
-.comic-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+.scanner-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, transparent, var(--cc-scanner), transparent);
+  box-shadow: 0 0 20px var(--cc-scanner), 0 0 40px var(--cc-scanner);
+  animation: scanner-line 2s ease-in-out infinite;
+  z-index: 10;
 }
 
-/* Drop zone styling */
-.drop-zone {
-  transition: all 0.2s ease;
+/* Glow pulse for scanner/AI elements */
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(0, 212, 255, 0.6), 0 0 50px rgba(0, 212, 255, 0.3);
+  }
 }
 
-.drop-zone.dragging {
-  border-color: #3b82f6;
-  background-color: #eff6ff;
+.glow-scanner {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+/* Gold shimmer for values */
+@keyframes gold-shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.shimmer-gold {
+  background: linear-gradient(90deg, var(--cc-gold), #fbbf24, var(--cc-gold));
+  background-size: 200% 100%;
+  animation: gold-shimmer 3s ease-in-out infinite;
+  -webkit-background-clip: text;
+  background-clip: text;
 }
 
 /* Toast slide-in animation */
@@ -120,7 +230,118 @@ body {
   animation: slide-up 0.3s ease-out;
 }
 
-/* Skeleton loading animation */
+/* Stagger in animation for lists */
+@keyframes stagger-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-stagger-in {
+  animation: stagger-in 0.4s ease-out forwards;
+  opacity: 0;
+}
+
+/* Stagger delay utilities */
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+.stagger-5 { animation-delay: 0.25s; }
+.stagger-6 { animation-delay: 0.3s; }
+
+/* Number count-up effect */
+@keyframes count-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-count-up {
+  animation: count-up 0.5s ease-out forwards;
+}
+
+/* ============================================
+   COMIC CARD STYLES
+   ============================================ */
+
+.comic-card {
+  position: relative;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.25s ease;
+  will-change: transform, box-shadow;
+}
+
+.comic-card:hover {
+  transform: translateY(-8px) rotate(0.5deg);
+  box-shadow: 0 20px 40px rgba(10, 15, 26, 0.18),
+              0 8px 16px rgba(10, 15, 26, 0.1);
+}
+
+.comic-card:active {
+  transform: translateY(-4px) rotate(0deg);
+  transition-duration: 0.1s;
+}
+
+/* Comic card corner notches (subtle panel reference) */
+.comic-card-notch {
+  position: relative;
+}
+
+.comic-card-notch::before,
+.comic-card-notch::after {
+  content: "";
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(10, 15, 26, 0.1);
+  pointer-events: none;
+  z-index: 5;
+}
+
+.comic-card-notch::before {
+  top: 8px;
+  left: 8px;
+  border-right: none;
+  border-bottom: none;
+}
+
+.comic-card-notch::after {
+  bottom: 8px;
+  right: 8px;
+  border-left: none;
+  border-top: none;
+}
+
+/* ============================================
+   DROP ZONE STYLING
+   ============================================ */
+
+.drop-zone {
+  transition: all 0.25s ease;
+  border: 2px dashed rgba(10, 15, 26, 0.2);
+}
+
+.drop-zone.dragging {
+  border-color: var(--cc-scanner);
+  background-color: rgba(0, 212, 255, 0.05);
+  box-shadow: inset 0 0 30px rgba(0, 212, 255, 0.1);
+}
+
+/* ============================================
+   SKELETON LOADING
+   ============================================ */
+
 @keyframes shimmer {
   0% {
     background-position: -200% 0;
@@ -131,7 +352,188 @@ body {
 }
 
 .skeleton {
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background: linear-gradient(
+    90deg,
+    rgba(10, 15, 26, 0.06) 25%,
+    rgba(10, 15, 26, 0.1) 50%,
+    rgba(10, 15, 26, 0.06) 75%
+  );
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
+}
+
+/* ============================================
+   BUTTON STYLES
+   ============================================ */
+
+/* Primary scanner-themed button */
+.btn-scanner {
+  background: linear-gradient(135deg, var(--cc-scanner), #00a8cc);
+  color: var(--cc-ink);
+  font-weight: 600;
+  border: none;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.btn-scanner:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 212, 255, 0.35);
+}
+
+.btn-scanner:active {
+  transform: translateY(0);
+}
+
+/* Gold/premium button */
+.btn-gold {
+  background: linear-gradient(135deg, var(--cc-gold), #d97706);
+  color: var(--cc-ink);
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.btn-gold:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(245, 158, 11, 0.35);
+}
+
+/* Retro outline button */
+.btn-retro {
+  background: transparent;
+  border: 2px solid var(--cc-ink);
+  color: var(--cc-ink);
+  font-weight: 600;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.btn-retro:hover {
+  background: var(--cc-ink);
+  color: var(--cc-cream);
+  box-shadow: 4px 4px 0 rgba(10, 15, 26, 0.3);
+}
+
+/* ============================================
+   BADGE STYLES
+   ============================================ */
+
+/* Price badge with slight tilt */
+.badge-price {
+  transform: rotate(-2deg);
+  background: var(--cc-ink);
+  color: var(--cc-cream);
+  font-family: var(--font-jetbrains-mono), monospace;
+  box-shadow: 2px 2px 0 rgba(10, 15, 26, 0.2);
+}
+
+/* Condition badge */
+.badge-condition {
+  background: linear-gradient(135deg, var(--cc-scanner), #0891b2);
+  color: var(--cc-ink);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* For sale ribbon */
+.badge-for-sale {
+  background: var(--cc-mint);
+  color: var(--cc-ink);
+  font-weight: 700;
+}
+
+/* ============================================
+   INPUT STYLES
+   ============================================ */
+
+.input-retro {
+  background: white;
+  border: 2px solid rgba(10, 15, 26, 0.15);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.input-retro:focus {
+  border-color: var(--cc-scanner);
+  box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.15);
+  outline: none;
+}
+
+.input-retro::placeholder {
+  color: rgba(10, 15, 26, 0.4);
+}
+
+/* ============================================
+   SPECIAL EFFECTS
+   ============================================ */
+
+/* Scanner processing overlay */
+.scanner-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(0, 212, 255, 0.1) 50%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+/* Value highlight glow */
+.value-glow {
+  text-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+}
+
+/* Graded comic special frame */
+.graded-frame {
+  border: 3px solid var(--cc-purple);
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+}
+
+/* High-value comic indicator */
+.high-value-indicator {
+  position: relative;
+}
+
+.high-value-indicator::after {
+  content: "";
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 12px;
+  height: 12px;
+  background: var(--cc-gold);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--cc-gold);
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+/* ============================================
+   RESPONSIVE UTILITIES
+   ============================================ */
+
+/* Touch-friendly tap targets */
+@media (pointer: coarse) {
+  .touch-target {
+    min-height: 48px;
+    min-width: 48px;
+  }
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .comic-card:hover {
+    transform: none;
+  }
 }

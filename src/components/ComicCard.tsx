@@ -19,6 +19,9 @@ export function ComicCard({ item, onClick, onToggleStar, onEdit }: ComicCardProp
   const hasProfitData = estimatedValue > 0 && purchasePrice > 0;
   const profitLoss = hasProfitData ? estimatedValue - purchasePrice : 0;
 
+  // High value threshold (comics worth $100+)
+  const isHighValue = estimatedValue >= 100;
+
   const handleStarClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onToggleStar?.(item.id);
@@ -32,10 +35,12 @@ export function ComicCard({ item, onClick, onToggleStar, onEdit }: ComicCardProp
   return (
     <div
       onClick={onClick}
-      className="comic-card bg-white rounded-xl shadow-md overflow-hidden cursor-pointer group"
+      className={`comic-card comic-card-notch bg-cc-cream rounded-xl overflow-hidden cursor-pointer group border border-cc-ink/5 ${
+        isHighValue ? "high-value-indicator" : ""
+      }`}
     >
       {/* Cover Image */}
-      <div className="relative aspect-[2/3] bg-gray-100">
+      <div className="relative aspect-[2/3] bg-cc-ink/5">
         {coverImageUrl ? (
           <img
             src={coverImageUrl}
@@ -43,35 +48,35 @@ export function ComicCard({ item, onClick, onToggleStar, onEdit }: ComicCardProp
             className="w-full h-full object-cover"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gray-900 text-4xl">
-              <span className="text-green-400 font-bold italic drop-shadow-[0_0_8px_rgba(74,222,128,0.6)]">?</span>
-            </div>
+          <div className="w-full h-full flex items-center justify-center bg-cc-ink">
+            <span className="text-4xl font-display text-cc-scanner drop-shadow-[0_0_12px_rgba(0,212,255,0.6)]">?</span>
+          </div>
         )}
 
-        {/* Badges */}
-        <div className="absolute top-2 left-2 flex flex-col gap-1">
+        {/* Badges - Top Left */}
+        <div className="absolute top-2 left-2 flex flex-col gap-1.5">
           {forSale && (
-            <span className="px-2 py-1 bg-green-500 text-white text-xs font-semibold rounded-full flex items-center gap-1">
+            <span className="badge-for-sale px-2 py-1 text-xs font-bold rounded flex items-center gap-1 shadow-retro-sm">
               <Tag className="w-3 h-3" />
               For Sale
             </span>
           )}
           {conditionLabel && (
-            <span className="px-2 py-1 bg-blue-500 text-white text-xs font-semibold rounded-full">
+            <span className="badge-condition px-2 py-1 text-[10px] font-bold rounded shadow-sm">
               {conditionLabel}
             </span>
           )}
         </div>
 
         {/* Quick Actions - Show on hover */}
-        <div className="absolute top-2 right-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+        <div className="absolute top-2 right-2 flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-x-2 group-hover:translate-x-0">
           {onToggleStar && (
             <button
               onClick={handleStarClick}
-              className={`p-2 rounded-full transition-colors ${
+              className={`p-2 rounded-lg transition-all duration-200 shadow-md ${
                 item.isStarred
-                  ? "bg-yellow-500 text-white"
-                  : "bg-white/90 text-gray-600 hover:bg-yellow-100 hover:text-yellow-600"
+                  ? "bg-cc-gold text-cc-ink shadow-gold"
+                  : "bg-cc-cream/95 text-cc-ink/60 hover:bg-cc-gold/20 hover:text-cc-gold"
               }`}
               title={item.isStarred ? "Remove from favorites" : "Add to favorites"}
             >
@@ -81,7 +86,7 @@ export function ComicCard({ item, onClick, onToggleStar, onEdit }: ComicCardProp
           {onEdit && (
             <button
               onClick={handleEditClick}
-              className="p-2 bg-white/90 text-gray-600 rounded-full hover:bg-blue-100 hover:text-blue-600 transition-colors"
+              className="p-2 bg-cc-cream/95 text-cc-ink/60 rounded-lg hover:bg-cc-scanner/20 hover:text-cc-scanner transition-all duration-200 shadow-md"
               title="Edit details"
             >
               <Pencil className="w-4 h-4" />
@@ -89,19 +94,19 @@ export function ComicCard({ item, onClick, onToggleStar, onEdit }: ComicCardProp
           )}
         </div>
 
-        {/* Price/Profit Badge */}
-        <div className="absolute bottom-2 right-2 flex flex-col gap-1 items-end">
+        {/* Price/Profit Badge - Bottom Right */}
+        <div className="absolute bottom-2 right-2 flex flex-col gap-1.5 items-end">
           {estimatedValue > 0 && (
-            <span className="px-2 py-1 bg-black/70 text-white text-xs font-bold rounded-lg flex items-center gap-1">
-              <DollarSign className="w-3 h-3" />
-              {estimatedValue.toFixed(0)}
+            <span className="badge-price px-2.5 py-1 text-xs font-bold rounded-lg flex items-center gap-1">
+              <DollarSign className="w-3 h-3 text-cc-gold" />
+              <span className="font-mono">{estimatedValue.toFixed(0)}</span>
             </span>
           )}
           {hasProfitData && (
-            <span className={`px-2 py-0.5 text-xs font-semibold rounded-lg flex items-center gap-0.5 ${
+            <span className={`px-2 py-0.5 text-xs font-bold rounded flex items-center gap-0.5 font-mono ${
               profitLoss >= 0
-                ? "bg-green-500 text-white"
-                : "bg-red-500 text-white"
+                ? "bg-cc-mint text-cc-ink"
+                : "bg-cc-red text-white"
             }`}>
               {profitLoss >= 0 ? (
                 <TrendingUp className="w-3 h-3" />
@@ -113,27 +118,27 @@ export function ComicCard({ item, onClick, onToggleStar, onEdit }: ComicCardProp
           )}
         </div>
 
-        {/* Hover Overlay */}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200 pointer-events-none" />
+        {/* Hover Overlay with subtle scanner effect */}
+        <div className="absolute inset-0 bg-gradient-to-t from-cc-ink/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
       </div>
 
-      {/* Info */}
-      <div className="p-3">
-        <h3 className="font-semibold text-gray-900 truncate">
+      {/* Info Section */}
+      <div className="p-3 border-t border-cc-ink/5">
+        <h3 className="font-display text-lg text-cc-ink truncate tracking-wide">
           {comic.title || "Unknown Title"}
         </h3>
-        <div className="flex items-center justify-between mt-1">
-          <p className="text-sm text-gray-600">
+        <div className="flex items-center justify-between mt-0.5">
+          <p className="text-sm text-cc-ink/70 font-mono">
             #{comic.issueNumber || "?"}
             {comic.variant && (
-              <span className="text-gray-400 ml-1">({comic.variant})</span>
+              <span className="text-cc-ink/40 ml-1 font-sans text-xs">({comic.variant})</span>
             )}
           </p>
           {item.isStarred && (
-            <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+            <Star className="w-4 h-4 text-cc-gold fill-cc-gold" />
           )}
         </div>
-        <p className="text-xs text-gray-500 mt-1 truncate">
+        <p className="text-xs text-cc-ink/50 mt-1 truncate">
           {comic.publisher || "Unknown Publisher"}
           {comic.releaseYear && ` • ${comic.releaseYear}`}
         </p>

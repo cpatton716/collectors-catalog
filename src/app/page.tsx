@@ -283,10 +283,10 @@ export default function Home() {
     <div className="max-w-6xl mx-auto">
       {/* Hero Section */}
       <div className="text-center py-12">
-        <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-          {isLoaded && isSignedIn ? "A Look in Your Chest" : "Catalog Your Collection"}
+        <h1 className="font-display text-5xl md:text-6xl text-cc-ink mb-4 tracking-wide">
+          {isLoaded && isSignedIn ? "A LOOK IN YOUR CHEST" : "CATALOG YOUR COLLECTION"}
         </h1>
-        <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-8">
+        <p className="text-xl text-cc-ink/70 max-w-2xl mx-auto mb-8">
           {isLoaded && isSignedIn
             ? "Your collection at a glance. Track value changes, see your best investments, and discover what's hot in the market."
             : "Scan covers with technopathic recognition, track your collection's value, discover key issues, and connect with fellow collectors to buy and sell."}
@@ -296,7 +296,7 @@ export default function Home() {
         <div className="flex items-center justify-center gap-4 mb-12">
           <Link
             href="/scan"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition-colors shadow-lg shadow-primary-600/25"
+            className="inline-flex items-center gap-2 px-6 py-3 btn-scanner rounded-lg font-semibold shadow-retro hover:shadow-scanner transition-all duration-200"
           >
             <Camera className="w-5 h-5" />
             {isLoaded && isSignedIn
@@ -315,15 +315,15 @@ export default function Home() {
             {biggestIncrease && (
               <button
                 onClick={() => setShowBiggestIncrease(true)}
-                className="bg-white rounded-xl p-4 shadow-sm border border-green-200 hover:shadow-md hover:border-green-300 transition-all text-left"
+                className="bg-cc-cream rounded-xl p-4 shadow-sm border-2 border-cc-mint/30 hover:shadow-md hover:border-cc-mint/50 transition-all text-left comic-card"
               >
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2 bg-green-100 rounded-lg">
-                    <TrendingUp className="w-5 h-5 text-green-600" />
+                  <div className="p-2 bg-cc-mint/20 rounded-lg">
+                    <TrendingUp className="w-5 h-5 text-cc-mint" />
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500">Biggest Increase</p>
-                    <p className="text-lg font-bold text-green-600">
+                    <p className="text-xs text-cc-ink/50 uppercase tracking-wide">Biggest Increase</p>
+                    <p className="text-lg font-bold text-cc-mint font-mono">
                       +${biggestIncrease.change.toFixed(2)}
                     </p>
                   </div>
@@ -333,14 +333,14 @@ export default function Home() {
                     <img
                       src={biggestIncrease.item.coverImageUrl}
                       alt=""
-                      className="w-10 h-14 object-cover rounded"
+                      className="w-10 h-14 object-cover rounded shadow-sm"
                     />
                   )}
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">
+                    <p className="text-sm font-medium text-cc-ink truncate">
                       {biggestIncrease.item.comic.title}
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-cc-ink/50 font-mono">
                       #{biggestIncrease.item.comic.issueNumber}
                     </p>
                   </div>
@@ -352,15 +352,15 @@ export default function Home() {
             {bestBuy && (
               <button
                 onClick={() => setShowBestBuy(true)}
-                className="bg-white rounded-xl p-4 shadow-sm border border-purple-200 hover:shadow-md hover:border-purple-300 transition-all text-left"
+                className="bg-cc-cream rounded-xl p-4 shadow-sm border-2 border-cc-purple/30 hover:shadow-md hover:border-cc-purple/50 transition-all text-left comic-card"
               >
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2 bg-purple-100 rounded-lg">
-                    <Trophy className="w-5 h-5 text-purple-600" />
+                  <div className="p-2 bg-cc-purple/20 rounded-lg">
+                    <Trophy className="w-5 h-5 text-cc-purple" />
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500">Best Buy</p>
-                    <p className="text-lg font-bold text-purple-600">
+                    <p className="text-xs text-cc-ink/50 uppercase tracking-wide">Best Buy</p>
+                    <p className="text-lg font-bold text-cc-purple font-mono">
                       +{bestBuy.roi.toFixed(0)}% ROI
                     </p>
                   </div>
@@ -370,14 +370,14 @@ export default function Home() {
                     <img
                       src={bestBuy.item.coverImageUrl}
                       alt=""
-                      className="w-10 h-14 object-cover rounded"
+                      className="w-10 h-14 object-cover rounded shadow-sm"
                     />
                   )}
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">
+                    <p className="text-sm font-medium text-cc-ink truncate">
                       {bestBuy.item.comic.title}
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-cc-ink/50 font-mono">
                       #{bestBuy.item.comic.issueNumber}
                     </p>
                   </div>
@@ -389,15 +389,15 @@ export default function Home() {
             {biggestDecline && (
               <button
                 onClick={() => setShowBiggestDecline(true)}
-                className="bg-white rounded-xl p-4 shadow-sm border border-red-200 hover:shadow-md hover:border-red-300 transition-all text-left"
+                className="bg-cc-cream rounded-xl p-4 shadow-sm border-2 border-cc-red/30 hover:shadow-md hover:border-cc-red/50 transition-all text-left comic-card"
               >
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2 bg-red-100 rounded-lg">
-                    <TrendingDown className="w-5 h-5 text-red-600" />
+                  <div className="p-2 bg-cc-red/20 rounded-lg">
+                    <TrendingDown className="w-5 h-5 text-cc-red" />
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500">Biggest Decline</p>
-                    <p className="text-lg font-bold text-red-600">
+                    <p className="text-xs text-cc-ink/50 uppercase tracking-wide">Biggest Decline</p>
+                    <p className="text-lg font-bold text-cc-red font-mono">
                       ${biggestDecline.change.toFixed(2)}
                     </p>
                   </div>
@@ -407,14 +407,14 @@ export default function Home() {
                     <img
                       src={biggestDecline.item.coverImageUrl}
                       alt=""
-                      className="w-10 h-14 object-cover rounded"
+                      className="w-10 h-14 object-cover rounded shadow-sm"
                     />
                   )}
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">
+                    <p className="text-sm font-medium text-cc-ink truncate">
                       {biggestDecline.item.comic.title}
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-cc-ink/50 font-mono">
                       #{biggestDecline.item.comic.issueNumber}
                     </p>
                   </div>
@@ -428,39 +428,39 @@ export default function Home() {
         {isLoaded && !isSignedIn && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12 max-w-4xl mx-auto">
             <div className="text-center">
-              <div className="w-16 h-16 bg-primary-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Camera className="w-8 h-8 text-primary-600" />
+              <div className="w-16 h-16 bg-cc-scanner/15 rounded-2xl flex items-center justify-center mx-auto mb-4 glow-scanner">
+                <Camera className="w-8 h-8 text-cc-scanner" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              <h3 className="text-lg font-semibold text-cc-ink mb-2">
                 Technopathic Recognition
               </h3>
-              <p className="text-gray-600">
+              <p className="text-cc-ink/60">
                 Upload a photo and we&apos;ll instantly identify the title, issue #,
                 publisher, creators, key info, and more.
               </p>
             </div>
 
             <div className="text-center">
-              <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <TrendingUp className="w-8 h-8 text-green-600" />
+              <div className="w-16 h-16 bg-cc-mint/15 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <TrendingUp className="w-8 h-8 text-cc-mint" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              <h3 className="text-lg font-semibold text-cc-ink mb-2">
                 Track Values
               </h3>
-              <p className="text-gray-600">
+              <p className="text-cc-ink/60">
                 Monitor the market value of your comics with price history charts
                 and alerts for significant changes.
               </p>
             </div>
 
             <div className="text-center">
-              <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Tag className="w-8 h-8 text-orange-600" />
+              <div className="w-16 h-16 bg-cc-gold/15 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Tag className="w-8 h-8 text-cc-gold" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              <h3 className="text-lg font-semibold text-cc-ink mb-2">
                 Buy & Sell
               </h3>
-              <p className="text-gray-600">
+              <p className="text-cc-ink/60">
                 List your comics for sale and connect with other collectors. Secure
                 transactions powered by Stripe.
               </p>
@@ -470,44 +470,44 @@ export default function Home() {
 
         {/* How It Works - Only shown to non-logged-in users */}
         {isLoaded && !isSignedIn && (
-          <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 mb-8 max-w-4xl mx-auto">
-            <h2 className="text-2xl font-bold text-gray-900 text-center mb-8">
-              How It Works
+          <div className="bg-cc-cream rounded-2xl p-8 shadow-sm border-2 border-cc-ink/10 mb-8 max-w-4xl mx-auto">
+            <h2 className="font-display text-3xl text-cc-ink text-center mb-8 tracking-wide">
+              HOW IT WORKS
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div className="text-center">
-                <div className="w-10 h-10 bg-primary-600 text-white rounded-full flex items-center justify-center mx-auto mb-3 font-bold">
+                <div className="w-10 h-10 bg-cc-scanner text-cc-ink rounded-full flex items-center justify-center mx-auto mb-3 font-bold font-mono shadow-scanner">
                   1
                 </div>
-                <h4 className="font-semibold text-gray-900 mb-1">Upload Photo</h4>
-                <p className="text-sm text-gray-600">
+                <h4 className="font-semibold text-cc-ink mb-1">Upload Photo</h4>
+                <p className="text-sm text-cc-ink/60">
                   Take a photo or upload an image of your comic cover
                 </p>
               </div>
               <div className="text-center">
-                <div className="w-10 h-10 bg-primary-600 text-white rounded-full flex items-center justify-center mx-auto mb-3 font-bold">
+                <div className="w-10 h-10 bg-cc-scanner text-cc-ink rounded-full flex items-center justify-center mx-auto mb-3 font-bold font-mono shadow-scanner">
                   2
                 </div>
-                <h4 className="font-semibold text-gray-900 mb-1">Analyze</h4>
-                <p className="text-sm text-gray-600">
+                <h4 className="font-semibold text-cc-ink mb-1">Analyze</h4>
+                <p className="text-sm text-cc-ink/60">
                   Uses our Technopathy to identify the book&apos;s details
                 </p>
               </div>
               <div className="text-center">
-                <div className="w-10 h-10 bg-primary-600 text-white rounded-full flex items-center justify-center mx-auto mb-3 font-bold">
+                <div className="w-10 h-10 bg-cc-scanner text-cc-ink rounded-full flex items-center justify-center mx-auto mb-3 font-bold font-mono shadow-scanner">
                   3
                 </div>
-                <h4 className="font-semibold text-gray-900 mb-1">Verify & Edit</h4>
-                <p className="text-sm text-gray-600">
+                <h4 className="font-semibold text-cc-ink mb-1">Verify & Edit</h4>
+                <p className="text-sm text-cc-ink/60">
                   Review the details and make any necessary corrections
                 </p>
               </div>
               <div className="text-center">
-                <div className="w-10 h-10 bg-primary-600 text-white rounded-full flex items-center justify-center mx-auto mb-3 font-bold">
+                <div className="w-10 h-10 bg-cc-scanner text-cc-ink rounded-full flex items-center justify-center mx-auto mb-3 font-bold font-mono shadow-scanner">
                   4
                 </div>
-                <h4 className="font-semibold text-gray-900 mb-1">Save & Track</h4>
-                <p className="text-sm text-gray-600">
+                <h4 className="font-semibold text-cc-ink mb-1">Save & Track</h4>
+                <p className="text-sm text-cc-ink/60">
                   Add to your collection and track its value over time
                 </p>
               </div>
@@ -519,16 +519,16 @@ export default function Home() {
       {/* Collection Value Dashboard - Prominent Card for Logged-in Users */}
       {isLoaded && isSignedIn && stats.totalComics > 0 && (
         <div className="mb-8">
-          <div className="bg-gradient-to-r from-primary-600 to-primary-700 rounded-2xl p-6 shadow-lg text-white">
+          <div className="bg-cc-ink rounded-2xl p-6 shadow-retro glow-scanner">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
-                <h2 className="text-lg font-medium opacity-90 mb-1">Collection Value</h2>
+                <h2 className="text-lg font-medium text-cc-cream/80 mb-1 uppercase tracking-wide">Collection Value</h2>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-4xl md:text-5xl font-bold">
+                  <span className="text-4xl md:text-5xl font-bold text-cc-gold font-mono shimmer-gold">
                     ${stats.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                   {stats.unpricedCount > 0 && (
-                    <span className="text-sm opacity-75">
+                    <span className="text-sm text-cc-cream/60">
                       ({stats.unpricedCount} unpriced)
                     </span>
                   )}
@@ -536,13 +536,13 @@ export default function Home() {
               </div>
               <div className="flex items-center gap-6">
                 <div className="text-center">
-                  <p className="text-3xl font-bold">{stats.totalComics}</p>
-                  <p className="text-sm opacity-75">Comics</p>
+                  <p className="text-3xl font-bold text-cc-scanner font-mono">{stats.totalComics}</p>
+                  <p className="text-sm text-cc-cream/60">Comics</p>
                 </div>
-                <div className="h-12 w-px bg-white/20" />
+                <div className="h-12 w-px bg-cc-cream/20" />
                 <Link
                   href="/collection"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg font-medium transition-colors"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-cc-scanner/20 hover:bg-cc-scanner/30 text-cc-scanner rounded-lg font-medium transition-colors border border-cc-scanner/30"
                 >
                   <BookOpen className="w-5 h-5" />
                   View Collection
@@ -556,60 +556,60 @@ export default function Home() {
       {/* Stats Cards */}
       {stats.totalComics > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-12">
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-blue-200">
+          <div className="bg-cc-cream rounded-xl p-4 shadow-sm border-2 border-cc-scanner/20">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <BookOpen className="w-5 h-5 text-blue-600" />
+              <div className="p-2 bg-cc-scanner/15 rounded-lg">
+                <BookOpen className="w-5 h-5 text-cc-scanner" />
               </div>
               <div>
-                <p className="text-xs text-gray-500">Comics</p>
-                <p className="text-xl font-bold text-gray-900">
+                <p className="text-xs text-cc-ink/50 uppercase tracking-wide">Comics</p>
+                <p className="text-xl font-bold text-cc-ink font-mono">
                   {stats.totalComics}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-purple-200">
+          <div className="bg-cc-cream rounded-xl p-4 shadow-sm border-2 border-cc-purple/20">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <DollarSign className="w-5 h-5 text-purple-600" />
+              <div className="p-2 bg-cc-purple/15 rounded-lg">
+                <DollarSign className="w-5 h-5 text-cc-purple" />
               </div>
               <div>
-                <p className="text-xs text-gray-500">Total Cost</p>
-                <p className="text-xl font-bold text-gray-900">
+                <p className="text-xs text-cc-ink/50 uppercase tracking-wide">Total Cost</p>
+                <p className="text-xl font-bold text-cc-ink font-mono">
                   ${stats.totalCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-green-200">
+          <div className="bg-cc-cream rounded-xl p-4 shadow-sm border-2 border-cc-mint/20">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <TrendingUp className="w-5 h-5 text-green-600" />
+              <div className="p-2 bg-cc-mint/15 rounded-lg">
+                <TrendingUp className="w-5 h-5 text-cc-mint" />
               </div>
               <div>
-                <p className="text-xs text-gray-500">Est. Value</p>
-                <p className="text-xl font-bold text-gray-900">
+                <p className="text-xs text-cc-ink/50 uppercase tracking-wide">Est. Value</p>
+                <p className="text-xl font-bold text-cc-ink font-mono">
                   ${stats.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-orange-200">
+          <div className="bg-cc-cream rounded-xl p-4 shadow-sm border-2 border-cc-gold/20">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-orange-100 rounded-lg">
-                <Receipt className="w-5 h-5 text-orange-600" />
+              <div className="p-2 bg-cc-gold/15 rounded-lg">
+                <Receipt className="w-5 h-5 text-cc-gold" />
               </div>
               <div>
-                <p className="text-xs text-gray-500">Sales ({salesStats.totalSales})</p>
-                <p className="text-xl font-bold text-gray-900">
+                <p className="text-xs text-cc-ink/50 uppercase tracking-wide">Sales ({salesStats.totalSales})</p>
+                <p className="text-xl font-bold text-cc-ink font-mono">
                   ${salesStats.totalRevenue.toFixed(2)}
                 </p>
                 {salesStats.totalProfit !== 0 && (
-                  <p className={`text-xs ${salesStats.totalProfit >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  <p className={`text-xs font-mono ${salesStats.totalProfit >= 0 ? 'text-cc-mint' : 'text-cc-red'}`}>
                     {salesStats.totalProfit >= 0 ? '+' : ''}${salesStats.totalProfit.toFixed(2)} profit
                   </p>
                 )}
@@ -617,22 +617,22 @@ export default function Home() {
             </div>
           </div>
 
-          <div className={`bg-white rounded-xl p-4 shadow-sm border ${profitLoss >= 0 ? 'border-green-200' : 'border-red-200'}`}>
+          <div className={`bg-cc-cream rounded-xl p-4 shadow-sm border-2 ${profitLoss >= 0 ? 'border-cc-mint/20' : 'border-cc-red/20'}`}>
             <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-lg ${profitLoss >= 0 ? 'bg-green-100' : 'bg-red-100'}`}>
+              <div className={`p-2 rounded-lg ${profitLoss >= 0 ? 'bg-cc-mint/15' : 'bg-cc-red/15'}`}>
                 {profitLoss >= 0 ? (
-                  <ArrowUpRight className="w-5 h-5 text-green-600" />
+                  <ArrowUpRight className="w-5 h-5 text-cc-mint" />
                 ) : (
-                  <ArrowDownRight className="w-5 h-5 text-red-600" />
+                  <ArrowDownRight className="w-5 h-5 text-cc-red" />
                 )}
               </div>
               <div>
-                <p className="text-xs text-gray-500">Profit/Loss</p>
-                <p className={`text-xl font-bold ${profitLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                <p className="text-xs text-cc-ink/50 uppercase tracking-wide">Profit/Loss</p>
+                <p className={`text-xl font-bold font-mono ${profitLoss >= 0 ? 'text-cc-mint' : 'text-cc-red'}`}>
                   {profitLoss >= 0 ? '+' : ''}{profitLoss.toFixed(2)}
                 </p>
                 {stats.totalCost > 0 && (
-                  <p className={`text-xs ${profitLoss >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  <p className={`text-xs font-mono ${profitLoss >= 0 ? 'text-cc-mint' : 'text-cc-red'}`}>
                     {profitLoss >= 0 ? '+' : ''}{profitLossPercent.toFixed(1)}%
                   </p>
                 )}
@@ -646,21 +646,21 @@ export default function Home() {
       <div className="mb-12">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl">
-              <Flame className="w-6 h-6 text-white" />
+            <div className="p-2 bg-gradient-to-br from-cc-gold to-cc-red rounded-xl shadow-gold">
+              <Flame className="w-6 h-6 text-cc-ink" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">
-                Professor&apos;s Hottest Books
+              <h2 className="font-display text-2xl text-cc-ink tracking-wide">
+                PROFESSOR&apos;S HOTTEST BOOKS
               </h2>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-cc-ink/60">
                 Weekly market analysis of the most in-demand comics
               </p>
             </div>
           </div>
           <Link
             href="/hottest-books"
-            className="text-primary-600 hover:text-primary-700 text-sm font-medium flex items-center gap-1"
+            className="text-cc-scanner hover:text-cc-scanner/80 text-sm font-medium flex items-center gap-1"
           >
             View All
             <ChevronRight className="w-4 h-4" />
@@ -669,14 +669,14 @@ export default function Home() {
 
         {hotBooksLoading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
+            <Loader2 className="w-8 h-8 animate-spin text-cc-gold" />
           </div>
         ) : hotBooksError ? (
           <div className="text-center py-8">
-            <p className="text-gray-500 mb-2">{hotBooksError}</p>
+            <p className="text-cc-ink/60 mb-2">{hotBooksError}</p>
             <button
               onClick={() => window.location.reload()}
-              className="inline-flex items-center gap-2 text-sm text-orange-600 hover:text-orange-700"
+              className="inline-flex items-center gap-2 text-sm text-cc-gold hover:text-cc-gold/80"
             >
               <RefreshCw className="w-4 h-4" />
               Try Again
@@ -688,10 +688,10 @@ export default function Home() {
               <Link
                 key={book.rank}
                 href="/hottest-books"
-                className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md hover:border-orange-200 transition-all"
+                className="bg-cc-cream rounded-xl p-4 shadow-sm border-2 border-cc-ink/5 hover:shadow-md hover:border-cc-gold/30 transition-all comic-card"
               >
                 <div className="flex items-start gap-3 mb-3">
-                  <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-red-600 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                  <div className="w-8 h-8 bg-gradient-to-br from-cc-gold to-cc-red rounded-full flex items-center justify-center text-cc-ink font-bold text-sm flex-shrink-0 font-mono">
                     {book.rank}
                   </div>
                   {book.coverImageUrl && (
@@ -702,16 +702,16 @@ export default function Home() {
                     />
                   )}
                 </div>
-                <h3 className="font-semibold text-gray-900 text-sm leading-tight mb-1">
+                <h3 className="font-semibold text-cc-ink text-sm leading-tight mb-1">
                   {book.title} #{book.issueNumber}
                 </h3>
-                <p className="text-xs text-gray-500 mb-2">
+                <p className="text-xs text-cc-ink/50 mb-2">
                   {book.publisher}
                 </p>
                 <div className="flex items-center gap-1 text-sm">
-                  <DollarSign className="w-3 h-3 text-green-600" />
-                  <span className="font-medium text-green-600">${formatCurrency(book.priceRange.mid)}</span>
-                  <span className="text-gray-400 text-xs">mid</span>
+                  <DollarSign className="w-3 h-3 text-cc-mint" />
+                  <span className="font-medium text-cc-mint font-mono">${formatCurrency(book.priceRange.mid)}</span>
+                  <span className="text-cc-ink/40 text-xs">mid</span>
                 </div>
               </Link>
             ))}
@@ -723,13 +723,13 @@ export default function Home() {
       {recentlyViewed.length > 0 && (
         <div className="mb-12">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-              <Clock className="w-5 h-5 text-gray-500" />
-              Recently Viewed
+            <h2 className="font-display text-2xl text-cc-ink flex items-center gap-2 tracking-wide">
+              <Clock className="w-5 h-5 text-cc-ink/50" />
+              RECENTLY VIEWED
             </h2>
             <Link
               href="/collection"
-              className="text-primary-600 hover:text-primary-700 text-sm font-medium flex items-center gap-1"
+              className="text-cc-scanner hover:text-cc-scanner/80 text-sm font-medium flex items-center gap-1"
             >
               View All
               <ChevronRight className="w-4 h-4" />
@@ -740,9 +740,9 @@ export default function Home() {
               <div
                 key={item.id}
                 onClick={() => router.push("/collection")}
-                className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+                className="bg-cc-cream rounded-xl shadow-sm border-2 border-cc-ink/5 overflow-hidden cursor-pointer hover:shadow-md transition-shadow comic-card"
               >
-                <div className="aspect-[2/3] bg-gray-100 relative">
+                <div className="aspect-[2/3] bg-cc-ink/5 relative">
                   {item.coverImageUrl ? (
                     <img
                       src={item.coverImageUrl}
@@ -750,23 +750,23 @@ export default function Home() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gray-900 text-3xl">
-                      <span className="text-green-400 font-bold italic drop-shadow-[0_0_8px_rgba(74,222,128,0.6)]">?</span>
+                    <div className="w-full h-full flex items-center justify-center bg-cc-ink">
+                      <span className="text-3xl font-display text-cc-scanner drop-shadow-[0_0_12px_rgba(0,212,255,0.6)]">?</span>
                     </div>
                   )}
                   {item.comic.priceData?.estimatedValue && (
                     <div className="absolute bottom-2 right-2">
-                      <span className="px-2 py-1 bg-black/70 text-white text-xs font-bold rounded-lg">
+                      <span className="badge-price px-2 py-1 text-xs font-bold rounded-lg">
                         ${item.comic.priceData.estimatedValue.toFixed(0)}
                       </span>
                     </div>
                   )}
                 </div>
                 <div className="p-2">
-                  <p className="font-medium text-gray-900 text-sm truncate">
+                  <p className="font-medium text-cc-ink text-sm truncate">
                     {item.comic.title}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-cc-ink/50 font-mono">
                     #{item.comic.issueNumber}
                   </p>
                 </div>
@@ -780,22 +780,22 @@ export default function Home() {
       {showBiggestIncrease && biggestIncrease && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
-            className="absolute inset-0 bg-black/50"
+            className="absolute inset-0 bg-cc-ink/60 backdrop-blur-sm"
             onClick={() => setShowBiggestIncrease(false)}
           />
-          <div className="relative bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl">
+          <div className="relative bg-cc-cream rounded-2xl max-w-sm w-full p-6 shadow-xl border-2 border-cc-ink/10">
             <button
               onClick={() => setShowBiggestIncrease(false)}
-              className="absolute top-4 right-4 p-1 hover:bg-gray-100 rounded-full"
+              className="absolute top-4 right-4 p-1 hover:bg-cc-ink/5 rounded-full"
             >
-              <X className="w-5 h-5 text-gray-500" />
+              <X className="w-5 h-5 text-cc-ink/50" />
             </button>
 
             <div className="flex items-center gap-2 mb-4">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <TrendingUp className="w-5 h-5 text-green-600" />
+              <div className="p-2 bg-cc-mint/20 rounded-lg">
+                <TrendingUp className="w-5 h-5 text-cc-mint" />
               </div>
-              <h3 className="text-lg font-bold text-gray-900">Biggest Increase</h3>
+              <h3 className="font-display text-xl text-cc-ink tracking-wide">BIGGEST INCREASE</h3>
             </div>
 
             {/* Duration Filter */}
@@ -804,10 +804,10 @@ export default function Home() {
                 <button
                   key={days}
                   onClick={() => setIncreaseDuration(days)}
-                  className={`px-3 py-1 text-sm rounded-full transition-colors ${
+                  className={`px-3 py-1 text-sm rounded-lg transition-colors font-medium ${
                     increaseDuration === days
-                      ? "bg-green-600 text-white"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      ? "bg-cc-mint text-cc-ink"
+                      : "bg-cc-ink/5 text-cc-ink/60 hover:bg-cc-ink/10"
                   }`}
                 >
                   {days} days
@@ -825,20 +825,20 @@ export default function Home() {
                 />
               )}
               <div>
-                <h4 className="font-semibold text-gray-900">
+                <h4 className="font-semibold text-cc-ink">
                   {biggestIncrease.item.comic.title}
                 </h4>
-                <p className="text-sm text-gray-500 mb-3">
+                <p className="text-sm text-cc-ink/50 mb-3 font-mono">
                   #{biggestIncrease.item.comic.issueNumber}
                 </p>
                 <div className="space-y-1">
-                  <p className="text-2xl font-bold text-green-600">
+                  <p className="text-2xl font-bold text-cc-mint font-mono">
                     +${biggestIncrease.change.toFixed(2)}
                   </p>
-                  <p className="text-sm text-green-600">
+                  <p className="text-sm text-cc-mint font-mono">
                     +{biggestIncrease.changePercent.toFixed(1)}%
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-cc-ink/50 font-mono">
                     Current: ${biggestIncrease.currentValue.toFixed(2)}
                   </p>
                 </div>

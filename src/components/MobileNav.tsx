@@ -79,8 +79,8 @@ export function MobileNav() {
           isVisible ? "translate-y-0" : "translate-y-full"
         }`}
       >
-        {/* Glassmorphism container */}
-        <div className="mx-3 mb-3 bg-white/80 backdrop-blur-lg rounded-2xl shadow-lg border border-gray-200/50">
+        {/* Glassmorphism container with retro-futuristic styling */}
+        <div className="mx-3 mb-3 bg-cc-cream/90 backdrop-blur-lg rounded-2xl shadow-lg border-2 border-cc-ink/10">
           <div className="flex items-center justify-around py-2 px-1">
             {navItems.map((item) => {
               const isActive = pathname === item.href;
@@ -94,14 +94,14 @@ export function MobileNav() {
                   onClick={(e) => handleNavClick(e, item)}
                   className={`flex flex-col items-center gap-0.5 px-4 py-2 rounded-xl transition-all duration-200 ${
                     isActive
-                      ? "bg-primary-100 text-primary-600"
+                      ? "bg-cc-scanner/15 text-cc-scanner border border-cc-scanner/30"
                       : isComingSoon
-                      ? "text-gray-400"
-                      : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                      ? "text-cc-ink/30"
+                      : "text-cc-ink/60 hover:text-cc-ink hover:bg-cc-ink/5"
                   }`}
                 >
                   <Icon className={`w-5 h-5 ${isActive ? "stroke-[2.5]" : ""}`} />
-                  <span className={`text-[10px] ${isActive ? "font-semibold" : "font-medium"}`}>
+                  <span className={`text-[10px] ${isActive ? "font-bold" : "font-medium"}`}>
                     {item.label}
                   </span>
                 </Link>
@@ -115,7 +115,7 @@ export function MobileNav() {
 
       {/* Coming Soon Toast */}
       {showComingSoon && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-4 py-2 bg-gray-900 text-white text-sm rounded-full shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-200">
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-4 py-2 bg-cc-ink text-cc-scanner text-sm font-medium rounded-lg shadow-retro animate-slide-up">
           Shop coming soon!
         </div>
       )}

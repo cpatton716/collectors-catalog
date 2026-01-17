@@ -305,17 +305,17 @@ export default function CollectionPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">My Collection</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="font-display text-4xl text-cc-ink tracking-wide">MY COLLECTION</h1>
+          <p className="text-cc-ink/60 mt-1">
             {isFiltered ? (
               <>
-                {stats.count} of {stats.totalCount} comics • ${stats.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} of ${stats.fullCollectionValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} total
+                <span className="font-mono">{stats.count}</span> of <span className="font-mono">{stats.totalCount}</span> comics • <span className="font-mono text-cc-gold">${stats.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span> of <span className="font-mono">${stats.fullCollectionValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span> total
               </>
             ) : (
               <>
-                {stats.count} comics • ${stats.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} total value
+                <span className="font-mono">{stats.count}</span> comics • <span className="font-mono text-cc-gold">${stats.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span> total value
                 {stats.unpricedCount > 0 && (
-                  <span className="text-gray-400"> ({stats.unpricedCount} unpriced)</span>
+                  <span className="text-cc-ink/40"> ({stats.unpricedCount} unpriced)</span>
                 )}
               </>
             )}
@@ -324,21 +324,21 @@ export default function CollectionPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.push("/stats")}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-cc-cream border-2 border-cc-ink/10 text-cc-ink/70 rounded-lg hover:bg-cc-ink/5 transition-colors"
           >
             <BarChart3 className="w-5 h-5" />
             <span className="hidden sm:inline">Stats</span>
           </button>
           <button
             onClick={() => setShowShareModal(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-cc-cream border-2 border-cc-ink/10 text-cc-ink/70 rounded-lg hover:bg-cc-ink/5 transition-colors"
           >
             <Share2 className="w-5 h-5" />
             <span className="hidden sm:inline">Share</span>
           </button>
           <button
             onClick={() => router.push("/scan")}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 btn-scanner rounded-lg shadow-retro-sm hover:shadow-scanner transition-all duration-200"
           >
             <Plus className="w-5 h-5" />
             Add Book
@@ -348,79 +348,79 @@ export default function CollectionPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-        <div className="bg-white rounded-lg p-4 shadow-sm border border-blue-200 flex items-center gap-4">
-          <div className="p-3 bg-blue-100 rounded-lg">
-            <BookOpen className="w-5 h-5 text-blue-600" />
+        <div className="bg-cc-cream rounded-lg p-4 shadow-sm border-2 border-cc-scanner/20 flex items-center gap-4">
+          <div className="p-3 bg-cc-scanner/15 rounded-lg">
+            <BookOpen className="w-5 h-5 text-cc-scanner" />
           </div>
           <div>
-            <p className="text-sm text-gray-500">Comics{isFiltered && " (filtered)"}</p>
-            <p className="text-xl font-bold text-gray-900">{stats.count}</p>
+            <p className="text-sm text-cc-ink/50 uppercase tracking-wide">Comics{isFiltered && " (filtered)"}</p>
+            <p className="text-xl font-bold text-cc-ink font-mono">{stats.count}</p>
           </div>
         </div>
-        <div className="bg-white rounded-lg p-4 shadow-sm border border-purple-200 flex items-center gap-4">
-          <div className="p-3 bg-purple-100 rounded-lg">
-            <DollarSign className="w-5 h-5 text-purple-600" />
+        <div className="bg-cc-cream rounded-lg p-4 shadow-sm border-2 border-cc-purple/20 flex items-center gap-4">
+          <div className="p-3 bg-cc-purple/15 rounded-lg">
+            <DollarSign className="w-5 h-5 text-cc-purple" />
           </div>
           <div>
-            <p className="text-sm text-gray-500">Total Cost</p>
-            <p className="text-xl font-bold text-gray-900">
+            <p className="text-sm text-cc-ink/50 uppercase tracking-wide">Total Cost</p>
+            <p className="text-xl font-bold text-cc-ink font-mono">
               ${stats.totalCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           </div>
         </div>
-        <div className="bg-white rounded-lg p-4 shadow-sm border border-green-200 flex items-center gap-4">
-          <div className="p-3 bg-green-100 rounded-lg">
-            <TrendingUp className="w-5 h-5 text-green-600" />
+        <div className="bg-cc-cream rounded-lg p-4 shadow-sm border-2 border-cc-mint/20 flex items-center gap-4">
+          <div className="p-3 bg-cc-mint/15 rounded-lg">
+            <TrendingUp className="w-5 h-5 text-cc-mint" />
           </div>
           <div>
-            <p className="text-sm text-gray-500">Est. Value{stats.unpricedCount > 0 && ` (${stats.unpricedCount} unpriced)`}</p>
-            <p className="text-xl font-bold text-gray-900">
+            <p className="text-sm text-cc-ink/50 uppercase tracking-wide">Est. Value{stats.unpricedCount > 0 && ` (${stats.unpricedCount} unpriced)`}</p>
+            <p className="text-xl font-bold text-cc-ink font-mono">
               ${stats.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           </div>
         </div>
-        <div className={`bg-white rounded-lg p-4 shadow-sm border flex items-center gap-4 ${
-          salesStats.totalProfit >= 0 ? "border-blue-200" : "border-gray-100"
+        <div className={`bg-cc-cream rounded-lg p-4 shadow-sm border-2 flex items-center gap-4 ${
+          salesStats.totalProfit >= 0 ? "border-cc-gold/20" : "border-cc-ink/10"
         }`}>
-          <div className="p-3 bg-blue-100 rounded-lg flex-shrink-0">
-            <Receipt className="w-5 h-5 text-blue-600" />
+          <div className="p-3 bg-cc-gold/15 rounded-lg flex-shrink-0">
+            <Receipt className="w-5 h-5 text-cc-gold" />
           </div>
           <div className="min-w-0">
-            <p className="text-sm text-gray-500">Sales ({salesStats.totalSales})</p>
-            <p className="text-xl font-bold text-gray-900">
+            <p className="text-sm text-cc-ink/50 uppercase tracking-wide">Sales ({salesStats.totalSales})</p>
+            <p className="text-xl font-bold text-cc-ink font-mono">
               ${salesStats.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
             {salesStats.totalProfit !== 0 && (
-              <p className={`text-xs ${
-                salesStats.totalProfit >= 0 ? "text-green-500" : "text-red-500"
+              <p className={`text-xs font-mono ${
+                salesStats.totalProfit >= 0 ? "text-cc-mint" : "text-cc-red"
               }`}>
                 {salesStats.totalProfit >= 0 ? "+" : ""}${salesStats.totalProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} profit
               </p>
             )}
           </div>
         </div>
-        <div className={`bg-white rounded-lg p-4 shadow-sm border flex items-center gap-4 ${
-          profitLoss >= 0 ? "border-green-200" : "border-red-200"
+        <div className={`bg-cc-cream rounded-lg p-4 shadow-sm border-2 flex items-center gap-4 ${
+          profitLoss >= 0 ? "border-cc-mint/20" : "border-cc-red/20"
         }`}>
           <div className={`p-3 rounded-lg flex-shrink-0 ${
-            profitLoss >= 0 ? "bg-green-100" : "bg-red-100"
+            profitLoss >= 0 ? "bg-cc-mint/15" : "bg-cc-red/15"
           }`}>
             {profitLoss >= 0 ? (
-              <ArrowUpRight className="w-5 h-5 text-green-600" />
+              <ArrowUpRight className="w-5 h-5 text-cc-mint" />
             ) : (
-              <ArrowDownRight className="w-5 h-5 text-red-600" />
+              <ArrowDownRight className="w-5 h-5 text-cc-red" />
             )}
           </div>
           <div className="min-w-0">
-            <p className="text-sm text-gray-500">Profit/Loss</p>
-            <p className={`text-xl font-bold ${
-              profitLoss >= 0 ? "text-green-600" : "text-red-600"
+            <p className="text-sm text-cc-ink/50 uppercase tracking-wide">Profit/Loss</p>
+            <p className={`text-xl font-bold font-mono ${
+              profitLoss >= 0 ? "text-cc-mint" : "text-cc-red"
             }`}>
               {profitLoss >= 0 ? "+" : ""}${profitLoss.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
             {stats.totalCost > 0 && (
-              <p className={`text-xs ${
-                profitLoss >= 0 ? "text-green-500" : "text-red-500"
+              <p className={`text-xs font-mono ${
+                profitLoss >= 0 ? "text-cc-mint" : "text-cc-red"
               }`}>
                 {profitLossPercent >= 0 ? "+" : ""}{profitLossPercent.toFixed(1)}%
               </p>
@@ -446,17 +446,17 @@ export default function CollectionPage() {
               <button
                 key={list.id}
                 onClick={() => setSelectedList(list.id)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
                   selectedList === list.id
-                    ? "bg-primary-600 text-white shadow-sm"
-                    : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
+                    ? "bg-cc-scanner text-cc-ink shadow-scanner"
+                    : "bg-cc-cream text-cc-ink/70 border-2 border-cc-ink/10 hover:border-cc-scanner/30"
                 }`}
               >
                 {list.name}
-                <span className={`px-1.5 py-0.5 rounded text-xs ${
+                <span className={`px-1.5 py-0.5 rounded text-xs font-mono ${
                   selectedList === list.id
-                    ? "bg-primary-500 text-white"
-                    : "bg-gray-100 text-gray-600"
+                    ? "bg-cc-ink/20 text-cc-ink"
+                    : "bg-cc-ink/5 text-cc-ink/60"
                 }`}>
                   {count}
                 </span>
@@ -467,31 +467,31 @@ export default function CollectionPage() {
       </div>
 
       {/* Filters Bar */}
-      <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 mb-6">
+      <div className="bg-cc-cream rounded-xl p-4 shadow-sm border-2 border-cc-ink/10 mb-6">
         <div className="flex flex-col gap-4">
           {/* Top Row - Search and View Toggle */}
           <div className="flex flex-col md:flex-row gap-4">
             {/* Search */}
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cc-ink/40" />
               <input
                 type="text"
                 placeholder="Search by title, publisher, writer..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-900 placeholder:text-gray-400"
+                className="w-full pl-10 pr-4 py-2 border-2 border-cc-ink/10 rounded-lg focus:ring-2 focus:ring-cc-scanner/50 focus:border-cc-scanner bg-white/50 text-cc-ink placeholder:text-cc-ink/40"
               />
             </div>
 
             {/* View Toggle */}
-            <div className="flex items-center bg-gray-100 rounded-lg p-1">
+            <div className="flex items-center bg-cc-ink/5 rounded-lg p-1">
               <button
                 onClick={() => setViewMode("grid")}
                 title="Grid View - Display comics as cover thumbnails"
-                className={`p-2 rounded-md transition-colors ${
+                className={`p-2 rounded-md transition-all duration-200 ${
                   viewMode === "grid"
-                    ? "bg-white shadow-sm text-primary-600"
-                    : "text-gray-500 hover:text-gray-700"
+                    ? "bg-cc-scanner text-cc-ink shadow-sm"
+                    : "text-cc-ink/50 hover:text-cc-ink"
                 }`}
               >
                 <Grid3X3 className="w-5 h-5" />
@@ -499,10 +499,10 @@ export default function CollectionPage() {
               <button
                 onClick={() => setViewMode("list")}
                 title="List View - Display comics in a detailed table format"
-                className={`p-2 rounded-md transition-colors ${
+                className={`p-2 rounded-md transition-all duration-200 ${
                   viewMode === "list"
-                    ? "bg-white shadow-sm text-primary-600"
-                    : "text-gray-500 hover:text-gray-700"
+                    ? "bg-cc-scanner text-cc-ink shadow-sm"
+                    : "text-cc-ink/50 hover:text-cc-ink"
                 }`}
               >
                 <List className="w-5 h-5" />
@@ -515,26 +515,26 @@ export default function CollectionPage() {
             {/* Starred Filter */}
             <button
               onClick={() => setShowStarredOnly(!showStarredOnly)}
-              className={`flex items-center gap-1.5 px-2.5 py-2 rounded-lg border transition-colors text-sm ${
+              className={`flex items-center gap-1.5 px-2.5 py-2 rounded-lg border-2 transition-all duration-200 text-sm ${
                 showStarredOnly
-                  ? "bg-yellow-100 border-yellow-300 text-yellow-700"
-                  : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
+                  ? "bg-cc-gold/20 border-cc-gold/50 text-cc-gold"
+                  : "bg-white/50 border-cc-ink/10 text-cc-ink/60 hover:border-cc-gold/30"
               }`}
             >
-              <Star className={`w-4 h-4 ${showStarredOnly ? "fill-yellow-500 text-yellow-500" : ""}`} />
+              <Star className={`w-4 h-4 ${showStarredOnly ? "fill-cc-gold text-cc-gold" : ""}`} />
               <span className="hidden sm:inline">Starred</span>
             </button>
 
             {/* List Filter */}
             <div className="flex items-center gap-1.5">
-              <label className="text-sm font-medium text-gray-600 hidden md:flex items-center gap-1">
+              <label className="text-sm font-medium text-cc-ink/60 hidden md:flex items-center gap-1">
                 <ListFilter className="w-4 h-4" />
                 List:
               </label>
               <select
                 value={selectedList}
                 onChange={(e) => setSelectedList(e.target.value)}
-                className="px-2.5 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white text-sm text-gray-900"
+                className="px-2.5 py-2 border-2 border-cc-ink/10 rounded-lg focus:ring-2 focus:ring-cc-scanner/50 focus:border-cc-scanner bg-white/50 text-sm text-cc-ink"
               >
                 {lists.map((list) => (
                   <option key={list.id} value={list.id}>
@@ -546,14 +546,14 @@ export default function CollectionPage() {
 
             {/* Publisher Filter */}
             <div className="flex items-center gap-1.5">
-              <label className="text-sm font-medium text-gray-600 hidden md:flex items-center gap-1">
+              <label className="text-sm font-medium text-cc-ink/60 hidden md:flex items-center gap-1">
                 <Building className="w-4 h-4" />
                 Publisher:
               </label>
               <select
                 value={publisherFilter}
                 onChange={(e) => setPublisherFilter(e.target.value)}
-                className="px-2.5 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white text-sm text-gray-900"
+                className="px-2.5 py-2 border-2 border-cc-ink/10 rounded-lg focus:ring-2 focus:ring-cc-scanner/50 focus:border-cc-scanner bg-white/50 text-sm text-cc-ink"
               >
                 <option value="all">All Publishers</option>
                 {uniquePublishers.map((publisher) => (
@@ -566,14 +566,14 @@ export default function CollectionPage() {
 
             {/* Title Filter */}
             <div className="flex items-center gap-1.5">
-              <label className="text-sm font-medium text-gray-600 hidden md:flex items-center gap-1">
+              <label className="text-sm font-medium text-cc-ink/60 hidden md:flex items-center gap-1">
                 <Book className="w-4 h-4" />
                 Title:
               </label>
               <select
                 value={titleFilter}
                 onChange={(e) => setTitleFilter(e.target.value)}
-                className="px-2.5 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white text-sm text-gray-900"
+                className="px-2.5 py-2 border-2 border-cc-ink/10 rounded-lg focus:ring-2 focus:ring-cc-scanner/50 focus:border-cc-scanner bg-white/50 text-sm text-cc-ink"
               >
                 <option value="all">All Titles</option>
                 {uniqueTitles.map((title) => (
@@ -586,14 +586,14 @@ export default function CollectionPage() {
 
             {/* Sort */}
             <div className="flex items-center gap-1.5 ml-auto">
-              <label className="text-sm font-medium text-gray-600 flex items-center gap-1">
+              <label className="text-sm font-medium text-cc-ink/60 flex items-center gap-1">
                 <SortAsc className="w-4 h-4" />
                 Sort:
               </label>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="px-2.5 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white text-sm text-gray-900"
+                className="px-2.5 py-2 border-2 border-cc-ink/10 rounded-lg focus:ring-2 focus:ring-cc-scanner/50 focus:border-cc-scanner bg-white/50 text-sm text-cc-ink"
               >
                 <option value="date">Date Added</option>
                 <option value="title">Title</option>
@@ -606,7 +606,7 @@ export default function CollectionPage() {
             <FeatureButton
               feature="csvExport"
               onClick={handleExportCSV}
-              className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-700 transition-colors text-sm"
+              className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg border-2 border-cc-ink/10 bg-white/50 text-cc-ink/60 hover:border-cc-scanner/30 hover:text-cc-ink transition-all duration-200 text-sm"
             >
               <Download className="w-4 h-4" />
               <span className="hidden sm:inline">Export CSV</span>

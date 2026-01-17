@@ -107,6 +107,39 @@ Run a mental checklist:
 
 **Trigger "design check" to review the full design system.**
 
+## Design Thinking
+
+Before coding, understand the context and commit to a BOLD aesthetic direction:
+- **Purpose**: What problem does this interface solve? Who uses it?
+- **Tone**: Pick an extreme: brutally minimal, maximalist chaos, retro-futuristic, organic/natural, luxury/refined, playful/toy-like, editorial/magazine, brutalist/raw, art deco/geometric, soft/pastel, industrial/utilitarian, etc. There are so many flavors to choose from. Use these for inspiration but design one that is true to the aesthetic direction.
+- **Constraints**: Technical requirements (framework, performance, accessibility).
+- **Differentiation**: What makes this UNFORGETTABLE? What's the one thing someone will remember?
+
+**CRITICAL**: Choose a clear conceptual direction and execute it with precision. Bold maximalism and refined minimalism both work - the key is intentionality, not intensity.
+
+Then implement working code (HTML/CSS/JS, React, Vue, etc.) that is:
+- Production-grade and functional
+- Visually striking and memorable
+- Cohesive with a clear aesthetic point-of-view
+- Meticulously refined in every detail
+
+## Frontend Aesthetics Guidelines
+
+Focus on:
+- **Typography**: Choose fonts that are beautiful, unique, and interesting. Avoid generic fonts like Arial and Inter; opt instead for distinctive choices that elevate the frontend's aesthetics; unexpected, characterful font choices. Pair a distinctive display font with a refined body font.
+- **Color & Theme**: Commit to a cohesive aesthetic. Use CSS variables for consistency. Dominant colors with sharp accents outperform timid, evenly-distributed palettes.
+- **Motion**: Use animations for effects and micro-interactions. Prioritize CSS-only solutions for HTML. Use Motion library for React when available. Focus on high-impact moments: one well-orchestrated page load with staggered reveals (animation-delay) creates more delight than scattered micro-interactions. Use scroll-triggering and hover states that surprise.
+- **Spatial Composition**: Unexpected layouts. Asymmetry. Overlap. Diagonal flow. Grid-breaking elements. Generous negative space OR controlled density.
+- **Backgrounds & Visual Details**: Create atmosphere and depth rather than defaulting to solid colors. Add contextual effects and textures that match the overall aesthetic. Apply creative forms like gradient meshes, noise textures, geometric patterns, layered transparencies, dramatic shadows, decorative borders, custom cursors, and grain overlays.
+
+NEVER use generic AI-generated aesthetics like overused font families (Inter, Roboto, Arial, system fonts), cliched color schemes (particularly purple gradients on white backgrounds), predictable layouts and component patterns, and cookie-cutter design that lacks context-specific character.
+
+Interpret creatively and make unexpected choices that feel genuinely designed for the context. No design should be the same. Vary between light and dark themes, different fonts, different aesthetics. NEVER converge on common choices (Space Grotesk, for example) across generations.
+
+**IMPORTANT**: Match implementation complexity to the aesthetic vision. Maximalist designs need elaborate code with extensive animations and effects. Minimalist or refined designs need restraint, precision, and careful attention to spacing, typography, and subtle details. Elegance comes from executing the vision well.
+
+Remember: Claude is capable of extraordinary creative work. Don't hold back, show what can truly be created when thinking outside the box and committing fully to a distinctive vision.
+
 ## Clipboard Usage
 **ALWAYS** copy content to the user's clipboard when they need to paste something somewhere (Supabase SQL, API keys, URLs, etc.):
 ```bash
@@ -318,4 +351,111 @@ When the user says **"revert technopathy"**, revert ALL of the following changes
 2. Use Edit tool with replace_all where multiple occurrences exist
 3. Run `npm run build` to verify changes compile
 4. Commit with message: "Revert technopathy branding back to AI terminology"
+
+## Revert Retro-Futuristic Design Command
+
+When the user says **"revert design"** or **"revert retro design"**, revert ALL of the following changes back to the original design:
+
+### Files and Exact Changes to Revert:
+
+**1. `/src/app/layout.tsx`**
+- REVERT font imports from `Bebas_Neue, Source_Sans_3, JetBrains_Mono` back to just `Inter`
+- REVERT body className from `${sourceSans.variable} ${bebasNeue.variable} ${jetbrainsMono.variable} font-sans` to `inter.className`
+- REVERT themeColor from `#0a0f1a` to `#1e40af`
+- REVERT background class from `bg-cc-cream` to `bg-gray-50`
+
+**2. `/tailwind.config.ts`**
+- REVERT entire config back to original:
+```typescript
+import type { Config } from "tailwindcss";
+
+const config: Config = {
+  content: [
+    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        primary: {
+          50: "#eff6ff",
+          100: "#dbeafe",
+          200: "#bfdbfe",
+          300: "#93c5fd",
+          400: "#60a5fa",
+          500: "#3b82f6",
+          600: "#2563eb",
+          700: "#1d4ed8",
+          800: "#1e40af",
+          900: "#1e3a8a",
+        },
+      },
+    },
+  },
+  plugins: [],
+};
+
+export default config;
+```
+
+**3. `/src/app/globals.css`**
+- REMOVE all new CSS variables (--cc-ink, --cc-cream, etc.)
+- REMOVE halftone pattern styles
+- REMOVE scanner animation styles
+- REMOVE new keyframe animations (scanner-sweep, value-shimmer, card-lift, etc.)
+- REVERT :root variables to original
+- REVERT .comic-card styles to original
+- REVERT .skeleton styles to original
+
+**4. `/src/components/ComicCard.tsx`**
+- REVERT to original styling (remove retro-futuristic classes)
+- REVERT card background from `bg-cc-cream` to `bg-white`
+- REMOVE notch corner effects
+- REMOVE new hover animations
+- REVERT badge styling to original
+
+**5. `/src/components/MobileNav.tsx`**
+- REVERT glassmorphism container from `bg-cc-ink/90` styling back to `bg-white/80`
+- REVERT active state colors from scanner-blue to primary colors
+- REVERT text colors to original gray scale
+
+**6. `/src/components/Navigation.tsx`**
+- REVERT nav background and styling to original
+- REVERT logo text from `font-display` to original
+- REVERT button styling to original primary colors
+
+### Revert Process:
+1. Read each file listed above
+2. Replace with original content or use Edit tool to revert specific changes
+3. Run `npm run build` to verify changes compile
+4. Commit with message: "Revert retro-futuristic design back to original"
+
+## Disable Beta Mode Command
+
+When the user says **"disable beta mode"** or **"enable paid tiers"**, perform the following change:
+
+### File to Edit:
+**`/src/hooks/useSubscription.ts`** (line ~70)
+
+### Change:
+```typescript
+// CURRENT (Beta Mode ON):
+const BETA_MODE_ALL_FEATURES = true;
+
+// CHANGE TO (Beta Mode OFF - Paid tiers enabled):
+const BETA_MODE_ALL_FEATURES = false;
+```
+
+### What This Does:
+- **When `true` (current):** All logged-in users get premium features (unlimited scans, all feature access)
+- **When `false` (for launch):** Users are gated by their actual subscription tier (free/premium) via Stripe
+
+### Process:
+1. Edit `src/hooks/useSubscription.ts` line ~70
+2. Change `BETA_MODE_ALL_FEATURES = true` to `BETA_MODE_ALL_FEATURES = false`
+3. Run `npm run build` to verify
+4. Commit with message: "Disable beta mode - enable paid subscription tiers"
+
+**Note:** Ensure Stripe is fully configured and tested before disabling beta mode.
 

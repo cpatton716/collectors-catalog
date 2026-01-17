@@ -65,6 +65,20 @@ const defaultFeatures = {
   cloudSync: false,
 };
 
+// BETA MODE: Enable all features for logged-in users
+// Set to false when ready to enable paid tiers with Stripe
+const BETA_MODE_ALL_FEATURES = true;
+
+const betaFeatures = {
+  keyHunt: true,
+  csvExport: true,
+  fullStats: true,
+  unlimitedListings: true,
+  unlimitedScans: true,
+  shopBuying: true,
+  cloudSync: true,
+};
+
 export function useSubscription(): SubscriptionState {
   const { isSignedIn, isLoaded } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
@@ -85,14 +99,17 @@ export function useSubscription(): SubscriptionState {
 
       const result = await response.json();
 
+      // Apply beta mode features for signed-in users
+      const shouldUseBetaFeatures = BETA_MODE_ALL_FEATURES && isSignedIn;
+
       setData({
         isGuest: result.isGuest,
-        tier: result.tier,
+        tier: shouldUseBetaFeatures ? "premium" : result.tier,
         status: result.status,
         scansUsed: result.scansUsed,
-        scansRemaining: result.scansRemaining,
-        monthlyLimit: result.monthlyLimit,
-        canScan: result.canScan,
+        scansRemaining: shouldUseBetaFeatures ? 999 : result.scansRemaining,
+        monthlyLimit: shouldUseBetaFeatures ? null : result.monthlyLimit,
+        canScan: shouldUseBetaFeatures ? true : result.canScan,
         purchasedScans: result.purchasedScans,
         monthResetDate: result.monthResetDate ? new Date(result.monthResetDate) : null,
         isTrialing: result.isTrialing,
@@ -100,23 +117,25 @@ export function useSubscription(): SubscriptionState {
         trialEndsAt: result.trialEndsAt ? new Date(result.trialEndsAt) : null,
         trialDaysRemaining: result.trialDaysRemaining,
         currentPeriodEnd: result.currentPeriodEnd ? new Date(result.currentPeriodEnd) : null,
-        listingLimit: result.listingLimit,
+        listingLimit: shouldUseBetaFeatures ? 999 : result.listingLimit,
         activeListings: result.activeListings,
-        canCreateListing: result.canCreateListing,
-        features: result.features || defaultFeatures,
+        canCreateListing: shouldUseBetaFeatures ? true : result.canCreateListing,
+        features: shouldUseBetaFeatures ? betaFeatures : (result.features || defaultFeatures),
       });
     } catch (err) {
       console.error("Error fetching subscription status:", err);
       setError(err instanceof Error ? err.message : "Unknown error");
 
-      // Set default guest state on error
+      // Set default guest state on error (still apply beta mode if applicable)
+      const shouldUseBetaFeatures = BETA_MODE_ALL_FEATURES && isSignedIn;
+
       setData({
         isGuest: !isSignedIn,
-        tier: isSignedIn ? "free" : "guest",
+        tier: shouldUseBetaFeatures ? "premium" : (isSignedIn ? "free" : "guest"),
         status: null,
         scansUsed: 0,
-        scansRemaining: isSignedIn ? 10 : 5,
-        monthlyLimit: isSignedIn ? 10 : 5,
+        scansRemaining: shouldUseBetaFeatures ? 999 : (isSignedIn ? 10 : 5),
+        monthlyLimit: shouldUseBetaFeatures ? null : (isSignedIn ? 10 : 5),
         canScan: true,
         purchasedScans: 0,
         monthResetDate: null,
@@ -125,10 +144,10 @@ export function useSubscription(): SubscriptionState {
         trialEndsAt: null,
         trialDaysRemaining: 0,
         currentPeriodEnd: null,
-        listingLimit: isSignedIn ? 3 : 0,
+        listingLimit: shouldUseBetaFeatures ? 999 : (isSignedIn ? 3 : 0),
         activeListings: 0,
-        canCreateListing: isSignedIn || false,
-        features: {
+        canCreateListing: shouldUseBetaFeatures ? true : (isSignedIn || false),
+        features: shouldUseBetaFeatures ? betaFeatures : {
           ...defaultFeatures,
           shopBuying: isSignedIn || false,
           cloudSync: isSignedIn || false,

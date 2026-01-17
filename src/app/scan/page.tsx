@@ -396,13 +396,13 @@ export default function ScanPage() {
       <div className="mb-8">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
+          className="flex items-center gap-2 text-cc-ink/60 hover:text-cc-ink mb-4 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           Back
         </button>
-        <h1 className="text-3xl font-bold text-gray-900">Scan Book Cover</h1>
-        <p className="text-gray-600 mt-2">
+        <h1 className="font-display text-4xl text-cc-ink tracking-wide">SCAN BOOK COVER</h1>
+        <p className="text-cc-ink/60 mt-2">
           Upload a photo of your comic book cover to identify and add it to your
           collection.
         </p>
@@ -422,12 +422,12 @@ export default function ScanPage() {
                 <div key={step.id} className="flex-1 flex items-center">
                   <div className="flex flex-col items-center">
                     <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+                      className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 ${
                         isCompleted
-                          ? "bg-green-500 text-white"
+                          ? "bg-cc-mint text-cc-ink"
                           : isCurrent
-                            ? "bg-primary-600 text-white"
-                            : "bg-gray-200 text-gray-400"
+                            ? "bg-cc-scanner text-cc-ink glow-scanner"
+                            : "bg-cc-ink/10 text-cc-ink/40"
                       }`}
                     >
                       {isCompleted ? (
@@ -437,8 +437,8 @@ export default function ScanPage() {
                       )}
                     </div>
                     <span
-                      className={`text-xs mt-2 font-medium ${
-                        isCurrent ? "text-primary-600" : isCompleted ? "text-green-600" : "text-gray-400"
+                      className={`text-xs mt-2 font-medium uppercase tracking-wide ${
+                        isCurrent ? "text-cc-scanner" : isCompleted ? "text-cc-mint" : "text-cc-ink/40"
                       }`}
                     >
                       {step.label}
@@ -447,7 +447,7 @@ export default function ScanPage() {
                   {index < STEPS.length - 1 && (
                     <div
                       className={`flex-1 h-1 mx-2 rounded ${
-                        index < currentIndex ? "bg-green-500" : "bg-gray-200"
+                        index < currentIndex ? "bg-cc-mint" : "bg-cc-ink/10"
                       }`}
                     />
                   )}
@@ -465,29 +465,29 @@ export default function ScanPage() {
           {isGuest && <GuestLimitBanner variant={isLimitReached ? "warning" : "info"} />}
 
           {isLimitReached ? (
-            <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
+            <div className="bg-cc-cream rounded-xl p-8 shadow-sm border-2 border-cc-ink/10">
               <GuestLimitBanner />
             </div>
           ) : (
-            <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
+            <div className="bg-cc-cream rounded-xl p-8 shadow-sm border-2 border-cc-ink/10">
               <ImageUpload onImageSelect={handleImageSelect} />
 
               {/* Alternative add methods */}
-              <div className="mt-8 pt-6 border-t border-gray-100">
-                <p className="text-sm text-gray-500 text-center mb-4">
+              <div className="mt-8 pt-6 border-t border-cc-ink/10">
+                <p className="text-sm text-cc-ink/50 text-center mb-4 uppercase tracking-wide">
                   Other ways to add your books:
                 </p>
                 <div className="flex flex-wrap justify-center gap-6">
                   <button
                     onClick={() => setShowBarcodeScanner(true)}
-                    className="flex flex-col items-center justify-center w-36 h-24 bg-primary-50 text-primary-700 rounded-xl hover:bg-primary-100 transition-colors border border-primary-200"
+                    className="flex flex-col items-center justify-center w-36 h-24 bg-cc-scanner/10 text-cc-scanner rounded-xl hover:bg-cc-scanner/20 transition-colors border-2 border-cc-scanner/30"
                   >
                     <ScanBarcode className="w-7 h-7 mb-2" />
                     <span className="text-sm font-medium">Scan Barcode</span>
                   </button>
                   <button
                     onClick={handleManualEntry}
-                    className="flex flex-col items-center justify-center w-36 h-24 bg-primary-50 text-primary-700 rounded-xl hover:bg-primary-100 transition-colors border border-primary-200"
+                    className="flex flex-col items-center justify-center w-36 h-24 bg-cc-purple/10 text-cc-purple rounded-xl hover:bg-cc-purple/20 transition-colors border-2 border-cc-purple/30"
                   >
                     <PenLine className="w-7 h-7 mb-2" />
                     <span className="text-sm font-medium">Enter Manually</span>
@@ -495,7 +495,7 @@ export default function ScanPage() {
                   {isSignedIn && (
                     <button
                       onClick={() => setShowCSVImport(true)}
-                      className="hidden sm:flex flex-col items-center justify-center w-36 h-24 bg-primary-50 text-primary-700 rounded-xl hover:bg-primary-100 transition-colors border border-primary-200"
+                      className="hidden sm:flex flex-col items-center justify-center w-36 h-24 bg-cc-gold/10 text-cc-gold rounded-xl hover:bg-cc-gold/20 transition-colors border-2 border-cc-gold/30"
                     >
                       <FileSpreadsheet className="w-7 h-7 mb-2" />
                       <span className="text-sm font-medium">Import CSV</span>
