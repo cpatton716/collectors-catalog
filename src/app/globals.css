@@ -2,29 +2,63 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================
+   VINTAGE NEWSPRINT - 1940s-50s Golden Age
+   Action Comics Bold + Worn/Distressed
+   ============================================ */
+
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 249, 250, 251;
-  --background-end-rgb: 255, 255, 255;
+  /* Paper & Background */
+  --vintage-paper: #F5F0E1;
+  --vintage-aged: #E8D4A8;
+  --vintage-cream: #FDF8EC;
+
+  /* Ink & Text */
+  --vintage-ink: #1A1A1A;
+  --vintage-ink-soft: #2D2D2D;
+  --vintage-ink-faded: #4A4A4A;
+
+  /* Action Comics Bold */
+  --vintage-red: #C41E3A;
+  --vintage-red-dark: #9A1730;
+  --vintage-blue: #1E4D8C;
+  --vintage-blue-dark: #153A6B;
+  --vintage-yellow: #F7C942;
+  --vintage-yellow-dark: #D4A830;
+
+  /* Aged Accents */
+  --vintage-brown: #5C4033;
+  --vintage-rust: #8B4513;
+  --vintage-foxing: #C4A77D;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 17, 24, 39;
-    --background-end-rgb: 31, 41, 55;
-  }
-}
-
+/* Base body styling */
 body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+  background-color: var(--vintage-paper);
+  color: var(--vintage-ink);
+  font-family: var(--font-crimson), Georgia, serif;
   min-height: 100vh;
+  position: relative;
+}
+
+/* Paper texture overlay */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  z-index: 1;
+}
+
+/* Ensure content is above texture */
+body > * {
+  position: relative;
+  z-index: 2;
 }
 
 @layer utilities {
@@ -33,62 +67,297 @@ body {
   }
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+/* ============================================
+   TYPOGRAPHY UTILITIES
+   ============================================ */
+
+.font-headline {
+  font-family: var(--font-anton), Impact, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 1.1;
 }
 
-::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 4px;
+.font-body {
+  font-family: var(--font-crimson), Georgia, serif;
+  line-height: 1.6;
 }
 
-::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 4px;
+.font-caption {
+  font-family: var(--font-courier-prime), "Courier New", monospace;
+  font-size: 0.875rem;
+  letter-spacing: 0.05em;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #a1a1a1;
-}
+/* ============================================
+   VINTAGE CARD STYLES
+   ============================================ */
 
-/* Animation for loading states */
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-.animate-pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-/* Card hover effect */
 .comic-card {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  background: var(--vintage-cream);
+  border: 3px solid var(--vintage-ink);
+  box-shadow: 4px 4px 0px var(--vintage-ink);
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.comic-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, transparent 40%, rgba(232, 212, 168, 0.3) 100%);
+  pointer-events: none;
 }
 
 .comic-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px var(--vintage-ink);
 }
 
-/* Drop zone styling */
+.comic-card:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px var(--vintage-ink);
+}
+
+/* ============================================
+   BUTTON STYLES
+   ============================================ */
+
+.btn-vintage {
+  font-family: var(--font-anton), Impact, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.75rem 1.5rem;
+  border: 3px solid var(--vintage-ink);
+  box-shadow: 3px 3px 0px var(--vintage-ink);
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.btn-vintage:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0px var(--vintage-ink);
+}
+
+.btn-vintage:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0px var(--vintage-ink);
+}
+
+.btn-primary {
+  background: var(--vintage-red);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--vintage-red-dark);
+}
+
+.btn-secondary {
+  background: var(--vintage-blue);
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: var(--vintage-blue-dark);
+}
+
+.btn-accent {
+  background: var(--vintage-yellow);
+  color: var(--vintage-ink);
+}
+
+.btn-accent:hover {
+  background: var(--vintage-yellow-dark);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--vintage-ink);
+}
+
+.btn-ghost:hover {
+  background: var(--vintage-aged);
+}
+
+/* ============================================
+   BADGE & TAG STYLES
+   ============================================ */
+
+.badge-vintage {
+  font-family: var(--font-anton), Impact, sans-serif;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  padding: 0.25rem 0.75rem;
+  border: 2px solid currentColor;
+  display: inline-block;
+}
+
+.badge-red {
+  background: var(--vintage-red);
+  color: white;
+  border-color: var(--vintage-red-dark);
+}
+
+.badge-blue {
+  background: var(--vintage-blue);
+  color: white;
+  border-color: var(--vintage-blue-dark);
+}
+
+.badge-yellow {
+  background: var(--vintage-yellow);
+  color: var(--vintage-ink);
+  border-color: var(--vintage-yellow-dark);
+}
+
+.badge-outline {
+  background: transparent;
+  color: var(--vintage-ink);
+  border-color: var(--vintage-ink);
+}
+
+/* ============================================
+   WORN/DISTRESSED EFFECTS
+   ============================================ */
+
+.worn-edge {
+  position: relative;
+}
+
+.worn-edge::after {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background:
+    linear-gradient(135deg, var(--vintage-paper) 2px, transparent 2px),
+    linear-gradient(225deg, var(--vintage-paper) 2px, transparent 2px),
+    linear-gradient(315deg, var(--vintage-paper) 2px, transparent 2px),
+    linear-gradient(45deg, var(--vintage-paper) 2px, transparent 2px);
+  background-size: 8px 8px;
+  background-position: 0 0, 100% 0, 100% 100%, 0 100%;
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+.foxing-spots {
+  position: relative;
+}
+
+.foxing-spots::before {
+  content: "";
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: var(--vintage-foxing);
+  border-radius: 50%;
+  top: 10%;
+  right: 15%;
+  opacity: 0.4;
+  box-shadow:
+    20px 30px 0 2px var(--vintage-foxing),
+    -15px 50px 0 1px var(--vintage-foxing),
+    40px 10px 0 3px var(--vintage-foxing);
+}
+
+/* ============================================
+   HALFTONE DOTS EFFECT
+   ============================================ */
+
+.halftone-bg {
+  position: relative;
+}
+
+.halftone-bg::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: radial-gradient(circle, var(--vintage-ink) 1px, transparent 1px);
+  background-size: 4px 4px;
+  opacity: 0.05;
+  pointer-events: none;
+}
+
+/* ============================================
+   CUSTOM SCROLLBAR
+   ============================================ */
+
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--vintage-aged);
+  border: 2px solid var(--vintage-ink);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--vintage-ink);
+  border: 2px solid var(--vintage-aged);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--vintage-ink-soft);
+}
+
+/* ============================================
+   DROP ZONE STYLING
+   ============================================ */
+
 .drop-zone {
+  background: var(--vintage-cream);
+  border: 3px dashed var(--vintage-ink-faded);
   transition: all 0.2s ease;
 }
 
-.drop-zone.dragging {
-  border-color: #3b82f6;
-  background-color: #eff6ff;
+.drop-zone.dragging,
+.drop-zone:hover {
+  border-color: var(--vintage-blue);
+  background: linear-gradient(135deg, var(--vintage-cream) 0%, rgba(30, 77, 140, 0.1) 100%);
+  box-shadow: inset 0 0 20px rgba(30, 77, 140, 0.1);
 }
 
-/* Toast slide-in animation */
+/* ============================================
+   SKELETON LOADING
+   ============================================ */
+
+@keyframes vintage-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--vintage-aged) 25%,
+    var(--vintage-cream) 50%,
+    var(--vintage-aged) 75%
+  );
+  background-size: 200% 100%;
+  animation: vintage-shimmer 1.5s infinite;
+  border: 2px solid var(--vintage-ink-faded);
+}
+
+/* ============================================
+   TOAST ANIMATIONS
+   ============================================ */
+
 @keyframes slide-in {
   from {
     transform: translateX(100%);
@@ -104,7 +373,6 @@ body {
   animation: slide-in 0.3s ease-out;
 }
 
-/* Toast slide-up animation */
 @keyframes slide-up {
   from {
     transform: translateY(100%);
@@ -120,18 +388,246 @@ body {
   animation: slide-up 0.3s ease-out;
 }
 
-/* Skeleton loading animation */
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
+/* ============================================
+   SPEECH BUBBLE STYLE
+   ============================================ */
+
+.speech-bubble {
+  position: relative;
+  background: white;
+  border: 3px solid var(--vintage-ink);
+  border-radius: 20px;
+  padding: 1rem 1.5rem;
+}
+
+.speech-bubble::after {
+  content: "";
+  position: absolute;
+  bottom: -15px;
+  left: 30px;
+  border-width: 15px 10px 0;
+  border-style: solid;
+  border-color: var(--vintage-ink) transparent transparent transparent;
+}
+
+.speech-bubble::before {
+  content: "";
+  position: absolute;
+  bottom: -10px;
+  left: 32px;
+  border-width: 12px 8px 0;
+  border-style: solid;
+  border-color: white transparent transparent transparent;
+  z-index: 1;
+}
+
+/* ============================================
+   COMIC PANEL BORDER
+   ============================================ */
+
+.panel-border {
+  border: 4px solid var(--vintage-ink);
+  position: relative;
+}
+
+.panel-border::before {
+  content: "";
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  right: -4px;
+  bottom: -4px;
+  border: 2px solid var(--vintage-ink);
+  pointer-events: none;
+}
+
+/* ============================================
+   STAMP EFFECT
+   ============================================ */
+
+.stamp {
+  font-family: var(--font-anton), Impact, sans-serif;
+  text-transform: uppercase;
+  color: var(--vintage-red);
+  border: 4px solid var(--vintage-red);
+  padding: 0.5rem 1rem;
+  transform: rotate(-5deg);
+  opacity: 0.85;
+  letter-spacing: 0.1em;
+}
+
+.stamp-approved {
+  color: #2E7D32;
+  border-color: #2E7D32;
+}
+
+.stamp-sold {
+  color: var(--vintage-red);
+  border-color: var(--vintage-red);
+}
+
+/* ============================================
+   PRICE TAG STYLE
+   ============================================ */
+
+.price-tag {
+  background: var(--vintage-yellow);
+  color: var(--vintage-ink);
+  font-family: var(--font-anton), Impact, sans-serif;
+  padding: 0.5rem 1rem;
+  border: 2px solid var(--vintage-ink);
+  box-shadow: 2px 2px 0px var(--vintage-ink);
+  transform: rotate(2deg);
+}
+
+/* ============================================
+   NAV STYLES
+   ============================================ */
+
+.nav-vintage {
+  background: var(--vintage-cream);
+  border-bottom: 4px solid var(--vintage-ink);
+  box-shadow: 0 4px 0 var(--vintage-aged);
+}
+
+.nav-link {
+  font-family: var(--font-anton), Impact, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--vintage-ink);
+  padding: 0.5rem 1rem;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.nav-link:hover {
+  color: var(--vintage-red);
+}
+
+.nav-link.active {
+  color: var(--vintage-red);
+}
+
+.nav-link.active::after {
+  content: "";
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--vintage-red);
+}
+
+/* ============================================
+   INPUT STYLES
+   ============================================ */
+
+.input-vintage {
+  background: white;
+  border: 3px solid var(--vintage-ink);
+  padding: 0.75rem 1rem;
+  font-family: var(--font-crimson), Georgia, serif;
+  transition: all 0.15s ease;
+}
+
+.input-vintage:focus {
+  outline: none;
+  box-shadow: 3px 3px 0px var(--vintage-blue);
+  border-color: var(--vintage-blue);
+}
+
+.input-vintage::placeholder {
+  color: var(--vintage-ink-faded);
+  font-style: italic;
+}
+
+/* ============================================
+   MOBILE BOTTOM NAV
+   ============================================ */
+
+.mobile-nav-vintage {
+  background: var(--vintage-cream);
+  border-top: 4px solid var(--vintage-ink);
+  box-shadow: 0 -4px 10px rgba(26, 26, 26, 0.1);
+}
+
+.mobile-nav-item {
+  font-family: var(--font-anton), Impact, sans-serif;
+  text-transform: uppercase;
+  font-size: 0.65rem;
+  letter-spacing: 0.05em;
+  color: var(--vintage-ink-faded);
+  transition: all 0.15s ease;
+}
+
+.mobile-nav-item.active {
+  color: var(--vintage-red);
+}
+
+.mobile-nav-item.active .nav-icon {
+  background: var(--vintage-yellow);
+  border: 2px solid var(--vintage-ink);
+  box-shadow: 2px 2px 0px var(--vintage-ink);
+}
+
+/* ============================================
+   LOADING PULSE
+   ============================================ */
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
   }
-  100% {
-    background-position: 200% 0;
+  50% {
+    opacity: 0.5;
   }
 }
 
-.skeleton {
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* ============================================
+   STARBURST / ACTION BURST
+   ============================================ */
+
+.starburst {
+  position: relative;
+  background: var(--vintage-yellow);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.starburst::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 120%;
+  height: 120%;
+  background: inherit;
+  transform: translate(-50%, -50%) rotate(30deg);
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  z-index: -1;
+}
+
+/* ============================================
+   RESPONSIVE UTILITIES
+   ============================================ */
+
+@media (max-width: 768px) {
+  .font-headline {
+    font-size: 1.75rem;
+  }
+
+  .comic-card {
+    box-shadow: 3px 3px 0px var(--vintage-ink);
+  }
+
+  .comic-card:hover {
+    transform: none;
+    box-shadow: 3px 3px 0px var(--vintage-ink);
+  }
 }

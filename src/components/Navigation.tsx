@@ -62,18 +62,19 @@ export function Navigation() {
 
   return (
     <>
-      <nav className="bg-white shadow-sm border-b border-gray-200">
+      {/* Vintage Newsprint Navigation */}
+      <nav className="bg-vintage-cream border-b-4 border-vintage-ink shadow-[0_4px_0_#E8D4A8]">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <Link href="/" className="flex items-center space-x-2">
+            <Link href="/" className="flex items-center space-x-2 group">
               <ChestIcon size={36} />
-              <span className="font-bold text-xl text-gray-900">
+              <span className="font-display text-2xl text-vintage-ink tracking-wide uppercase">
                 Collectors Chest
               </span>
             </Link>
 
-            {/* Navigation Links - hidden on mobile (MobileNav handles that) */}
+            {/* Navigation Links - hidden on mobile */}
             <div className="hidden md:flex items-center space-x-1">
               {links.map((link) => {
                 const Icon = link.icon;
@@ -82,14 +83,17 @@ export function Navigation() {
                   <Link
                     key={link.href}
                     href={link.href}
-                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+                    className={`nav-link flex items-center space-x-2 px-4 py-2 transition-colors ${
                       isActive
-                        ? "bg-primary-100 text-primary-700"
-                        : "text-gray-600 hover:bg-gray-100"
+                        ? "text-vintage-red"
+                        : "text-vintage-ink hover:text-vintage-red"
                     }`}
                   >
                     <Icon className="w-5 h-5" />
-                    <span>{link.label}</span>
+                    <span className="font-display text-sm tracking-wide">{link.label}</span>
+                    {isActive && (
+                      <span className="absolute bottom-0 left-0 right-0 h-1 bg-vintage-red" />
+                    )}
                   </Link>
                 );
               })}
@@ -97,32 +101,32 @@ export function Navigation() {
               <SignedIn>
                 <Link
                   href="/my-auctions"
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+                  className={`nav-link flex items-center space-x-2 px-4 py-2 transition-colors ${
                     pathname === "/my-auctions"
-                      ? "bg-primary-100 text-primary-700"
-                      : "text-gray-600 hover:bg-gray-100"
+                      ? "text-vintage-red"
+                      : "text-vintage-ink hover:text-vintage-red"
                   }`}
                 >
                   <Gavel className="w-5 h-5" />
-                  <span>My Listings</span>
+                  <span className="font-display text-sm tracking-wide">My Listings</span>
                 </Link>
               </SignedIn>
             </div>
 
             {/* Right side: Notifications + Professor + Auth */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               {/* Notifications (signed in only) */}
               <SignedIn>
                 <NotificationBell />
               </SignedIn>
 
-              {/* Ask the Professor button */}
+              {/* Ask the Professor button - vintage style */}
               <button
                 onClick={() => setShowProfessor(true)}
-                className="p-2 mr-4 rounded-full bg-gradient-to-br from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 transition-all duration-200 shadow-sm"
+                className="p-2 mr-2 bg-vintage-yellow border-2 border-vintage-ink shadow-vintage-sm hover:shadow-vintage hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all duration-150"
                 aria-label="Ask the Professor"
               >
-                <Brain className="w-5 h-5 text-yellow-400" />
+                <Brain className="w-5 h-5 text-vintage-ink" />
               </button>
 
               {/* Auth */}
@@ -133,7 +137,7 @@ export function Navigation() {
                   userProfileMode="navigation"
                   appearance={{
                     elements: {
-                      avatarBox: "w-9 h-9",
+                      avatarBox: "w-9 h-9 border-2 border-vintage-ink",
                     },
                   }}
                 />
@@ -141,9 +145,9 @@ export function Navigation() {
               <SignedOut>
                 <Link
                   href="/sign-in"
-                  className="flex items-center gap-1.5 p-2 sm:px-3 sm:py-1.5 bg-primary-600 text-white text-sm rounded-full sm:rounded-lg hover:bg-primary-700 transition-colors"
+                  className="btn-vintage btn-primary flex items-center gap-1.5 px-4 py-2 text-sm"
                 >
-                  <LogIn className="w-5 h-5 sm:w-4 sm:h-4" />
+                  <LogIn className="w-4 h-4" />
                   <span className="hidden sm:inline">Sign In</span>
                 </Link>
               </SignedOut>
@@ -152,61 +156,70 @@ export function Navigation() {
         </div>
       </nav>
 
-      {/* Ask the Professor Modal */}
+      {/* Ask the Professor Modal - Vintage Style */}
       {showProfessor && (
         <div
-          className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-vintage-ink/60 flex items-end sm:items-center justify-center p-4"
           onClick={() => setShowProfessor(false)}
         >
           <div
-            className="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-lg max-h-[80vh] overflow-hidden shadow-2xl"
+            className="bg-vintage-cream border-4 border-vintage-ink shadow-vintage-lg w-full max-w-lg max-h-[80vh] overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
-            <div className="bg-gradient-to-r from-blue-700 to-blue-900 p-6 text-white">
+            {/* Header - Styled like a newspaper headline */}
+            <div className="bg-vintage-blue border-b-4 border-vintage-ink p-6 text-white relative">
+              {/* Corner fold effect */}
+              <div className="absolute top-0 right-0 w-8 h-8 bg-vintage-cream border-l-4 border-b-4 border-vintage-ink transform origin-top-right" style={{ clipPath: 'polygon(100% 0, 0 100%, 100% 100%)' }} />
+
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-yellow-400/20 rounded-xl">
-                    <Brain className="w-6 h-6 text-yellow-400" />
+                  <div className="p-2 bg-vintage-yellow border-2 border-vintage-ink">
+                    <Brain className="w-6 h-6 text-vintage-ink" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-yellow-400">Ask the Professor</h2>
-                    <p className="text-blue-200 text-sm">Your guide to Collectors Chest</p>
+                    <h2 className="font-display text-2xl text-vintage-yellow tracking-wide uppercase">
+                      Ask the Professor
+                    </h2>
+                    <p className="font-mono text-xs text-blue-200 tracking-wider uppercase">
+                      Your Guide to Collectors Chest
+                    </p>
                   </div>
                 </div>
                 <button
                   onClick={() => setShowProfessor(false)}
-                  className="p-2 hover:bg-yellow-400/20 rounded-lg transition-colors"
+                  className="p-2 bg-vintage-red border-2 border-vintage-ink hover:bg-vintage-redDark transition-colors"
                 >
-                  <X className="w-5 h-5 text-yellow-400" />
+                  <X className="w-5 h-5 text-white" />
                 </button>
               </div>
             </div>
 
             {/* FAQ List */}
-            <div className="overflow-y-auto max-h-[calc(80vh-120px)] p-4">
-              <p className="text-gray-600 text-sm mb-4">
+            <div className="overflow-y-auto max-h-[calc(80vh-120px)] p-4 bg-vintage-paper">
+              <p className="font-serif text-vintage-inkSoft text-sm mb-4 italic">
                 Welcome, collector! Here are answers to commonly asked questions.
               </p>
               <div className="space-y-2">
                 {faqs.map((faq, index) => (
                   <div
                     key={index}
-                    className="border border-gray-200 rounded-lg overflow-hidden"
+                    className="border-3 border-vintage-ink bg-vintage-cream overflow-hidden"
                   >
                     <button
                       onClick={() => setExpandedFAQ(expandedFAQ === index ? null : index)}
-                      className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 transition-colors"
+                      className="w-full flex items-center justify-between p-4 text-left hover:bg-vintage-aged transition-colors"
                     >
-                      <span className="font-medium text-gray-900 pr-4">{faq.question}</span>
+                      <span className="font-display text-sm text-vintage-ink pr-4 uppercase tracking-wide">
+                        {faq.question}
+                      </span>
                       {expandedFAQ === index ? (
-                        <ChevronUp className="w-5 h-5 text-gray-500 flex-shrink-0" />
+                        <ChevronUp className="w-5 h-5 text-vintage-red flex-shrink-0" />
                       ) : (
-                        <ChevronDown className="w-5 h-5 text-gray-500 flex-shrink-0" />
+                        <ChevronDown className="w-5 h-5 text-vintage-inkFaded flex-shrink-0" />
                       )}
                     </button>
                     {expandedFAQ === index && (
-                      <div className="px-4 pb-4 text-gray-600 text-sm border-t border-gray-100 pt-3">
+                      <div className="px-4 pb-4 font-serif text-vintage-inkSoft text-sm border-t-2 border-vintage-ink/20 pt-3 bg-white/50">
                         {faq.answer}
                       </div>
                     )}

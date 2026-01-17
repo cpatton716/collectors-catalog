@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Anton, Crimson_Text, Courier_Prime } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 import { Navigation } from "@/components/Navigation";
@@ -9,7 +9,29 @@ import { ServiceWorkerProvider } from "@/components/ServiceWorkerProvider";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { PostHogProvider } from "@/components/PostHogProvider";
 
-const inter = Inter({ subsets: ["latin"] });
+// Bold condensed display font for headlines
+const anton = Anton({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-anton",
+  display: "swap",
+});
+
+// Elegant serif for body text
+const crimsonText = Crimson_Text({
+  weight: ["400", "600", "700"],
+  subsets: ["latin"],
+  variable: "--font-crimson",
+  display: "swap",
+});
+
+// Typewriter style for captions/accents
+const courierPrime = Courier_Prime({
+  weight: ["400", "700"],
+  subsets: ["latin"],
+  variable: "--font-courier-prime",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Collectors Chest - Track, Value & Trade Your Comics",
@@ -41,7 +63,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#1e40af",
+  themeColor: "#C41E3A", // Action Comics Red
 };
 
 export default function RootLayout({
@@ -52,11 +74,13 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en">
-        <body className={inter.className}>
+        <body
+          className={`${anton.variable} ${crimsonText.variable} ${courierPrime.variable} font-serif bg-vintage-paper`}
+        >
           <PostHogProvider>
             <ServiceWorkerProvider>
               <Providers>
-                <div className="min-h-screen bg-gray-50 pb-20 md:pb-0">
+                <div className="min-h-screen pb-20 md:pb-0">
                   <Navigation />
                   <main className="container mx-auto px-4 py-8">{children}</main>
                   <MobileUtilitiesFAB />

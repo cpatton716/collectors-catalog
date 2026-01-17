@@ -32,10 +32,10 @@ export function ComicCard({ item, onClick, onToggleStar, onEdit }: ComicCardProp
   return (
     <div
       onClick={onClick}
-      className="comic-card bg-white rounded-xl shadow-md overflow-hidden cursor-pointer group"
+      className="comic-card overflow-hidden cursor-pointer group"
     >
       {/* Cover Image */}
-      <div className="relative aspect-[2/3] bg-gray-100">
+      <div className="relative aspect-[2/3] bg-vintage-aged">
         {coverImageUrl ? (
           <img
             src={coverImageUrl}
@@ -43,21 +43,21 @@ export function ComicCard({ item, onClick, onToggleStar, onEdit }: ComicCardProp
             className="w-full h-full object-cover"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gray-900 text-4xl">
-              <span className="text-green-400 font-bold italic drop-shadow-[0_0_8px_rgba(74,222,128,0.6)]">?</span>
-            </div>
+          <div className="w-full h-full flex items-center justify-center bg-vintage-ink text-4xl">
+            <span className="text-vintage-yellow font-display drop-shadow-lg">?</span>
+          </div>
         )}
 
-        {/* Badges */}
+        {/* Badges - Vintage Style */}
         <div className="absolute top-2 left-2 flex flex-col gap-1">
           {forSale && (
-            <span className="px-2 py-1 bg-green-500 text-white text-xs font-semibold rounded-full flex items-center gap-1">
+            <span className="badge-vintage badge-yellow flex items-center gap-1">
               <Tag className="w-3 h-3" />
               For Sale
             </span>
           )}
           {conditionLabel && (
-            <span className="px-2 py-1 bg-blue-500 text-white text-xs font-semibold rounded-full">
+            <span className="badge-vintage badge-blue">
               {conditionLabel}
             </span>
           )}
@@ -68,10 +68,10 @@ export function ComicCard({ item, onClick, onToggleStar, onEdit }: ComicCardProp
           {onToggleStar && (
             <button
               onClick={handleStarClick}
-              className={`p-2 rounded-full transition-colors ${
+              className={`p-2 border-2 border-vintage-ink transition-all ${
                 item.isStarred
-                  ? "bg-yellow-500 text-white"
-                  : "bg-white/90 text-gray-600 hover:bg-yellow-100 hover:text-yellow-600"
+                  ? "bg-vintage-yellow text-vintage-ink shadow-vintage-sm"
+                  : "bg-vintage-cream text-vintage-inkFaded hover:bg-vintage-yellow hover:text-vintage-ink"
               }`}
               title={item.isStarred ? "Remove from favorites" : "Add to favorites"}
             >
@@ -81,7 +81,7 @@ export function ComicCard({ item, onClick, onToggleStar, onEdit }: ComicCardProp
           {onEdit && (
             <button
               onClick={handleEditClick}
-              className="p-2 bg-white/90 text-gray-600 rounded-full hover:bg-blue-100 hover:text-blue-600 transition-colors"
+              className="p-2 bg-vintage-cream border-2 border-vintage-ink text-vintage-inkFaded hover:bg-vintage-blue hover:text-white transition-all"
               title="Edit details"
             >
               <Pencil className="w-4 h-4" />
@@ -89,19 +89,19 @@ export function ComicCard({ item, onClick, onToggleStar, onEdit }: ComicCardProp
           )}
         </div>
 
-        {/* Price/Profit Badge */}
+        {/* Price/Profit Badge - Vintage Price Tag Style */}
         <div className="absolute bottom-2 right-2 flex flex-col gap-1 items-end">
           {estimatedValue > 0 && (
-            <span className="px-2 py-1 bg-black/70 text-white text-xs font-bold rounded-lg flex items-center gap-1">
+            <span className="price-tag flex items-center gap-1 text-sm">
               <DollarSign className="w-3 h-3" />
               {estimatedValue.toFixed(0)}
             </span>
           )}
           {hasProfitData && (
-            <span className={`px-2 py-0.5 text-xs font-semibold rounded-lg flex items-center gap-0.5 ${
+            <span className={`badge-vintage text-xs flex items-center gap-0.5 ${
               profitLoss >= 0
-                ? "bg-green-500 text-white"
-                : "bg-red-500 text-white"
+                ? "bg-green-600 text-white border-green-800"
+                : "bg-vintage-red text-white border-vintage-redDark"
             }`}>
               {profitLoss >= 0 ? (
                 <TrendingUp className="w-3 h-3" />
@@ -113,27 +113,27 @@ export function ComicCard({ item, onClick, onToggleStar, onEdit }: ComicCardProp
           )}
         </div>
 
-        {/* Hover Overlay */}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200 pointer-events-none" />
+        {/* Hover Overlay - Slight aging effect */}
+        <div className="absolute inset-0 bg-vintage-foxing/0 group-hover:bg-vintage-foxing/10 transition-colors duration-200 pointer-events-none" />
       </div>
 
       {/* Info */}
-      <div className="p-3">
-        <h3 className="font-semibold text-gray-900 truncate">
+      <div className="p-3 bg-vintage-cream">
+        <h3 className="font-display text-vintage-ink truncate uppercase tracking-wide">
           {comic.title || "Unknown Title"}
         </h3>
         <div className="flex items-center justify-between mt-1">
-          <p className="text-sm text-gray-600">
+          <p className="font-mono text-sm text-vintage-inkSoft">
             #{comic.issueNumber || "?"}
             {comic.variant && (
-              <span className="text-gray-400 ml-1">({comic.variant})</span>
+              <span className="text-vintage-inkFaded ml-1">({comic.variant})</span>
             )}
           </p>
           {item.isStarred && (
-            <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+            <Star className="w-4 h-4 text-vintage-yellow fill-vintage-yellow" />
           )}
         </div>
-        <p className="text-xs text-gray-500 mt-1 truncate">
+        <p className="font-mono text-xs text-vintage-inkFaded mt-1 truncate uppercase tracking-wider">
           {comic.publisher || "Unknown Publisher"}
           {comic.releaseYear && ` • ${comic.releaseYear}`}
         </p>
