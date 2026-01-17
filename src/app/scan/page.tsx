@@ -396,21 +396,21 @@ export default function ScanPage() {
       <div className="mb-8">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
+          className="flex items-center gap-2 text-vintage-inkFaded hover:text-vintage-ink mb-4 font-mono text-sm uppercase tracking-wide"
         >
           <ArrowLeft className="w-4 h-4" />
           Back
         </button>
-        <h1 className="text-3xl font-bold text-gray-900">Scan Book Cover</h1>
-        <p className="text-gray-600 mt-2">
+        <h1 className="text-3xl font-display text-vintage-ink uppercase tracking-wide">Scan Book Cover</h1>
+        <p className="text-vintage-inkSoft font-serif mt-2">
           Upload a photo of your comic book cover to identify and add it to your
           collection.
         </p>
       </div>
 
-      {/* Progress Steps */}
+      {/* Progress Steps - Vintage Style */}
       {state !== "error" && (
-        <div className="mb-8">
+        <div className="mb-8 bg-vintage-cream border-3 border-vintage-ink p-4 shadow-vintage">
           <div className="flex items-center justify-between">
             {STEPS.map((step, index) => {
               const currentIndex = getCurrentStepIndex();
@@ -422,12 +422,12 @@ export default function ScanPage() {
                 <div key={step.id} className="flex-1 flex items-center">
                   <div className="flex flex-col items-center">
                     <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+                      className={`w-10 h-10 border-2 border-vintage-ink flex items-center justify-center transition-colors ${
                         isCompleted
-                          ? "bg-green-500 text-white"
+                          ? "bg-green-600 text-white"
                           : isCurrent
-                            ? "bg-primary-600 text-white"
-                            : "bg-gray-200 text-gray-400"
+                            ? "bg-vintage-blue text-white"
+                            : "bg-vintage-aged text-vintage-inkFaded"
                       }`}
                     >
                       {isCompleted ? (
@@ -437,8 +437,8 @@ export default function ScanPage() {
                       )}
                     </div>
                     <span
-                      className={`text-xs mt-2 font-medium ${
-                        isCurrent ? "text-primary-600" : isCompleted ? "text-green-600" : "text-gray-400"
+                      className={`text-xs mt-2 font-display uppercase tracking-wide ${
+                        isCurrent ? "text-vintage-blue" : isCompleted ? "text-green-700" : "text-vintage-inkFaded"
                       }`}
                     >
                       {step.label}
@@ -446,8 +446,8 @@ export default function ScanPage() {
                   </div>
                   {index < STEPS.length - 1 && (
                     <div
-                      className={`flex-1 h-1 mx-2 rounded ${
-                        index < currentIndex ? "bg-green-500" : "bg-gray-200"
+                      className={`flex-1 h-1 mx-2 border border-vintage-ink ${
+                        index < currentIndex ? "bg-green-600" : "bg-vintage-aged"
                       }`}
                     />
                   )}
@@ -465,40 +465,40 @@ export default function ScanPage() {
           {isGuest && <GuestLimitBanner variant={isLimitReached ? "warning" : "info"} />}
 
           {isLimitReached ? (
-            <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
+            <div className="bg-vintage-cream border-3 border-vintage-ink p-8 shadow-vintage">
               <GuestLimitBanner />
             </div>
           ) : (
-            <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
+            <div className="bg-vintage-cream border-3 border-vintage-ink p-8 shadow-vintage">
               <ImageUpload onImageSelect={handleImageSelect} />
 
               {/* Alternative add methods */}
-              <div className="mt-8 pt-6 border-t border-gray-100">
-                <p className="text-sm text-gray-500 text-center mb-4">
+              <div className="mt-8 pt-6 border-t-2 border-vintage-ink/20">
+                <p className="text-sm text-vintage-inkFaded text-center mb-4 font-mono uppercase tracking-wide">
                   Other ways to add your books:
                 </p>
-                <div className="flex flex-wrap justify-center gap-6">
+                <div className="flex flex-wrap justify-center gap-4">
                   <button
                     onClick={() => setShowBarcodeScanner(true)}
-                    className="flex flex-col items-center justify-center w-36 h-24 bg-primary-50 text-primary-700 rounded-xl hover:bg-primary-100 transition-colors border border-primary-200"
+                    className="flex flex-col items-center justify-center w-36 h-24 bg-vintage-paper text-vintage-blue border-2 border-vintage-ink hover:bg-vintage-blue hover:text-white transition-colors shadow-vintage-sm"
                   >
                     <ScanBarcode className="w-7 h-7 mb-2" />
-                    <span className="text-sm font-medium">Scan Barcode</span>
+                    <span className="text-sm font-display uppercase">Scan Barcode</span>
                   </button>
                   <button
                     onClick={handleManualEntry}
-                    className="flex flex-col items-center justify-center w-36 h-24 bg-primary-50 text-primary-700 rounded-xl hover:bg-primary-100 transition-colors border border-primary-200"
+                    className="flex flex-col items-center justify-center w-36 h-24 bg-vintage-paper text-vintage-blue border-2 border-vintage-ink hover:bg-vintage-blue hover:text-white transition-colors shadow-vintage-sm"
                   >
                     <PenLine className="w-7 h-7 mb-2" />
-                    <span className="text-sm font-medium">Enter Manually</span>
+                    <span className="text-sm font-display uppercase">Enter Manually</span>
                   </button>
                   {isSignedIn && (
                     <button
                       onClick={() => setShowCSVImport(true)}
-                      className="hidden sm:flex flex-col items-center justify-center w-36 h-24 bg-primary-50 text-primary-700 rounded-xl hover:bg-primary-100 transition-colors border border-primary-200"
+                      className="hidden sm:flex flex-col items-center justify-center w-36 h-24 bg-vintage-paper text-vintage-blue border-2 border-vintage-ink hover:bg-vintage-blue hover:text-white transition-colors shadow-vintage-sm"
                     >
                       <FileSpreadsheet className="w-7 h-7 mb-2" />
-                      <span className="text-sm font-medium">Import CSV</span>
+                      <span className="text-sm font-display uppercase">Import CSV</span>
                     </button>
                   )}
                 </div>
@@ -510,11 +510,11 @@ export default function ScanPage() {
 
       {/* Analyzing State */}
       {state === "analyzing" && (
-        <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
+        <div className="bg-vintage-cream border-3 border-vintage-ink p-8 shadow-vintage">
           <div className="flex flex-col md:flex-row gap-8">
             {/* Image Preview */}
             <div className="md:w-1/3">
-              <div className="aspect-[2/3] rounded-lg overflow-hidden bg-gray-100">
+              <div className="aspect-[2/3] overflow-hidden bg-vintage-aged border-2 border-vintage-ink">
                 {imagePreview && (
                   <img
                     src={imagePreview}
@@ -528,26 +528,26 @@ export default function ScanPage() {
             {/* Loading State */}
             <div className="md:w-2/3 flex flex-col items-center justify-center text-center">
               <div className="relative">
-                <div className="w-20 h-20 bg-primary-100 rounded-full flex items-center justify-center">
-                  <Wand2 className="w-10 h-10 text-primary-600" />
+                <div className="w-20 h-20 bg-vintage-yellow border-2 border-vintage-ink flex items-center justify-center">
+                  <Wand2 className="w-10 h-10 text-vintage-ink" />
                 </div>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <Loader2 className="w-24 h-24 text-primary-300 animate-spin" />
+                  <Loader2 className="w-24 h-24 text-vintage-blue animate-spin" />
                 </div>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mt-6">
+              <h3 className="text-xl font-display text-vintage-ink mt-6 uppercase tracking-wide">
                 Analyzing Comic Cover
               </h3>
-              <p className="text-gray-600 mt-2">
+              <p className="text-vintage-inkSoft font-serif mt-2">
                 Hang tight! We&apos;re identifying the title, issue #, publisher, and more...
               </p>
-              <div className="mt-4 flex items-center gap-2 text-sm text-gray-500">
-                <div className="w-2 h-2 bg-primary-500 rounded-full animate-pulse" />
-                This should only take a few seconds. Enjoy these fun facts while you wait!
+              <div className="mt-4 flex items-center gap-2 text-sm text-vintage-inkFaded font-mono">
+                <div className="w-2 h-2 bg-vintage-red rounded-full animate-pulse" />
+                Enjoy these fun facts while you wait!
               </div>
               {currentFact && (
-                <div className="mt-6 p-4 bg-primary-50 rounded-lg border border-primary-100 max-w-md">
-                  <p className="text-sm text-primary-800 italic">
+                <div className="mt-6 p-4 bg-vintage-paper border-2 border-vintage-ink max-w-md shadow-vintage-sm">
+                  <p className="text-sm text-vintage-inkSoft font-serif italic">
                     &ldquo;{currentFact}&rdquo;
                   </p>
                 </div>
@@ -559,12 +559,12 @@ export default function ScanPage() {
 
       {/* Error State */}
       {state === "error" && (
-        <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
+        <div className="bg-vintage-cream border-3 border-vintage-ink p-8 shadow-vintage">
           <div className="flex flex-col md:flex-row gap-8">
             {/* Image Preview */}
             {imagePreview && (
               <div className="md:w-1/3">
-                <div className="aspect-[2/3] rounded-lg overflow-hidden bg-gray-100">
+                <div className="aspect-[2/3] overflow-hidden bg-vintage-aged border-2 border-vintage-ink">
                   <img
                     src={imagePreview}
                     alt="Uploaded comic"
@@ -578,29 +578,29 @@ export default function ScanPage() {
             <div
               className={`${imagePreview ? "md:w-2/3" : "w-full"} flex flex-col items-center justify-center text-center`}
             >
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
-                <AlertCircle className="w-8 h-8 text-red-600" />
+              <div className="w-16 h-16 bg-vintage-red border-2 border-vintage-redDark flex items-center justify-center">
+                <AlertCircle className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mt-4">
+              <h3 className="text-xl font-display text-vintage-ink mt-4 uppercase tracking-wide">
                 Couldn&apos;t Recognize Comic
               </h3>
-              <p className="text-gray-600 mt-2 max-w-md">{error}</p>
-              <div className="flex items-center gap-3 mt-6">
+              <p className="text-vintage-inkSoft font-serif mt-2 max-w-md">{error}</p>
+              <div className="flex flex-wrap items-center justify-center gap-3 mt-6">
                 <button
                   onClick={handleRetry}
-                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                  className="btn-vintage bg-vintage-blue text-white hover:bg-vintage-blueDark"
                 >
                   Try Again
                 </button>
                 <button
                   onClick={handleManualEntry}
-                  className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="btn-vintage bg-vintage-paper text-vintage-ink hover:bg-vintage-aged"
                 >
                   Enter Manually
                 </button>
                 <button
                   onClick={handleCancel}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="btn-vintage bg-vintage-aged text-vintage-ink hover:bg-vintage-paper"
                 >
                   Cancel
                 </button>
@@ -612,12 +612,12 @@ export default function ScanPage() {
 
       {/* Review State */}
       {state === "review" && comicDetails && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-vintage-cream border-3 border-vintage-ink shadow-vintage overflow-hidden">
           <div className="flex flex-col lg:flex-row">
             {/* Image Preview */}
-            <div className="lg:w-1/3 p-6 bg-gray-50 border-b lg:border-b-0 lg:border-r border-gray-100">
+            <div className="lg:w-1/3 p-6 bg-vintage-aged border-b-3 lg:border-b-0 lg:border-r-3 border-vintage-ink">
               <div className="sticky top-6">
-                <div className="aspect-[2/3] rounded-lg overflow-hidden bg-gray-200 shadow-lg relative group">
+                <div className="aspect-[2/3] overflow-hidden bg-vintage-paper border-2 border-vintage-ink shadow-vintage relative group">
                   {imagePreview ? (
                     <>
                       <img
@@ -628,22 +628,22 @@ export default function ScanPage() {
                       />
                       {/* Zoom hint overlay */}
                       <div
-                        className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors cursor-pointer flex items-center justify-center"
+                        className="absolute inset-0 bg-vintage-ink/0 group-hover:bg-vintage-ink/20 transition-colors cursor-pointer flex items-center justify-center"
                         onClick={() => setShowEnlargedImage(true)}
                       >
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 rounded-full p-2 shadow-lg">
-                          <ZoomIn className="w-5 h-5 text-gray-700" />
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-vintage-cream border-2 border-vintage-ink p-2 shadow-vintage-sm">
+                          <ZoomIn className="w-5 h-5 text-vintage-ink" />
                         </div>
                       </div>
                     </>
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400">
+                    <div className="w-full h-full flex items-center justify-center text-vintage-inkFaded font-serif">
                       No image
                     </div>
                   )}
                 </div>
                 {imagePreview && (
-                  <p className="text-xs text-gray-500 text-center mt-2">
+                  <p className="text-xs text-vintage-inkFaded text-center mt-2 font-mono uppercase tracking-wide">
                     Tap image to enlarge
                   </p>
                 )}
@@ -659,7 +659,7 @@ export default function ScanPage() {
 
             {/* Form */}
             <div className="lg:w-2/3 p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">
+              <h2 className="text-xl font-display text-vintage-ink mb-6 uppercase tracking-wide">
                 Verify Comic Details
               </h2>
               <ComicDetailsForm
@@ -679,11 +679,11 @@ export default function ScanPage() {
 
       {/* Saved State */}
       {state === "saved" && savedComic && (
-        <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
+        <div className="bg-vintage-cream border-3 border-vintage-ink p-8 shadow-vintage">
           <div className="flex flex-col md:flex-row gap-8">
             {/* Image Preview */}
             <div className="md:w-1/3">
-              <div className="aspect-[2/3] rounded-lg overflow-hidden bg-gray-100 shadow-lg">
+              <div className="aspect-[2/3] overflow-hidden bg-vintage-aged border-2 border-vintage-ink shadow-vintage">
                 {imagePreview ? (
                   <img
                     src={imagePreview}
@@ -691,7 +691,7 @@ export default function ScanPage() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400">
+                  <div className="w-full h-full flex items-center justify-center text-vintage-inkFaded font-serif">
                     No image
                   </div>
                 )}
@@ -700,21 +700,21 @@ export default function ScanPage() {
 
             {/* Success Message */}
             <div className="md:w-2/3 flex flex-col items-center justify-center text-center">
-              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
-                <Check className="w-10 h-10 text-green-600" />
+              <div className="w-20 h-20 bg-green-600 border-2 border-green-800 flex items-center justify-center">
+                <Check className="w-10 h-10 text-white" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mt-6">
+              <h3 className="text-2xl font-display text-vintage-ink mt-6 uppercase tracking-wide">
                 Added to Collection!
               </h3>
-              <p className="text-gray-600 mt-2">
-                <span className="font-semibold">{savedComic.comic.title}</span>
+              <p className="text-vintage-inkSoft font-serif mt-2">
+                <span className="font-bold">{savedComic.comic.title}</span>
                 {savedComic.comic.issueNumber && ` #${savedComic.comic.issueNumber}`}
                 {" "}has been saved.
               </p>
 
               {savedComic.comic.priceData?.estimatedValue && (
-                <div className="mt-4 px-4 py-2 bg-green-50 rounded-lg">
-                  <p className="text-sm text-green-700">
+                <div className="mt-4 price-tag inline-block">
+                  <p className="text-sm">
                     Estimated Value: <span className="font-bold">${savedComic.comic.priceData.estimatedValue.toFixed(2)}</span>
                   </p>
                 </div>
@@ -723,14 +723,14 @@ export default function ScanPage() {
               <div className="flex flex-col sm:flex-row items-center gap-3 mt-8">
                 <button
                   onClick={handleAddAnother}
-                  className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2 font-medium"
+                  className="btn-vintage bg-vintage-red text-white hover:bg-vintage-redDark flex items-center gap-2"
                 >
                   <Camera className="w-5 h-5" />
                   Scan Another Book
                 </button>
                 <button
                   onClick={() => router.push("/collection")}
-                  className="px-6 py-3 bg-white text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                  className="btn-vintage bg-vintage-paper text-vintage-ink hover:bg-vintage-aged"
                 >
                   View Collection
                 </button>
@@ -751,7 +751,7 @@ export default function ScanPage() {
 
       {/* CSV Import Modal */}
       {showCSVImport && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-vintage-ink/70">
           <div className="w-full max-w-2xl">
             <CSVImport
               onImportComplete={async (items) => {
@@ -784,20 +784,20 @@ export default function ScanPage() {
       {/* Enlarged Image Modal */}
       {showEnlargedImage && imagePreview && (
         <div
-          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-vintage-ink/95 flex items-center justify-center p-4"
           onClick={() => setShowEnlargedImage(false)}
         >
           {/* Close button */}
           <button
             onClick={() => setShowEnlargedImage(false)}
-            className="absolute top-4 right-4 p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors z-10"
+            className="absolute top-4 right-4 p-3 bg-vintage-cream/10 hover:bg-vintage-cream/20 border-2 border-vintage-cream/30 transition-colors z-10"
             aria-label="Close"
           >
-            <X className="w-6 h-6 text-white" />
+            <X className="w-6 h-6 text-vintage-cream" />
           </button>
 
           {/* Hint text */}
-          <p className="absolute top-4 left-4 text-white/70 text-sm">
+          <p className="absolute top-4 left-4 text-vintage-cream/70 text-sm font-mono uppercase tracking-wide">
             Tap anywhere to close
           </p>
 
@@ -805,7 +805,7 @@ export default function ScanPage() {
           <img
             src={imagePreview}
             alt="Enlarged comic cover"
-            className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+            className="max-w-full max-h-[90vh] object-contain border-4 border-vintage-cream shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           />
         </div>

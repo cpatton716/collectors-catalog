@@ -305,8 +305,8 @@ export default function CollectionPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">My Collection</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-3xl font-display text-vintage-ink uppercase tracking-wide">My Collection</h1>
+          <p className="text-vintage-inkSoft font-serif mt-1">
             {isFiltered ? (
               <>
                 {stats.count} of {stats.totalCount} comics • ${stats.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} of ${stats.fullCollectionValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} total
@@ -315,7 +315,7 @@ export default function CollectionPage() {
               <>
                 {stats.count} comics • ${stats.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} total value
                 {stats.unpricedCount > 0 && (
-                  <span className="text-gray-400"> ({stats.unpricedCount} unpriced)</span>
+                  <span className="text-vintage-inkFaded"> ({stats.unpricedCount} unpriced)</span>
                 )}
               </>
             )}
@@ -324,21 +324,21 @@ export default function CollectionPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.push("/stats")}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            className="btn-vintage bg-vintage-paper text-vintage-ink hover:bg-vintage-aged"
           >
             <BarChart3 className="w-5 h-5" />
             <span className="hidden sm:inline">Stats</span>
           </button>
           <button
             onClick={() => setShowShareModal(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            className="btn-vintage bg-vintage-paper text-vintage-ink hover:bg-vintage-aged"
           >
             <Share2 className="w-5 h-5" />
             <span className="hidden sm:inline">Share</span>
           </button>
           <button
             onClick={() => router.push("/scan")}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+            className="btn-vintage bg-vintage-red text-white hover:bg-vintage-redDark"
           >
             <Plus className="w-5 h-5" />
             Add Book
@@ -346,81 +346,77 @@ export default function CollectionPage() {
         </div>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards - Vintage Style */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-        <div className="bg-white rounded-lg p-4 shadow-sm border border-blue-200 flex items-center gap-4">
-          <div className="p-3 bg-blue-100 rounded-lg">
-            <BookOpen className="w-5 h-5 text-blue-600" />
+        <div className="bg-vintage-cream border-2 border-vintage-ink p-4 shadow-vintage-sm flex items-center gap-4">
+          <div className="p-3 bg-vintage-blue border border-vintage-blueDark">
+            <BookOpen className="w-5 h-5 text-white" />
           </div>
           <div>
-            <p className="text-sm text-gray-500">Comics{isFiltered && " (filtered)"}</p>
-            <p className="text-xl font-bold text-gray-900">{stats.count}</p>
+            <p className="text-sm text-vintage-inkFaded font-mono uppercase tracking-wide">Comics{isFiltered && " (filtered)"}</p>
+            <p className="text-xl font-display text-vintage-ink">{stats.count}</p>
           </div>
         </div>
-        <div className="bg-white rounded-lg p-4 shadow-sm border border-purple-200 flex items-center gap-4">
-          <div className="p-3 bg-purple-100 rounded-lg">
-            <DollarSign className="w-5 h-5 text-purple-600" />
+        <div className="bg-vintage-cream border-2 border-vintage-ink p-4 shadow-vintage-sm flex items-center gap-4">
+          <div className="p-3 bg-vintage-brown border border-vintage-ink">
+            <DollarSign className="w-5 h-5 text-white" />
           </div>
           <div>
-            <p className="text-sm text-gray-500">Total Cost</p>
-            <p className="text-xl font-bold text-gray-900">
+            <p className="text-sm text-vintage-inkFaded font-mono uppercase tracking-wide">Total Cost</p>
+            <p className="text-xl font-display text-vintage-ink">
               ${stats.totalCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           </div>
         </div>
-        <div className="bg-white rounded-lg p-4 shadow-sm border border-green-200 flex items-center gap-4">
-          <div className="p-3 bg-green-100 rounded-lg">
-            <TrendingUp className="w-5 h-5 text-green-600" />
+        <div className="bg-vintage-cream border-2 border-vintage-ink p-4 shadow-vintage-sm flex items-center gap-4">
+          <div className="p-3 bg-green-600 border border-green-800">
+            <TrendingUp className="w-5 h-5 text-white" />
           </div>
           <div>
-            <p className="text-sm text-gray-500">Est. Value{stats.unpricedCount > 0 && ` (${stats.unpricedCount} unpriced)`}</p>
-            <p className="text-xl font-bold text-gray-900">
+            <p className="text-sm text-vintage-inkFaded font-mono uppercase tracking-wide">Est. Value{stats.unpricedCount > 0 && ` (${stats.unpricedCount} unpriced)`}</p>
+            <p className="text-xl font-display text-vintage-ink">
               ${stats.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           </div>
         </div>
-        <div className={`bg-white rounded-lg p-4 shadow-sm border flex items-center gap-4 ${
-          salesStats.totalProfit >= 0 ? "border-blue-200" : "border-gray-100"
-        }`}>
-          <div className="p-3 bg-blue-100 rounded-lg flex-shrink-0">
-            <Receipt className="w-5 h-5 text-blue-600" />
+        <div className="bg-vintage-cream border-2 border-vintage-ink p-4 shadow-vintage-sm flex items-center gap-4">
+          <div className="p-3 bg-vintage-yellow border border-vintage-yellowDark flex-shrink-0">
+            <Receipt className="w-5 h-5 text-vintage-ink" />
           </div>
           <div className="min-w-0">
-            <p className="text-sm text-gray-500">Sales ({salesStats.totalSales})</p>
-            <p className="text-xl font-bold text-gray-900">
+            <p className="text-sm text-vintage-inkFaded font-mono uppercase tracking-wide">Sales ({salesStats.totalSales})</p>
+            <p className="text-xl font-display text-vintage-ink">
               ${salesStats.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
             {salesStats.totalProfit !== 0 && (
-              <p className={`text-xs ${
-                salesStats.totalProfit >= 0 ? "text-green-500" : "text-red-500"
+              <p className={`text-xs font-mono ${
+                salesStats.totalProfit >= 0 ? "text-green-700" : "text-vintage-red"
               }`}>
                 {salesStats.totalProfit >= 0 ? "+" : ""}${salesStats.totalProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} profit
               </p>
             )}
           </div>
         </div>
-        <div className={`bg-white rounded-lg p-4 shadow-sm border flex items-center gap-4 ${
-          profitLoss >= 0 ? "border-green-200" : "border-red-200"
-        }`}>
-          <div className={`p-3 rounded-lg flex-shrink-0 ${
-            profitLoss >= 0 ? "bg-green-100" : "bg-red-100"
+        <div className={`bg-vintage-cream border-2 border-vintage-ink p-4 shadow-vintage-sm flex items-center gap-4`}>
+          <div className={`p-3 flex-shrink-0 border ${
+            profitLoss >= 0 ? "bg-green-600 border-green-800" : "bg-vintage-red border-vintage-redDark"
           }`}>
             {profitLoss >= 0 ? (
-              <ArrowUpRight className="w-5 h-5 text-green-600" />
+              <ArrowUpRight className="w-5 h-5 text-white" />
             ) : (
-              <ArrowDownRight className="w-5 h-5 text-red-600" />
+              <ArrowDownRight className="w-5 h-5 text-white" />
             )}
           </div>
           <div className="min-w-0">
-            <p className="text-sm text-gray-500">Profit/Loss</p>
-            <p className={`text-xl font-bold ${
-              profitLoss >= 0 ? "text-green-600" : "text-red-600"
+            <p className="text-sm text-vintage-inkFaded font-mono uppercase tracking-wide">Profit/Loss</p>
+            <p className={`text-xl font-display ${
+              profitLoss >= 0 ? "text-green-700" : "text-vintage-red"
             }`}>
               {profitLoss >= 0 ? "+" : ""}${profitLoss.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
             {stats.totalCost > 0 && (
-              <p className={`text-xs ${
-                profitLoss >= 0 ? "text-green-500" : "text-red-500"
+              <p className={`text-xs font-mono ${
+                profitLoss >= 0 ? "text-green-700" : "text-vintage-red"
               }`}>
                 {profitLossPercent >= 0 ? "+" : ""}{profitLossPercent.toFixed(1)}%
               </p>
@@ -429,7 +425,7 @@ export default function CollectionPage() {
         </div>
       </div>
 
-      {/* List Selector Tabs */}
+      {/* List Selector Tabs - Vintage Style */}
       <div className="mb-4">
         <div className="flex flex-wrap gap-2">
           {lists.map((list) => {
@@ -446,17 +442,17 @@ export default function CollectionPage() {
               <button
                 key={list.id}
                 onClick={() => setSelectedList(list.id)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+                className={`px-4 py-2 text-sm font-display uppercase tracking-wide transition-colors flex items-center gap-2 border-2 ${
                   selectedList === list.id
-                    ? "bg-primary-600 text-white shadow-sm"
-                    : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
+                    ? "bg-vintage-blue text-white border-vintage-blueDark shadow-vintage-sm"
+                    : "bg-vintage-paper text-vintage-ink border-vintage-ink hover:bg-vintage-aged"
                 }`}
               >
                 {list.name}
-                <span className={`px-1.5 py-0.5 rounded text-xs ${
+                <span className={`px-1.5 py-0.5 text-xs font-mono ${
                   selectedList === list.id
-                    ? "bg-primary-500 text-white"
-                    : "bg-gray-100 text-gray-600"
+                    ? "bg-vintage-blueDark text-white"
+                    : "bg-vintage-aged text-vintage-inkSoft"
                 }`}>
                   {count}
                 </span>
@@ -466,32 +462,32 @@ export default function CollectionPage() {
         </div>
       </div>
 
-      {/* Filters Bar */}
-      <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 mb-6">
+      {/* Filters Bar - Vintage Style */}
+      <div className="bg-vintage-cream border-3 border-vintage-ink p-4 shadow-vintage mb-6">
         <div className="flex flex-col gap-4">
           {/* Top Row - Search and View Toggle */}
           <div className="flex flex-col md:flex-row gap-4">
             {/* Search */}
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-vintage-inkFaded" />
               <input
                 type="text"
                 placeholder="Search by title, publisher, writer..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-900 placeholder:text-gray-400"
+                className="w-full pl-10 pr-4 py-2 border-2 border-vintage-ink bg-vintage-paper focus:ring-2 focus:ring-vintage-blue focus:border-vintage-blue text-vintage-ink placeholder:text-vintage-inkFaded font-serif"
               />
             </div>
 
             {/* View Toggle */}
-            <div className="flex items-center bg-gray-100 rounded-lg p-1">
+            <div className="flex items-center bg-vintage-aged border-2 border-vintage-ink p-1">
               <button
                 onClick={() => setViewMode("grid")}
                 title="Grid View - Display comics as cover thumbnails"
-                className={`p-2 rounded-md transition-colors ${
+                className={`p-2 transition-colors ${
                   viewMode === "grid"
-                    ? "bg-white shadow-sm text-primary-600"
-                    : "text-gray-500 hover:text-gray-700"
+                    ? "bg-vintage-blue text-white shadow-vintage-sm"
+                    : "text-vintage-inkFaded hover:text-vintage-ink"
                 }`}
               >
                 <Grid3X3 className="w-5 h-5" />
@@ -499,10 +495,10 @@ export default function CollectionPage() {
               <button
                 onClick={() => setViewMode("list")}
                 title="List View - Display comics in a detailed table format"
-                className={`p-2 rounded-md transition-colors ${
+                className={`p-2 transition-colors ${
                   viewMode === "list"
-                    ? "bg-white shadow-sm text-primary-600"
-                    : "text-gray-500 hover:text-gray-700"
+                    ? "bg-vintage-blue text-white shadow-vintage-sm"
+                    : "text-vintage-inkFaded hover:text-vintage-ink"
                 }`}
               >
                 <List className="w-5 h-5" />
@@ -515,26 +511,26 @@ export default function CollectionPage() {
             {/* Starred Filter */}
             <button
               onClick={() => setShowStarredOnly(!showStarredOnly)}
-              className={`flex items-center gap-1.5 px-2.5 py-2 rounded-lg border transition-colors text-sm ${
+              className={`flex items-center gap-1.5 px-2.5 py-2 border-2 transition-colors text-sm font-display uppercase ${
                 showStarredOnly
-                  ? "bg-yellow-100 border-yellow-300 text-yellow-700"
-                  : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
+                  ? "bg-vintage-yellow border-vintage-yellowDark text-vintage-ink"
+                  : "bg-vintage-paper border-vintage-ink text-vintage-inkFaded hover:bg-vintage-aged"
               }`}
             >
-              <Star className={`w-4 h-4 ${showStarredOnly ? "fill-yellow-500 text-yellow-500" : ""}`} />
+              <Star className={`w-4 h-4 ${showStarredOnly ? "fill-vintage-ink text-vintage-ink" : ""}`} />
               <span className="hidden sm:inline">Starred</span>
             </button>
 
             {/* List Filter */}
             <div className="flex items-center gap-1.5">
-              <label className="text-sm font-medium text-gray-600 hidden md:flex items-center gap-1">
+              <label className="text-sm font-mono text-vintage-inkFaded uppercase tracking-wide hidden md:flex items-center gap-1">
                 <ListFilter className="w-4 h-4" />
                 List:
               </label>
               <select
                 value={selectedList}
                 onChange={(e) => setSelectedList(e.target.value)}
-                className="px-2.5 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white text-sm text-gray-900"
+                className="px-2.5 py-2 border-2 border-vintage-ink bg-vintage-paper focus:ring-2 focus:ring-vintage-blue text-sm text-vintage-ink font-serif"
               >
                 {lists.map((list) => (
                   <option key={list.id} value={list.id}>
@@ -546,14 +542,14 @@ export default function CollectionPage() {
 
             {/* Publisher Filter */}
             <div className="flex items-center gap-1.5">
-              <label className="text-sm font-medium text-gray-600 hidden md:flex items-center gap-1">
+              <label className="text-sm font-mono text-vintage-inkFaded uppercase tracking-wide hidden md:flex items-center gap-1">
                 <Building className="w-4 h-4" />
                 Publisher:
               </label>
               <select
                 value={publisherFilter}
                 onChange={(e) => setPublisherFilter(e.target.value)}
-                className="px-2.5 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white text-sm text-gray-900"
+                className="px-2.5 py-2 border-2 border-vintage-ink bg-vintage-paper focus:ring-2 focus:ring-vintage-blue text-sm text-vintage-ink font-serif"
               >
                 <option value="all">All Publishers</option>
                 {uniquePublishers.map((publisher) => (
@@ -566,14 +562,14 @@ export default function CollectionPage() {
 
             {/* Title Filter */}
             <div className="flex items-center gap-1.5">
-              <label className="text-sm font-medium text-gray-600 hidden md:flex items-center gap-1">
+              <label className="text-sm font-mono text-vintage-inkFaded uppercase tracking-wide hidden md:flex items-center gap-1">
                 <Book className="w-4 h-4" />
                 Title:
               </label>
               <select
                 value={titleFilter}
                 onChange={(e) => setTitleFilter(e.target.value)}
-                className="px-2.5 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white text-sm text-gray-900"
+                className="px-2.5 py-2 border-2 border-vintage-ink bg-vintage-paper focus:ring-2 focus:ring-vintage-blue text-sm text-vintage-ink font-serif"
               >
                 <option value="all">All Titles</option>
                 {uniqueTitles.map((title) => (
@@ -586,14 +582,14 @@ export default function CollectionPage() {
 
             {/* Sort */}
             <div className="flex items-center gap-1.5 ml-auto">
-              <label className="text-sm font-medium text-gray-600 flex items-center gap-1">
+              <label className="text-sm font-mono text-vintage-inkFaded uppercase tracking-wide flex items-center gap-1">
                 <SortAsc className="w-4 h-4" />
                 Sort:
               </label>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="px-2.5 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white text-sm text-gray-900"
+                className="px-2.5 py-2 border-2 border-vintage-ink bg-vintage-paper focus:ring-2 focus:ring-vintage-blue text-sm text-vintage-ink font-serif"
               >
                 <option value="date">Date Added</option>
                 <option value="title">Title</option>
@@ -606,7 +602,7 @@ export default function CollectionPage() {
             <FeatureButton
               feature="csvExport"
               onClick={handleExportCSV}
-              className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-700 transition-colors text-sm"
+              className="flex items-center gap-1.5 px-2.5 py-2 border-2 border-vintage-ink bg-vintage-paper text-vintage-inkFaded hover:bg-vintage-aged hover:text-vintage-ink transition-colors text-sm font-display uppercase"
             >
               <Download className="w-4 h-4" />
               <span className="hidden sm:inline">Export CSV</span>
@@ -622,7 +618,7 @@ export default function CollectionPage() {
                   setSearchQuery("");
                   setSelectedList("collection");
                 }}
-                className="text-sm text-primary-600 hover:text-primary-700 underline whitespace-nowrap"
+                className="text-sm text-vintage-red hover:text-vintage-redDark underline whitespace-nowrap font-mono"
               >
                 Clear filters
               </button>
@@ -633,18 +629,18 @@ export default function CollectionPage() {
 
       {/* Collection Display */}
       {filteredCollection.length === 0 ? (
-        <div className="bg-white rounded-xl p-12 shadow-sm border border-gray-100 text-center">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <BookOpen className="w-8 h-8 text-gray-400" />
+        <div className="bg-vintage-cream border-3 border-vintage-ink p-12 shadow-vintage text-center">
+          <div className="w-16 h-16 bg-vintage-aged border-2 border-vintage-ink flex items-center justify-center mx-auto mb-4">
+            <BookOpen className="w-8 h-8 text-vintage-inkFaded" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          <h3 className="text-lg font-display text-vintage-ink uppercase tracking-wide mb-2">
             {searchQuery || publisherFilter !== "all" || titleFilter !== "all" || showStarredOnly
               ? "No comics match your filters"
               : selectedList !== "collection"
                 ? "This list is empty"
                 : "Your collection is empty"}
           </h3>
-          <p className="text-gray-600 mb-6">
+          <p className="text-vintage-inkSoft font-serif mb-6">
             {searchQuery || publisherFilter !== "all" || titleFilter !== "all" || showStarredOnly
               ? "Try adjusting your filters or search terms"
               : selectedList !== "collection"
@@ -660,14 +656,14 @@ export default function CollectionPage() {
                   setTitleFilter("all");
                   setShowStarredOnly(false);
                 }}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                className="btn-vintage bg-vintage-blue text-white hover:bg-vintage-blueDark"
               >
                 Clear All Filters
               </button>
             ) : (
               <button
                 onClick={() => router.push("/scan")}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                className="btn-vintage bg-vintage-red text-white hover:bg-vintage-redDark inline-flex items-center gap-2"
               >
                 <Plus className="w-5 h-5" />
                 {selectedList !== "collection" ? "Scan a Book" : "Add Your First Comic"}
@@ -676,7 +672,7 @@ export default function CollectionPage() {
             {selectedList !== "collection" && collection.length > 0 && (
               <button
                 onClick={() => setSelectedList("collection")}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-white text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                className="btn-vintage bg-vintage-paper text-vintage-ink hover:bg-vintage-aged"
               >
                 View All Comics
               </button>
@@ -696,9 +692,9 @@ export default function CollectionPage() {
           ))}
         </div>
       ) : (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-vintage-cream border-3 border-vintage-ink shadow-vintage overflow-hidden">
           {/* Table Header */}
-          <div className="grid grid-cols-12 gap-4 px-4 py-3 bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+          <div className="grid grid-cols-12 gap-4 px-4 py-3 bg-vintage-aged border-b-2 border-vintage-ink text-xs font-display text-vintage-ink uppercase tracking-wider">
             <div className="col-span-5">Comic</div>
             <div className="col-span-2">Publisher</div>
             <div className="col-span-2 text-right">Est. Value</div>
@@ -707,7 +703,7 @@ export default function CollectionPage() {
           </div>
 
           {/* Table Body */}
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-vintage-ink/20">
             {filteredCollection.map((item) => {
               const { comic } = item;
               const estimatedValue = getComicValue(item);
@@ -719,11 +715,11 @@ export default function CollectionPage() {
                 <div
                   key={item.id}
                   onClick={() => handleComicClick(item)}
-                  className="grid grid-cols-12 gap-4 px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors items-center"
+                  className="grid grid-cols-12 gap-4 px-4 py-3 hover:bg-vintage-aged cursor-pointer transition-colors items-center"
                 >
                   {/* Comic Info */}
                   <div className="col-span-5 flex items-center gap-3">
-                    <div className="w-10 h-14 flex-shrink-0 rounded overflow-hidden bg-gray-100">
+                    <div className="w-10 h-14 flex-shrink-0 overflow-hidden bg-vintage-aged border border-vintage-ink">
                       {item.coverImageUrl ? (
                         <img
                           src={item.coverImageUrl}
@@ -731,24 +727,24 @@ export default function CollectionPage() {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gray-900 text-xs">
-                          <span className="text-green-400 font-bold italic drop-shadow-[0_0_4px_rgba(74,222,128,0.6)]">?</span>
+                        <div className="w-full h-full flex items-center justify-center bg-vintage-ink text-xs">
+                          <span className="text-vintage-yellow font-display">?</span>
                         </div>
                       )}
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="font-medium text-gray-900 truncate">
+                        <p className="font-display text-vintage-ink truncate uppercase">
                           {comic.title || "Unknown Title"}
                         </p>
                         {item.isStarred && (
-                          <Star className="w-4 h-4 text-yellow-500 fill-yellow-500 flex-shrink-0" />
+                          <Star className="w-4 h-4 text-vintage-yellow fill-vintage-yellow flex-shrink-0" />
                         )}
                       </div>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-vintage-inkFaded font-mono">
                         Issue #{comic.issueNumber || "?"}
                         {comic.variant && (
-                          <span className="text-gray-400"> • {comic.variant}</span>
+                          <span className="text-vintage-inkFaded"> • {comic.variant}</span>
                         )}
                       </p>
                     </div>
@@ -756,7 +752,7 @@ export default function CollectionPage() {
 
                   {/* Publisher */}
                   <div className="col-span-2">
-                    <p className="text-sm text-gray-600 truncate">
+                    <p className="text-sm text-vintage-inkSoft font-serif truncate">
                       {comic.publisher || "Unknown"}
                     </p>
                   </div>
@@ -765,42 +761,42 @@ export default function CollectionPage() {
                   <div className="col-span-2 text-right">
                     {estimatedValue > 0 ? (
                       <div>
-                        <p className="font-medium text-gray-900">
+                        <p className="font-display text-vintage-ink">
                           ${estimatedValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </p>
                         {itemProfitLoss !== null && (
-                          <p className={`text-xs ${itemProfitLoss >= 0 ? "text-green-600" : "text-red-600"}`}>
+                          <p className={`text-xs font-mono ${itemProfitLoss >= 0 ? "text-green-700" : "text-vintage-red"}`}>
                             {itemProfitLoss >= 0 ? "+" : ""}${itemProfitLoss.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </p>
                         )}
                       </div>
                     ) : (
-                      <span className="text-sm text-gray-400">—</span>
+                      <span className="text-sm text-vintage-inkFaded">—</span>
                     )}
                   </div>
 
                   {/* Purchase Price */}
                   <div className="col-span-2 text-right">
                     {item.purchasePrice ? (
-                      <p className="font-medium text-gray-900">
+                      <p className="font-display text-vintage-ink">
                         ${item.purchasePrice.toFixed(2)}
                       </p>
                     ) : (
-                      <span className="text-sm text-gray-400">—</span>
+                      <span className="text-sm text-vintage-inkFaded">—</span>
                     )}
                   </div>
 
                   {/* For Sale */}
                   <div className="col-span-1 flex justify-center">
                     {item.forSale ? (
-                      <div className="flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full">
+                      <div className="flex items-center gap-1 px-2 py-1 bg-vintage-yellow text-vintage-ink border border-vintage-yellowDark">
                         <Tag className="w-3 h-3" />
-                        <span className="text-xs font-medium">
+                        <span className="text-xs font-display">
                           ${item.askingPrice?.toFixed(0) || "—"}
                         </span>
                       </div>
                     ) : (
-                      <span className="text-gray-300">—</span>
+                      <span className="text-vintage-inkFaded">—</span>
                     )}
                   </div>
                 </div>
@@ -831,13 +827,13 @@ export default function CollectionPage() {
       {/* Edit Modal */}
       {editingItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pb-20 md:pb-4">
-          <div className="absolute inset-0 bg-black/50" onClick={handleCancelEdit} />
-          <div className="relative bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[85vh] md:max-h-[90vh] overflow-hidden">
+          <div className="absolute inset-0 bg-vintage-ink/70" onClick={handleCancelEdit} />
+          <div className="relative bg-vintage-cream border-3 border-vintage-ink shadow-vintage-lg max-w-4xl w-full max-h-[85vh] md:max-h-[90vh] overflow-hidden">
             <div className="flex flex-col lg:flex-row max-h-[85vh] md:max-h-[90vh]">
               {/* Image Preview - Hidden on mobile, shown on desktop */}
-              <div className="hidden lg:block lg:w-1/3 p-6 bg-gray-50 border-r border-gray-100">
+              <div className="hidden lg:block lg:w-1/3 p-6 bg-vintage-aged border-r-3 border-vintage-ink">
                 <div className="sticky top-6">
-                  <div className="aspect-[2/3] rounded-lg overflow-hidden bg-gray-200 shadow-lg">
+                  <div className="aspect-[2/3] overflow-hidden bg-vintage-paper border-2 border-vintage-ink shadow-vintage">
                     {editingItem.coverImageUrl ? (
                       <img
                         src={editingItem.coverImageUrl}
@@ -845,8 +841,8 @@ export default function CollectionPage() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gray-900 text-4xl">
-                        <span className="text-green-400 font-bold italic drop-shadow-[0_0_8px_rgba(74,222,128,0.6)]">?</span>
+                      <div className="w-full h-full flex items-center justify-center bg-vintage-ink text-4xl">
+                        <span className="text-vintage-yellow font-display">?</span>
                       </div>
                     )}
                   </div>
@@ -855,7 +851,7 @@ export default function CollectionPage() {
 
               {/* Form */}
               <div className="lg:w-2/3 p-4 md:p-6 overflow-y-auto">
-                <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-4 md:mb-6">
+                <h2 className="text-lg md:text-xl font-display text-vintage-ink mb-4 md:mb-6 uppercase tracking-wide">
                   Edit Comic Details
                 </h2>
                 <ComicDetailsForm
