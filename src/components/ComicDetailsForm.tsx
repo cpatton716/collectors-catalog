@@ -12,6 +12,7 @@ import {
 import { AlertCircle, AlertTriangle, CheckCircle, Loader2, DollarSign, TrendingUp, Info, Search, ExternalLink, Plus, X, KeyRound, RefreshCw } from "lucide-react";
 import { TitleAutocomplete } from "./TitleAutocomplete";
 import { GradePricingBreakdown } from "./GradePricingBreakdown";
+import { AddToKeyHuntButton } from "./AddToKeyHuntButton";
 import { calculateValueAtGrade } from "@/lib/gradePrice";
 
 // Helper to generate certification verification URLs
@@ -1218,6 +1219,21 @@ export function ComicDetailsForm({
         >
           Cancel
         </button>
+        {mode === "add" && (
+          <AddToKeyHuntButton
+            title={comic.title || ""}
+            issueNumber={comic.issueNumber || ""}
+            publisher={comic.publisher || undefined}
+            releaseYear={comic.releaseYear || undefined}
+            coverImageUrl={coverImageUrl}
+            keyInfo={comic.keyInfo}
+            currentPriceLow={comic.priceData?.estimatedValue ? comic.priceData.estimatedValue * 0.8 : undefined}
+            currentPriceMid={comic.priceData?.estimatedValue || undefined}
+            currentPriceHigh={comic.priceData?.estimatedValue ? comic.priceData.estimatedValue * 1.2 : undefined}
+            addedFrom="scan"
+            variant="compact"
+          />
+        )}
         <button
           type="submit"
           disabled={isLoading}

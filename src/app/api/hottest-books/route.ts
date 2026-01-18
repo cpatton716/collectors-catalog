@@ -1,65 +1,21 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
-import { STATIC_HOT_BOOKS } from "@/lib/staticHotBooks";
+import { createClient } from "@supabase/supabase-js";
+import Anthropic from "@anthropic-ai/sdk";
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-const COMIC_VINE_API_KEY = process.env.COMIC_VINE_API_KEY;
-const COMIC_VINE_BASE_URL = "https://comicvine.gamespot.com/api";
-
-const CACHE_KEY = "hottest_books";
-const CACHE_TTL_HOURS = 24;
-
-// TESTING MODE: Use static list to conserve API credits
-// TODO: Set to false before production launch (see BACKLOG.md)
-const USE_STATIC_LIST = true;
-
-// Fetch cover image from Comic Vine
-async function getComicVineCoverImage(title: string, issueNumber: string): Promise<string | null> {
-  if (!COMIC_VINE_API_KEY) {
-    return null;
-  }
-
-  try {
-    // Search for the volume first
-    const volumeSearchUrl = `${COMIC_VINE_BASE_URL}/volumes/?api_key=${COMIC_VINE_API_KEY}&format=json&filter=name:${encodeURIComponent(title)}&field_list=id,name&limit=5`;
-    const volumeResponse = await fetch(volumeSearchUrl, {
-      headers: { "User-Agent": "ComicTracker/1.0" },
-    });
-
-    if (!volumeResponse.ok) return null;
-
-    const volumeData = await volumeResponse.json();
-    if (volumeData.error !== "OK" || !volumeData.results?.length) return null;
-
-    // Find best matching volume
-    const volume = volumeData.results.find(
-      (v: { name: string }) => v.name.toLowerCase() === title.toLowerCase()
-    ) || volumeData.results[0];
-
-    // Search for the issue
-    const issueSearchUrl = `${COMIC_VINE_BASE_URL}/issues/?api_key=${COMIC_VINE_API_KEY}&format=json&filter=volume:${volume.id},issue_number:${issueNumber}&field_list=id,image`;
-    const issueResponse = await fetch(issueSearchUrl, {
-      headers: { "User-Agent": "ComicTracker/1.0" },
-    });
-
-    if (!issueResponse.ok) return null;
-
-    const issueData = await issueResponse.json();
-    if (issueData.error !== "OK" || !issueData.results?.length) return null;
-
-    const issue = issueData.results[0];
-    return issue.image?.medium_url || issue.image?.small_url || null;
-  } catch (error) {
-    console.error("Error fetching cover from Comic Vine:", error);
-    return null;
-  }
-}
+// Configuration
+const PRICES_CACHE_HOURS = 24;  // Refresh prices once per day
+const LIST_CACHE_HOURS = 168;   // Refresh hot list weekly (when GoCollect available)
 
 export interface HotBook {
+  id?: string;
   rank: number;
   title: string;
   issueNumber: string;
@@ -73,42 +29,153 @@ export interface HotBook {
     high: number;
   };
   coverImageUrl?: string;
+  priceSource?: string;
+  rankChange?: number | null;
+  dataSource?: string;
 }
 
-export async function GET() {
+interface DbHotBook {
+  id: string;
+  title: string;
+  issue_number: string;
+  publisher: string | null;
+  release_year: string | null;
+  key_info: string[];
+  why_hot: string | null;
+  cover_image_url: string | null;
+  price_low: number | null;
+  price_mid: number | null;
+  price_high: number | null;
+  price_source: string;
+  current_rank: number | null;
+  rank_change: number | null;
+  data_source: string;
+  prices_updated_at: string | null;
+}
+
+/**
+ * Check if prices need refreshing (older than PRICES_CACHE_HOURS)
+ */
+function needsPriceRefresh(pricesUpdatedAt: string | null): boolean {
+  if (!pricesUpdatedAt) return true;
+
+  const lastUpdate = new Date(pricesUpdatedAt);
+  const hoursSinceUpdate = (Date.now() - lastUpdate.getTime()) / (1000 * 60 * 60);
+
+  return hoursSinceUpdate >= PRICES_CACHE_HOURS;
+}
+
+/**
+ * Fetch eBay prices for a comic
+ */
+async function fetchEbayPrices(
+  title: string,
+  issueNumber: string
+): Promise<{ low: number; mid: number; high: number } | null> {
   try {
-    // TESTING MODE: Return static list to conserve API credits
-    if (USE_STATIC_LIST) {
-      console.log("Returning static hottest books list (testing mode)");
-      return NextResponse.json({ books: STATIC_HOT_BOOKS, cached: true, static: true });
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const response = await fetch(`${baseUrl}/api/ebay-prices`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title,
+        issueNumber,
+        grade: "VF/NM",  // Default grade for hot books
+      }),
+    });
+
+    if (!response.ok) return null;
+
+    const data = await response.json();
+    if (data.prices && data.prices.length > 0) {
+      const prices = data.prices.map((p: { price: number }) => p.price);
+      const sorted = prices.sort((a: number, b: number) => a - b);
+
+      return {
+        low: sorted[0],
+        mid: sorted[Math.floor(sorted.length / 2)],
+        high: sorted[sorted.length - 1],
+      };
     }
 
-    // Check Supabase cache first (shared across all users/instances)
-    const { data: cachedData } = await supabase
-      .from("app_cache")
-      .select("data, expires_at")
-      .eq("key", CACHE_KEY)
-      .single();
+    return null;
+  } catch (error) {
+    console.error("Error fetching eBay prices:", error);
+    return null;
+  }
+}
 
-    if (cachedData && new Date(cachedData.expires_at) > new Date()) {
-      console.log("Returning cached hottest books from Supabase");
-      return NextResponse.json({ books: cachedData.data, cached: true });
-    }
+/**
+ * Update prices for a single hot book
+ */
+async function updateBookPrices(bookId: string, title: string, issueNumber: string): Promise<void> {
+  const prices = await fetchEbayPrices(title, issueNumber);
 
-    if (!process.env.ANTHROPIC_API_KEY) {
-      return NextResponse.json(
-        { error: "The Hottest Books feature is temporarily unavailable. Please check back soon!" },
-        { status: 500 }
-      );
-    }
+  if (prices) {
+    await supabase
+      .from("hot_books")
+      .update({
+        price_low: prices.low,
+        price_mid: prices.mid,
+        price_high: prices.high,
+        price_source: "ebay",
+        prices_updated_at: new Date().toISOString(),
+      })
+      .eq("id", bookId);
 
-    const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 2048,
-      messages: [
-        {
-          role: "user",
-          content: `You are a comic book market expert. Generate a list of the 10 hottest comic books in the current market based on your knowledge of recent trends, movie/TV announcements, key issues, and collector demand.
+    // Also record in history
+    await supabase.from("hot_books_history").upsert({
+      hot_book_id: bookId,
+      rank: 0,  // Will be updated separately
+      price_low: prices.low,
+      price_mid: prices.mid,
+      price_high: prices.high,
+      recorded_at: new Date().toISOString().split("T")[0],
+    });
+  }
+}
+
+/**
+ * Convert database record to API response format
+ */
+function dbToApiFormat(db: DbHotBook): HotBook {
+  return {
+    id: db.id,
+    rank: db.current_rank || 0,
+    title: db.title,
+    issueNumber: db.issue_number,
+    publisher: db.publisher || "Unknown",
+    year: db.release_year || "Unknown",
+    keyFacts: db.key_info || [],
+    whyHot: db.why_hot || "",
+    priceRange: {
+      low: db.price_low || 0,
+      mid: db.price_mid || 0,
+      high: db.price_high || 0,
+    },
+    coverImageUrl: db.cover_image_url || undefined,
+    priceSource: db.price_source,
+    rankChange: db.rank_change,
+    dataSource: db.data_source,
+  };
+}
+
+/**
+ * Use AI to generate/refresh the hot books list
+ * This is the fallback when GoCollect is not available
+ */
+async function refreshHotBooksListWithAI(): Promise<HotBook[]> {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    throw new Error("ANTHROPIC_API_KEY not configured");
+  }
+
+  const response = await anthropic.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 2048,
+    messages: [
+      {
+        role: "user",
+        content: `You are a comic book market expert. Generate a list of the 10 hottest comic books in the current market based on your knowledge of recent trends, movie/TV announcements, key issues, and collector demand.
 
 For each book, provide:
 1. Title and issue number
@@ -138,65 +205,148 @@ Focus on a mix of:
 - Books with upcoming media adaptations
 
 Be accurate with your key facts and realistic with price estimates.`,
-        },
-      ],
-    });
+      },
+    ],
+  });
 
-    const textContent = response.content.find((block) => block.type === "text");
-    if (!textContent || textContent.type !== "text") {
-      return NextResponse.json({ books: [], error: "We couldn't load the hottest books right now. Please try again." });
+  const textContent = response.content.find((block) => block.type === "text");
+  if (!textContent || textContent.type !== "text") {
+    throw new Error("No text response from AI");
+  }
+
+  let jsonText = textContent.text.trim();
+  // Remove markdown code blocks if present
+  if (jsonText.startsWith("```json")) jsonText = jsonText.slice(7);
+  if (jsonText.startsWith("```")) jsonText = jsonText.slice(3);
+  if (jsonText.endsWith("```")) jsonText = jsonText.slice(0, -3);
+
+  return JSON.parse(jsonText.trim());
+}
+
+/**
+ * Main GET handler
+ */
+export async function GET() {
+  try {
+    // 1. Fetch hot books from database
+    const { data: dbBooks, error: dbError } = await supabase
+      .from("hot_books")
+      .select("*")
+      .not("current_rank", "is", null)
+      .order("current_rank", { ascending: true })
+      .limit(10);
+
+    if (dbError) {
+      console.error("Database error:", dbError);
+      throw new Error("Failed to fetch hot books from database");
     }
 
-    let books: HotBook[] = [];
-    try {
-      let jsonText = textContent.text.trim();
-      // Remove markdown code blocks if present
-      if (jsonText.startsWith("```json")) {
-        jsonText = jsonText.slice(7);
-      }
-      if (jsonText.startsWith("```")) {
-        jsonText = jsonText.slice(3);
-      }
-      if (jsonText.endsWith("```")) {
-        jsonText = jsonText.slice(0, -3);
-      }
-      books = JSON.parse(jsonText.trim());
-    } catch (parseError) {
-      console.error("Failed to parse hot books response:", parseError);
-      return NextResponse.json({ books: [], error: "We had trouble loading the hottest books. Please refresh to try again." });
-    }
+    // 2. If we have books in the database, check if prices need refresh
+    if (dbBooks && dbBooks.length > 0) {
+      const books = dbBooks as DbHotBook[];
+      const needsRefresh = books.some((book) => needsPriceRefresh(book.prices_updated_at));
 
-    // Fetch cover images from Comic Vine for each book
-    if (COMIC_VINE_API_KEY) {
-      console.log("Fetching cover images from Comic Vine...");
-      const booksWithCovers = await Promise.all(
-        books.map(async (book, index) => {
-          // Add small delay between requests to avoid rate limiting
-          await new Promise(resolve => setTimeout(resolve, index * 200));
-          const coverImageUrl = await getComicVineCoverImage(book.title, book.issueNumber);
-          return { ...book, coverImageUrl: coverImageUrl || undefined };
-        })
-      );
-      books = booksWithCovers;
-      console.log(`Fetched ${books.filter(b => b.coverImageUrl).length} cover images`);
-    }
+      if (needsRefresh) {
+        // Refresh prices in background (don't block response)
+        console.log("Refreshing hot books prices in background...");
 
-    // Cache the result in Supabase (shared across all users/instances)
-    const expiresAt = new Date(Date.now() + CACHE_TTL_HOURS * 60 * 60 * 1000).toISOString();
-    await supabase
-      .from("app_cache")
-      .upsert({
-        key: CACHE_KEY,
-        data: books,
-        expires_at: expiresAt,
+        // Find books that need price updates
+        const booksToUpdate = books.filter((book) => needsPriceRefresh(book.prices_updated_at));
+
+        // Update prices asynchronously (fire and forget for this request)
+        Promise.all(
+          booksToUpdate.map((book) =>
+            updateBookPrices(book.id, book.title, book.issue_number)
+          )
+        ).then(() => {
+          console.log(`Updated prices for ${booksToUpdate.length} hot books`);
+
+          // Log the refresh
+          supabase.from("hot_books_refresh_log").insert({
+            refresh_type: "prices_only",
+            data_source: "ebay",
+            books_updated: booksToUpdate.length,
+            success: true,
+          });
+        }).catch((err) => {
+          console.error("Error updating hot book prices:", err);
+        });
+      }
+
+      // Return current data immediately
+      return NextResponse.json({
+        books: books.map(dbToApiFormat),
+        cached: true,
+        pricesStale: needsRefresh,
       });
-    console.log("Cached hottest books to Supabase, expires:", expiresAt);
+    }
 
-    return NextResponse.json({ books, cached: false });
+    // 3. No books in database - need to generate the list
+    // This should only happen on first deployment or if table is empty
+    console.log("No hot books in database, generating with AI...");
+
+    try {
+      const aiBooks = await refreshHotBooksListWithAI();
+
+      // Store in database
+      for (const book of aiBooks) {
+        const normalizedTitle = book.title.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
+
+        await supabase.from("hot_books").upsert({
+          title: book.title,
+          title_normalized: normalizedTitle,
+          issue_number: book.issueNumber,
+          publisher: book.publisher,
+          release_year: book.year,
+          key_info: book.keyFacts,
+          why_hot: book.whyHot,
+          price_low: book.priceRange.low,
+          price_mid: book.priceRange.mid,
+          price_high: book.priceRange.high,
+          price_source: "ai_estimate",
+          current_rank: book.rank,
+          data_source: "ai",
+          prices_updated_at: new Date().toISOString(),
+          metadata_updated_at: new Date().toISOString(),
+        }, {
+          onConflict: "title_normalized,issue_number",
+        });
+      }
+
+      // Log the refresh
+      await supabase.from("hot_books_refresh_log").insert({
+        refresh_type: "full_list",
+        data_source: "ai",
+        books_updated: aiBooks.length,
+        success: true,
+      });
+
+      return NextResponse.json({
+        books: aiBooks,
+        cached: false,
+        generated: true,
+      });
+    } catch (aiError) {
+      console.error("Error generating hot books with AI:", aiError);
+
+      // Log the failure
+      await supabase.from("hot_books_refresh_log").insert({
+        refresh_type: "full_list",
+        data_source: "ai",
+        books_updated: 0,
+        success: false,
+        error_message: aiError instanceof Error ? aiError.message : "Unknown error",
+      });
+
+      return NextResponse.json(
+        { books: [], error: "Failed to generate hot books list" },
+        { status: 500 }
+      );
+    }
   } catch (error) {
-    console.error("Error fetching hottest books:", error);
+    console.error("Error in hottest-books API:", error);
     return NextResponse.json(
-      { books: [], error: "Something went wrong while loading the hottest books. Please try again later." },
+      { books: [], error: "Something went wrong while loading the hottest books" },
       { status: 500 }
     );
   }

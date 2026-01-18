@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { Upload, X, Image as ImageIcon, Camera, FolderOpen } from "lucide-react";
 import { LiveCameraCapture } from "./LiveCameraCapture";
+import { quickCompress, formatBytes } from "@/lib/imageOptimization";
 
 interface ImageUploadProps {
   onImageSelect: (file: File, preview: string) => void;
@@ -32,8 +33,8 @@ export function ImageUpload({ onImageSelect, disabled }: ImageUploadProps) {
 
   const acceptedTypes = ["image/jpeg", "image/jpg", "image/png"];
   const maxSize = 15 * 1024 * 1024; // 15MB before compression
-  const maxDimension = 2048; // Max width/height for compression
-  const targetSize = 1.5 * 1024 * 1024; // Target ~1.5MB after compression
+  const maxDimension = 1200; // Max width/height for compression (reduced from 2048)
+  const targetSize = 400 * 1024; // Target ~400KB after compression (reduced from 1.5MB)
 
   const validateFile = (file: File): string | null => {
     const fileType = file.type.toLowerCase();
@@ -52,67 +53,27 @@ export function ImageUpload({ onImageSelect, disabled }: ImageUploadProps) {
     return null;
   };
 
-  // Compress image using canvas
-  const compressImage = useCallback((file: File): Promise<{ file: File; preview: string }> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-          // Calculate new dimensions
-          let { width, height } = img;
+  // Compress image using optimized compression utility
+  const compressImage = useCallback(async (file: File): Promise<{ file: File; preview: string }> => {
+    try {
+      // Use the optimized compression with aggressive settings
+      const compressedDataUrl = await quickCompress(file, maxDimension, targetSize);
 
-          // Only resize if larger than maxDimension
-          if (width > maxDimension || height > maxDimension) {
-            if (width > height) {
-              height = Math.round((height * maxDimension) / width);
-              width = maxDimension;
-            } else {
-              width = Math.round((width * maxDimension) / height);
-              height = maxDimension;
-            }
-          }
+      // Convert data URL to File
+      const response = await fetch(compressedDataUrl);
+      const blob = await response.blob();
+      const compressedFile = new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), {
+        type: 'image/jpeg'
+      });
 
-          // Create canvas and draw resized image
-          const canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          if (!ctx) {
-            reject(new Error('Could not get canvas context'));
-            return;
-          }
-          ctx.drawImage(img, 0, 0, width, height);
+      console.log(`Image compressed: ${formatBytes(file.size)} -> ${formatBytes(compressedFile.size)} (${((1 - compressedFile.size / file.size) * 100).toFixed(0)}% reduction)`);
 
-          // Start with high quality and reduce if needed
-          let quality = 0.85;
-          let dataUrl = canvas.toDataURL('image/jpeg', quality);
-
-          // Reduce quality if still too large
-          while (dataUrl.length > targetSize * 1.37 && quality > 0.3) { // 1.37 accounts for base64 overhead
-            quality -= 0.1;
-            dataUrl = canvas.toDataURL('image/jpeg', quality);
-          }
-
-          // Convert data URL to File
-          fetch(dataUrl)
-            .then(res => res.blob())
-            .then(blob => {
-              const compressedFile = new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), {
-                type: 'image/jpeg'
-              });
-              console.log(`Image compressed: ${(file.size / 1024 / 1024).toFixed(2)}MB -> ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB`);
-              resolve({ file: compressedFile, preview: dataUrl });
-            })
-            .catch(reject);
-        };
-        img.onerror = () => reject(new Error('Failed to load image'));
-        img.src = e.target?.result as string;
-      };
-      reader.onerror = () => reject(new Error('Failed to read file'));
-      reader.readAsDataURL(file);
-    });
-  }, []);
+      return { file: compressedFile, preview: compressedDataUrl };
+    } catch (error) {
+      console.error('Compression error:', error);
+      throw new Error('Failed to compress image');
+    }
+  }, [maxDimension, targetSize]);
 
   const handleFile = useCallback(
     async (file: File) => {
@@ -135,15 +96,16 @@ export function ImageUpload({ onImageSelect, disabled }: ImageUploadProps) {
       }
 
       try {
-        // Compress large images or images from gallery
-        const needsCompression = file.size > 2 * 1024 * 1024; // Compress if > 2MB
+        // Always compress for optimal storage - target is 400KB
+        // Only skip compression if already under 200KB (already optimized)
+        const needsCompression = file.size > 200 * 1024;
 
         if (needsCompression) {
           const { file: compressedFile, preview: compressedPreview } = await compressImage(file);
           setPreview(compressedPreview);
           onImageSelect(compressedFile, compressedPreview);
         } else {
-          // Small enough, use as-is
+          // Already small enough, use as-is
           const reader = new FileReader();
           reader.onload = (e) => {
             const previewUrl = e.target?.result as string;

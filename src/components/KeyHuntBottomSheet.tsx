@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Camera, ScanBarcode, PenLine, X, KeyRound, Database, WifiOff, History } from "lucide-react";
+import { Camera, ScanBarcode, PenLine, X, KeyRound, Database, WifiOff, History, Target } from "lucide-react";
 import { getKeyHuntHistoryCount } from "@/lib/offlineCache";
+import { useKeyHunt } from "@/hooks/useKeyHunt";
 
-type KeyHuntOption = "cover" | "barcode" | "manual" | "offline-search" | "history";
+type KeyHuntOption = "cover" | "barcode" | "manual" | "offline-search" | "history" | "my-list";
 
 interface KeyHuntBottomSheetProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ export function KeyHuntBottomSheet({
 }: KeyHuntBottomSheetProps) {
   const sheetRef = useRef<HTMLDivElement>(null);
   const [historyCount, setHistoryCount] = useState(0);
+  const { count: wishlistCount, isSignedIn } = useKeyHunt();
 
   // Load history count on mount and when opened
   useEffect(() => {
@@ -51,6 +53,15 @@ export function KeyHuntBottomSheet({
   if (!isOpen) return null;
 
   const options = [
+    {
+      id: "my-list" as KeyHuntOption,
+      icon: Target,
+      title: "My Hunt List",
+      description: wishlistCount > 0 ? `${wishlistCount} comics you're hunting` : isSignedIn ? "Start tracking comics you want" : "Sign in to track comics",
+      color: "bg-amber-500",
+      disabled: false,
+      badge: wishlistCount > 0 ? wishlistCount : null,
+    },
     {
       id: "cover" as KeyHuntOption,
       icon: Camera,

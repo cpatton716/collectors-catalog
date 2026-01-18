@@ -14,6 +14,7 @@ import { OfflineIndicator, SyncNotification } from "@/components/OfflineIndicato
 import { KeyHuntOfflineSearch } from "@/components/KeyHuntOfflineSearch";
 import { KeyHuntHistoryList } from "@/components/KeyHuntHistoryList";
 import { KeyHuntHistoryDetail } from "@/components/KeyHuntHistoryDetail";
+import { KeyHuntWishlist } from "@/components/KeyHuntWishlist";
 import { FeatureGate } from "@/components/FeatureGate";
 import { ComicDetails, CollectionItem } from "@/types/comic";
 import { storage } from "@/lib/storage";
@@ -44,7 +45,8 @@ type KeyHuntFlow =
   | "error"
   | "offline-search"
   | "history"
-  | "history-detail";
+  | "history-detail"
+  | "my-list";
 
 interface LookupResult {
   title: string;
@@ -91,7 +93,7 @@ export default function KeyHuntPage() {
   }, [lastSyncResult]);
 
   // Handle option selection from bottom sheet
-  const handleSelectOption = (option: "cover" | "barcode" | "manual" | "offline-search" | "history") => {
+  const handleSelectOption = (option: "cover" | "barcode" | "manual" | "offline-search" | "history" | "my-list") => {
     setError(null);
     switch (option) {
       case "cover":
@@ -118,6 +120,9 @@ export default function KeyHuntPage() {
         break;
       case "history":
         setFlow("history");
+        break;
+      case "my-list":
+        setFlow("my-list");
         break;
     }
   };
@@ -616,6 +621,26 @@ export default function KeyHuntPage() {
           onAddToCollection={handleAddFromHistory}
           isOffline={isOfflineMode}
         />
+      )}
+
+      {/* My Hunt List View */}
+      {flow === "my-list" && (
+        <div className="flex-1 bg-gray-50 min-h-[calc(100vh-120px)]">
+          <div className="p-4 bg-white border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900">My Hunt List</h2>
+              <button
+                onClick={() => setFlow("options")}
+                className="text-amber-600 text-sm font-medium"
+              >
+                Back
+              </button>
+            </div>
+          </div>
+          <div className="p-4">
+            <KeyHuntWishlist onClose={() => setFlow("options")} />
+          </div>
+        </div>
       )}
 
       {/* Main content area for cover scan */}
