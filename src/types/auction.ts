@@ -241,6 +241,8 @@ export interface SellerProfile {
   id: string;
   displayName: string | null;
   publicDisplayName: string | null;
+  username: string | null;
+  displayPreference: "username_only" | "display_name_only" | "both" | null;
   positiveRatings: number;
   negativeRatings: number;
   sellerSince: string | null;

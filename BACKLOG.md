@@ -174,31 +174,23 @@ Pull Marvel comic cover images and creator information directly from Marvel.com 
 
 ### Username System for Privacy
 **Priority:** Medium
-**Status:** Pending
+**Status:** ✅ Complete (Jan 17, 2026)
 
-Add a username system so sellers can display a custom name instead of their email or real name.
+Added username system so sellers can display @username instead of email or real name.
 
-**Current Behavior:**
-- Seller name falls back to anonymized email (e.g., "chr...") when no display name is set
-- No way to set a unique username that's distinct from display name
+**Implementation:**
+- Username validation: 3-20 chars, lowercase, letters/numbers/underscores
+- Built-in profanity filter with leetspeak detection (catches @ss, sh1t, etc.)
+- Reserved username blocking (admin, support, system, etc.)
+- Real-time availability checking with debounce
+- Profile Settings UI for setting username
+- Seller badges display @username in marketplace
 
-**Proposed Features:**
-1. **Username Field** - Allow users to set a unique username (e.g., "@comicfan42")
-2. **Display Name Options** - Let users choose what name is shown publicly:
-   - Username only
-   - Display name only
-   - Both (display name with @username)
-3. **Privacy Controls** - Option to hide email entirely from public profile
-4. **Username Validation** - Ensure uniqueness, block inappropriate names
-
-**User Flow:**
-1. Profile Settings → Set Username
-2. Choose display preference for marketplace listings
-3. Username shown on listings, seller pages, and transaction history
-
-**Database Changes:**
-- Add `username` column to profiles table (unique, lowercase)
-- Add `display_preference` enum (username_only, display_name_only, both)
+**Files:**
+- `src/lib/usernameValidation.ts` - Validation utility
+- `src/app/api/username/route.ts` - Check/set API
+- `src/components/UsernameSettings.tsx` - Profile UI
+- `supabase/migrations/20260117_add_username.sql` - DB migration
 
 ---
 
@@ -368,19 +360,16 @@ Investigate using GoCollect as a data provider for price data and hot books list
 
 ### eBay API Integration for Price History
 **Priority:** Medium
-**Status:** Pending
+**Status:** ✅ Complete (Jan 2026)
 
-Replace AI-generated price estimates with real market data from eBay's API. This will provide:
-- Actual recent sales data for specific comics (title, issue, grade)
-- More accurate estimated values based on real transactions
-- Historical price trends over time
-- Better confidence in valuations for buying/selling decisions
+Integrated eBay Browse API for real market data from completed/sold listings.
 
-**Requirements:**
-- eBay Developer Account and API credentials
-- API integration for completed listings search
+**Implementation:**
+- OAuth 2.0 authentication (`src/lib/ebay.ts`)
+- Price lookup for completed listings
 - Caching layer to minimize API calls
 - Fallback to AI estimates when no eBay data available
+- API route: `/src/app/api/ebay-prices/route.ts`
 
 ---
 
@@ -717,22 +706,15 @@ When converting to native mobile apps (iOS/Android), the cover image search feat
 
 ---
 
+## Completed
+
 ### Custom Chest SVG Icon
 **Priority:** Low
-**Status:** Pending
+**Status:** ✅ Complete (Jan 2026)
 
-Design and implement a custom treasure chest icon for the Collectors Chest branding.
-
-**Requirements:**
-- Clean, simple design suitable for favicon and nav
-- Evokes treasure/collecting theme
-- Works at small sizes (16x16, 32x32)
-- SVG format for scalability
-- Consider animated version for loading states
+Designed and implemented a custom treasure chest icon for the Collectors Chest branding.
 
 ---
-
-## Completed
 
 ### Key Hunt (Mobile Quick Lookup)
 **Priority:** Medium
