@@ -6,22 +6,43 @@ This log tracks session-by-session progress on Collectors Chest.
 
 ## Changes Since Last Deploy
 
-**Sessions since last deploy:** 1
+**Sessions since last deploy:** 3
 **Deploy Readiness:** Ready to deploy
 
 ### Accumulated Changes:
+
+**January 15 Session:**
+- Email capture system for guest bonus scans
+- Jest test coverage (43 tests for auction, subscription, guest scans)
+- Premium subscription billing foundation (pending Stripe products)
+- Feature gating (Key Hunt, CSV Export, Stats, Listings)
+- Pricing page with tier comparison
+- Scan limit enforcement (guest 5, free 10/month)
+- ScanLimitBanner, TrialPrompt, UpgradeModal components
+
+**January 17 Session (Part 1):**
+- Community key info system with 402 curated key comic entries
+- Key info submission system with admin moderation
+- Username system with validation and availability checking
+- Custom profile page replacing Clerk's UserProfile
+- "Suggest Key Info" button in comic detail modal
+- Key info display in auction/listing modals
+- Admin key info moderation page at `/admin/key-info`
+
+**January 17 Session (Part 2):**
 - Key Hunt wishlist feature (database, API, UI)
-- Hot Books database caching with 24-hour price refresh
+- Hot Books database caching with 24-hour lazy price refresh
 - Usage monitoring alerts system
 - Image optimization (400KB target compression)
-- Admin usage dashboard
+- Admin usage dashboard at `/admin/usage`
+- Merged main branch into all 3 design branches
 
 ---
 
-## January 17, 2026 (Session)
+## January 17, 2026 (Late Session)
 
 ### Session Summary
-Added Key Hunt wishlist feature allowing users to track comics they want to acquire. Implemented Hot Books database caching to reduce API calls. Created usage monitoring system with email alerts. Added client-side image optimization.
+Added Key Hunt wishlist feature allowing users to track comics they want to acquire. Implemented Hot Books database caching to reduce API calls. Created usage monitoring system with email alerts. Added client-side image optimization. Merged all changes to design branches.
 
 ### Key Accomplishments
 - **Key Hunt Wishlist** - Full CRUD system for tracking wanted comics
@@ -45,6 +66,10 @@ Added Key Hunt wishlist feature allowing users to track comics they want to acqu
 - **Image Optimization** - Reduced storage usage
   - Client-side compression targeting 400KB (down from 1.5MB)
   - Updated ImageUpload and LiveCameraCapture components
+- **Branch Sync** - Merged main into all design branches
+  - design/pop-art-lichtenstein
+  - design/retro-futuristic
+  - design/vintage-newsprint
 
 ### Files Added
 - `src/app/api/key-hunt/route.ts`
@@ -78,6 +103,120 @@ Added Key Hunt wishlist feature allowing users to track comics they want to acqu
 
 ### Environment Variables Added
 - `ADMIN_EMAIL` - For usage alert notifications
+
+---
+
+## January 17, 2026 (Earlier Session)
+
+### Session Summary
+Built community key info system with 402 curated key comic entries. Added username system with validation and custom profile page. Implemented key info submission with admin moderation.
+
+### Key Accomplishments
+- **Key Comics Database** - 402 curated key comic entries
+  - `keyComicsDatabase.ts` with comprehensive key info
+  - `keyComicsDb.ts` for database operations
+  - Database-backed key info lookup in analyze API
+- **Community Key Info** - User submission system
+  - `SuggestKeyInfoModal` component for submissions
+  - `/api/key-info/submit` for user submissions
+  - Admin moderation at `/admin/key-info`
+  - `/api/admin/key-info` routes for approval/rejection
+- **Username System** - Customizable display names
+  - `UsernameSettings` component
+  - `/api/username` with validation
+  - `/api/username/current` for fetching
+  - `usernameValidation.ts` utilities
+- **Custom Profile Page** - Replaced Clerk's UserProfile
+  - `CustomProfilePage` component
+  - Account settings, display preferences
+  - Integrated username management
+
+### Files Added
+- `src/lib/keyComicsDatabase.ts` - 402 key comic entries
+- `src/lib/keyComicsDb.ts` - Database operations
+- `src/components/SuggestKeyInfoModal.tsx`
+- `src/components/UsernameSettings.tsx`
+- `src/components/CustomProfilePage.tsx`
+- `src/lib/usernameValidation.ts`
+- `src/hooks/useDebounce.ts`
+- `src/app/admin/key-info/page.tsx`
+- `src/app/api/key-info/submit/route.ts`
+- `src/app/api/admin/key-info/route.ts`
+- `src/app/api/admin/key-info/[id]/route.ts`
+- `src/app/api/username/route.ts`
+- `src/app/api/username/current/route.ts`
+- `supabase/migrations/20250117_key_info_community.sql`
+- `supabase/migrations/20250117_key_info_seed.sql`
+- `supabase/migrations/20260117_add_username.sql`
+
+### Files Modified
+- `src/app/profile/[[...profile]]/page.tsx` - Use CustomProfilePage
+- `src/components/ComicDetailModal.tsx` - Add Suggest Key Info button
+- `src/components/auction/AuctionDetailModal.tsx` - Show key info
+- `src/components/auction/ListingDetailModal.tsx` - Show key info
+- `src/components/auction/SellerBadge.tsx` - Display username
+- `src/app/api/analyze/route.ts` - Database key info lookup
+
+### Database Changes
+- Created `key_comics` table with 402 seeded entries
+- Created `key_info_submissions` table for community submissions
+- Added `username` and `display_name_preference` to user_profiles
+
+---
+
+## January 15, 2026 (Session)
+
+### Session Summary
+Added email capture for guest bonus scans, implemented test coverage with Jest, built subscription billing foundation, and created feature gating system.
+
+### Key Accomplishments
+- **Email Capture** - Bonus scans for email signup
+  - `EmailCaptureModal` component
+  - `/api/email-capture` with Resend integration
+  - 5 bonus scans for email submission
+- **Test Coverage** - 43 tests across 3 test files
+  - `auction.test.ts` - Auction calculations
+  - `subscription.test.ts` - Subscription logic
+  - `useGuestScans.test.ts` - Guest scan tracking
+- **Subscription Billing** - Foundation for premium tiers
+  - `subscription.ts` with tier logic
+  - `useSubscription.ts` hook
+  - `/api/billing/*` routes (checkout, portal, status)
+  - Stripe webhook updates
+- **Feature Gating** - Control access by tier
+  - `FeatureGate` component
+  - `UpgradeModal` for upgrade prompts
+  - `TrialPrompt` for trial conversion
+  - `ScanLimitBanner` for limit warnings
+- **Pricing Page** - Tier comparison at `/pricing`
+- **Scan Limits** - Guest 5, free 10/month
+
+### Files Added
+- `src/components/EmailCaptureModal.tsx`
+- `src/components/FeatureGate.tsx`
+- `src/components/UpgradeModal.tsx`
+- `src/components/TrialPrompt.tsx`
+- `src/components/ScanLimitBanner.tsx`
+- `src/lib/subscription.ts`
+- `src/hooks/useSubscription.ts`
+- `src/app/pricing/page.tsx`
+- `src/app/api/email-capture/route.ts`
+- `src/app/api/billing/checkout/route.ts`
+- `src/app/api/billing/portal/route.ts`
+- `src/app/api/billing/status/route.ts`
+- `src/app/api/cron/reset-scans/route.ts`
+- `jest.config.js`, `jest.setup.js`
+- `src/types/__tests__/auction.test.ts`
+- `src/lib/__tests__/subscription.test.ts`
+- `src/hooks/__tests__/useGuestScans.test.ts`
+- `SUBSCRIPTION_TIERS.md`
+- `supabase/migrations/20260115_add_subscription_fields.sql`
+
+### Files Modified
+- `src/hooks/useGuestScans.ts` - Bonus scan support
+- `src/app/api/analyze/route.ts` - Scan limit checks
+- `src/app/api/webhooks/stripe/route.ts` - Subscription handling
+- Various pages - FeatureGate wrappers
 
 ---
 

@@ -45,9 +45,12 @@
 | Barcode Scanning | 📚 🤖 | Comic Vine lookup, AI fallback |
 | Price Estimation | 🏷️ 🗄️ 🔴 | eBay API → Supabase cache → Redis |
 | CGC/CBCS Cert Lookup | Web scrape | Verifies graded comic certification |
-| Guest Scan Limiting | 💾 | 10 free scans tracked in localStorage |
+| Key Info Lookup | 🗄️ | 402 curated key comics database |
+| Suggest Key Info | 🗄️ 🔐 | Community submissions for key facts |
+| Scan Limits | 💾 🗄️ | Guest 5, Free 10/mo, Pro unlimited |
+| Email Capture | 📧 | 5 bonus scans for email signup |
 | CSV Import | 🤖 🗄️ | Bulk import with AI enrichment |
-| Milestone Prompts | 💾 📊 | Sign-up nudges at 5, 7, 9 scans |
+| Image Optimization | — | Client-side compression to 400KB |
 
 ---
 
@@ -154,7 +157,9 @@
 |---------|----------|-------|
 | Sign In | 🔐 | Google + Apple social login |
 | Sign Up (Waitlist) | 🔐 📧 | Currently captures email only |
-| User Profile | 🔐 | Account management |
+| Custom Profile Page | 🗄️ 🔐 | Replaced Clerk's UserProfile |
+| Username System | 🗄️ 🔐 | Customizable display name with validation |
+| Display Preferences | 🗄️ | Username vs real name preference |
 | Data Migration | 💾 🗄️ | Import localStorage on signup |
 
 ---
@@ -171,7 +176,19 @@
 
 ---
 
-### Admin (`/admin/usage`)
+### Pricing Page (`/pricing`)
+
+| Feature | Services | Notes |
+|---------|----------|-------|
+| Tier Comparison | — | Free vs Pro feature matrix |
+| Upgrade Flow | 💰 🔐 | Stripe checkout integration |
+| Current Plan Display | 🗄️ 🔐 | Shows user's subscription status |
+
+---
+
+### Admin Pages
+
+#### Usage Dashboard (`/admin/usage`)
 
 | Feature | Services | Notes |
 |---------|----------|-------|
@@ -181,7 +198,15 @@
 | Anthropic Metrics | 🤖 | Token usage, costs |
 | Alert History | 🗄️ | Past limit warnings |
 
-**Note:** Admin-only page, no auth protection yet (security by obscurity).
+#### Key Info Moderation (`/admin/key-info`)
+
+| Feature | Services | Notes |
+|---------|----------|-------|
+| Submission Queue | 🗄️ | Pending community submissions |
+| Approve/Reject | 🗄️ | Moderation actions |
+| Edit Before Approve | 🗄️ | Modify submitted key info |
+
+**Note:** Admin pages have no auth protection yet (security by obscurity).
 
 ---
 
@@ -241,11 +266,14 @@
 | `/api/sellers/[id]/ratings` | GET/POST | Seller reputation | 🗄️ 🔐 |
 | `/api/sharing` | GET/POST/PATCH | Public profile settings | 🗄️ 🔐 |
 
-### Payments
+### Payments & Billing
 
 | Route | Method | Purpose | Services |
 |-------|--------|---------|----------|
 | `/api/checkout` | POST | Stripe checkout session | 💰 🗄️ 🔐 |
+| `/api/billing/checkout` | POST | Subscription checkout | 💰 🗄️ 🔐 |
+| `/api/billing/portal` | POST | Stripe customer portal | 💰 🗄️ 🔐 |
+| `/api/billing/status` | GET | Subscription status | 🗄️ 🔐 |
 
 ### Key Hunt
 
@@ -262,6 +290,17 @@
 |-------|--------|---------|----------|
 | `/api/admin/usage` | GET | Service usage metrics | 🗄️ 🔴 🤖 |
 | `/api/admin/usage/check-alerts` | POST | Check limits, send alerts | 🗄️ 📧 |
+| `/api/admin/key-info` | GET | List pending submissions | 🗄️ |
+| `/api/admin/key-info/[id]` | PATCH/DELETE | Approve/reject submission | 🗄️ |
+
+### User & Profile
+
+| Route | Method | Purpose | Services |
+|-------|--------|---------|----------|
+| `/api/username` | GET/POST/PATCH | Username management | 🗄️ 🔐 |
+| `/api/username/current` | GET | Get current user's username | 🗄️ 🔐 |
+| `/api/key-info/submit` | POST | Submit key info suggestion | 🗄️ 🔐 |
+| `/api/email-capture` | POST | Guest email for bonus scans | 📧 🗄️ |
 
 ### Utility
 
@@ -277,20 +316,24 @@
 | Route | Trigger | Purpose | Services |
 |-------|---------|---------|----------|
 | `/api/webhooks/clerk` | User deleted | Cascade delete user data | 🔐 🗄️ |
-| `/api/webhooks/stripe` | Payment completed | Update auction to paid | 💰 🗄️ |
+| `/api/webhooks/stripe` | Payment events | Auction payments, subscriptions | 💰 🗄️ |
 
 ---
 
-## Cron Jobs
+## Cron Jobs & Scheduled Functions
 
-| Route | Schedule | Purpose | Services |
-|-------|----------|---------|----------|
+| Route/Function | Schedule | Purpose | Services |
+|----------------|----------|---------|----------|
 | `/api/cron/process-auctions` | Every 5 min | End auctions, expire offers/listings | 🗄️ |
+| `/api/cron/reset-scans` | Monthly | Reset free tier scan counts | 🗄️ |
+| `check-usage-alerts` (Netlify) | Daily | Monitor service limits, send alerts | 🗄️ 📧 |
 
 **Automation Logic:**
 - Auctions: Mark as `closed` or `sold` when end time passes
 - Offers: Expire after 48 hours if no response
 - Listings: Expire after 30 days
+- Scans: Reset monthly counts on 1st of month
+- Alerts: Email admin when approaching service limits
 
 ---
 
