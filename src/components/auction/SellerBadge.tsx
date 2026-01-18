@@ -10,14 +10,40 @@ interface SellerBadgeProps {
   onClick?: () => void;
 }
 
+/**
+ * Get display name based on user's preference
+ */
+function getSellerDisplayName(seller: SellerProfile): string {
+  const { username, displayName, publicDisplayName, displayPreference } = seller;
+  const preference = displayPreference || "username_only";
+
+  // If user has a username, use it based on preference
+  if (username) {
+    switch (preference) {
+      case "username_only":
+        return `@${username}`;
+      case "display_name_only":
+        return publicDisplayName || displayName || `@${username}`;
+      case "both":
+        const name = publicDisplayName || displayName;
+        return name ? `${name} (@${username})` : `@${username}`;
+      default:
+        return `@${username}`;
+    }
+  }
+
+  // Fallback to display name or generic
+  return publicDisplayName || displayName || "Seller";
+}
+
 export function SellerBadge({
   seller,
   size = "md",
   showCount = true,
   onClick,
 }: SellerBadgeProps) {
-  const { reputation, positivePercentage, totalRatings, displayName, publicDisplayName } = seller;
-  const name = publicDisplayName || displayName || "Seller";
+  const { reputation, positivePercentage, totalRatings } = seller;
+  const name = getSellerDisplayName(seller);
 
   const sizeClasses = {
     sm: "text-xs gap-1",
