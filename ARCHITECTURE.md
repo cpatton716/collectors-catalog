@@ -2,7 +2,7 @@
 
 > **Comprehensive map of pages, features, and service dependencies**
 
-*Last Updated: January 14, 2026*
+*Last Updated: January 17, 2026*
 
 ---
 
@@ -74,6 +74,8 @@
 | Offline Mode | 💾 | Cached lookups, sync queue |
 | Barcode Cache | 💾 | 7-day TTL, max 20 entries |
 | Quick-Add Buttons | 💾 | Want List, Collection, Passed On |
+| My Hunt List | 🗄️ 🔐 | Wishlist of comics user wants to find |
+| Add to Hunt List | 🗄️ 🔐 | From Hot Books or scan results |
 
 ---
 
@@ -117,10 +119,12 @@
 
 | Feature | Services | Notes |
 |---------|----------|-------|
-| Trending Comics List | 🤖 🗄️ | AI-generated weekly |
+| Trending Comics List | 🗄️ 🤖 | Database-cached, AI fallback |
 | Cover Images | 📚 | Comic Vine API |
 | Market Analysis | 🤖 | Why it's hot, price trends |
-| Client Caching | 💾 | 24-hour localStorage cache |
+| Database Caching | 🗄️ | hot_books table with seeded data |
+| Price Refresh | 🏷️ 🗄️ | eBay API, 24-hour lazy refresh |
+| Add to Hunt List | 🗄️ 🔐 | Track comics you want to find |
 
 ---
 
@@ -164,6 +168,20 @@
 | Footer Links | — | Available from homepage footer |
 
 **Status:** Page structure complete. Content pending LLC formation for official business name.
+
+---
+
+### Admin (`/admin/usage`)
+
+| Feature | Services | Notes |
+|---------|----------|-------|
+| Usage Dashboard | 🗄️ 🔴 🤖 | Monitor service consumption |
+| Supabase Metrics | 🗄️ | Database size, row counts |
+| Upstash Metrics | 🔴 | Commands used, storage |
+| Anthropic Metrics | 🤖 | Token usage, costs |
+| Alert History | 🗄️ | Past limit warnings |
+
+**Note:** Admin-only page, no auth protection yet (security by obscurity).
 
 ---
 
@@ -228,6 +246,22 @@
 | Route | Method | Purpose | Services |
 |-------|--------|---------|----------|
 | `/api/checkout` | POST | Stripe checkout session | 💰 🗄️ 🔐 |
+
+### Key Hunt
+
+| Route | Method | Purpose | Services |
+|-------|--------|---------|----------|
+| `/api/key-hunt` | GET | Get user's hunt list | 🗄️ 🔐 |
+| `/api/key-hunt` | POST | Add comic to hunt list | 🗄️ 🔐 |
+| `/api/key-hunt` | DELETE | Remove from hunt list | 🗄️ 🔐 |
+| `/api/key-hunt` | PATCH | Update hunt list item | 🗄️ 🔐 |
+
+### Admin
+
+| Route | Method | Purpose | Services |
+|-------|--------|---------|----------|
+| `/api/admin/usage` | GET | Service usage metrics | 🗄️ 🔴 🤖 |
+| `/api/admin/usage/check-alerts` | POST | Check limits, send alerts | 🗄️ 📧 |
 
 ### Utility
 

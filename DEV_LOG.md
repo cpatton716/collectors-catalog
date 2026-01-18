@@ -6,11 +6,78 @@ This log tracks session-by-session progress on Collectors Chest.
 
 ## Changes Since Last Deploy
 
-**Sessions since last deploy:** 0
-**Deploy Readiness:** Just deployed
+**Sessions since last deploy:** 1
+**Deploy Readiness:** Ready to deploy
 
 ### Accumulated Changes:
-(none yet)
+- Key Hunt wishlist feature (database, API, UI)
+- Hot Books database caching with 24-hour price refresh
+- Usage monitoring alerts system
+- Image optimization (400KB target compression)
+- Admin usage dashboard
+
+---
+
+## January 17, 2026 (Session)
+
+### Session Summary
+Added Key Hunt wishlist feature allowing users to track comics they want to acquire. Implemented Hot Books database caching to reduce API calls. Created usage monitoring system with email alerts. Added client-side image optimization.
+
+### Key Accomplishments
+- **Key Hunt Wishlist** - Full CRUD system for tracking wanted comics
+  - Database table `key_hunt_lists` with RLS policies
+  - API routes at `/api/key-hunt` (GET, POST, DELETE, PATCH)
+  - `useKeyHunt` React hook for state management
+  - `AddToKeyHuntButton` component for Hot Books and scan results
+  - `KeyHuntWishlist` component for viewing/managing hunt list
+  - Integrated "My Hunt List" option into Key Hunt bottom sheet
+- **Hot Books Caching** - Reduced API calls and improved load times
+  - Database tables `hot_books`, `hot_books_history`, `hot_books_refresh_log`
+  - 10 seeded hot comics with static data
+  - 24-hour lazy price refresh from eBay API
+  - Refactored `/api/hottest-books` to use database-first approach
+- **Usage Monitoring** - Alert system for service limits
+  - Database table `usage_alerts` for tracking alerts
+  - `/api/admin/usage` endpoint for metrics
+  - `/api/admin/usage/check-alerts` for limit checking
+  - Admin dashboard at `/admin/usage`
+  - Netlify scheduled function for daily checks
+- **Image Optimization** - Reduced storage usage
+  - Client-side compression targeting 400KB (down from 1.5MB)
+  - Updated ImageUpload and LiveCameraCapture components
+
+### Files Added
+- `src/app/api/key-hunt/route.ts`
+- `src/hooks/useKeyHunt.ts`
+- `src/components/AddToKeyHuntButton.tsx`
+- `src/components/KeyHuntWishlist.tsx`
+- `src/lib/imageOptimization.ts`
+- `src/app/api/admin/usage/route.ts`
+- `src/app/api/admin/usage/check-alerts/route.ts`
+- `src/app/admin/usage/page.tsx`
+- `netlify.toml`
+- `netlify/functions/check-usage-alerts.ts`
+- `supabase/migrations/20250117_hot_books_and_key_hunt.sql`
+- `supabase/migrations/20250117_usage_monitoring.sql`
+
+### Files Modified
+- `src/app/api/hottest-books/route.ts` - Refactored for database caching
+- `src/app/hottest-books/page.tsx` - Added AddToKeyHuntButton
+- `src/app/key-hunt/page.tsx` - Added My Hunt List flow
+- `src/components/ComicDetailsForm.tsx` - Added AddToKeyHuntButton to scan results
+- `src/components/KeyHuntBottomSheet.tsx` - Added My Hunt List option
+- `src/components/ImageUpload.tsx` - Added compression
+- `src/components/LiveCameraCapture.tsx` - Added compression
+
+### Database Changes
+- Created `hot_books` table with 10 seeded comics
+- Created `hot_books_history` table for ranking tracking
+- Created `key_hunt_lists` table for user wishlists
+- Created `hot_books_refresh_log` table for API tracking
+- Created `usage_alerts` table for monitoring
+
+### Environment Variables Added
+- `ADMIN_EMAIL` - For usage alert notifications
 
 ---
 
