@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Camera, X, RotateCcw, Check, SwitchCamera, AlertCircle } from "lucide-react";
+import { quickCompress, formatBytes } from "@/lib/imageOptimization";
 
 interface LiveCameraCaptureProps {
   onCapture: (file: File, preview: string) => void;
@@ -160,17 +161,32 @@ export function LiveCameraCapture({ onCapture, onClose }: LiveCameraCaptureProps
     startCamera();
   }, [startCamera]);
 
-  // Confirm and submit captured photo
-  const confirmCapture = useCallback(() => {
+  // Confirm and submit captured photo with optimized compression
+  const confirmCapture = useCallback(async () => {
     if (!capturedImage) return;
 
-    // Convert data URL to File
-    fetch(capturedImage)
-      .then(res => res.blob())
-      .then(blob => {
-        const file = new File([blob], `comic-${Date.now()}.jpg`, { type: "image/jpeg" });
-        onCapture(file, capturedImage);
-      });
+    try {
+      // Compress the captured image for optimal storage (target 400KB)
+      const compressedDataUrl = await quickCompress(capturedImage, 1200, 400 * 1024);
+
+      // Convert to File
+      const response = await fetch(compressedDataUrl);
+      const blob = await response.blob();
+      const file = new File([blob], `comic-${Date.now()}.jpg`, { type: "image/jpeg" });
+
+      // Log compression stats
+      const originalSize = Math.round((capturedImage.length * 3) / 4);
+      console.log(`Camera capture compressed: ${formatBytes(originalSize)} -> ${formatBytes(file.size)}`);
+
+      onCapture(file, compressedDataUrl);
+    } catch (error) {
+      console.error("Error compressing captured image:", error);
+      // Fallback to uncompressed if compression fails
+      const response = await fetch(capturedImage);
+      const blob = await response.blob();
+      const file = new File([blob], `comic-${Date.now()}.jpg`, { type: "image/jpeg" });
+      onCapture(file, capturedImage);
+    }
   }, [capturedImage, onCapture]);
 
   // Handle close

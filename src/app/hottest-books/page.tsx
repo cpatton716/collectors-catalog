@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Flame, TrendingUp, DollarSign, Loader2, RefreshCw, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { formatCurrency } from "@/lib/statsCalculator";
+import { AddToKeyHuntButton } from "@/components/AddToKeyHuntButton";
 
 interface HotBook {
   rank: number;
@@ -345,6 +346,23 @@ export default function HottestBooksPage() {
                           </div>
                         </div>
                       )}
+                    </div>
+
+                    {/* Add to Key Hunt Button */}
+                    <div className="mt-4">
+                      <AddToKeyHuntButton
+                        title={selectedBook.title}
+                        issueNumber={selectedBook.issueNumber}
+                        publisher={selectedBook.publisher}
+                        releaseYear={selectedBook.year}
+                        coverImageUrl={selectedBook.coverImageUrl}
+                        keyInfo={selectedBook.keyFacts}
+                        currentPriceLow={selectedBook.priceRange.low}
+                        currentPriceMid={selectedBook.priceRange.mid}
+                        currentPriceHigh={selectedBook.priceRange.high}
+                        addedFrom="hot_books"
+                        className="w-full justify-center"
+                      />
                     </div>
 
                     {/* Swipe hint on mobile */}

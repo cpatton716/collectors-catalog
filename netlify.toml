@@ -1,0 +1,15 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+# Next.js plugin for Netlify
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Scheduled function for daily usage checks
+[functions]
+  directory = "netlify/functions"
+
+# Environment variables reminder - these must be set in Netlify dashboard:
+# - CRON_SECRET: Secret key for scheduled function auth
+# - ADMIN_EMAIL: Email to receive alerts
