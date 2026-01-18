@@ -284,8 +284,14 @@ export default function Home() {
       {/* Hero Section */}
       <div className="text-center py-12">
         <div className="inline-block mb-6">
-          <h1 className="font-comic text-5xl md:text-7xl text-pop-black tracking-wide text-comic-outline"
-            style={{ WebkitTextStroke: '2px black' }}>
+          <h1
+            className="font-comic text-5xl md:text-7xl text-pop-yellow tracking-wide"
+            style={{
+              WebkitTextStroke: '3px black',
+              paintOrder: 'stroke fill',
+              textShadow: '4px 4px 0px #000'
+            }}
+          >
             {isLoaded && isSignedIn ? "YOUR CHEST!" : "COLLECTORS CHEST!"}
           </h1>
         </div>

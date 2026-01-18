@@ -14,6 +14,7 @@ import {
   getSubscriptionStatus,
   GUEST_SCAN_LIMIT,
 } from "@/lib/subscription";
+import { lookupKeyInfo } from "@/lib/keyComicsDatabase";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -509,6 +510,19 @@ Important:
     if (comicDetails.title && comicDetails.issueNumber && (!comicDetails.keyInfo || comicDetails.keyInfo.length === 0)) {
       console.log("Performing key info lookup...");
 
+      // FIRST: Check our curated key comics database (fast, guaranteed accurate)
+      const databaseKeyInfo = lookupKeyInfo(comicDetails.title, comicDetails.issueNumber);
+      if (databaseKeyInfo && databaseKeyInfo.length > 0) {
+        console.log("Key info found in database:", databaseKeyInfo);
+        comicDetails.keyInfo = databaseKeyInfo;
+      } else {
+        // FALLBACK: Use AI lookup for comics not in our database
+        console.log("Key info not in database, falling back to AI lookup...");
+      }
+    }
+
+    // AI Key Info lookup - only if database didn't have it
+    if (comicDetails.title && comicDetails.issueNumber && (!comicDetails.keyInfo || comicDetails.keyInfo.length === 0)) {
       try {
         const keyInfoResponse = await anthropic.messages.create({
           model: "claude-sonnet-4-20250514",

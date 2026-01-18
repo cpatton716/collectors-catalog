@@ -146,7 +146,7 @@ export async function getAuction(
       `
       *,
       comics(*),
-      profiles!auctions_seller_id_fkey(id, display_name, public_display_name, email, positive_ratings, negative_ratings, seller_since)
+      profiles!auctions_seller_id_fkey(id, display_name, public_display_name, email, positive_ratings, negative_ratings, seller_since, username, display_preference)
     `
     )
     .eq("id", auctionId)
@@ -1400,7 +1400,7 @@ export async function getSellerProfile(sellerId: string): Promise<SellerProfile 
   const { data, error } = await supabase
     .from("profiles")
     .select(
-      "id, display_name, public_display_name, positive_ratings, negative_ratings, seller_since"
+      "id, display_name, public_display_name, username, display_preference, positive_ratings, negative_ratings, seller_since"
     )
     .eq("id", sellerId)
     .single();
@@ -1416,6 +1416,8 @@ export async function getSellerProfile(sellerId: string): Promise<SellerProfile 
     id: data.id,
     displayName: data.display_name,
     publicDisplayName: data.public_display_name,
+    username: data.username,
+    displayPreference: data.display_preference,
     positiveRatings: data.positive_ratings || 0,
     negativeRatings: data.negative_ratings || 0,
     sellerSince: data.seller_since,
@@ -1603,17 +1605,18 @@ function transformDbAuction(data: Record<string, unknown>): Auction {
 
     // Generate a fallback display name from email if no name is set
     let fallbackName: string | null = null;
-    if (!profile.display_name && !profile.public_display_name && profile.email) {
+    if (!profile.display_name && !profile.public_display_name && !profile.username && profile.email) {
       const email = profile.email as string;
-      const username = email.split("@")[0];
-      // Show username part of email (will be replaced by actual username later)
-      fallbackName = username;
+      const emailUsername = email.split("@")[0];
+      fallbackName = emailUsername;
     }
 
     auction.seller = {
       id: profile.id as string,
       displayName: (profile.display_name as string | null) || fallbackName,
       publicDisplayName: profile.public_display_name as string | null,
+      username: profile.username as string | null,
+      displayPreference: profile.display_preference as "username_only" | "display_name_only" | "both" | null,
       positiveRatings: (profile.positive_ratings as number) || 0,
       negativeRatings: (profile.negative_ratings as number) || 0,
       sellerSince: profile.seller_since as string | null,

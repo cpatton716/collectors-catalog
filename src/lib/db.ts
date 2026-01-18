@@ -614,6 +614,8 @@ function transformCollectionItemToDbComic(item: CollectionItem, profileId: strin
 export interface PublicProfile {
   id: string;
   displayName: string | null;
+  username: string | null;
+  displayPreference: "username_only" | "display_name_only" | "both" | null;
   publicSlug: string | null;
   publicDisplayName: string | null;
   publicBio: string | null;
@@ -648,6 +650,8 @@ export async function getPublicProfile(
   return {
     id: data.id,
     displayName: data.display_name,
+    username: data.username,
+    displayPreference: data.display_preference,
     publicSlug: data.public_slug,
     publicDisplayName: data.public_display_name,
     publicBio: data.public_bio,
