@@ -6,36 +6,41 @@ This log tracks session-by-session progress on Collectors Chest.
 
 ## Changes Since Last Deploy
 
-**Sessions since last deploy:** 3
-**Deploy Readiness:** Ready to deploy
+**Sessions since last deploy:** 0
+**Deploy Readiness:** Just deployed
 
 ### Accumulated Changes:
+(none yet)
 
-**January 15 Session:**
-- Email capture system for guest bonus scans
-- Jest test coverage (43 tests for auction, subscription, guest scans)
-- Premium subscription billing foundation (pending Stripe products)
-- Feature gating (Key Hunt, CSV Export, Stats, Listings)
-- Pricing page with tier comparison
-- Scan limit enforcement (guest 5, free 10/month)
-- ScanLimitBanner, TrialPrompt, UpgradeModal components
+---
 
-**January 17 Session (Part 1):**
-- Community key info system with 402 curated key comic entries
-- Key info submission system with admin moderation
-- Username system with validation and availability checking
-- Custom profile page replacing Clerk's UserProfile
-- "Suggest Key Info" button in comic detail modal
-- Key info display in auction/listing modals
-- Admin key info moderation page at `/admin/key-info`
+## Deploy Log - January 17, 2026
 
-**January 17 Session (Part 2):**
-- Key Hunt wishlist feature (database, API, UI)
-- Hot Books database caching with 24-hour lazy price refresh
-- Usage monitoring alerts system
-- Image optimization (400KB target compression)
-- Admin usage dashboard at `/admin/usage`
-- Merged main branch into all 3 design branches
+**Deployed to Netlify**
+
+### Changes Included:
+- **Email Capture** - Guest bonus scans for email signup
+- **Test Coverage** - 43 Jest tests (auction, subscription, guest scans)
+- **Subscription Foundation** - Billing routes, feature gating, pricing page
+- **Community Key Info** - 402 curated key comics, user submissions, admin moderation
+- **Username System** - Custom display names with validation
+- **Custom Profile Page** - Replaced Clerk's UserProfile
+- **Key Hunt Wishlist** - Track comics you want to find
+- **Hot Books Caching** - Database-first with 24-hour price refresh
+- **Usage Monitoring** - Admin dashboard, email alerts for service limits
+- **Image Optimization** - Client-side compression to 400KB
+- **Design Branch Sync** - Merged main into all 3 design branches
+
+### Database Migrations Required:
+- `20260115_add_subscription_fields.sql`
+- `20250117_key_info_community.sql`
+- `20250117_key_info_seed.sql`
+- `20260117_add_username.sql`
+- `20250117_hot_books_and_key_hunt.sql`
+- `20250117_usage_monitoring.sql`
+
+### New Environment Variables:
+- `ADMIN_EMAIL` - For usage alert notifications
 
 ---
 
