@@ -174,45 +174,69 @@ Pull Marvel comic cover images and creator information directly from Marvel.com 
 
 ### Username System for Privacy
 **Priority:** Medium
-**Status:** Pending
+**Status:** ✅ Complete (Jan 17, 2026)
 
-Add a username system so sellers can display a custom name instead of their email or real name.
+Added username system so sellers can display @username instead of email or real name.
 
-**Current Behavior:**
-- Seller name falls back to anonymized email (e.g., "chr...") when no display name is set
-- No way to set a unique username that's distinct from display name
+**Implementation:**
+- Username validation: 3-20 chars, lowercase, letters/numbers/underscores
+- Built-in profanity filter with leetspeak detection (catches @ss, sh1t, etc.)
+- Reserved username blocking (admin, support, system, etc.)
+- Real-time availability checking with debounce
+- Profile Settings UI for setting username
+- Seller badges display @username in marketplace
 
-**Proposed Features:**
-1. **Username Field** - Allow users to set a unique username (e.g., "@comicfan42")
-2. **Display Name Options** - Let users choose what name is shown publicly:
-   - Username only
-   - Display name only
-   - Both (display name with @username)
-3. **Privacy Controls** - Option to hide email entirely from public profile
-4. **Username Validation** - Ensure uniqueness, block inappropriate names
-
-**User Flow:**
-1. Profile Settings → Set Username
-2. Choose display preference for marketplace listings
-3. Username shown on listings, seller pages, and transaction history
-
-**Database Changes:**
-- Add `username` column to profiles table (unique, lowercase)
-- Add `display_preference` enum (username_only, display_name_only, both)
+**Files:**
+- `src/lib/usernameValidation.ts` - Validation utility
+- `src/app/api/username/route.ts` - Check/set API
+- `src/components/UsernameSettings.tsx` - Profile UI
+- `supabase/migrations/20260117_add_username.sql` - DB migration
 
 ---
 
 ### Image Optimization & Resizing
 **Priority:** Medium
-**Status:** ✅ Complete (Jan 2026)
+**Status:** Pending
 
-Client-side image compression implemented in ImageUpload component.
+Implement image optimization to prevent oversized images from breaking layouts and reduce storage/bandwidth costs.
 
-**Implementation:**
-- `src/components/ImageUpload.tsx` - compressImage function
-- Max size: 15MB input, ~1.5MB target after compression
-- Max dimension: 2048px (resizes larger images)
-- Canvas-based compression maintains quality
+**Current Issues:**
+- Large cover images (like Marvel.com high-res images) can break modal layouts
+- No image compression on upload
+- External URL images vary wildly in size
+
+**Recommended Solutions:**
+
+1. **Client-Side Resize on Upload**
+   - Resize images to max 800x1200 before uploading to Supabase
+   - Use canvas API or library like `browser-image-compression`
+   - Maintains quality while reducing file size by 70-90%
+
+2. **Server-Side Processing**
+   - Use Sharp or similar library in API routes
+   - Process images on upload before storing
+   - Generate multiple sizes (thumbnail, medium, full)
+
+3. **CDN with Image Transformation** (Recommended for scale)
+   - Cloudinary, imgix, or Cloudflare Images
+   - Transform images on-the-fly with URL parameters
+   - Automatic WebP conversion, lazy loading support
+   - Cost: ~$0-10/mo for current scale
+
+4. **Supabase Image Transformations**
+   - Supabase Storage has built-in image transformations
+   - Add `?width=800&height=1200` to image URLs
+   - Free with Supabase, but limited options
+
+**Implementation Priority:**
+1. Start with client-side resize (free, immediate impact)
+2. Add Supabase transformations for existing images
+3. Consider CDN if scaling beyond free tiers
+
+**Files to Update:**
+- `src/app/api/analyze/route.ts` - Where images are processed
+- `src/components/ImageUpload.tsx` (if exists) - Upload handling
+- Listing/auction modals - Image display
 
 ---
 
@@ -253,15 +277,27 @@ Currently, when marking a comic as sold, users manually enter the sale price. On
 
 ### Custom SVG Icons & Branding
 **Priority:** High
-**Status:** ✅ Complete (Jan 2026)
+**Status:** Pending
 
-Custom treasure chest icon and full favicon set implemented.
+Replace default Lucide icons with custom SVG icons for brand identity, including a treasure chest logo.
 
-**Implementation:**
-- `src/components/icons/ChestIcon.tsx` - Custom SVG treasure chest
-- Used in Navigation header and Sign-up page
-- Full favicon set in `public/icons/` (192x192, 512x512, maskable variants)
-- PWA shortcuts with custom icons
+**Requirements:**
+- Custom treasure chest icon for header logo and favicon
+- Favicon set (16x16, 32x32, 180x180, 192x192, 512x512)
+- Icons should match Lucide style (24x24 viewBox, stroke-based, 2px stroke width)
+- Store in `/src/components/icons/` and `/public/icons/`
+
+**Files Ready:**
+- `/src/components/icons/index.tsx` - Template with specs created
+- `/public/icons/` - Directory created for favicon variants
+
+**Icon Sizes Used in App:**
+- w-3 h-3 (12px) - Tiny indicators
+- w-4 h-4 (16px) - Small UI elements
+- w-5 h-5 (20px) - Standard (most common)
+- w-6 h-6 (24px) - Navigation
+- w-8 h-8 (32px) - Modal titles
+- w-16 h-16 (64px) - Large modal icons
 
 ---
 
@@ -326,34 +362,29 @@ Investigate using GoCollect as a data provider for price data and hot books list
 **Priority:** Medium
 **Status:** ✅ Complete (Jan 2026)
 
-Real market data from eBay's Browse API is now integrated:
-- Actual recent sales data for specific comics (title, issue, grade)
-- More accurate estimated values based on real transactions
-- AI fallback when no eBay data available
-- Redis caching to minimize API calls
+Integrated eBay Browse API for real market data from completed/sold listings.
 
 **Implementation:**
-- `src/app/api/ebay-prices/route.ts` - eBay Browse API integration
-- `src/lib/ebayPriceCache.ts` - Redis caching layer
-- Console logs show `[ebay-finding]` for debugging
+- OAuth 2.0 authentication (`src/lib/ebay.ts`)
+- Price lookup for completed listings
+- Caching layer to minimize API calls
+- Fallback to AI estimates when no eBay data available
+- API route: `/src/app/api/ebay-prices/route.ts`
 
 ---
 
 ### Shop Page for Books For Sale
 **Priority:** High
-**Status:** ✅ Complete (Jan 2026)
+**Status:** Pending
 
-Marketplace page where users can browse and purchase comics listed for sale.
+Create a marketplace page where users can browse and purchase comics listed for sale by other users.
 
-**Features Implemented:**
-- Grid view of all available listings (Auctions + Buy Now tabs)
+**Features:**
+- Grid view of all available listings
 - Search and filter by title, publisher, price range
 - Comic detail view with seller info
-- Secure checkout via Stripe
-- Seller ratings/reviews system
-- Watchlist functionality
-
-**Files:** `/src/app/shop/page.tsx`, `/src/components/auction/*`
+- Secure checkout via Stripe Connect
+- Seller ratings/reviews (future)
 
 ---
 
@@ -675,20 +706,15 @@ When converting to native mobile apps (iOS/Android), the cover image search feat
 
 ---
 
+## Completed
+
 ### Custom Chest SVG Icon
 **Priority:** Low
 **Status:** ✅ Complete (Jan 2026)
 
-Custom treasure chest SVG implemented.
-
-**Implementation:**
-- `src/components/icons/ChestIcon.tsx` - Full SVG with gradients
-- Used in Navigation and Sign-up pages
-- Works at all sizes (16px to 64px)
+Designed and implemented a custom treasure chest icon for the Collectors Chest branding.
 
 ---
-
-## Completed
 
 ### Key Hunt (Mobile Quick Lookup)
 **Priority:** Medium

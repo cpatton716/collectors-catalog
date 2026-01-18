@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
-import { X, Package, ChevronLeft, ChevronRight, ShoppingCart, AlertCircle, Check, Tag, Loader2, CheckCircle, PackageMinus, AlertTriangle } from "lucide-react";
+import { X, Package, ChevronLeft, ChevronRight, ShoppingCart, AlertCircle, Check, Tag, Loader2, CheckCircle, PackageMinus, AlertTriangle, Key } from "lucide-react";
 import { Auction, formatPrice } from "@/types/auction";
 
 type SellerAction = "mark_as_sold" | "pull_off_shelf";
@@ -259,6 +259,21 @@ export function ListingDetailModal({
                     {comic?.publisher || "Unknown Publisher"}
                     {comic?.releaseYear && ` (${comic.releaseYear})`}
                   </p>
+
+                  {/* Key Info */}
+                  {listing.comic?.comic?.keyInfo && listing.comic.comic.keyInfo.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {listing.comic.comic.keyInfo.map((info, idx) => (
+                        <span
+                          key={idx}
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-800 text-xs font-medium rounded-full"
+                        >
+                          <Key className="w-3 h-3" />
+                          {info}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Seller */}

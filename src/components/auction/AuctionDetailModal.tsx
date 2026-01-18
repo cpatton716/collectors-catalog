@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Package, Calendar, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle, PackageMinus } from "lucide-react";
+import { X, Package, Calendar, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle, PackageMinus, Key } from "lucide-react";
 import { Auction, formatPrice } from "@/types/auction";
 
 type SellerAction = "mark_as_sold" | "pull_off_shelf";
@@ -239,6 +239,21 @@ export function AuctionDetailModal({
                   {auction.comic?.comic?.releaseYear &&
                     ` • ${auction.comic.comic.releaseYear}`}
                 </p>
+
+                {/* Key Info */}
+                {auction.comic?.comic?.keyInfo && auction.comic.comic.keyInfo.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {auction.comic.comic.keyInfo.map((info, idx) => (
+                      <span
+                        key={idx}
+                        className="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-800 text-xs font-medium rounded-full"
+                      >
+                        <Key className="w-3 h-3" />
+                        {info}
+                      </span>
+                    ))}
+                  </div>
+                )}
 
                 {/* Countdown */}
                 <div className="mt-4 p-3 bg-gray-50 rounded-lg">
