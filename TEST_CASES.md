@@ -227,6 +227,37 @@ A guide for testing the main and secondary features of the application.
 | Repeat lookup (cache hit) | Look up same comic again | Near-instant response (~50ms), console shows "Database hit" |
 | CSV import seeds database | Import CSV with new comics → search one | Second search is fast (database hit) |
 
+### 15a. Redis Caching (Phase 2-4 Optimizations)
+
+**Location:** Various API endpoints - verify via browser console or network tab
+
+| Test Case | Steps | Expected Result |
+|-----------|-------|-----------------|
+| Title autocomplete cache | Type "Spider" in title field → Clear → Type "Spider" again | Second request returns faster (Redis hit) |
+| Barcode cache | Scan same barcode twice | Second scan returns instantly (6-month cache) |
+| Cert lookup cache | Look up same CGC cert number twice | Second lookup returns instantly (1-year cache) |
+| Profile cache | Make multiple API calls as logged-in user | Profile fetched once, cached 5 minutes |
+| AI image cache | Scan exact same image twice | Second scan skips AI call (30-day cache) |
+| eBay price cache | View price for same comic twice | Second view uses cached price (24-hour cache) |
+
+**Debugging Redis Cache:**
+- Check browser Network tab for response times
+- First requests: 500-2000ms (API/AI call)
+- Cached requests: 50-200ms (Redis hit)
+- Verify `UPSTASH_REDIS_REST_URL` is set in environment
+
+### 15b. Hot Books ISR (Incremental Static Regeneration)
+
+**Location:** `/hottest-books` page
+
+| Test Case | Steps | Expected Result |
+|-----------|-------|-----------------|
+| Initial page load | Navigate to /hottest-books | Page loads instantly (pre-rendered) |
+| Server-rendered content | View page source | Hot books data present in HTML |
+| Hourly revalidation | Check build output | Shows "1h" revalidate interval |
+| Book selection | Click on different books | Detail panel updates client-side |
+| Navigation | Use prev/next buttons or swipe | Navigates between books smoothly |
+
 ### 16. Auctions
 
 **Location:** Navigation → "Shop" → Auctions tab, or "My Auctions"
@@ -375,4 +406,4 @@ If you encounter bugs or unexpected behavior:
 
 ---
 
-*Last Updated: January 14, 2026*
+*Last Updated: January 21, 2026*
