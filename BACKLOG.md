@@ -194,6 +194,36 @@ Added username system so sellers can display @username instead of email or real 
 
 ---
 
+### Migrate to Next.js Image Component
+**Priority:** Medium
+**Status:** Pending
+
+Migrate ~30 `<img>` elements to Next.js `<Image>` component for automatic image optimization, lazy loading, and better Core Web Vitals scores.
+
+**Benefits:**
+- Automatic lazy loading and format optimization (WebP)
+- Better LCP (Largest Contentful Paint) scores
+- Reduced bandwidth for users
+- Automatic responsive sizing
+
+**Challenges:**
+- External comic covers have unknown dimensions
+- Need to handle `fill` prop for dynamic images
+- May cause layout shifts if not configured properly
+
+**Files to Update:**
+- `src/components/ComicCard.tsx`
+- `src/components/ComicDetailModal.tsx`
+- `src/components/CollectionStats.tsx`
+- `src/app/collection/page.tsx`
+- `src/app/page.tsx`
+- `src/app/scan/page.tsx`
+- (and 20+ more - run `npm run lint` to see full list)
+
+**Note:** Currently suppressed in ESLint config. Re-enable `@next/next/no-img-element` rule after migration.
+
+---
+
 ### Image Optimization & Resizing
 **Priority:** Medium
 **Status:** Pending

@@ -24,7 +24,6 @@ export async function POST(request: Request) {
     try {
       const dbResult = await getComicMetadata(normalizedTitle, normalizedIssue);
       if (dbResult) {
-        console.log(`[import-lookup] Database hit for ${normalizedTitle} #${normalizedIssue}`);
 
         // Return in the format expected by CSV import
         return NextResponse.json({
@@ -50,7 +49,6 @@ export async function POST(request: Request) {
     }
 
     // 2. Fall back to Claude API
-    console.log(`[import-lookup] Database miss for ${normalizedTitle} #${normalizedIssue}, calling AI...`);
 
     // Build the comic identifier string
     const comicIdentifier = `${title} #${issueNumber}${variant ? ` (${variant})` : ""}${publisher ? ` - ${publisher}` : ""}${releaseYear ? ` (${releaseYear})` : ""}`;
@@ -165,7 +163,6 @@ Be realistic with prices based on typical eBay sold listings.`,
         });
       }
     } catch {
-      console.log("Failed to parse Claude response for:", comicIdentifier);
     }
 
     return NextResponse.json({

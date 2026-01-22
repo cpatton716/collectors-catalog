@@ -5,12 +5,13 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { storage } from "@/lib/storage";
 import { calculateCollectionValue, getComicValue } from "@/lib/gradePrice";
-import { CollectionItem, UserList } from "@/types/comic";
+import { CollectionItem } from "@/types/comic";
 import { useCollection } from "@/hooks/useCollection";
 import { ComicCard } from "@/components/ComicCard";
 import { ComicListItem } from "@/components/ComicListItem";
 import { ComicDetailModal } from "@/components/ComicDetailModal";
 import { ComicDetailsForm } from "@/components/ComicDetailsForm";
+import { ComicImage } from "@/components/ComicImage";
 import { CollectionPageSkeleton } from "@/components/Skeleton";
 import { useToast } from "@/components/Toast";
 import {
@@ -19,20 +20,16 @@ import {
   ListFilter,
   Plus,
   Search,
-  Filter,
   SortAsc,
   BookOpen,
   Book,
   Building,
   DollarSign,
   TrendingUp,
-  TrendingDown,
   Star,
   ArrowUpRight,
   ArrowDownRight,
   Receipt,
-  Check,
-  ChevronRight,
   Tag,
   Download,
   Share2,
@@ -40,7 +37,7 @@ import {
 } from "lucide-react";
 import { exportCollectionToCSV } from "@/lib/csvExport";
 import { ShareCollectionModal } from "@/components/ShareCollectionModal";
-import { FeatureButton, PremiumBadge } from "@/components/FeatureGate";
+import { FeatureButton } from "@/components/FeatureGate";
 import { useSubscription } from "@/hooks/useSubscription";
 
 type ViewMode = "grid" | "list";
@@ -723,18 +720,13 @@ export default function CollectionPage() {
                 >
                   {/* Comic Info */}
                   <div className="col-span-5 flex items-center gap-3">
-                    <div className="w-10 h-14 flex-shrink-0 rounded overflow-hidden bg-gray-100">
-                      {item.coverImageUrl ? (
-                        <img
-                          src={item.coverImageUrl}
-                          alt={`${comic.title} #${comic.issueNumber}`}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gray-900 text-xs">
-                          <span className="text-green-400 font-bold italic drop-shadow-[0_0_4px_rgba(74,222,128,0.6)]">?</span>
-                        </div>
-                      )}
+                    <div className="w-10 h-14 flex-shrink-0 rounded overflow-hidden">
+                      <ComicImage
+                        src={item.coverImageUrl}
+                        alt={`${comic.title} #${comic.issueNumber}`}
+                        aspectRatio="fill"
+                        sizes="40px"
+                      />
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
@@ -837,18 +829,13 @@ export default function CollectionPage() {
               {/* Image Preview - Hidden on mobile, shown on desktop */}
               <div className="hidden lg:block lg:w-1/3 p-6 bg-gray-50 border-r border-gray-100">
                 <div className="sticky top-6">
-                  <div className="aspect-[2/3] rounded-lg overflow-hidden bg-gray-200 shadow-lg">
-                    {editingItem.coverImageUrl ? (
-                      <img
-                        src={editingItem.coverImageUrl}
-                        alt="Comic cover"
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gray-900 text-4xl">
-                        <span className="text-green-400 font-bold italic drop-shadow-[0_0_8px_rgba(74,222,128,0.6)]">?</span>
-                      </div>
-                    )}
+                  <div className="aspect-[2/3] rounded-lg overflow-hidden shadow-lg">
+                    <ComicImage
+                      src={editingItem.coverImageUrl}
+                      alt="Comic cover"
+                      aspectRatio="fill"
+                      sizes="(max-width: 1024px) 0px, 33vw"
+                    />
                   </div>
                 </div>
               </div>

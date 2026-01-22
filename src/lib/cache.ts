@@ -14,6 +14,10 @@ const CACHE_PREFIX = {
   ebayPrice: "cache:ebay:",
   comicMetadata: "cache:comic:",
   aiAnalyze: "cache:ai:",
+  barcode: "cache:barcode:", // Phase 2: Barcode lookups (immutable)
+  cert: "cache:cert:", // Phase 2: CGC/CBCS cert lookups (immutable)
+  profile: "cache:profile:", // Phase 3: User profiles (short TTL for freshness)
+  titleSuggest: "cache:title:", // Phase 4: Title autocomplete (reduce AI calls)
 } as const;
 
 // TTL values in seconds
@@ -21,6 +25,10 @@ const CACHE_TTL = {
   ebayPrice: 60 * 60 * 24, // 24 hours
   comicMetadata: 60 * 60 * 24 * 7, // 7 days
   aiAnalyze: 60 * 60 * 24 * 30, // 30 days (AI results are stable)
+  barcode: 60 * 60 * 24 * 180, // 6 months (barcodes never change)
+  cert: 60 * 60 * 24 * 365, // 1 year (certificates are permanent)
+  profile: 60 * 5, // 5 minutes (short for subscription/settings changes)
+  titleSuggest: 60 * 60 * 24, // 24 hours (title data is stable)
 } as const;
 
 /**

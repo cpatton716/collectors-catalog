@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import Anthropic from "@anthropic-ai/sdk";
+import { lookupEbaySoldPrices, isFindingApiConfigured } from "@/lib/ebayFinding";
+import { cacheGet, cacheSet, generateEbayPriceCacheKey } from "@/lib/cache";
+import { PriceData } from "@/types/comic";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -12,7 +15,6 @@ const anthropic = new Anthropic({
 
 // Configuration
 const PRICES_CACHE_HOURS = 24;  // Refresh prices once per day
-const LIST_CACHE_HOURS = 168;   // Refresh hot list weekly (when GoCollect available)
 
 export interface HotBook {
   id?: string;
@@ -66,38 +68,56 @@ function needsPriceRefresh(pricesUpdatedAt: string | null): boolean {
 }
 
 /**
- * Fetch eBay prices for a comic
+ * Fetch eBay prices for a comic using the Finding API directly
+ * This avoids internal HTTP calls and uses Redis caching
  */
 async function fetchEbayPrices(
   title: string,
   issueNumber: string
 ): Promise<{ low: number; mid: number; high: number } | null> {
+  if (!isFindingApiConfigured()) {
+    return null;
+  }
+
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-    const response = await fetch(`${baseUrl}/api/ebay-prices`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title,
-        issueNumber,
-        grade: "VF/NM",  // Default grade for hot books
-      }),
-    });
+    // Generate cache key for hot books (raw grade 9.4)
+    const cacheKey = generateEbayPriceCacheKey(title, issueNumber, 9.4, false, undefined);
 
-    if (!response.ok) return null;
+    // Check Redis cache first
+    const cachedResult = await cacheGet<PriceData | { noData: true }>(cacheKey, "ebayPrice");
+    if (cachedResult !== null) {
+      if ("noData" in cachedResult) {
+        return null;
+      }
+      // Extract price range from cached data
+      if (cachedResult.recentSales && cachedResult.recentSales.length > 0) {
+        const prices = cachedResult.recentSales.map(s => s.price).sort((a, b) => a - b);
+        return {
+          low: prices[0],
+          mid: prices[Math.floor(prices.length / 2)],
+          high: prices[prices.length - 1],
+        };
+      }
+      return null;
+    }
 
-    const data = await response.json();
-    if (data.prices && data.prices.length > 0) {
-      const prices = data.prices.map((p: { price: number }) => p.price);
-      const sorted = prices.sort((a: number, b: number) => a - b);
+    // Fetch from eBay Finding API (raw copy search for hot books)
+    const priceData = await lookupEbaySoldPrices(title, issueNumber, undefined, false, undefined);
 
+    if (priceData && priceData.recentSales && priceData.recentSales.length > 0) {
+      // Cache the result
+      cacheSet(cacheKey, priceData, "ebayPrice").catch(() => {});
+
+      const prices = priceData.recentSales.map(s => s.price).sort((a, b) => a - b);
       return {
-        low: sorted[0],
-        mid: sorted[Math.floor(sorted.length / 2)],
-        high: sorted[sorted.length - 1],
+        low: prices[0],
+        mid: prices[Math.floor(prices.length / 2)],
+        high: prices[prices.length - 1],
       };
     }
 
+    // Cache negative result
+    cacheSet(cacheKey, { noData: true }, "ebayPrice").catch(() => {});
     return null;
   } catch (error) {
     console.error("Error fetching eBay prices:", error);
@@ -248,7 +268,6 @@ export async function GET() {
 
       if (needsRefresh) {
         // Refresh prices in background (don't block response)
-        console.log("Refreshing hot books prices in background...");
 
         // Find books that need price updates
         const booksToUpdate = books.filter((book) => needsPriceRefresh(book.prices_updated_at));
@@ -259,7 +278,6 @@ export async function GET() {
             updateBookPrices(book.id, book.title, book.issue_number)
           )
         ).then(() => {
-          console.log(`Updated prices for ${booksToUpdate.length} hot books`);
 
           // Log the refresh
           supabase.from("hot_books_refresh_log").insert({
@@ -283,7 +301,6 @@ export async function GET() {
 
     // 3. No books in database - need to generate the list
     // This should only happen on first deployment or if table is empty
-    console.log("No hot books in database, generating with AI...");
 
     try {
       const aiBooks = await refreshHotBooksListWithAI();

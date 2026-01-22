@@ -3,7 +3,11 @@
  *
  * Fetches comic book data from CGC, CBCS, and PGX verification pages
  * using their certification numbers.
+ *
+ * Phase 2: Now includes Redis caching (1 year TTL) since certificates are permanent.
  */
+
+import { cacheGet, cacheSet } from "./cache";
 
 export interface CertLookupResult {
   success: boolean;
@@ -49,7 +53,6 @@ export async function lookupCGCCert(certNumber: string): Promise<CertLookupResul
   }
 
   try {
-    console.log(`[cert-lookup] Looking up CGC cert: ${cleanCert}`);
 
     const response = await fetch(`https://www.cgccomics.com/certlookup/${cleanCert}/`, {
       headers: {
@@ -59,7 +62,6 @@ export async function lookupCGCCert(certNumber: string): Promise<CertLookupResul
     });
 
     if (!response.ok) {
-      console.log(`[cert-lookup] CGC lookup failed: ${response.status}`);
       return {
         success: false,
         source: "cgc",
@@ -199,11 +201,6 @@ function parseCGCResponse(html: string, certNumber: string): CertLookupResult {
       };
     }
 
-    console.log("[cert-lookup] CGC parsed data:", {
-      title, issueNumber, publisher, releaseYear, grade,
-      pageQuality, gradeDate, labelType, signatures, keyComments, graderNotes
-    });
-
     return {
       success: true,
       source: "cgc",
@@ -259,7 +256,6 @@ export async function lookupCBCSCert(certNumber: string): Promise<CertLookupResu
   }
 
   try {
-    console.log(`[cert-lookup] Looking up CBCS cert: ${cleanCert}`);
 
     const response = await fetch(`https://cbcscomics.com/grading-notes/${encodeURIComponent(cleanCert)}`, {
       headers: {
@@ -269,7 +265,6 @@ export async function lookupCBCSCert(certNumber: string): Promise<CertLookupResu
     });
 
     if (!response.ok) {
-      console.log(`[cert-lookup] CBCS lookup failed: ${response.status}`);
       return {
         success: false,
         source: "cbcs",
@@ -375,11 +370,6 @@ function parseCBCSResponse(html: string, certNumber: string): CertLookupResult {
       };
     }
 
-    console.log("[cert-lookup] CBCS parsed data:", {
-      title, issueNumber, publisher, releaseYear, grade,
-      variant, pageQuality, signatures, graderNotes
-    });
-
     return {
       success: true,
       source: "cbcs",
@@ -433,7 +423,6 @@ export async function lookupPGXCert(certNumber: string): Promise<CertLookupResul
   }
 
   try {
-    console.log(`[cert-lookup] Looking up PGX cert: ${cleanCert}`);
 
     const response = await fetch(`https://www.pgxcomics.com/cert/verify/${cleanCert}`, {
       headers: {
@@ -443,7 +432,6 @@ export async function lookupPGXCert(certNumber: string): Promise<CertLookupResul
     });
 
     if (!response.ok) {
-      console.log(`[cert-lookup] PGX lookup failed: ${response.status}`);
       return {
         success: false,
         source: "pgx",
@@ -550,14 +538,33 @@ export async function lookupCertification(
   certNumber: string
 ): Promise<CertLookupResult> {
   const company = gradingCompany.toUpperCase();
+  const cleanCert = certNumber.replace(/\D/g, ""); // Normalize for cache key
+
+  // ============================================
+  // Cert Caching (Phase 2 optimization)
+  // Cache cert results for 1 year - certificates never change
+  // Saves web scraping calls and improves response time
+  // ============================================
+  const cacheKey = `${company.toLowerCase()}-${cleanCert}`;
+  const cachedResult = await cacheGet<CertLookupResult>(cacheKey, "cert");
+
+  if (cachedResult && cachedResult.success && cachedResult.data) {
+    return cachedResult;
+  }
+
+  // Fetch from grading company website
+  let result: CertLookupResult;
 
   switch (company) {
     case "CGC":
-      return lookupCGCCert(certNumber);
+      result = await lookupCGCCert(certNumber);
+      break;
     case "CBCS":
-      return lookupCBCSCert(certNumber);
+      result = await lookupCBCSCert(certNumber);
+      break;
     case "PGX":
-      return lookupPGXCert(certNumber);
+      result = await lookupPGXCert(certNumber);
+      break;
     default:
       return {
         success: false,
@@ -566,6 +573,13 @@ export async function lookupCertification(
         error: `Unsupported grading company: ${gradingCompany}`,
       };
   }
+
+  // Cache successful results for 1 year (fire and forget)
+  if (result.success && result.data) {
+    cacheSet(cacheKey, result, "cert").catch(() => {});
+  }
+
+  return result;
 }
 
 /**

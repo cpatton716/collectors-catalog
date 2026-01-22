@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X, DollarSign, AlertCircle, Send } from "lucide-react";
 import { Auction, formatPrice, MIN_FIXED_PRICE } from "@/types/auction";
+import { ComicImage } from "../ComicImage";
 
 interface MakeOfferModalProps {
   listing: Auction;
@@ -111,11 +112,14 @@ export function MakeOfferModal({
               {/* Listing Info */}
               <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                 {listing.comic?.coverImageUrl && (
-                  <img
-                    src={listing.comic.coverImageUrl}
-                    alt={listing.comic?.comic.title || "Comic"}
-                    className="w-12 h-16 object-cover rounded"
-                  />
+                  <div className="w-12 h-16 rounded overflow-hidden flex-shrink-0">
+                    <ComicImage
+                      src={listing.comic.coverImageUrl}
+                      alt={listing.comic?.comic.title || "Comic"}
+                      aspectRatio="fill"
+                      sizes="48px"
+                    />
+                  </div>
                 )}
                 <div className="flex-1 min-w-0">
                   <p className="font-medium truncate">

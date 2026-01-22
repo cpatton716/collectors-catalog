@@ -60,7 +60,6 @@ export async function POST(request: NextRequest) {
     try {
       const redisCached = await cacheGet<ComicLookupResult>(cacheKey, "comicMetadata");
       if (redisCached) {
-        console.log(`[comic-lookup] Redis cache hit for ${normalizedTitle} #${normalizedIssue}`);
         return NextResponse.json({ ...redisCached, source: "cache" });
       }
     } catch (redisError) {
@@ -71,7 +70,6 @@ export async function POST(request: NextRequest) {
     try {
       const dbResult = await getComicMetadata(normalizedTitle, normalizedIssue);
       if (dbResult) {
-        console.log(`[comic-lookup] Database hit for ${normalizedTitle} #${normalizedIssue} (lookup #${dbResult.lookupCount})`);
 
         const result: ComicLookupResult = {
           publisher: dbResult.publisher,
@@ -101,7 +99,6 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. Fall back to Claude API (slower ~1-2s, but handles everything)
-    console.log(`[comic-lookup] Database miss for ${normalizedTitle} #${normalizedIssue}, calling AI...`);
 
     if (!process.env.ANTHROPIC_API_KEY) {
       return NextResponse.json(

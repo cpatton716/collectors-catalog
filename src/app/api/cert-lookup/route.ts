@@ -20,7 +20,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`[cert-lookup API] Looking up ${gradingCompany} cert: ${certNumber}`);
 
     const result = await lookupCertification(gradingCompany, certNumber);
 

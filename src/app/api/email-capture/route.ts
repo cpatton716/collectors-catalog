@@ -36,14 +36,8 @@ export async function POST(request: NextRequest) {
     // Normalize email
     const normalizedEmail = email.toLowerCase().trim();
 
-    // If no API key or audience ID, log and return success (for testing)
+    // If no API key or audience ID, return success silently (for testing)
     if (!process.env.RESEND_API_KEY || !BONUS_SCANS_AUDIENCE_ID) {
-      console.log(`[EmailCapture] Would add email: ${normalizedEmail} (Resend not configured)`, {
-        source,
-        scansUsed,
-        hasApiKey: !!process.env.RESEND_API_KEY,
-        hasAudienceId: !!BONUS_SCANS_AUDIENCE_ID,
-      });
       return NextResponse.json({
         success: true,
         message: "Bonus scans unlocked",
@@ -51,7 +45,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    console.log(`[EmailCapture] Attempting to add ${normalizedEmail} for bonus scans`);
 
     // Try to add contact to Resend audience
     // If contact already exists, they've already redeemed bonus scans
@@ -66,7 +59,6 @@ export async function POST(request: NextRequest) {
     if (error) {
       // If contact already exists, they've already used bonus scans
       if (error.message?.includes("already exists")) {
-        console.log(`[EmailCapture] Email already redeemed bonus scans: ${normalizedEmail}`);
         return NextResponse.json(
           { error: "This email has already been used for bonus scans" },
           { status: 409 }
@@ -84,7 +76,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`[EmailCapture] Added email for bonus scans: ${normalizedEmail}`, data);
 
     // Optionally send a welcome email
     try {

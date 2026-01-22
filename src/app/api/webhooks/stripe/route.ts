@@ -24,7 +24,6 @@ const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 export async function POST(request: NextRequest) {
   try {
     if (!stripe || !webhookSecret) {
-      console.log("Stripe not configured, skipping webhook");
       return NextResponse.json({ received: true });
     }
 
@@ -63,7 +62,6 @@ export async function POST(request: NextRequest) {
 
       case "checkout.session.expired": {
         const session = event.data.object as Stripe.Checkout.Session;
-        console.log("Checkout session expired:", session.id);
         break;
       }
 
@@ -104,7 +102,6 @@ export async function POST(request: NextRequest) {
       }
 
       default:
-        console.log(`Unhandled event type: ${event.type}`);
     }
 
     return NextResponse.json({ received: true });
@@ -137,13 +134,11 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   }
 
   // Subscription checkout is handled by subscription.created event
-  console.log("Checkout completed:", session.id, "mode:", session.mode);
 }
 
 async function handleScanPackPurchase(profileId: string) {
   const result = await addPurchasedScans(profileId, SCAN_PACK_AMOUNT);
   if (result.success) {
-    console.log(`Added ${SCAN_PACK_AMOUNT} scans to profile ${profileId}. Total: ${result.totalPurchased}`);
   } else {
     console.error(`Failed to add scans to profile ${profileId}`);
   }
@@ -172,7 +167,6 @@ async function handleAuctionPayment(metadata: Record<string, string>) {
   // Request rating from buyer
   await createNotification(buyerId, "rating_request", auctionId);
 
-  console.log(`Payment completed for auction ${auctionId}`);
 }
 
 // ============================================
@@ -197,12 +191,10 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
   // Check if this is a trial
   if (subscription.status === "trialing") {
     await startTrial(profile.id);
-    console.log(`Trial started for profile ${profile.id}`);
   }
 
   // Upgrade to premium
   await upgradeToPremium(profile.id, subscription.id, currentPeriodEnd);
-  console.log(`Subscription created for profile ${profile.id}`);
 }
 
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
@@ -238,7 +230,6 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   }
 
   await updateSubscriptionStatus(profile.id, status, currentPeriodEnd);
-  console.log(`Subscription updated for profile ${profile.id}: ${status}`);
 }
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
@@ -252,7 +243,6 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
 
   // Downgrade to free tier
   await downgradeToFree(profile.id);
-  console.log(`Subscription canceled for profile ${profile.id}, downgraded to free`);
 }
 
 // ============================================
@@ -274,7 +264,6 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
 
   // Update subscription status to active (in case it was past_due)
   await updateSubscriptionStatus(profile.id, "active");
-  console.log(`Invoice payment succeeded for profile ${profile.id}`);
 }
 
 async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
@@ -292,7 +281,6 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
 
   // Mark subscription as past_due
   await updateSubscriptionStatus(profile.id, "past_due");
-  console.log(`Invoice payment failed for profile ${profile.id}, marked as past_due`);
 
   // TODO: Send email notification about failed payment via Resend
 }

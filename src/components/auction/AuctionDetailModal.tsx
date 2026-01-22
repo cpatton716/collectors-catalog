@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { X, Package, Calendar, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle, PackageMinus, Key } from "lucide-react";
 import { Auction, formatPrice } from "@/types/auction";
 
@@ -10,6 +11,7 @@ import { BidForm } from "./BidForm";
 import { BidHistory } from "./BidHistory";
 import { SellerBadge } from "./SellerBadge";
 import { WatchlistButton } from "./WatchlistButton";
+import { ComicImage } from "../ComicImage";
 
 interface AuctionDetailModalProps {
   auctionId: string;
@@ -155,17 +157,19 @@ export function AuctionDetailModal({
                 {/* Main Image */}
                 <div className="aspect-square relative max-h-[60vh] md:max-h-[70vh]">
                   {allImages[selectedImageIndex] ? (
-                    <img
+                    <Image
                       src={allImages[selectedImageIndex]}
                       alt="Auction item"
-                      className="w-full h-full object-contain max-w-full"
+                      fill
+                      className="object-contain"
+                      sizes="(max-width: 768px) 100vw, 50vw"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gray-900">
-                      <span className="text-6xl text-green-400 font-bold italic">
-                        ?
-                      </span>
-                    </div>
+                    <ComicImage
+                      src={null}
+                      alt="No image"
+                      aspectRatio="fill"
+                    />
                   )}
 
                   {/* Navigation Arrows */}
@@ -202,16 +206,18 @@ export function AuctionDetailModal({
                       <button
                         key={idx}
                         onClick={() => setSelectedImageIndex(idx)}
-                        className={`w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-colors ${
+                        className={`w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-colors relative ${
                           idx === selectedImageIndex
                             ? "border-blue-500"
                             : "border-transparent"
                         }`}
                       >
-                        <img
+                        <Image
                           src={img}
                           alt={`Thumbnail ${idx + 1}`}
-                          className="w-full h-full object-cover"
+                          fill
+                          className="object-cover"
+                          sizes="64px"
                         />
                       </button>
                     ))}

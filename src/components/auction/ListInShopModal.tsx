@@ -25,6 +25,7 @@ import {
   AUCTION_DURATION_OPTIONS,
 } from "@/types/auction";
 import { useSubscription } from "@/hooks/useSubscription";
+import { ComicImage } from "../ComicImage";
 
 type ListingMode = "sell" | "auction";
 
@@ -336,11 +337,14 @@ export function ListInShopModal({
           {step === 1 && !checkingLimit && listingLimitInfo?.canCreate && (
             <div className="space-y-4">
               <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <img
-                  src={comic.coverImageUrl || "/placeholder-cover.png"}
-                  alt={comic.comic.title || "Comic"}
-                  className="w-16 h-20 object-cover rounded"
-                />
+                <div className="w-16 h-20 rounded overflow-hidden flex-shrink-0">
+                  <ComicImage
+                    src={comic.coverImageUrl}
+                    alt={comic.comic.title || "Comic"}
+                    aspectRatio="fill"
+                    sizes="64px"
+                  />
+                </div>
                 <div>
                   <p className="font-medium text-gray-900">{comic.comic.title}</p>
                   <p className="text-sm text-gray-600">

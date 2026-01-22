@@ -5,6 +5,7 @@ import { Gavel, ShoppingCart, Package, Clock } from "lucide-react";
 import { AuctionCountdown } from "./AuctionCountdown";
 import { WatchlistButton } from "./WatchlistButton";
 import { SellerBadgeCompact } from "./SellerBadge";
+import { ComicImage } from "../ComicImage";
 
 interface AuctionCardProps {
   auction: Auction;
@@ -66,20 +67,12 @@ export function AuctionCard({
       className="bg-white rounded-xl shadow-md overflow-hidden cursor-pointer group hover:shadow-lg transition-shadow"
     >
       {/* Cover Image */}
-      <div className="relative aspect-[2/3] bg-gray-100">
-        {coverImageUrl ? (
-          <img
-            src={coverImageUrl}
-            alt={`${title} #${issueNumber}`}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gray-900 text-4xl">
-            <span className="text-green-400 font-bold italic drop-shadow-[0_0_8px_rgba(74,222,128,0.6)]">
-              ?
-            </span>
-          </div>
-        )}
+      <div className="relative aspect-[2/3]">
+        <ComicImage
+          src={coverImageUrl}
+          alt={`${title} #${issueNumber}`}
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 200px"
+        />
 
         {/* Watchlist Button */}
         <div className="absolute top-2 right-2">

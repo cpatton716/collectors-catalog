@@ -32,7 +32,6 @@ export async function GET(request: NextRequest) {
   try {
     const result = await resetAllMonthlyScans();
 
-    console.log(`[cron/reset-scans] Reset scans for ${result.updated} users`);
 
     return NextResponse.json({
       success: true,

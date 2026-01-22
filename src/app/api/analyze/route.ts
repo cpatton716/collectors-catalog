@@ -3,11 +3,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { lookupEbaySoldPrices, isFindingApiConfigured } from "@/lib/ebayFinding";
 import { lookupCertification } from "@/lib/certLookup";
-import { supabase } from "@/lib/supabase";
 import { getProfileByClerkId } from "@/lib/db";
 import { PriceData } from "@/types/comic";
 import { rateLimiters, checkRateLimit, getRateLimitIdentifier } from "@/lib/rateLimit";
-import { cacheGet, cacheSet, generateEbayPriceCacheKey } from "@/lib/cache";
+import { cacheGet, cacheSet, generateEbayPriceCacheKey, hashImageData, isCacheAvailable } from "@/lib/cache";
 import {
   canUserScan,
   incrementScanCount,
@@ -20,68 +19,8 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-// eBay price cache TTL: 24 hours
-const EBAY_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
-
-/**
- * Get cached eBay price from database
- * Returns: { found: true, data: PriceData | null } if cache hit
- *          { found: false } if cache miss
- */
-async function getCachedEbayPrice(cacheKey: string): Promise<{ found: boolean; data: PriceData | null }> {
-  try {
-    const { data, error } = await supabase
-      .from("ebay_price_cache")
-      .select("price_data, created_at")
-      .eq("cache_key", cacheKey)
-      .single();
-
-    if (error || !data) return { found: false, data: null };
-
-    const cacheAge = Date.now() - new Date(data.created_at).getTime();
-    if (cacheAge > EBAY_CACHE_TTL_MS) {
-      // Cache expired
-      await supabase.from("ebay_price_cache").delete().eq("cache_key", cacheKey);
-      return { found: false, data: null };
-    }
-
-    // Cache hit - data may be null if eBay had no results
-    return { found: true, data: data.price_data as PriceData | null };
-  } catch {
-    return { found: false, data: null };
-  }
-}
-
-/**
- * Save eBay price to cache
- */
-async function setCachedEbayPrice(
-  cacheKey: string,
-  priceData: PriceData | null,
-  title: string,
-  issueNumber: string,
-  grade: number,
-  isSlabbed: boolean,
-  gradingCompany?: string
-): Promise<void> {
-  try {
-    await supabase.from("ebay_price_cache").upsert(
-      {
-        cache_key: cacheKey,
-        title,
-        issue_number: issueNumber,
-        grade,
-        is_graded: isSlabbed,
-        grading_company: gradingCompany || null,
-        price_data: priceData,
-        created_at: new Date().toISOString(),
-      },
-      { onConflict: "cache_key", ignoreDuplicates: false }
-    );
-  } catch (error) {
-    console.error("[analyze] Cache save error:", error);
-  }
-}
+// Phase 3: Removed Supabase cache layer - using Redis only for eBay prices
+// This simplifies the caching architecture and reduces latency
 
 export async function POST(request: NextRequest) {
   // Track profile for scan counting at the end
@@ -142,8 +81,6 @@ export async function POST(request: NextRequest) {
 
     const { image, mediaType } = await request.json();
 
-    console.log("Received image request, mediaType:", mediaType);
-    console.log("Image data length:", image?.length || 0);
 
     if (!image) {
       return NextResponse.json({ error: "No image was received. Please try uploading your photo again." }, { status: 400 });
@@ -167,7 +104,39 @@ export async function POST(request: NextRequest) {
     // Remove data URL prefix if present
     const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
 
-    const response = await anthropic.messages.create({
+    // ============================================
+    // Image Hash Caching (Phase 2 optimization)
+    // Cache AI analysis results by image hash for 30 days
+    // Saves ~$0.005-0.007 per duplicate/retry scan
+    // ============================================
+    const imageHash = hashImageData(base64Data);
+    const cachedAnalysis = await cacheGet<{
+      title: string;
+      issueNumber: string;
+      publisher: string | null;
+      releaseYear: string | null;
+      variant: string | null;
+      writer: string | null;
+      coverArtist: string | null;
+      interiorArtist: string | null;
+      isSlabbed: boolean;
+      grade: string | null;
+      gradingCompany: string | null;
+      certificationNumber: string | null;
+      keyInfo: string[];
+    }>(imageHash, "aiAnalyze");
+
+    // If we have a cached result, use it but still get fresh pricing
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let comicDetails: any;
+    let usedCache = false;
+
+    if (cachedAnalysis && cachedAnalysis.title) {
+      comicDetails = { ...cachedAnalysis };
+      usedCache = true;
+    } else {
+      // No cache hit - run the AI image analysis
+      const response = await anthropic.messages.create({
       model: "claude-sonnet-4-20250514",
       max_tokens: 1024,
       messages: [
@@ -232,43 +201,67 @@ Important:
           ],
         },
       ],
-    });
+      });
 
-    // Extract the text content from the response
-    const textContent = response.content.find((block) => block.type === "text");
-    if (!textContent || textContent.type !== "text") {
-      throw new Error("We couldn't analyze this image. Please try a clearer photo of the comic cover.");
-    }
+      // Extract the text content from the response
+      const textContent = response.content.find((block) => block.type === "text");
+      if (!textContent || textContent.type !== "text") {
+        throw new Error("We couldn't analyze this image. Please try a clearer photo of the comic cover.");
+      }
 
-    // Parse the JSON response
-    let comicDetails;
-    try {
-      // Clean the response - remove any markdown code blocks if present
-      let jsonText = textContent.text.trim();
-      console.log("Raw Claude response:", jsonText.substring(0, 500));
+      // Parse the JSON response
+      try {
+        // Clean the response - remove any markdown code blocks if present
+        let jsonText = textContent.text.trim();
 
-      if (jsonText.startsWith("```json")) {
-        jsonText = jsonText.slice(7);
+        if (jsonText.startsWith("```json")) {
+          jsonText = jsonText.slice(7);
+        }
+        if (jsonText.startsWith("```")) {
+          jsonText = jsonText.slice(3);
+        }
+        if (jsonText.endsWith("```")) {
+          jsonText = jsonText.slice(0, -3);
+        }
+        comicDetails = JSON.parse(jsonText.trim());
+        // Initialize keyInfo as empty array
+        comicDetails.keyInfo = [];
+
+        // Cache the AI analysis result for 30 days (Phase 2 optimization)
+        // Only cache if we got valid results
+        if (comicDetails.title && isCacheAvailable()) {
+          const cacheData = {
+            title: comicDetails.title,
+            issueNumber: comicDetails.issueNumber,
+            publisher: comicDetails.publisher,
+            releaseYear: comicDetails.releaseYear,
+            variant: comicDetails.variant,
+            writer: comicDetails.writer,
+            coverArtist: comicDetails.coverArtist,
+            interiorArtist: comicDetails.interiorArtist,
+            isSlabbed: comicDetails.isSlabbed,
+            grade: comicDetails.grade,
+            gradingCompany: comicDetails.gradingCompany,
+            certificationNumber: comicDetails.certificationNumber,
+            keyInfo: [], // Don't cache keyInfo - we get it fresh from DB or AI
+          };
+          // Fire and forget - don't block the response
+          cacheSet(imageHash, cacheData, "aiAnalyze").catch(() => {});
+        }
+      } catch (parseError) {
+        console.error("Failed to parse Claude response:", textContent.text);
+        console.error("Parse error:", parseError);
+        throw new Error("We had trouble reading the comic details. Please try a different photo with the cover clearly visible.");
       }
-      if (jsonText.startsWith("```")) {
-        jsonText = jsonText.slice(3);
-      }
-      if (jsonText.endsWith("```")) {
-        jsonText = jsonText.slice(0, -3);
-      }
-      comicDetails = JSON.parse(jsonText.trim());
-      // Initialize keyInfo as empty array
+    } // End of else block (no cache hit)
+
+    // Ensure keyInfo is initialized
+    if (!comicDetails.keyInfo) {
       comicDetails.keyInfo = [];
-      console.log("Parsed comic details:", comicDetails);
-    } catch (parseError) {
-      console.error("Failed to parse Claude response:", textContent.text);
-      console.error("Parse error:", parseError);
-      throw new Error("We had trouble reading the comic details. Please try a different photo with the cover clearly visible.");
     }
 
     // If this is a slabbed comic with a certification number, look up from grading company
     if (comicDetails.isSlabbed && comicDetails.certificationNumber && comicDetails.gradingCompany) {
-      console.log(`[analyze] Slabbed comic detected, looking up cert ${comicDetails.certificationNumber} from ${comicDetails.gradingCompany}...`);
 
       try {
         const certResult = await lookupCertification(
@@ -277,7 +270,6 @@ Important:
         );
 
         if (certResult.success && certResult.data) {
-          console.log("[analyze] Cert lookup successful:", certResult.data);
 
           // Merge cert data with AI data (cert takes priority for overlapping fields)
           if (certResult.data.title) {
@@ -326,9 +318,7 @@ Important:
               .filter(s => s.length > 0);
           }
 
-          console.log("[analyze] Merged comic details after cert lookup:", comicDetails);
         } else {
-          console.log("[analyze] Cert lookup failed or returned no data:", certResult.error);
           // Continue with AI-detected data
         }
       } catch (certError) {
@@ -337,127 +327,65 @@ Important:
       }
     }
 
-    // If we have title and issue but missing creator info, look it up
+    // ============================================
+    // COMBINED VERIFICATION CALL (Phase 2 optimization)
+    // Merges creator lookup, verification, and key info into ONE API call
+    // This saves 30-35% on Anthropic costs vs. 3 separate calls
+    // ============================================
+
+    // Check what info is missing
     const missingCreatorInfo = !comicDetails.writer || !comicDetails.coverArtist || !comicDetails.interiorArtist;
+    const missingBasicInfo = !comicDetails.publisher || !comicDetails.releaseYear;
 
-    if (comicDetails.title && comicDetails.issueNumber && missingCreatorInfo) {
-      console.log("Missing creator info, performing lookup...");
-
-      try {
-        const lookupResponse = await anthropic.messages.create({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 512,
-          messages: [
-            {
-              role: "user",
-              content: `You are a comic book expert with extensive knowledge of comic book history and creators.
-
-I need the creator information for this comic:
-- Title: ${comicDetails.title}
-- Issue Number: ${comicDetails.issueNumber}
-- Publisher: ${comicDetails.publisher || "Unknown"}
-- Year: ${comicDetails.releaseYear || "Unknown"}
-
-Please provide the creator information as a JSON object:
-{
-  "writer": "the writer(s) of this issue",
-  "coverArtist": "the cover artist for this issue",
-  "interiorArtist": "the interior/pencil artist for this issue"
-}
-
-Important:
-- Return ONLY the JSON object, no other text
-- Use your knowledge of comic book history to provide accurate information
-- If you're not confident about a specific creator, use null
-- For well-known issues, this information should be in your training data
-- Be specific - provide actual names, not generic responses`,
-            },
-          ],
-        });
-
-        const lookupTextContent = lookupResponse.content.find((block) => block.type === "text");
-        if (lookupTextContent && lookupTextContent.type === "text") {
-          let lookupJson = lookupTextContent.text.trim();
-          console.log("Creator lookup response:", lookupJson);
-
-          // Clean markdown if present
-          if (lookupJson.startsWith("```json")) {
-            lookupJson = lookupJson.slice(7);
-          }
-          if (lookupJson.startsWith("```")) {
-            lookupJson = lookupJson.slice(3);
-          }
-          if (lookupJson.endsWith("```")) {
-            lookupJson = lookupJson.slice(0, -3);
-          }
-
-          const creatorInfo = JSON.parse(lookupJson.trim());
-          console.log("Parsed creator info:", creatorInfo);
-
-          // Only fill in missing fields
-          if (!comicDetails.writer && creatorInfo.writer) {
-            comicDetails.writer = creatorInfo.writer;
-          }
-          if (!comicDetails.coverArtist && creatorInfo.coverArtist) {
-            comicDetails.coverArtist = creatorInfo.coverArtist;
-          }
-          if (!comicDetails.interiorArtist && creatorInfo.interiorArtist) {
-            comicDetails.interiorArtist = creatorInfo.interiorArtist;
-          }
-
-          console.log("Final comic details with creator info:", comicDetails);
-        }
-      } catch (lookupError) {
-        // Don't fail the whole request if lookup fails, just log it
-        console.error("Creator lookup failed:", lookupError);
+    // First, check our curated key comics database (fast, guaranteed accurate, FREE)
+    let databaseKeyInfo: string[] | null = null;
+    if (comicDetails.title && comicDetails.issueNumber) {
+      databaseKeyInfo = lookupKeyInfo(comicDetails.title, comicDetails.issueNumber);
+      if (databaseKeyInfo && databaseKeyInfo.length > 0) {
+        comicDetails.keyInfo = databaseKeyInfo;
       }
     }
 
-    // Verify and fill in any other missing details
-    const missingBasicInfo = !comicDetails.publisher || !comicDetails.releaseYear || !comicDetails.variant;
+    // Only call AI if we need to fill in missing information
+    const needsKeyInfoFromAI = !databaseKeyInfo || databaseKeyInfo.length === 0;
+    const needsAIVerification = comicDetails.title && comicDetails.issueNumber &&
+      (missingCreatorInfo || missingBasicInfo || needsKeyInfoFromAI);
 
-    if (comicDetails.title && comicDetails.issueNumber && missingBasicInfo) {
-      console.log("Missing basic info, performing verification lookup...");
-
+    if (needsAIVerification) {
       try {
+        // Build a list of what we need
+        const missingFields: string[] = [];
+        if (missingCreatorInfo) missingFields.push("creators (writer, coverArtist, interiorArtist)");
+        if (missingBasicInfo) missingFields.push("publication info (publisher, releaseYear)");
+        if (needsKeyInfoFromAI) missingFields.push("key collector facts");
+
         const verifyResponse = await anthropic.messages.create({
           model: "claude-sonnet-4-20250514",
-          max_tokens: 512,
+          max_tokens: 384, // Combined call needs slightly more tokens (~300 actual)
           messages: [
             {
               role: "user",
-              content: `You are a comic book expert with extensive knowledge of comic book history.
+              content: `You are a comic book expert. Complete this comic's information.
 
-I need to verify and complete the following comic book information:
-- Title: ${comicDetails.title}
-- Issue Number: ${comicDetails.issueNumber}
-- Publisher: ${comicDetails.publisher || "Unknown"}
-- Year: ${comicDetails.releaseYear || "Unknown"}
-- Variant: ${comicDetails.variant || "Unknown"}
+Comic: "${comicDetails.title}" #${comicDetails.issueNumber}
+Known: Publisher=${comicDetails.publisher || "?"}, Year=${comicDetails.releaseYear || "?"}, Variant=${comicDetails.variant || "standard"}
+Need: ${missingFields.join(", ")}
 
-Please provide the correct/complete information as a JSON object:
+Return JSON:
 {
-  "publisher": "the correct publisher name (e.g., 'Marvel Comics', 'DC Comics')",
-  "releaseYear": "the 4-digit year this issue was published",
-  "variant": "the variant name if this is a variant cover, or null if it's a standard cover",
-  "keyInfo": ["array of MAJOR key facts about this issue"]
+  "writer": "${comicDetails.writer || "fill in or null"}",
+  "coverArtist": "${comicDetails.coverArtist || "fill in or null"}",
+  "interiorArtist": "${comicDetails.interiorArtist || "fill in or null"}",
+  "publisher": "${comicDetails.publisher || "fill in (full name like Marvel Comics)"}",
+  "releaseYear": "${comicDetails.releaseYear || "YYYY or null"}",
+  "variant": ${comicDetails.variant ? `"${comicDetails.variant}"` : "null if standard cover"},
+  "keyInfo": ["ONLY major key facts - first appearances, deaths, origins. Empty array for regular issues."]
 }
 
-Important:
-- Return ONLY the JSON object, no other text
-- Use your knowledge of comic book history to provide accurate information
-- If you're not confident about a specific field, use null
-- For publisher, use the full official name
-- For keyInfo, ONLY include truly significant collector-relevant facts:
-  * First appearances of MAJOR characters (heroes, villains, or significant supporting cast that collectors care about)
-  * Major storyline events (e.g., "Death of Gwen Stacy", "Dark Phoenix Saga begins")
-  * Origin stories of major characters
-  * First appearance of iconic costumes or items (e.g., "First appearance of symbiote suit", "First Infinity Gauntlet")
-  * Iconic/historically significant cover art
-  * Creator milestones (e.g., "First Neal Adams art on Green Lantern", "First Todd McFarlane Spider-Man")
-- Do NOT include: minor character appearances, team roster changes, crossover tie-ins, relationship milestones, or anything that wouldn't significantly affect the comic's collector value
-- Quality over quantity - only 1-3 facts for truly key issues, empty array for regular issues
-- Return an empty array for issues with no major significance`,
+Rules:
+- Keep existing values if already filled
+- For keyInfo: ONLY significant collector facts (first appearances of MAJOR characters, major storyline events, origin stories). Most issues = empty array.
+- Return ONLY valid JSON, no other text.`,
             },
           ],
         });
@@ -465,23 +393,24 @@ Important:
         const verifyTextContent = verifyResponse.content.find((block) => block.type === "text");
         if (verifyTextContent && verifyTextContent.type === "text") {
           let verifyJson = verifyTextContent.text.trim();
-          console.log("Verification lookup response:", verifyJson);
 
           // Clean markdown if present
-          if (verifyJson.startsWith("```json")) {
-            verifyJson = verifyJson.slice(7);
-          }
-          if (verifyJson.startsWith("```")) {
-            verifyJson = verifyJson.slice(3);
-          }
-          if (verifyJson.endsWith("```")) {
-            verifyJson = verifyJson.slice(0, -3);
-          }
+          if (verifyJson.startsWith("```json")) verifyJson = verifyJson.slice(7);
+          if (verifyJson.startsWith("```")) verifyJson = verifyJson.slice(3);
+          if (verifyJson.endsWith("```")) verifyJson = verifyJson.slice(0, -3);
 
           const verifyInfo = JSON.parse(verifyJson.trim());
-          console.log("Parsed verification info:", verifyInfo);
 
-          // Only fill in missing fields
+          // Only fill in fields that are missing
+          if (!comicDetails.writer && verifyInfo.writer) {
+            comicDetails.writer = verifyInfo.writer;
+          }
+          if (!comicDetails.coverArtist && verifyInfo.coverArtist) {
+            comicDetails.coverArtist = verifyInfo.coverArtist;
+          }
+          if (!comicDetails.interiorArtist && verifyInfo.interiorArtist) {
+            comicDetails.interiorArtist = verifyInfo.interiorArtist;
+          }
           if (!comicDetails.publisher && verifyInfo.publisher) {
             comicDetails.publisher = verifyInfo.publisher;
           }
@@ -491,117 +420,27 @@ Important:
           if (!comicDetails.variant && verifyInfo.variant) {
             comicDetails.variant = verifyInfo.variant;
           }
-          // Set key info from verification
-          if (verifyInfo.keyInfo && Array.isArray(verifyInfo.keyInfo)) {
+          // Only use AI keyInfo if we didn't get it from database
+          if (needsKeyInfoFromAI && verifyInfo.keyInfo && Array.isArray(verifyInfo.keyInfo)) {
             comicDetails.keyInfo = verifyInfo.keyInfo;
-          } else {
-            comicDetails.keyInfo = [];
           }
-
-          console.log("Final comic details after verification:", comicDetails);
         }
       } catch (verifyError) {
-        // Don't fail the whole request if verification fails, just log it
-        console.error("Verification lookup failed:", verifyError);
-      }
-    }
-
-    // Key Info lookup - if we have title+issue but keyInfo is empty (verification didn't run or failed)
-    if (comicDetails.title && comicDetails.issueNumber && (!comicDetails.keyInfo || comicDetails.keyInfo.length === 0)) {
-      console.log("Performing key info lookup...");
-
-      // FIRST: Check our curated key comics database (fast, guaranteed accurate)
-      const databaseKeyInfo = lookupKeyInfo(comicDetails.title, comicDetails.issueNumber);
-      if (databaseKeyInfo && databaseKeyInfo.length > 0) {
-        console.log("Key info found in database:", databaseKeyInfo);
-        comicDetails.keyInfo = databaseKeyInfo;
-      } else {
-        // FALLBACK: Use AI lookup for comics not in our database
-        console.log("Key info not in database, falling back to AI lookup...");
-      }
-    }
-
-    // AI Key Info lookup - only if database didn't have it
-    if (comicDetails.title && comicDetails.issueNumber && (!comicDetails.keyInfo || comicDetails.keyInfo.length === 0)) {
-      try {
-        const keyInfoResponse = await anthropic.messages.create({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1024,
-          messages: [
-            {
-              role: "user",
-              content: `You are a comic book expert. I need to know if this issue has any MAJOR collector significance.
-
-Comic: ${comicDetails.title} #${comicDetails.issueNumber}
-Publisher: ${comicDetails.publisher || "Unknown"}
-Year: ${comicDetails.releaseYear || "Unknown"}
-
-Return a JSON object:
-{
-  "keyInfo": ["array of MAJOR key facts - leave empty if none"]
-}
-
-ONLY include facts that significantly impact collector value:
-- First appearances of MAJOR characters (not minor/supporting characters)
-- Major storyline events (e.g., "Death of Superman", "Kraven's Last Hunt begins")
-- Origin stories of major characters
-- First appearance of iconic costumes/items (e.g., "First symbiote suit", "First Infinity Gauntlet")
-- Iconic/historically significant cover art
-- Creator milestones (e.g., "First Jim Lee X-Men art", "First Frank Miller Daredevil")
-
-Do NOT include:
-- Minor character first appearances
-- Team roster changes
-- Crossover tie-ins
-- Deaths that were quickly reversed
-- Relationship milestones
-- Cameo appearances
-
-Most issues should return an empty array. Only 1-3 facts maximum for truly key issues.
-Return ONLY the JSON object.`,
-            },
-          ],
-        });
-
-        const keyInfoTextContent = keyInfoResponse.content.find((block) => block.type === "text");
-        if (keyInfoTextContent && keyInfoTextContent.type === "text") {
-          let keyInfoJson = keyInfoTextContent.text.trim();
-          console.log("Key info lookup response:", keyInfoJson);
-
-          // Clean markdown if present
-          if (keyInfoJson.startsWith("```json")) {
-            keyInfoJson = keyInfoJson.slice(7);
-          }
-          if (keyInfoJson.startsWith("```")) {
-            keyInfoJson = keyInfoJson.slice(3);
-          }
-          if (keyInfoJson.endsWith("```")) {
-            keyInfoJson = keyInfoJson.slice(0, -3);
-          }
-
-          const keyInfoData = JSON.parse(keyInfoJson.trim());
-          console.log("Parsed key info:", keyInfoData);
-
-          if (keyInfoData.keyInfo && Array.isArray(keyInfoData.keyInfo)) {
-            comicDetails.keyInfo = keyInfoData.keyInfo;
-          }
-        }
-      } catch (keyInfoError) {
-        console.error("Key info lookup failed:", keyInfoError);
+        console.error("Combined verification lookup failed:", verifyError);
+        // Continue without the extra data - image analysis result is still valid
       }
     }
 
     // Price/Value lookup - Try eBay first, fall back to AI
     if (comicDetails.title && comicDetails.issueNumber) {
-      console.log("Performing price lookup...");
 
       const isSlabbed = comicDetails.isSlabbed || false;
       const grade = comicDetails.grade ? parseFloat(comicDetails.grade) : 9.4;
       let priceDataFound = false;
 
-      // 1. Try eBay Finding API first (real sold listings) - with Redis + Supabase caching
+      // 1. Try eBay Finding API first (real sold listings) - with Redis caching only
+      // Phase 3: Simplified to use Redis only (removed Supabase cache layer)
       if (isFindingApiConfigured()) {
-        console.log("[analyze] Trying eBay Finding API...");
         try {
           const cacheKey = generateEbayPriceCacheKey(
             comicDetails.title,
@@ -611,82 +450,38 @@ Return ONLY the JSON object.`,
             comicDetails.gradingCompany || undefined
           );
 
-          // 1a. Check Redis cache first (fastest)
-          const redisResult = await cacheGet<PriceData | { noData: true }>(cacheKey, "ebayPrice");
-          if (redisResult !== null) {
-            if ("noData" in redisResult) {
-              console.log("[analyze] Redis cache indicates no eBay data available");
-              // priceDataFound stays false, will fall back to AI
-            } else {
-              console.log("[analyze] eBay price found in Redis cache");
+          // Check Redis cache first
+          const cachedResult = await cacheGet<PriceData | { noData: true }>(cacheKey, "ebayPrice");
+          if (cachedResult !== null) {
+            if (!("noData" in cachedResult)) {
               comicDetails.priceData = {
-                ...redisResult,
+                ...cachedResult,
                 priceSource: "ebay",
               };
               priceDataFound = true;
             }
-          }
+            // If noData marker, priceDataFound stays false - will fall back to AI
+          } else {
+            // Cache miss - fetch from eBay API
+            const ebayPriceData = await lookupEbaySoldPrices(
+              comicDetails.title,
+              comicDetails.issueNumber,
+              grade,
+              isSlabbed,
+              comicDetails.gradingCompany || undefined
+            );
 
-          if (!priceDataFound && redisResult === null) {
-            // 1b. Check Supabase cache (fallback, still faster than API)
-            const supabaseResult = await getCachedEbayPrice(cacheKey);
-            if (supabaseResult.found) {
-              if (supabaseResult.data) {
-                console.log("[analyze] eBay price found in Supabase cache");
-                comicDetails.priceData = {
-                  ...supabaseResult.data,
-                  priceSource: "ebay",
-                };
-                priceDataFound = true;
-                // Backfill Redis cache for next time
-                cacheSet(cacheKey, supabaseResult.data, "ebayPrice");
-              } else {
-                console.log("[analyze] Cache hit but no eBay data available (previously checked)");
-                // Cache the "no data" marker in Redis too
-                cacheSet(cacheKey, { noData: true }, "ebayPrice");
-              }
+            if (ebayPriceData && ebayPriceData.estimatedValue) {
+              comicDetails.priceData = {
+                ...ebayPriceData,
+                priceSource: "ebay",
+              };
+              priceDataFound = true;
+              // Cache in Redis (fire and forget)
+              cacheSet(cacheKey, ebayPriceData, "ebayPrice").catch(() => {});
             } else {
-              // 1c. Fetch from eBay API (slowest)
-              const ebayPriceData = await lookupEbaySoldPrices(
-                comicDetails.title,
-                comicDetails.issueNumber,
-                grade,
-                isSlabbed,
-                comicDetails.gradingCompany || undefined
-              );
-
-              if (ebayPriceData && ebayPriceData.estimatedValue) {
-                console.log("[analyze] eBay price data found");
-                comicDetails.priceData = {
-                  ...ebayPriceData,
-                  priceSource: "ebay",
-                };
-                priceDataFound = true;
-
-                // Cache in both Redis and Supabase
-                cacheSet(cacheKey, ebayPriceData, "ebayPrice");
-                await setCachedEbayPrice(
-                  cacheKey,
-                  ebayPriceData,
-                  comicDetails.title,
-                  comicDetails.issueNumber,
-                  grade,
-                  isSlabbed,
-                  comicDetails.gradingCompany || undefined
-                );
-              } else {
-                // Cache the "no results" to avoid repeated API calls
-                cacheSet(cacheKey, { noData: true }, "ebayPrice");
-                await setCachedEbayPrice(
-                  cacheKey,
-                  null,
-                  comicDetails.title,
-                  comicDetails.issueNumber,
-                  grade,
-                  isSlabbed,
-                  comicDetails.gradingCompany || undefined
-                );
-              }
+              // Cache "no results" marker to avoid repeated API calls
+              cacheSet(cacheKey, { noData: true }, "ebayPrice").catch(() => {});
             }
           }
         } catch (ebayError) {
@@ -696,7 +491,6 @@ Return ONLY the JSON object.`,
 
       // 2. Fall back to AI estimates if eBay didn't return results
       if (!priceDataFound) {
-        console.log("[analyze] Falling back to AI price estimates...");
         try {
           const gradeInfo = comicDetails.grade
             ? `Grade: ${comicDetails.grade}`
@@ -710,7 +504,7 @@ Return ONLY the JSON object.`,
 
           const priceResponse = await anthropic.messages.create({
             model: "claude-sonnet-4-20250514",
-            max_tokens: 1024,
+            max_tokens: 512, // Reduced from 1024 - actual responses are ~200 tokens
             messages: [
               {
                 role: "user",
@@ -769,7 +563,6 @@ Important:
           const priceTextContent = priceResponse.content.find((block) => block.type === "text");
           if (priceTextContent && priceTextContent.type === "text") {
             let priceJson = priceTextContent.text.trim();
-            console.log("AI Price lookup response:", priceJson);
 
             // Clean markdown if present
             if (priceJson.startsWith("```json")) {
@@ -783,7 +576,6 @@ Important:
             }
 
             const priceInfo = JSON.parse(priceJson.trim());
-            console.log("Parsed AI price info:", priceInfo);
 
             // Process the sales data according to business rules
             const now = new Date();
@@ -859,7 +651,6 @@ Important:
               priceSource: "ai",
             };
 
-            console.log("Final AI price data:", comicDetails.priceData);
           }
         } catch (priceError) {
           console.error("AI Price lookup failed:", priceError);

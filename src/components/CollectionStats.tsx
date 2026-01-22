@@ -24,12 +24,12 @@ import {
   Building,
   Key,
   BarChart3,
-  PieChart,
   ArrowUpRight,
   ArrowDownRight,
   ExternalLink,
   Shield,
 } from "lucide-react";
+import { ComicImage } from "./ComicImage";
 
 interface CollectionStatsProps {
   collection: CollectionItem[];
@@ -394,11 +394,12 @@ export function CollectionStats({ collection, onComicClick }: CollectionStatsPro
                 className="flex items-center gap-4 p-3 rounded-lg border border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors"
               >
                 <span className="text-lg font-bold text-gray-400 w-6">{index + 1}</span>
-                <div className="w-12 h-16 rounded overflow-hidden bg-gray-100 flex-shrink-0">
-                  <img
+                <div className="w-12 h-16 rounded overflow-hidden flex-shrink-0">
+                  <ComicImage
                     src={item.coverImageUrl}
                     alt={`${item.comic.title} #${item.comic.issueNumber}`}
-                    className="w-full h-full object-cover"
+                    aspectRatio="fill"
+                    sizes="48px"
                   />
                 </div>
                 <div className="flex-1 min-w-0">

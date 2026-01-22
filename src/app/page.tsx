@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useUser } from "@clerk/nextjs";
@@ -146,7 +147,6 @@ export default function Home() {
       // Check client-side cache first (prevents unnecessary API calls)
       const cached = getCachedHotBooks();
       if (cached && cached.length > 0) {
-        console.log("Using cached hottest books from localStorage");
         setHotBooks(cached);
         setHotBooksLoading(false);
         return;
@@ -165,7 +165,6 @@ export default function Home() {
           // Cache the result in localStorage for 24 hours
           if (books.length > 0) {
             setCachedHotBooks(books);
-            console.log("Cached hottest books to localStorage");
           }
         }
       } catch (err) {
@@ -330,11 +329,16 @@ export default function Home() {
                 </div>
                 <div className="flex items-center gap-2">
                   {biggestIncrease.item.coverImageUrl && (
-                    <img
-                      src={biggestIncrease.item.coverImageUrl}
-                      alt=""
-                      className="w-10 h-14 object-cover rounded"
-                    />
+                    <div className="w-10 h-14 relative flex-shrink-0 rounded overflow-hidden">
+                      <Image
+                        src={biggestIncrease.item.coverImageUrl}
+                        alt=""
+                        fill
+                        className="object-cover"
+                        sizes="40px"
+                        unoptimized
+                      />
+                    </div>
                   )}
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">
@@ -367,11 +371,16 @@ export default function Home() {
                 </div>
                 <div className="flex items-center gap-2">
                   {bestBuy.item.coverImageUrl && (
-                    <img
-                      src={bestBuy.item.coverImageUrl}
-                      alt=""
-                      className="w-10 h-14 object-cover rounded"
-                    />
+                    <div className="w-10 h-14 relative flex-shrink-0 rounded overflow-hidden">
+                      <Image
+                        src={bestBuy.item.coverImageUrl}
+                        alt=""
+                        fill
+                        className="object-cover"
+                        sizes="40px"
+                        unoptimized
+                      />
+                    </div>
                   )}
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">
@@ -404,11 +413,16 @@ export default function Home() {
                 </div>
                 <div className="flex items-center gap-2">
                   {biggestDecline.item.coverImageUrl && (
-                    <img
-                      src={biggestDecline.item.coverImageUrl}
-                      alt=""
-                      className="w-10 h-14 object-cover rounded"
-                    />
+                    <div className="w-10 h-14 relative flex-shrink-0 rounded overflow-hidden">
+                      <Image
+                        src={biggestDecline.item.coverImageUrl}
+                        alt=""
+                        fill
+                        className="object-cover"
+                        sizes="40px"
+                        unoptimized
+                      />
+                    </div>
                   )}
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">
@@ -695,11 +709,16 @@ export default function Home() {
                     {book.rank}
                   </div>
                   {book.coverImageUrl && (
-                    <img
-                      src={book.coverImageUrl}
-                      alt={`${book.title} #${book.issueNumber}`}
-                      className="w-12 h-18 object-cover rounded shadow-sm"
-                    />
+                    <div className="w-12 h-18 relative flex-shrink-0 rounded overflow-hidden shadow-sm">
+                      <Image
+                        src={book.coverImageUrl}
+                        alt={`${book.title} #${book.issueNumber}`}
+                        fill
+                        className="object-cover"
+                        sizes="48px"
+                        unoptimized
+                      />
+                    </div>
                   )}
                 </div>
                 <h3 className="font-semibold text-gray-900 text-sm leading-tight mb-1">
@@ -744,10 +763,13 @@ export default function Home() {
               >
                 <div className="aspect-[2/3] bg-gray-100 relative">
                   {item.coverImageUrl ? (
-                    <img
+                    <Image
                       src={item.coverImageUrl}
                       alt={`${item.comic.title} #${item.comic.issueNumber}`}
-                      className="w-full h-full object-cover"
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 20vw"
+                      unoptimized
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-gray-900 text-3xl">
@@ -818,11 +840,16 @@ export default function Home() {
             {/* Book Info */}
             <div className="flex gap-4 mb-4">
               {biggestIncrease.item.coverImageUrl && (
-                <img
-                  src={biggestIncrease.item.coverImageUrl}
-                  alt=""
-                  className="w-24 h-36 object-cover rounded-lg shadow-md"
-                />
+                <div className="w-24 h-36 relative flex-shrink-0 rounded-lg overflow-hidden shadow-md">
+                  <Image
+                    src={biggestIncrease.item.coverImageUrl}
+                    alt=""
+                    fill
+                    className="object-cover"
+                    sizes="96px"
+                    unoptimized
+                  />
+                </div>
               )}
               <div>
                 <h4 className="font-semibold text-gray-900">
@@ -877,11 +904,16 @@ export default function Home() {
             {/* Book Info */}
             <div className="flex gap-4 mb-4">
               {bestBuy.item.coverImageUrl && (
-                <img
-                  src={bestBuy.item.coverImageUrl}
-                  alt=""
-                  className="w-24 h-36 object-cover rounded-lg shadow-md"
-                />
+                <div className="w-24 h-36 relative flex-shrink-0 rounded-lg overflow-hidden shadow-md">
+                  <Image
+                    src={bestBuy.item.coverImageUrl}
+                    alt=""
+                    fill
+                    className="object-cover"
+                    sizes="96px"
+                    unoptimized
+                  />
+                </div>
               )}
               <div>
                 <h4 className="font-semibold text-gray-900">
@@ -950,11 +982,16 @@ export default function Home() {
             {/* Book Info */}
             <div className="flex gap-4 mb-4">
               {biggestDecline.item.coverImageUrl && (
-                <img
-                  src={biggestDecline.item.coverImageUrl}
-                  alt=""
-                  className="w-24 h-36 object-cover rounded-lg shadow-md"
-                />
+                <div className="w-24 h-36 relative flex-shrink-0 rounded-lg overflow-hidden shadow-md">
+                  <Image
+                    src={biggestDecline.item.coverImageUrl}
+                    alt=""
+                    fill
+                    className="object-cover"
+                    sizes="96px"
+                    unoptimized
+                  />
+                </div>
               )}
               <div>
                 <h4 className="font-semibold text-gray-900">

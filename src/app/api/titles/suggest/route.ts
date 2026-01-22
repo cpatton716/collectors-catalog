@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
+import { cacheGet, cacheSet } from "@/lib/cache";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -11,10 +12,6 @@ export interface TitleSuggestion {
   publisher?: string;
 }
 
-// Cache for title suggestions to reduce API calls
-const titleCache = new Map<string, { suggestions: TitleSuggestion[]; timestamp: number }>();
-const CACHE_TTL = 1000 * 60 * 60; // 1 hour
-
 export async function POST(request: NextRequest) {
   try {
     const { query } = await request.json();
@@ -23,11 +20,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ suggestions: [] });
     }
 
-    // Check cache first
+    // Check Redis cache first (24-hour TTL)
     const cacheKey = query.toLowerCase().trim();
-    const cached = titleCache.get(cacheKey);
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      return NextResponse.json({ suggestions: cached.suggestions });
+    const cached = await cacheGet<TitleSuggestion[]>(cacheKey, "titleSuggest");
+    if (cached) {
+      return NextResponse.json({ suggestions: cached });
     }
 
     if (!process.env.ANTHROPIC_API_KEY) {
@@ -37,9 +34,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Use Haiku for title suggestions - cheaper model, sufficient for this task
     const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 1024,
+      model: "claude-haiku-3-5-20241022",
+      max_tokens: 512, // Reduced from 1024 - simple JSON array output
       messages: [
         {
           role: "user",
@@ -110,8 +108,10 @@ Use "Present" for ongoing series. If no matches, return an empty array: []`,
       return NextResponse.json({ suggestions: [] });
     }
 
-    // Cache the result
-    titleCache.set(cacheKey, { suggestions, timestamp: Date.now() });
+    // Cache the result in Redis (fire and forget)
+    if (suggestions.length > 0) {
+      cacheSet(cacheKey, suggestions, "titleSuggest").catch(() => {});
+    }
 
     return NextResponse.json({ suggestions });
   } catch (error) {

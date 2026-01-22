@@ -2,6 +2,7 @@
 
 import { CollectionItem } from "@/types/comic";
 import { DollarSign, Award } from "lucide-react";
+import { ComicImage } from "./ComicImage";
 
 interface PublicComicCardProps {
   item: CollectionItem;
@@ -18,18 +19,12 @@ export function PublicComicCard({ item, onClick }: PublicComicCardProps) {
       className="comic-card bg-white rounded-xl shadow-md overflow-hidden cursor-pointer group"
     >
       {/* Cover Image */}
-      <div className="relative aspect-[2/3] bg-gray-100">
-        {coverImageUrl ? (
-          <img
-            src={coverImageUrl}
-            alt={`${comic.title} #${comic.issueNumber}`}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gray-900 text-4xl">
-            <span className="text-green-400 font-bold italic drop-shadow-[0_0_8px_rgba(74,222,128,0.6)]">?</span>
-          </div>
-        )}
+      <div className="relative aspect-[2/3]">
+        <ComicImage
+          src={coverImageUrl}
+          alt={`${comic.title} #${comic.issueNumber}`}
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 200px"
+        />
 
         {/* Badges */}
         <div className="absolute top-2 left-2 flex flex-col gap-1">

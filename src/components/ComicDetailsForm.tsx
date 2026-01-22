@@ -9,6 +9,7 @@ import {
   GRADE_SCALE,
   GradingCompany,
 } from "@/types/comic";
+import Image from "next/image";
 import { AlertCircle, AlertTriangle, CheckCircle, Loader2, DollarSign, TrendingUp, Info, Search, ExternalLink, Plus, X, KeyRound, RefreshCw } from "lucide-react";
 import { TitleAutocomplete } from "./TitleAutocomplete";
 import { GradePricingBreakdown } from "./GradePricingBreakdown";
@@ -579,11 +580,14 @@ export function ComicDetailsForm({
           {/* Show current cover with change option */}
           {coverImageUrl && (
             <div className="flex items-start gap-4">
-              <div className="w-16 h-24 flex-shrink-0 rounded-md overflow-hidden bg-gray-200 shadow-sm">
-                <img
+              <div className="w-16 h-24 flex-shrink-0 rounded-md overflow-hidden bg-gray-200 shadow-sm relative">
+                <Image
                   src={coverImageUrl}
                   alt="Current cover"
-                  className="w-full h-full object-cover"
+                  fill
+                  className="object-cover"
+                  sizes="64px"
+                  unoptimized
                 />
               </div>
               <div className="flex-1 space-y-2">

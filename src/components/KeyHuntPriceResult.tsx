@@ -1,6 +1,7 @@
 "use client";
 
 import { X, Plus, RotateCcw, TrendingUp, TrendingDown, Minus, Database, CloudOff, ExternalLink, AlertTriangle } from "lucide-react";
+import { ComicImage } from "./ComicImage";
 
 interface RecentSale {
   price: number;
@@ -129,11 +130,14 @@ export function KeyHuntPriceResult({
         <div className="relative h-40 bg-gradient-to-br from-primary-500 to-primary-700 overflow-hidden">
           {/* Background cover image (blurred) */}
           {coverImageUrl && (
-            <img
-              src={coverImageUrl}
-              alt=""
-              className="absolute inset-0 w-full h-full object-cover scale-110 blur-sm"
-            />
+            <div className="absolute inset-0 scale-110 blur-sm">
+              <ComicImage
+                src={coverImageUrl}
+                alt=""
+                aspectRatio="fill"
+                sizes="400px"
+              />
+            </div>
           )}
           {/* Gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-r from-primary-600/90 via-primary-600/70 to-primary-600/40" />
@@ -141,19 +145,14 @@ export function KeyHuntPriceResult({
           {/* Content with cover thumbnail */}
           <div className="absolute inset-0 flex items-center px-4 gap-4">
             {/* Cover thumbnail */}
-            {coverImageUrl ? (
-              <div className="flex-shrink-0 w-20 h-28 rounded-lg overflow-hidden shadow-lg ring-2 ring-white/20">
-                <img
-                  src={coverImageUrl}
-                  alt={`${title} #${issueNumber}`}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            ) : (
-              <div className="flex-shrink-0 w-20 h-28 rounded-lg bg-white/10 flex items-center justify-center ring-2 ring-white/20">
-                <span className="text-3xl font-bold text-white/40">?</span>
-              </div>
-            )}
+            <div className="flex-shrink-0 w-20 h-28 rounded-lg overflow-hidden shadow-lg ring-2 ring-white/20">
+              <ComicImage
+                src={coverImageUrl}
+                alt={`${title} #${issueNumber}`}
+                aspectRatio="fill"
+                sizes="80px"
+              />
+            </div>
 
             {/* Title info */}
             <div className="flex-1 min-w-0 pr-10">

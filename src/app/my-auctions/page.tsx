@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import {
   Gavel,
   Tag,
@@ -230,10 +231,13 @@ export default function MyListingsPage() {
                   >
                     <div className="aspect-[2/3] bg-gray-100 relative">
                       {listing.comic?.coverImageUrl && (
-                        <img
+                        <Image
                           src={listing.comic.coverImageUrl}
                           alt=""
-                          className="w-full h-full object-cover grayscale"
+                          fill
+                          className="object-cover grayscale"
+                          sizes="(max-width: 768px) 33vw, (max-width: 1024px) 25vw, 12.5vw"
+                          unoptimized
                         />
                       )}
                       <div className="absolute inset-0 bg-black/30 flex items-center justify-center">

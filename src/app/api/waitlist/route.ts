@@ -26,16 +26,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // If no API key or audience ID, log and return success (for testing)
+    // If no API key or audience ID, return success silently (for testing)
     if (!process.env.RESEND_API_KEY || !WAITLIST_AUDIENCE_ID) {
-      console.log(`[Waitlist] Would add email: ${email} (Resend not configured)`, {
-        hasApiKey: !!process.env.RESEND_API_KEY,
-        hasAudienceId: !!WAITLIST_AUDIENCE_ID,
-      });
       return NextResponse.json({ success: true, message: "Added to waitlist" });
     }
 
-    console.log(`[Waitlist] Attempting to add ${email} to audience ${WAITLIST_AUDIENCE_ID}`);
 
     // Add contact to Resend audience
     const { data, error } = await resend.contacts.create({
@@ -47,7 +42,6 @@ export async function POST(request: NextRequest) {
     if (error) {
       // If contact already exists, that's okay
       if (error.message?.includes("already exists")) {
-        console.log(`[Waitlist] Email already on list: ${email}`);
         return NextResponse.json({ success: true, message: "Already on waitlist" });
       }
 
@@ -81,7 +75,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`[Waitlist] Added to waitlist: ${email}`, data);
     return NextResponse.json({ success: true, message: "Added to waitlist" });
 
   } catch (err) {

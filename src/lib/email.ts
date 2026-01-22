@@ -166,7 +166,6 @@ export async function sendNotificationEmail({
 }: SendNotificationEmailParams): Promise<{ success: boolean; error?: string }> {
   // Skip if no API key configured
   if (!process.env.RESEND_API_KEY) {
-    console.log(`[Email] Skipping email (no API key): ${type} to ${to}`);
     return { success: true };
   }
 
@@ -212,7 +211,6 @@ export async function sendNotificationEmail({
       return { success: false, error: error.message };
     }
 
-    console.log(`[Email] Sent ${type} to ${to}`);
     return { success: true };
   } catch (err) {
     console.error(`[Email] Error sending ${type} to ${to}:`, err);

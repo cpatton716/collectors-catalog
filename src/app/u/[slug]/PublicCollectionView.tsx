@@ -5,6 +5,7 @@ import { CollectionItem, UserList } from "@/types/comic";
 import { PublicProfile, PublicCollectionStats } from "@/lib/db";
 import { PublicComicCard } from "@/components/PublicComicCard";
 import { PublicComicModal } from "@/components/PublicComicModal";
+import { ComicImage } from "@/components/ComicImage";
 import {
   BookOpen,
   DollarSign,
@@ -285,11 +286,12 @@ export function PublicCollectionView({ profile, comics, lists, stats }: Props) {
                 >
                   {/* Comic Info */}
                   <div className="col-span-6 flex items-center gap-3">
-                    <div className="w-10 h-14 flex-shrink-0 rounded overflow-hidden bg-gray-100">
-                      <img
+                    <div className="w-10 h-14 flex-shrink-0 rounded overflow-hidden">
+                      <ComicImage
                         src={item.coverImageUrl}
                         alt={`${comic.title} #${comic.issueNumber}`}
-                        className="w-full h-full object-cover"
+                        aspectRatio="fill"
+                        sizes="40px"
                       />
                     </div>
                     <div className="min-w-0">

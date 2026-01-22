@@ -40,7 +40,6 @@ export async function POST(request: NextRequest) {
           );
       }
     } catch {
-      console.log("Open Library search failed, using fallback");
     }
 
     return NextResponse.json({

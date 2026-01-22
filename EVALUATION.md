@@ -460,6 +460,154 @@ Collectors Chest is a comic book collection tracking app with AI-powered cover r
 
 ---
 
+## 14. Performance & Cost Optimization Plan
+
+> **Added: January 21, 2026** - Comprehensive optimization to improve response times, reduce costs, and consolidate services.
+
+### Overview
+
+| Metric | Current | Target | Impact |
+|--------|---------|--------|--------|
+| Anthropic cost/scan | ~$0.015 | ~$0.008 | 47% reduction |
+| Scan response time | 4-8 seconds | 1-2 seconds | 75% faster |
+| Profile DB queries/session | ~25 | ~5 | 80% reduction |
+| Services with dual implementations | 3 | 0 | Cleaner codebase |
+
+---
+
+### Phase 1: Quick Wins (1-2 hours) ✅ COMPLETED
+
+| Task | File(s) | Impact | Status |
+|------|---------|--------|--------|
+| Reduce Anthropic max_tokens allocations | `/src/app/api/analyze/route.ts` | 10-15% cost savings | ✅ Done |
+| Switch title suggestions to Haiku model | `/src/app/api/titles/suggest/route.ts` | 60% cost on endpoint | ✅ Done |
+| Fix duplicate query in admin/usage | `/src/app/api/admin/usage/route.ts` | Fewer DB calls | ✅ Done |
+| Remove broken in-memory cache | `/src/app/api/con-mode-lookup/route.ts` | Fixes non-functional code | ✅ Done |
+
+---
+
+### Phase 2: Medium Effort (3-4 hours) ✅ COMPLETED
+
+| Task | File(s) | Impact | Status |
+|------|---------|--------|--------|
+| Combine Anthropic Calls 2+3+4 | `/src/app/api/analyze/route.ts` | 30-35% cost savings | ✅ Done |
+| Add image hash caching for AI analysis | `/src/app/api/analyze/route.ts`, `/src/lib/cache.ts` | 5-10% savings on retries | ✅ Done |
+| Add barcode lookup caching (Comic Vine) | `/src/app/api/barcode-lookup/route.ts` | Prevent repeat API calls | ✅ Done |
+| Add cert lookup caching (CGC/CBCS) | `/src/lib/certLookup.ts` | Permanent cache for immutable data | ✅ Done |
+
+---
+
+### Phase 3: Architecture (4-6 hours) ✅ COMPLETED
+
+| Task | File(s) | Impact | Status |
+|------|---------|--------|--------|
+| Remove Supabase cache layer (use Redis only) | `/src/app/api/analyze/route.ts`, `/src/app/api/ebay-prices/route.ts` | Simpler, faster | ✅ Done |
+| Consolidate eBay API implementations | Deleted `/src/lib/ebay.ts`, kept `/src/lib/ebayFinding.ts` | 568 lines removed | ✅ Done |
+| Add profile caching layer | `/src/lib/db.ts`, `/src/lib/cache.ts` | 5-min Redis cache | ✅ Done |
+| Implement ISR for hot books | `/src/app/hottest-books/page.tsx`, `/src/lib/hotBooksData.ts` | 1-hour revalidation | ✅ Done |
+| Fix hottest-books internal HTTP call | `/src/app/api/hottest-books/route.ts` | Direct library call | ✅ Done |
+
+---
+
+### Phase 4: Final Polish ✅ COMPLETED
+
+| Task | File(s) | Impact | Status |
+|------|---------|--------|--------|
+| Add database performance indexes | `/supabase/migrations/20260121_performance_indexes.sql` | Faster queries | ✅ Done |
+| Add title autocomplete caching | `/src/app/api/titles/suggest/route.ts` | Reduce AI calls | ✅ Done |
+
+---
+
+### Service Consolidation Plan ✅ COMPLETED
+
+**Resolved Redundancies:**
+
+| Situation | Resolution | Status |
+|-----------|------------|--------|
+| Dual eBay cache (Redis + Supabase) | Redis only | ✅ Done |
+| Dual eBay APIs (Browse + Finding) | Single Finding API implementation | ✅ Done |
+| Broken in-memory cache (con-mode-lookup) | Removed | ✅ Done |
+| Broken in-memory cache (titles/suggest) | Replaced with Redis | ✅ Done |
+
+**Services to Keep:**
+- ✅ Supabase - Database (remove caching role)
+- ✅ Clerk - Auth
+- ✅ Stripe - Payments
+- ✅ Anthropic - AI (optimize usage)
+- ✅ Upstash Redis - Caching & rate limiting
+- ✅ Resend - Email
+- ✅ PostHog - Analytics
+- ⚠️ Sentry - Error tracking (evaluate usage)
+
+---
+
+### Caching Strategy (Target State)
+
+| Data | Cache Location | TTL | Notes |
+|------|----------------|-----|-------|
+| eBay prices | Redis only | 24 hours | Remove Supabase cache |
+| Comic metadata | Redis | 7 days | Keep existing |
+| AI analysis | Redis (by image hash) | 30 days | NEW - add caching |
+| Barcode lookups | Redis | 6 months | NEW - immutable data |
+| Cert lookups | Redis | Permanent | NEW - certificates don't change |
+| User profiles | Redis | 5-10 minutes | NEW - session-level cache |
+| Title autocomplete | Redis | 24 hours | NEW - reduce AI calls |
+
+---
+
+### Anthropic API Optimization Details
+
+**Current Flow (4+ calls per scan):**
+```
+1. Image Analysis (always) - 1024 tokens
+2. Creator Lookup (if missing) - 512 tokens
+3. Verification (if missing) - 512 tokens
+4. Key Info (if not in DB) - 1024 tokens
+5. Price Estimation (if eBay fails) - 1024 tokens
+```
+
+**Optimized Flow (1-2 calls per scan):**
+```
+1. Image Analysis (always) - 1024 tokens
+2. Combined Verification (if missing) - 512 tokens (merges calls 2+3+4)
+3. Price Estimation (if eBay fails) - 512 tokens
+```
+
+**Token Allocation Changes:**
+| Call | Current max_tokens | Optimized | Actual usage |
+|------|-------------------|-----------|--------------|
+| Image Analysis | 1024 | 1024 | ~400 tokens |
+| Creator Lookup | 512 | MERGED | ~100 tokens |
+| Verification | 512 | MERGED | ~150 tokens |
+| Key Info | 1024 | MERGED | ~100 tokens |
+| Combined Verification | N/A | 512 | ~300 tokens |
+| Price Estimation | 1024 | 512 | ~200 tokens |
+
+---
+
+### Database Index Recommendations
+
+Add these indexes for faster queries:
+```sql
+CREATE INDEX idx_profiles_username ON profiles(username);
+CREATE INDEX idx_key_hunt_lists_lookup ON key_hunt_lists(title_normalized, issue_number, user_id);
+CREATE INDEX idx_hot_books_updated ON hot_books(prices_updated_at);
+CREATE INDEX idx_comics_profile_created ON comics(profile_id, created_at);
+```
+
+---
+
+### Success Metrics
+
+| Metric | Before | After | Measurement |
+|--------|--------|-------|-------------|
+| Anthropic cost/scan | $0.015 | $0.008 | Admin usage dashboard |
+| Scan response time | 4-8s | 1-2s | PostHog timing events |
+| Cache hit rate | ~30% | ~70% | Redis metrics |
+| DB queries/session | ~25 | ~5 | Supabase logs |
+
+---
+
 ## Appendix A: Architecture Overview
 
 ### Tech Stack

@@ -85,7 +85,6 @@ export async function POST(request: NextRequest) {
     try {
       const dbResult = await getComicMetadata(comicDetails.title, comicDetails.issueNumber || "1");
       if (dbResult && dbResult.priceData) {
-        console.log(`[quick-lookup] Database hit for ${comicDetails.title} #${comicDetails.issueNumber}`);
 
         return NextResponse.json({
           comic: {
@@ -126,7 +125,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Step 3: Fall back to Claude for key info and price data
-    console.log(`[quick-lookup] Database miss for ${comicDetails.title} #${comicDetails.issueNumber}, calling AI...`);
 
     if (!process.env.ANTHROPIC_API_KEY) {
       // Return what we have without price data

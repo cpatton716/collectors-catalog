@@ -68,6 +68,17 @@ export async function GET() {
       const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
       const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+      // Get row counts upfront (reused for both size estimation and metrics)
+      const [comicsResult, auctionsResult, profilesResult] = await Promise.all([
+        supabase.from("comics").select("*", { count: "exact", head: true }),
+        supabase.from("auction_listings").select("*", { count: "exact", head: true }),
+        supabase.from("profiles").select("*", { count: "exact", head: true }),
+      ]);
+
+      const comicsCount = comicsResult.count || 0;
+      const auctionsCount = auctionsResult.count || 0;
+      const profilesCount = profilesResult.count || 0;
+
       // Get database size using pg_database_size
       const { data: sizeData, error: sizeError } = await supabase.rpc(
         "get_database_size"
@@ -91,17 +102,9 @@ export async function GET() {
           dashboard: "https://supabase.com/dashboard",
         });
       } else {
-        // Fallback: estimate from table counts
-        const { count: comicsCount } = await supabase
-          .from("comics")
-          .select("*", { count: "exact", head: true });
-
-        const { count: auctionsCount } = await supabase
-          .from("auction_listings")
-          .select("*", { count: "exact", head: true });
-
+        // Fallback: estimate from table counts (already fetched above)
         // Rough estimate: ~5KB per comic with base64 image
-        const estimatedSize = (comicsCount || 0) * 5000 + (auctionsCount || 0) * 1000;
+        const estimatedSize = comicsCount * 5000 + auctionsCount * 1000;
         const percentage = estimatedSize / LIMITS.supabase.database;
 
         metrics.push({
@@ -120,18 +123,11 @@ export async function GET() {
         });
       }
 
-      // Get row counts for context
-      const { count: comicsCount } = await supabase
-        .from("comics")
-        .select("*", { count: "exact", head: true });
-
-      const { count: profilesCount } = await supabase
-        .from("profiles")
-        .select("*", { count: "exact", head: true });
+      // Row count metrics (using already-fetched data)
 
       metrics.push({
         name: "Total Comics in DB",
-        current: comicsCount || 0,
+        current: comicsCount,
         limit: 100000, // Arbitrary high limit for context
         unit: "rows",
         percentage: 0,
@@ -140,14 +136,14 @@ export async function GET() {
 
       metrics.push({
         name: "Total User Profiles",
-        current: profilesCount || 0,
+        current: profilesCount,
         limit: LIMITS.clerk.mau,
         unit: "users",
-        percentage: (profilesCount || 0) / LIMITS.clerk.mau,
+        percentage: profilesCount / LIMITS.clerk.mau,
         status:
-          (profilesCount || 0) / LIMITS.clerk.mau >= ALERT_THRESHOLDS.critical
+          profilesCount / LIMITS.clerk.mau >= ALERT_THRESHOLDS.critical
             ? "critical"
-            : (profilesCount || 0) / LIMITS.clerk.mau >= ALERT_THRESHOLDS.warning
+            : profilesCount / LIMITS.clerk.mau >= ALERT_THRESHOLDS.warning
               ? "warning"
               : "ok",
       });

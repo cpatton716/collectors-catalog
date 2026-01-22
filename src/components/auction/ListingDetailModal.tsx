@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useAuth } from "@clerk/nextjs";
 import { X, Package, ChevronLeft, ChevronRight, ShoppingCart, AlertCircle, Check, Tag, Loader2, CheckCircle, PackageMinus, AlertTriangle, Key } from "lucide-react";
 import { Auction, formatPrice } from "@/types/auction";
@@ -9,6 +10,7 @@ import { Auction, formatPrice } from "@/types/auction";
 type SellerAction = "mark_as_sold" | "pull_off_shelf";
 import { SellerBadge } from "./SellerBadge";
 import { WatchlistButton } from "./WatchlistButton";
+import { ComicImage } from "../ComicImage";
 
 interface ListingDetailModalProps {
   listingId: string;
@@ -184,10 +186,12 @@ export function ListingDetailModal({
               <div className="relative bg-gray-900 aspect-[3/4] md:aspect-auto md:min-h-[400px] md:max-h-[70vh]">
                 {allImages.length > 0 ? (
                   <>
-                    <img
+                    <Image
                       src={allImages[selectedImageIndex]}
                       alt={comic?.title || "Comic"}
-                      className="w-full h-full object-contain max-w-full"
+                      fill
+                      className="object-contain"
+                      sizes="(max-width: 768px) 100vw, 50vw"
                     />
 
                     {/* Image Navigation */}

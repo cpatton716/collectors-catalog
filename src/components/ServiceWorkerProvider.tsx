@@ -12,7 +12,6 @@ export function ServiceWorkerProvider({ children }: { children: React.ReactNode 
     navigator.serviceWorker
       .register("/sw.js")
       .then((registration) => {
-        console.log("[SW] Service worker registered with scope:", registration.scope);
 
         // Check for updates periodically
         setInterval(() => {

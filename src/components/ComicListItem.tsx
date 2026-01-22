@@ -2,6 +2,7 @@
 
 import { CollectionItem } from "@/types/comic";
 import { Tag, DollarSign, ChevronRight, Star } from "lucide-react";
+import { ComicImage } from "./ComicImage";
 
 interface ComicListItemProps {
   item: CollectionItem;
@@ -18,18 +19,13 @@ export function ComicListItem({ item, onClick }: ComicListItemProps) {
     >
       <div className="flex items-center gap-4">
         {/* Thumbnail */}
-        <div className="w-16 h-24 flex-shrink-0 rounded-md overflow-hidden bg-gray-100">
-          {coverImageUrl ? (
-            <img
-              src={coverImageUrl}
-              alt={`${comic.title} #${comic.issueNumber}`}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gray-900 text-2xl">
-              <span className="text-green-400 font-bold italic drop-shadow-[0_0_6px_rgba(74,222,128,0.6)]">?</span>
-            </div>
-          )}
+        <div className="w-16 h-24 flex-shrink-0 rounded-md overflow-hidden">
+          <ComicImage
+            src={coverImageUrl}
+            alt={`${comic.title} #${comic.issueNumber}`}
+            aspectRatio="fill"
+            sizes="64px"
+          />
         </div>
 
         {/* Details */}

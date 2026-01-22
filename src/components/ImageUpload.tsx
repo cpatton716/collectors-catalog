@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
+import Image from "next/image";
 import { Upload, X, Image as ImageIcon, Camera, FolderOpen } from "lucide-react";
 import { LiveCameraCapture } from "./LiveCameraCapture";
 import { quickCompress, formatBytes } from "@/lib/imageOptimization";
@@ -66,7 +67,6 @@ export function ImageUpload({ onImageSelect, disabled }: ImageUploadProps) {
         type: 'image/jpeg'
       });
 
-      console.log(`Image compressed: ${formatBytes(file.size)} -> ${formatBytes(compressedFile.size)} (${((1 - compressedFile.size / file.size) * 100).toFixed(0)}% reduction)`);
 
       return { file: compressedFile, preview: compressedDataUrl };
     } catch (error) {
@@ -182,10 +182,12 @@ export function ImageUpload({ onImageSelect, disabled }: ImageUploadProps) {
       {preview ? (
         <div className="relative">
           <div className="relative aspect-[2/3] max-w-sm mx-auto rounded-lg overflow-hidden shadow-lg">
-            <img
+            <Image
               src={preview}
               alt="Comic cover preview"
-              className="w-full h-full object-cover"
+              fill
+              className="object-cover"
+              unoptimized
             />
             {!disabled && (
               <button

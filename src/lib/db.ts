@@ -1,5 +1,6 @@
 import { supabase, supabaseAdmin } from "./supabase";
 import { CollectionItem, UserList, SaleRecord } from "@/types/comic";
+import { cacheGet, cacheSet, cacheDelete } from "./cache";
 
 // Profile management
 export async function getOrCreateProfile(clerkUserId: string, email?: string) {
@@ -23,7 +24,34 @@ export async function getOrCreateProfile(clerkUserId: string, email?: string) {
   return newProfile;
 }
 
-export async function getProfileByClerkId(clerkUserId: string) {
+// Profile type for caching
+interface CachedProfile {
+  id: string;
+  clerk_user_id: string;
+  email: string | null;
+  display_name: string | null;
+  username: string | null;
+  display_preference: string | null;
+  subscription_tier: string | null;
+  subscription_status: string | null;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  is_public: boolean;
+  public_slug: string | null;
+  public_display_name: string | null;
+  public_bio: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function getProfileByClerkId(clerkUserId: string): Promise<CachedProfile | null> {
+  // Try Redis cache first (5 minute TTL)
+  const cached = await cacheGet<CachedProfile>(clerkUserId, "profile");
+  if (cached) {
+    return cached;
+  }
+
+  // Cache miss - fetch from database
   const { data, error } = await supabase
     .from("profiles")
     .select("*")
@@ -31,7 +59,21 @@ export async function getProfileByClerkId(clerkUserId: string) {
     .single();
 
   if (error && error.code !== "PGRST116") throw error; // PGRST116 = not found
+
+  // Cache the result if found (fire and forget)
+  if (data) {
+    cacheSet(clerkUserId, data, "profile").catch(() => {});
+  }
+
   return data;
+}
+
+/**
+ * Invalidate profile cache after updates
+ * Call this whenever profile data changes (subscription, settings, etc.)
+ */
+export async function invalidateProfileCache(clerkUserId: string): Promise<void> {
+  await cacheDelete(clerkUserId, "profile");
 }
 
 // Comics

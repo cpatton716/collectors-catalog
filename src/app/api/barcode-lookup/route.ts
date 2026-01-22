@@ -1,7 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cacheGet, cacheSet } from "@/lib/cache";
 
 const COMIC_VINE_API_KEY = process.env.COMIC_VINE_API_KEY;
 const COMIC_VINE_BASE_URL = "https://comicvine.gamespot.com/api";
+
+// Type for cached barcode result
+interface BarcodeLookupResult {
+  title: string | null;
+  issueNumber: string | null;
+  publisher: string | null;
+  releaseYear: string | null;
+  writer: string | null;
+  coverArtist: string | null;
+  interiorArtist: string | null;
+  variant: null;
+  confidence: "high";
+  isSlabbed: false;
+  gradingCompany: null;
+  grade: null;
+  isSignatureSeries: false;
+  signedBy: null;
+  priceData: null;
+  coverImageUrl: string | null;
+}
 
 interface ComicVineIssue {
   id: number;
@@ -44,13 +65,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // ============================================
+    // Barcode Caching (Phase 2 optimization)
+    // Cache barcode results for 6 months - barcodes never change
+    // Saves API calls and improves response time
+    // ============================================
+    const cachedResult = await cacheGet<BarcodeLookupResult>(barcode, "barcode");
+    if (cachedResult && cachedResult.title) {
+      return NextResponse.json(cachedResult);
+    }
+
     // Search Comic Vine by UPC barcode
     // Comic Vine stores UPC codes without the last digit (check digit)
     const upcWithoutCheckDigit = barcode.slice(0, -1);
 
     const searchUrl = `${COMIC_VINE_BASE_URL}/issues/?api_key=${COMIC_VINE_API_KEY}&format=json&filter=upc:${upcWithoutCheckDigit}&field_list=id,name,issue_number,cover_date,image,volume,person_credits`;
 
-    console.log("Searching Comic Vine for barcode:", barcode);
 
     const response = await fetch(searchUrl, {
       headers: {
@@ -118,7 +148,7 @@ export async function POST(request: NextRequest) {
       releaseYear = issue.cover_date.split("-")[0];
     }
 
-    const comicDetails = {
+    const comicDetails: BarcodeLookupResult = {
       title: issue.volume?.name || null,
       issueNumber: issue.issue_number || null,
       publisher: issue.volume?.publisher?.name || null,
@@ -127,7 +157,7 @@ export async function POST(request: NextRequest) {
       coverArtist,
       interiorArtist,
       variant: null,
-      confidence: "high" as const,
+      confidence: "high",
       isSlabbed: false,
       gradingCompany: null,
       grade: null,
@@ -136,6 +166,11 @@ export async function POST(request: NextRequest) {
       priceData: null,
       coverImageUrl: issue.image?.medium_url || issue.image?.original_url || null,
     };
+
+    // Cache the result for 6 months (fire and forget)
+    if (comicDetails.title) {
+      cacheSet(barcode, comicDetails, "barcode").catch(() => {});
+    }
 
     return NextResponse.json(comicDetails);
   } catch (error) {

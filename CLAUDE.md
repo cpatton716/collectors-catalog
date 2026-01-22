@@ -36,7 +36,7 @@ When displaying the backlog (only when specifically requested), group items by s
 3. Pending - Low Priority
 4. Completed (with dates)
 
-Show each group as a numbered list with titles only, no details.
+Show each group as a continuous numbered list with titles only, no details.
 
 ## New Feature Interview
 1. Always interview me using the AskUserQuestionTool when a new feature is added
@@ -66,11 +66,12 @@ npm test -- [file]    # Run specific test file
 - Error states and validation failures
 - Happy path scenarios
 - Any function that handles money, limits, or permissions
+- Third-party integrations (Stripe, Clerk, Supabase)
 
 **What NOT to test (for now):**
 - React components (defer to manual testing)
 - API routes with database calls (require complex mocking)
-- Third-party integrations (Stripe, Clerk, Supabase)
+
 
 **Example:** When adding a new pricing calculation, write tests like:
 ```typescript
@@ -114,6 +115,7 @@ When the user says **"Close up shop"**, perform the following steps:
    - Consolidate any duplicate logic
    - Address any TODO comments created during the session
    - Ensure code follows project patterns and conventions
+   - remove deadcode or redundent code
 2. **Update TEST_CASES.md** - Add test cases for any new features added during the session
 3. **Review ARCHITECTURE.md** - If the session added/modified pages, API routes, or service integrations:
    - Update relevant sections to reflect changes
@@ -134,7 +136,7 @@ When the user says **"Close up shop"**, perform the following steps:
 
 The Dev Log is stored at: `DEV_LOG.md` in the project root.
 
-**Important:** Close up shop does NOT deploy. Deploys are limited and should be done strategically using the Deploy command.
+**Important:** Close up shop does NOT deploy. 
 
 ## Services & Infrastructure
 

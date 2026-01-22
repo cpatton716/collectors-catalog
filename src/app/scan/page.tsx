@@ -15,6 +15,7 @@ import { ComicDetails, CollectionItem } from "@/types/comic";
 import { useToast } from "@/components/Toast";
 import { useGuestScans, MilestoneType } from "@/hooks/useGuestScans";
 import { useCollection } from "@/hooks/useCollection";
+import Image from "next/image";
 import { Loader2, AlertCircle, ArrowLeft, Wand2, Check, Camera, Sparkles, ClipboardCheck, Save, ScanBarcode, PenLine, FileSpreadsheet, ZoomIn, X } from "lucide-react";
 import { analytics } from "@/components/PostHogProvider";
 
@@ -184,14 +185,12 @@ export default function ScanPage() {
       }
 
       const details = await response.json();
-      console.log("Frontend received details:", details);
 
       // Add an ID to the comic details
       const comicWithId = {
         ...details,
         id: uuidv4(),
       };
-      console.log("Setting comicDetails to:", comicWithId);
       setComicDetails(comicWithId);
       setState("review");
 
@@ -514,12 +513,14 @@ export default function ScanPage() {
           <div className="flex flex-col md:flex-row gap-8">
             {/* Image Preview */}
             <div className="md:w-1/3">
-              <div className="aspect-[2/3] rounded-lg overflow-hidden bg-gray-100">
+              <div className="aspect-[2/3] rounded-lg overflow-hidden bg-gray-100 relative">
                 {imagePreview && (
-                  <img
+                  <Image
                     src={imagePreview}
                     alt="Uploaded comic"
-                    className="w-full h-full object-cover"
+                    fill
+                    className="object-cover"
+                    unoptimized
                   />
                 )}
               </div>
@@ -564,11 +565,13 @@ export default function ScanPage() {
             {/* Image Preview */}
             {imagePreview && (
               <div className="md:w-1/3">
-                <div className="aspect-[2/3] rounded-lg overflow-hidden bg-gray-100">
-                  <img
+                <div className="aspect-[2/3] rounded-lg overflow-hidden bg-gray-100 relative">
+                  <Image
                     src={imagePreview}
                     alt="Uploaded comic"
-                    className="w-full h-full object-cover"
+                    fill
+                    className="object-cover"
+                    unoptimized
                   />
                 </div>
               </div>
@@ -620,11 +623,13 @@ export default function ScanPage() {
                 <div className="aspect-[2/3] rounded-lg overflow-hidden bg-gray-200 shadow-lg relative group">
                   {imagePreview ? (
                     <>
-                      <img
+                      <Image
                         src={imagePreview}
                         alt="Comic cover"
-                        className="w-full h-full object-cover cursor-pointer"
+                        fill
+                        className="object-cover cursor-pointer"
                         onClick={() => setShowEnlargedImage(true)}
+                        unoptimized
                       />
                       {/* Zoom hint overlay */}
                       <div
@@ -683,12 +688,14 @@ export default function ScanPage() {
           <div className="flex flex-col md:flex-row gap-8">
             {/* Image Preview */}
             <div className="md:w-1/3">
-              <div className="aspect-[2/3] rounded-lg overflow-hidden bg-gray-100 shadow-lg">
+              <div className="aspect-[2/3] rounded-lg overflow-hidden bg-gray-100 shadow-lg relative">
                 {imagePreview ? (
-                  <img
+                  <Image
                     src={imagePreview}
                     alt="Saved comic"
-                    className="w-full h-full object-cover"
+                    fill
+                    className="object-cover"
+                    unoptimized
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-400">
@@ -802,12 +809,19 @@ export default function ScanPage() {
           </p>
 
           {/* Enlarged image */}
-          <img
-            src={imagePreview}
-            alt="Enlarged comic cover"
-            className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+          <div
+            className="relative max-w-full max-h-[90vh] w-auto h-auto"
             onClick={(e) => e.stopPropagation()}
-          />
+          >
+            <Image
+              src={imagePreview}
+              alt="Enlarged comic cover"
+              width={800}
+              height={1200}
+              className="max-w-full max-h-[90vh] w-auto h-auto object-contain rounded-lg shadow-2xl"
+              unoptimized
+            />
+          </div>
         </div>
       )}
     </div>

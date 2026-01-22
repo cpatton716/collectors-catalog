@@ -189,7 +189,6 @@ export function useServiceWorker() {
       .then((reg) => {
         setRegistration(reg);
         setIsRegistered(true);
-        console.log('[SW] Service worker registered');
 
         // Check for updates
         reg.addEventListener('updatefound', () => {

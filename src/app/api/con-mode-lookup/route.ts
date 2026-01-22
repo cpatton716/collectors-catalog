@@ -7,9 +7,9 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-// In-memory cache for very fast repeated lookups (same session)
-const memoryCache = new Map<string, { data: ConModeLookupResult; timestamp: number }>();
-const MEMORY_CACHE_TTL = 1000 * 60 * 5; // 5 minutes
+// NOTE: In-memory caching removed - doesn't work in serverless environments
+// Each invocation gets a fresh process, so Map cache never hits.
+// Rely on database cache (getComicMetadata) which persists across requests.
 
 interface ConModeLookupResult {
   title: string;
@@ -47,20 +47,10 @@ export async function POST(request: NextRequest) {
     const selectedGrade = grade || 9.4;
     const seriesYears = years?.trim() || null; // e.g., "1963-2011" for disambiguation
 
-    // 1. Check in-memory cache first (fastest)
-    // Include years in cache key for different series with same name
-    const memoryCacheKey = `keyhunt-${normalizedTitle.toLowerCase()}-${seriesYears || "any"}-${normalizedIssue.toLowerCase()}-${selectedGrade}`;
-    const memoryCached = memoryCache.get(memoryCacheKey);
-    if (memoryCached && Date.now() - memoryCached.timestamp < MEMORY_CACHE_TTL) {
-      console.log(`[con-mode-lookup] Memory cache hit for ${normalizedTitle} #${normalizedIssue} (${seriesYears || "any series"})`);
-      return NextResponse.json(memoryCached.data);
-    }
-
-    // 2. Check database (fast ~50ms)
+    // 1. Check database cache (fast ~50ms)
     try {
       const dbResult = await getComicMetadata(normalizedTitle, normalizedIssue);
       if (dbResult && dbResult.priceData) {
-        console.log(`[con-mode-lookup] Database hit for ${normalizedTitle} #${normalizedIssue} (lookup #${dbResult.lookupCount})`);
 
         // Get price for the selected grade from cached grade estimates
         const gradeEstimate = dbResult.priceData.gradeEstimates?.find(
@@ -82,8 +72,7 @@ export async function POST(request: NextRequest) {
           disclaimer: "Values are estimates based on market knowledge. Actual prices may vary.",
         };
 
-        // Cache in memory and increment lookup count (non-blocking)
-        memoryCache.set(memoryCacheKey, { data: result, timestamp: Date.now() });
+        // Increment lookup count (non-blocking)
         incrementComicLookupCount(normalizedTitle, normalizedIssue).catch(() => {});
 
         return NextResponse.json(result);
@@ -95,7 +84,6 @@ export async function POST(request: NextRequest) {
 
     // 3. Try eBay Finding API for real sold listing data
     if (isFindingApiConfigured()) {
-      console.log(`[con-mode-lookup] Trying eBay Finding API for ${normalizedTitle} #${normalizedIssue}...`);
       try {
         const ebayPriceData = await lookupEbaySoldPrices(
           normalizedTitle,
@@ -105,7 +93,6 @@ export async function POST(request: NextRequest) {
         );
 
         if (ebayPriceData && ebayPriceData.estimatedValue) {
-          console.log(`[con-mode-lookup] eBay hit for ${normalizedTitle} #${normalizedIssue}`);
 
           // Get the price for the selected grade
           const gradeEstimate = ebayPriceData.gradeEstimates?.find(
@@ -163,9 +150,6 @@ export async function POST(request: NextRequest) {
             console.error("[con-mode-lookup] Failed to save eBay data to database:", err);
           });
 
-          // Cache in memory
-          memoryCache.set(memoryCacheKey, { data: result, timestamp: Date.now() });
-
           return NextResponse.json(result);
         }
       } catch (ebayError) {
@@ -175,7 +159,6 @@ export async function POST(request: NextRequest) {
     }
 
     // 4. Fall back to Claude API (slower ~1-2s)
-    console.log(`[con-mode-lookup] ${isFindingApiConfigured() ? "eBay miss" : "eBay not configured"} for ${normalizedTitle} #${normalizedIssue}${seriesYears ? ` (${seriesYears})` : ""}, calling AI...`);
 
     if (!process.env.ANTHROPIC_API_KEY) {
       return NextResponse.json(
@@ -250,8 +233,7 @@ Rules:
       let coverImageUrl: string | null = null;
       try {
         coverImageUrl = await fetchCoverImage(normalizedTitle, normalizedIssue, parsed.publisher);
-      } catch (coverError) {
-        console.log("[con-mode-lookup] Cover fetch failed:", coverError);
+      } catch (_coverError) {
       }
 
       const result: ConModeLookupResult = {
@@ -287,9 +269,6 @@ Rules:
       }).catch((err) => {
         console.error("[con-mode-lookup] Failed to save to database:", err);
       });
-
-      // Cache in memory
-      memoryCache.set(memoryCacheKey, { data: result, timestamp: Date.now() });
 
       return NextResponse.json(result);
     } catch {
@@ -333,7 +312,6 @@ async function fetchCoverImage(
         }
       }
     } catch (e) {
-      console.log("[cover] Comic Vine API failed:", e);
     }
   }
 
@@ -353,7 +331,6 @@ async function fetchCoverImage(
       }
     }
   } catch (e) {
-    console.log("[cover] Open Library API failed:", e);
   }
 
   return null;
@@ -396,7 +373,6 @@ async function fetchKeyInfoFromAI(
     const parsed = JSON.parse(jsonText.trim());
     return Array.isArray(parsed) ? parsed : [];
   } catch {
-    console.log("[con-mode-lookup] Key info AI lookup failed");
     return [];
   }
 }

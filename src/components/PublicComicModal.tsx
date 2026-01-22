@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { CollectionItem, GRADE_SCALE } from "@/types/comic";
 import {
   X,
@@ -16,6 +17,7 @@ import {
   KeyRound,
   ZoomIn,
 } from "lucide-react";
+import { ComicImage } from "./ComicImage";
 
 interface PublicComicModalProps {
   item: CollectionItem;
@@ -58,24 +60,19 @@ export function PublicComicModal({ item, onClose }: PublicComicModalProps) {
               onClick={() => item.coverImageUrl && setShowImageLightbox(true)}
               className={`aspect-[2/3] w-full max-w-[250px] rounded-lg overflow-hidden shadow-lg group relative ${item.coverImageUrl ? "cursor-pointer" : ""}`}
             >
-              {item.coverImageUrl ? (
-                <>
-                  <img
-                    src={item.coverImageUrl}
-                    alt={`${comic.title} #${comic.issueNumber}`}
-                    className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                  />
-                  {/* Zoom overlay on hover */}
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 rounded-full p-2">
-                      <ZoomIn className="w-6 h-6 text-gray-700" />
-                    </div>
+              <ComicImage
+                src={item.coverImageUrl}
+                alt={`${comic.title} #${comic.issueNumber}`}
+                aspectRatio="fill"
+                sizes="250px"
+              />
+              {/* Zoom overlay on hover */}
+              {item.coverImageUrl && (
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center pointer-events-none">
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 rounded-full p-2">
+                    <ZoomIn className="w-6 h-6 text-gray-700" />
                   </div>
-                </>
-              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gray-900 text-4xl">
-                <span className="text-green-400 font-bold italic drop-shadow-[0_0_8px_rgba(74,222,128,0.6)]">?</span>
-              </div>
+                </div>
               )}
             </div>
           </div>
@@ -270,12 +267,18 @@ export function PublicComicModal({ item, onClose }: PublicComicModalProps) {
           >
             <X className="w-6 h-6 text-white" />
           </button>
-          <img
-            src={item.coverImageUrl}
-            alt={`${comic.title} #${comic.issueNumber}`}
-            className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+          <div
+            className="relative max-w-full max-h-[90vh] aspect-[2/3]"
             onClick={(e) => e.stopPropagation()}
-          />
+          >
+            <Image
+              src={item.coverImageUrl}
+              alt={`${comic.title} #${comic.issueNumber}`}
+              fill
+              className="object-contain rounded-lg shadow-2xl"
+              sizes="90vw"
+            />
+          </div>
         </div>
       )}
     </div>

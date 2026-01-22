@@ -4,7 +4,6 @@ import { useState } from "react";
 import {
   Target,
   Trash2,
-  DollarSign,
   Bell,
   BellOff,
   ChevronDown,
@@ -16,6 +15,7 @@ import {
 import { useKeyHunt, KeyHuntItem } from "@/hooks/useKeyHunt";
 import { formatCurrency } from "@/lib/statsCalculator";
 import Link from "next/link";
+import { ComicImage } from "./ComicImage";
 
 interface KeyHuntWishlistProps {
   onClose?: () => void;
@@ -137,11 +137,12 @@ export function KeyHuntWishlist({ onClose }: KeyHuntWishlistProps) {
             >
               {/* Cover Image */}
               {item.coverImageUrl ? (
-                <div className="w-12 h-16 flex-shrink-0 bg-gray-100 rounded overflow-hidden">
-                  <img
+                <div className="w-12 h-16 flex-shrink-0 rounded overflow-hidden">
+                  <ComicImage
                     src={item.coverImageUrl}
                     alt={`${item.title} #${item.issueNumber}`}
-                    className="w-full h-full object-cover"
+                    aspectRatio="fill"
+                    sizes="48px"
                   />
                 </div>
               ) : (

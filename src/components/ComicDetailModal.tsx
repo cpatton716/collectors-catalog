@@ -33,8 +33,10 @@ import {
   CheckCircle,
   PackageMinus,
 } from "lucide-react";
+import Image from "next/image";
 import { ListInShopModal } from "./auction/ListInShopModal";
 import { SuggestKeyInfoModal } from "./SuggestKeyInfoModal";
+import { ComicImage } from "./ComicImage";
 
 // Helper to generate certification verification URLs
 function getCertVerificationUrl(certNumber: string, gradingCompany: string): string | null {
@@ -238,23 +240,18 @@ export function ComicDetailModal({
               onClick={() => item.coverImageUrl && setShowImageLightbox(true)}
               className={`aspect-[2/3] w-full max-w-[250px] rounded-lg overflow-hidden shadow-lg relative ${item.coverImageUrl ? 'cursor-pointer group' : ''}`}
             >
-              {item.coverImageUrl ? (
-                <>
-                  <img
-                    src={item.coverImageUrl}
-                    alt={`${comic.title} #${comic.issueNumber}`}
-                    className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                  />
-                  {/* Zoom overlay on hover */}
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 rounded-full p-2">
-                      <ZoomIn className="w-6 h-6 text-gray-700" />
-                    </div>
+              <ComicImage
+                src={item.coverImageUrl}
+                alt={`${comic.title} #${comic.issueNumber}`}
+                aspectRatio="fill"
+                sizes="250px"
+              />
+              {/* Zoom overlay on hover */}
+              {item.coverImageUrl && (
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center pointer-events-none">
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 rounded-full p-2">
+                    <ZoomIn className="w-6 h-6 text-gray-700" />
                   </div>
-                </>
-              ) : (
-                <div className="w-full h-full bg-gray-900 flex items-center justify-center text-4xl">
-                  <span className="text-green-400 font-bold italic drop-shadow-[0_0_8px_rgba(74,222,128,0.6)]">?</span>
                 </div>
               )}
             </div>
@@ -267,19 +264,14 @@ export function ComicDetailModal({
               {/* Mobile Cover Thumbnail */}
               <div
                 onClick={() => item.coverImageUrl && setShowImageLightbox(true)}
-                className={`flex-shrink-0 w-20 h-30 rounded-lg overflow-hidden shadow-md bg-gray-100 ${item.coverImageUrl ? 'cursor-pointer' : ''}`}
+                className={`flex-shrink-0 w-20 h-30 rounded-lg overflow-hidden shadow-md ${item.coverImageUrl ? 'cursor-pointer' : ''}`}
               >
-                {item.coverImageUrl ? (
-                  <img
-                    src={item.coverImageUrl}
-                    alt={`${comic.title} #${comic.issueNumber}`}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gray-900 flex items-center justify-center text-2xl">
-                    <span className="text-green-400 font-bold italic drop-shadow-[0_0_6px_rgba(74,222,128,0.6)]">?</span>
-                  </div>
-                )}
+                <ComicImage
+                  src={item.coverImageUrl}
+                  alt={`${comic.title} #${comic.issueNumber}`}
+                  aspectRatio="fill"
+                  sizes="80px"
+                />
               </div>
               {/* Mobile Title Info */}
               <div className="flex-1 min-w-0">
@@ -1044,12 +1036,18 @@ export function ComicDetailModal({
             <X className="w-6 h-6 text-white" />
           </button>
           {item.coverImageUrl && (
-            <img
-              src={item.coverImageUrl}
-              alt={`${comic.title} #${comic.issueNumber}`}
-              className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+            <div
+              className="relative max-w-full max-h-[90vh] aspect-[2/3]"
               onClick={(e) => e.stopPropagation()}
-            />
+            >
+              <Image
+                src={item.coverImageUrl}
+                alt={`${comic.title} #${comic.issueNumber}`}
+                fill
+                className="object-contain rounded-lg shadow-2xl"
+                sizes="90vw"
+              />
+            </div>
           )}
         </div>
       )}

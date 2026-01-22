@@ -27,6 +27,7 @@ import {
   Trash2,
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 // Tab types
 type TabId = "profile" | "security" | "billing";
@@ -379,10 +380,12 @@ export function CustomProfilePage() {
                       {isUploadingAvatar ? (
                         <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
                       ) : user?.imageUrl ? (
-                        <img
+                        <Image
                           src={user.imageUrl}
                           alt="Profile"
-                          className="w-full h-full object-cover"
+                          fill
+                          className="object-cover"
+                          unoptimized
                         />
                       ) : (
                         <User className="w-8 h-8 text-gray-400" />

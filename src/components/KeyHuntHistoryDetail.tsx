@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { KeyHuntHistoryEntry } from "@/lib/offlineCache";
 import { GradeSelector } from "./GradeSelector";
+import { ComicImage } from "./ComicImage";
 
 interface KeyHuntHistoryDetailProps {
   entry: KeyHuntHistoryEntry;
@@ -126,11 +127,14 @@ export function KeyHuntHistoryDetail({
           {/* Cover Image or Gradient Header */}
           <div className="relative h-40 bg-gradient-to-br from-primary-500 to-primary-700">
             {entry.coverImageUrl && (
-              <img
-                src={entry.coverImageUrl}
-                alt={`${entry.title} #${entry.issueNumber}`}
-                className="absolute inset-0 w-full h-full object-cover opacity-40"
-              />
+              <div className="absolute inset-0 opacity-40">
+                <ComicImage
+                  src={entry.coverImageUrl}
+                  alt={`${entry.title} #${entry.issueNumber}`}
+                  aspectRatio="fill"
+                  sizes="400px"
+                />
+              </div>
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
             <div className="absolute bottom-4 left-4 right-4">

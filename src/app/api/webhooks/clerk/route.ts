@@ -71,7 +71,6 @@ export async function POST(req: Request) {
         .single();
 
       if (profileError || !profile) {
-        console.log(`No profile found for Clerk user ${clerkUserId}`);
         return NextResponse.json({ received: true });
       }
 
@@ -138,7 +137,6 @@ export async function POST(req: Request) {
         );
       }
 
-      console.log(`Successfully deleted all data for user ${clerkUserId}`);
       return NextResponse.json({ received: true, deleted: true });
 
     } catch (err) {

@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Clock, DollarSign, Trash2, ChevronRight, X, AlertCircle } from "lucide-react";
 import {
   KeyHuntHistoryEntry,
   getKeyHuntHistory,
   clearKeyHuntHistory,
 } from "@/lib/offlineCache";
+import { ComicImage } from "./ComicImage";
 
 interface KeyHuntHistoryListProps {
   onSelectEntry: (entry: KeyHuntHistoryEntry) => void;
@@ -157,10 +158,11 @@ export function KeyHuntHistoryList({
                 {/* Cover Thumbnail */}
                 <div className="w-14 h-20 bg-gray-700 rounded-lg overflow-hidden flex-shrink-0">
                   {entry.coverImageUrl ? (
-                    <img
+                    <ComicImage
                       src={entry.coverImageUrl}
                       alt={`${entry.title} #${entry.issueNumber}`}
-                      className="w-full h-full object-cover"
+                      aspectRatio="fill"
+                      sizes="56px"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">

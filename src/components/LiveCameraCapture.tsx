@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import Image from "next/image";
 import { Camera, X, RotateCcw, Check, SwitchCamera, AlertCircle } from "lucide-react";
 import { quickCompress, formatBytes } from "@/lib/imageOptimization";
 
@@ -176,7 +177,6 @@ export function LiveCameraCapture({ onCapture, onClose }: LiveCameraCaptureProps
 
       // Log compression stats
       const originalSize = Math.round((capturedImage.length * 3) / 4);
-      console.log(`Camera capture compressed: ${formatBytes(originalSize)} -> ${formatBytes(file.size)}`);
 
       onCapture(file, compressedDataUrl);
     } catch (error) {
@@ -269,11 +269,15 @@ export function LiveCameraCapture({ onCapture, onClose }: LiveCameraCaptureProps
         )}
 
         {cameraState === "captured" && capturedImage && (
-          <img
-            src={capturedImage}
-            alt="Captured photo"
-            className="max-h-full max-w-full object-contain"
-          />
+          <div className="relative w-full h-full">
+            <Image
+              src={capturedImage}
+              alt="Captured photo"
+              fill
+              className="object-contain"
+              unoptimized
+            />
+          </div>
         )}
       </div>
 

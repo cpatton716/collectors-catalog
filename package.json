@@ -8,9 +8,14 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "typecheck": "tsc --noEmit",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "check": "npm run typecheck && npm run lint && npm test",
+    "check:full": "npm run typecheck && npm run lint && npm test && npm run build",
+    "depcheck": "depcheck --ignores='@eslint/eslintrc,@jest/globals,@testing-library/react,@types/jest,@types/react-dom,autoprefixer,eslint-config-next,jest-environment-jsdom,postcss,ts-jest,@typescript-eslint/eslint-plugin,@typescript-eslint/parser'"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.52.0",
@@ -25,7 +30,6 @@
     "posthog-js": "^1.318.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "recharts": "^2.15.0",
     "resend": "^6.7.0",
     "stripe": "^20.1.2",
     "svix": "^1.84.1",
@@ -44,6 +48,7 @@
     "@types/react-dom": "^18.3.5",
     "@types/uuid": "^10.0.0",
     "autoprefixer": "^10.4.20",
+    "depcheck": "^1.4.7",
     "eslint": "^9.0.0",
     "eslint-config-next": "^16.1.1",
     "eslint-plugin-react": "^7.37.5",

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import {
   X,
   DollarSign,
@@ -16,6 +17,7 @@ import {
   MIN_STARTING_PRICE,
   MAX_DETAIL_IMAGES,
 } from "@/types/auction";
+import { ComicImage } from "../ComicImage";
 
 interface CreateAuctionModalProps {
   comic: CollectionItem;
@@ -177,17 +179,14 @@ export function CreateAuctionModal({
 
           {/* Comic Preview */}
           <div className="flex items-center gap-3 p-4 m-4 bg-gray-50 rounded-lg">
-            {comic.coverImageUrl ? (
-              <img
+            <div className="w-16 h-24 rounded overflow-hidden flex-shrink-0">
+              <ComicImage
                 src={comic.coverImageUrl}
-                alt={comic.comic.title || ""}
-                className="w-16 h-24 object-cover rounded"
+                alt={comic.comic.title || "Comic"}
+                aspectRatio="fill"
+                sizes="64px"
               />
-            ) : (
-              <div className="w-16 h-24 bg-gray-200 rounded flex items-center justify-center">
-                <span className="text-2xl text-gray-400">?</span>
-              </div>
-            )}
+            </div>
             <div>
               <h3 className="font-semibold text-gray-900">
                 {comic.comic.title || "Unknown Title"} #
@@ -326,10 +325,12 @@ export function CreateAuctionModal({
                 <div className="grid grid-cols-4 gap-2">
                   {detailImages.map((img, idx) => (
                     <div key={idx} className="relative aspect-square">
-                      <img
+                      <Image
                         src={img}
                         alt={`Detail ${idx + 1}`}
-                        className="w-full h-full object-cover rounded-lg"
+                        fill
+                        className="object-cover rounded-lg"
+                        sizes="80px"
                       />
                       <button
                         onClick={() => removeImage(idx)}

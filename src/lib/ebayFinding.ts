@@ -164,7 +164,6 @@ export async function findCompletedItems(
   params: FindingSearchParams
 ): Promise<FindingPriceResult | null> {
   if (!isFindingApiConfigured()) {
-    console.log("[ebay-finding] API not configured");
     return null;
   }
 
@@ -176,7 +175,6 @@ export async function findCompletedItems(
   const requestBody = buildFindCompletedItemsRequest(keywords, limit);
 
   try {
-    console.log(`[ebay-finding] Searching for: ${keywords}`);
 
     const response = await fetch(baseUrl, {
       method: "POST",
@@ -223,7 +221,6 @@ function parseFindingResponse(
       data.findCompletedItemsResponse as Record<string, unknown>[]
     )?.[0];
     if (!response) {
-      console.log("[ebay-finding] No response data");
       return emptyResult(searchQuery);
     }
 
@@ -233,7 +230,6 @@ function parseFindingResponse(
         (response.errorMessage as Record<string, unknown>[])?.[0]
           ?.error as Record<string, unknown>[]
       )?.[0]?.message;
-      console.log("[ebay-finding] API returned:", ack, errorMessage);
       return emptyResult(searchQuery);
     }
 
@@ -282,9 +278,6 @@ function parseFindingResponse(
       }
     }
 
-    console.log(
-      `[ebay-finding] Found ${items.length} sold items (total: ${totalEntries})`
-    );
     return calculatePriceStats(items, totalEntries, searchQuery);
   } catch (error) {
     console.error("[ebay-finding] Error parsing response:", error);
@@ -459,7 +452,6 @@ export async function lookupEbaySoldPrices(
   gradingCompany?: string
 ): Promise<PriceData | null> {
   if (!isFindingApiConfigured()) {
-    console.log("[ebay-finding] API not configured - skipping");
     return null;
   }
 
@@ -475,7 +467,6 @@ export async function lookupEbaySoldPrices(
   const result = await findCompletedItems(params);
 
   if (!result || result.sales.length === 0) {
-    console.log(`[ebay-finding] No sales found for: ${title} #${issueNumber}`);
     return null;
   }
 
