@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Bangers, Comic_Neue, Space_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 import { Navigation } from "@/components/Navigation";
@@ -9,7 +9,27 @@ import { ServiceWorkerProvider } from "@/components/ServiceWorkerProvider";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { PostHogProvider } from "@/components/PostHogProvider";
 
-const inter = Inter({ subsets: ["latin"] });
+// Pop Art / Lichtenstein Typography
+const bangers = Bangers({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-bangers",
+  display: "swap",
+});
+
+const comicNeue = Comic_Neue({
+  weight: ["300", "400", "700"],
+  subsets: ["latin"],
+  variable: "--font-comic-neue",
+  display: "swap",
+});
+
+const spaceMono = Space_Mono({
+  weight: ["400", "700"],
+  subsets: ["latin"],
+  variable: "--font-space-mono",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Collectors Chest - Track, Value & Trade Your Comics",
@@ -41,7 +61,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#1e40af",
+  themeColor: "#FFF200", // Pop Art Yellow
 };
 
 export default function RootLayout({
@@ -52,11 +72,11 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en">
-        <body className={inter.className}>
+        <body className={`${bangers.variable} ${comicNeue.variable} ${spaceMono.variable} font-body`}>
           <PostHogProvider>
             <ServiceWorkerProvider>
               <Providers>
-                <div className="min-h-screen bg-gray-50 pb-20 md:pb-0">
+                <div className="min-h-screen bg-pop-cream pb-20 md:pb-0">
                   <Navigation />
                   <main className="container mx-auto px-4 py-8">{children}</main>
                   <MobileUtilitiesFAB />

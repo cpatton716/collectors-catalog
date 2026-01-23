@@ -62,19 +62,19 @@ export function Navigation() {
 
   return (
     <>
-      <nav className="bg-white shadow-sm border-b border-gray-200">
+      <nav className="bg-pop-yellow border-b-4 border-pop-black shadow-comic">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <Link href="/" className="flex items-center space-x-2">
+            <Link href="/" className="flex items-center space-x-2 group">
               <ChestIcon size={36} />
-              <span className="font-bold text-xl text-gray-900">
-                Collectors Chest
+              <span className="font-comic text-2xl text-pop-black tracking-wide group-hover:text-pop-red transition-colors">
+                COLLECTORS CHEST
               </span>
             </Link>
 
             {/* Navigation Links - hidden on mobile (MobileNav handles that) */}
-            <div className="hidden md:flex items-center space-x-1">
+            <div className="hidden md:flex items-center space-x-2">
               {links.map((link) => {
                 const Icon = link.icon;
                 const isActive = pathname === link.href;
@@ -82,14 +82,14 @@ export function Navigation() {
                   <Link
                     key={link.href}
                     href={link.href}
-                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+                    className={`nav-link-pop flex items-center space-x-2 px-3 py-1.5 transition-all ${
                       isActive
-                        ? "bg-primary-100 text-primary-700"
-                        : "text-gray-600 hover:bg-gray-100"
+                        ? "bg-pop-white text-pop-black border-2 border-pop-black shadow-comic-sm"
+                        : "text-pop-black hover:bg-pop-white/50"
                     }`}
                   >
                     <Icon className="w-5 h-5" />
-                    <span>{link.label}</span>
+                    <span className="font-comic text-sm tracking-wide">{link.label.toUpperCase()}</span>
                   </Link>
                 );
               })}
@@ -97,14 +97,14 @@ export function Navigation() {
               <SignedIn>
                 <Link
                   href="/my-auctions"
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+                  className={`nav-link-pop flex items-center space-x-2 px-3 py-1.5 transition-all ${
                     pathname === "/my-auctions"
-                      ? "bg-primary-100 text-primary-700"
-                      : "text-gray-600 hover:bg-gray-100"
+                      ? "bg-pop-white text-pop-black border-2 border-pop-black shadow-comic-sm"
+                      : "text-pop-black hover:bg-pop-white/50"
                   }`}
                 >
                   <Gavel className="w-5 h-5" />
-                  <span>My Listings</span>
+                  <span className="font-comic text-sm tracking-wide">MY LISTINGS</span>
                 </Link>
               </SignedIn>
             </div>
@@ -119,10 +119,10 @@ export function Navigation() {
               {/* Ask the Professor button */}
               <button
                 onClick={() => setShowProfessor(true)}
-                className="p-2 mr-4 rounded-full bg-gradient-to-br from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 transition-all duration-200 shadow-sm"
+                className="p-2 mr-4 bg-pop-blue border-2 border-pop-black shadow-comic-sm hover:shadow-comic hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all"
                 aria-label="Ask the Professor"
               >
-                <Brain className="w-5 h-5 text-yellow-400" />
+                <Brain className="w-5 h-5 text-pop-yellow" />
               </button>
 
               {/* Auth */}
@@ -133,7 +133,7 @@ export function Navigation() {
                   userProfileMode="navigation"
                   appearance={{
                     elements: {
-                      avatarBox: "w-9 h-9",
+                      avatarBox: "w-9 h-9 border-2 border-pop-black shadow-comic-sm",
                     },
                   }}
                 />
@@ -141,10 +141,10 @@ export function Navigation() {
               <SignedOut>
                 <Link
                   href="/sign-in"
-                  className="flex items-center gap-1.5 p-2 sm:px-3 sm:py-1.5 bg-primary-600 text-white text-sm rounded-full sm:rounded-lg hover:bg-primary-700 transition-colors"
+                  className="btn-pop btn-pop-red flex items-center gap-1.5 px-3 py-1.5 text-sm"
                 >
-                  <LogIn className="w-5 h-5 sm:w-4 sm:h-4" />
-                  <span className="hidden sm:inline">Sign In</span>
+                  <LogIn className="w-4 h-4" />
+                  <span className="hidden sm:inline font-comic">SIGN IN</span>
                 </Link>
               </SignedOut>
             </div>
@@ -155,58 +155,58 @@ export function Navigation() {
       {/* Ask the Professor Modal */}
       {showProfessor && (
         <div
-          className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-pop-black/70 flex items-end sm:items-center justify-center p-4"
           onClick={() => setShowProfessor(false)}
         >
           <div
-            className="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-lg max-h-[80vh] overflow-hidden shadow-2xl"
+            className="speech-bubble bg-pop-white w-full max-w-lg max-h-[80vh] overflow-hidden !rounded-none border-4 border-pop-black"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="bg-gradient-to-r from-blue-700 to-blue-900 p-6 text-white">
+            <div className="bg-pop-blue p-6 border-b-4 border-pop-black">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-yellow-400/20 rounded-xl">
-                    <Brain className="w-6 h-6 text-yellow-400" />
+                  <div className="p-2 bg-pop-yellow border-2 border-pop-black shadow-comic-sm">
+                    <Brain className="w-6 h-6 text-pop-black" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-yellow-400">Ask the Professor</h2>
-                    <p className="text-blue-200 text-sm">Your guide to Collectors Chest</p>
+                    <h2 className="font-comic text-2xl text-pop-yellow tracking-wide">ASK THE PROFESSOR!</h2>
+                    <p className="text-pop-white text-sm font-body">Your guide to Collectors Chest</p>
                   </div>
                 </div>
                 <button
                   onClick={() => setShowProfessor(false)}
-                  className="p-2 hover:bg-yellow-400/20 rounded-lg transition-colors"
+                  className="p-2 bg-pop-red border-2 border-pop-black shadow-comic-sm hover:shadow-comic transition-all"
                 >
-                  <X className="w-5 h-5 text-yellow-400" />
+                  <X className="w-5 h-5 text-pop-white" />
                 </button>
               </div>
             </div>
 
             {/* FAQ List */}
-            <div className="overflow-y-auto max-h-[calc(80vh-120px)] p-4">
-              <p className="text-gray-600 text-sm mb-4">
+            <div className="overflow-y-auto max-h-[calc(80vh-120px)] p-4 dots-blue-light">
+              <p className="text-pop-black font-body mb-4 bg-pop-white p-2 border-2 border-pop-black inline-block shadow-comic-sm">
                 Welcome, collector! Here are answers to commonly asked questions.
               </p>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {faqs.map((faq, index) => (
                   <div
                     key={index}
-                    className="border border-gray-200 rounded-lg overflow-hidden"
+                    className="bg-pop-white border-3 border-pop-black shadow-comic-sm overflow-hidden"
                   >
                     <button
                       onClick={() => setExpandedFAQ(expandedFAQ === index ? null : index)}
-                      className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 transition-colors"
+                      className="w-full flex items-center justify-between p-4 text-left hover:bg-pop-yellow/20 transition-colors"
                     >
-                      <span className="font-medium text-gray-900 pr-4">{faq.question}</span>
+                      <span className="font-comic text-pop-black pr-4">{faq.question}</span>
                       {expandedFAQ === index ? (
-                        <ChevronUp className="w-5 h-5 text-gray-500 flex-shrink-0" />
+                        <ChevronUp className="w-5 h-5 text-pop-blue flex-shrink-0" />
                       ) : (
-                        <ChevronDown className="w-5 h-5 text-gray-500 flex-shrink-0" />
+                        <ChevronDown className="w-5 h-5 text-pop-blue flex-shrink-0" />
                       )}
                     </button>
                     {expandedFAQ === index && (
-                      <div className="px-4 pb-4 text-gray-600 text-sm border-t border-gray-100 pt-3">
+                      <div className="px-4 pb-4 text-pop-black font-body text-sm border-t-2 border-pop-black pt-3 bg-pop-cream">
                         {faq.answer}
                       </div>
                     )}

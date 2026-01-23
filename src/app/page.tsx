@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useUser } from "@clerk/nextjs";
@@ -147,6 +146,7 @@ export default function Home() {
       // Check client-side cache first (prevents unnecessary API calls)
       const cached = getCachedHotBooks();
       if (cached && cached.length > 0) {
+        console.log("Using cached hottest books from localStorage");
         setHotBooks(cached);
         setHotBooksLoading(false);
         return;
@@ -165,6 +165,7 @@ export default function Home() {
           // Cache the result in localStorage for 24 hours
           if (books.length > 0) {
             setCachedHotBooks(books);
+            console.log("Cached hottest books to localStorage");
           }
         }
       } catch (err) {
@@ -282,69 +283,75 @@ export default function Home() {
     <div className="max-w-6xl mx-auto">
       {/* Hero Section */}
       <div className="text-center py-12">
-        <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-          {isLoaded && isSignedIn ? "A Look in Your Chest" : "Catalog Your Collection"}
-        </h1>
-        <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-8">
-          {isLoaded && isSignedIn
-            ? "Your collection at a glance. Track value changes, see your best investments, and discover what's hot in the market."
-            : "Scan covers with technopathic recognition, track your collection's value, discover key issues, and connect with fellow collectors to buy and sell."}
-        </p>
+        <div className="inline-block mb-6">
+          <h1
+            className="font-comic text-5xl md:text-7xl text-pop-yellow tracking-wide"
+            style={{
+              WebkitTextStroke: '3px black',
+              paintOrder: 'stroke fill',
+              textShadow: '4px 4px 0px #000'
+            }}
+          >
+            {isLoaded && isSignedIn ? "YOUR CHEST!" : "COLLECTORS CHEST!"}
+          </h1>
+        </div>
+        <div className="speech-bubble max-w-2xl mx-auto mb-8 !shadow-comic-lg">
+          <p className="text-xl font-body text-pop-black">
+            {isLoaded && isSignedIn
+              ? "Your collection at a glance. Track value changes, see your best investments, and discover what's hot in the market."
+              : "Scan covers with technopathic recognition, track your collection's value, discover key issues, and connect with fellow collectors to buy and sell."}
+          </p>
+        </div>
 
         {/* Scan CTA */}
         <div className="flex items-center justify-center gap-4 mb-12">
           <Link
             href="/scan"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition-colors shadow-lg shadow-primary-600/25"
+            className="btn-pop btn-pop-red text-xl px-8 py-4"
           >
-            <Camera className="w-5 h-5" />
+            <Camera className="w-6 h-6" />
             {isLoaded && isSignedIn
-              ? "Scan a Book"
+              ? "SCAN A BOOK!"
               : guestScanCount > 0
-                ? "Scan Another Book"
-                : "Scan Your First Book"}
-            <ArrowRight className="w-4 h-4" />
+                ? "SCAN ANOTHER!"
+                : "SCAN YOUR FIRST!"}
+            <ArrowRight className="w-5 h-5" />
           </Link>
         </div>
 
         {/* Collection Insights Cards - Only for signed-in users with collection */}
         {isLoaded && isSignedIn && stats.totalComics > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12 max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 max-w-4xl mx-auto">
             {/* Biggest Increase Card */}
             {biggestIncrease && (
               <button
                 onClick={() => setShowBiggestIncrease(true)}
-                className="bg-white rounded-xl p-4 shadow-sm border border-green-200 hover:shadow-md hover:border-green-300 transition-all text-left"
+                className="comic-panel bg-pop-white p-4 text-left hover:shadow-comic-lg"
               >
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2 bg-green-100 rounded-lg">
-                    <TrendingUp className="w-5 h-5 text-green-600" />
+                  <div className="p-2 bg-pop-green border-2 border-pop-black">
+                    <TrendingUp className="w-5 h-5 text-pop-white" />
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500">Biggest Increase</p>
-                    <p className="text-lg font-bold text-green-600">
+                    <p className="text-xs font-comic text-pop-black">BIGGEST INCREASE</p>
+                    <p className="text-lg font-comic text-pop-green">
                       +${biggestIncrease.change.toFixed(2)}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   {biggestIncrease.item.coverImageUrl && (
-                    <div className="w-10 h-14 relative flex-shrink-0 rounded overflow-hidden">
-                      <Image
-                        src={biggestIncrease.item.coverImageUrl}
-                        alt=""
-                        fill
-                        className="object-cover"
-                        sizes="40px"
-                        unoptimized
-                      />
-                    </div>
+                    <img
+                      src={biggestIncrease.item.coverImageUrl}
+                      alt=""
+                      className="w-10 h-14 object-cover border-2 border-pop-black"
+                    />
                   )}
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      {biggestIncrease.item.comic.title}
+                    <p className="text-sm font-comic text-pop-black truncate">
+                      {biggestIncrease.item.comic.title?.toUpperCase()}
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs font-body text-pop-black/70">
                       #{biggestIncrease.item.comic.issueNumber}
                     </p>
                   </div>
@@ -356,37 +363,32 @@ export default function Home() {
             {bestBuy && (
               <button
                 onClick={() => setShowBestBuy(true)}
-                className="bg-white rounded-xl p-4 shadow-sm border border-purple-200 hover:shadow-md hover:border-purple-300 transition-all text-left"
+                className="comic-panel bg-pop-white p-4 text-left hover:shadow-comic-lg"
               >
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2 bg-purple-100 rounded-lg">
-                    <Trophy className="w-5 h-5 text-purple-600" />
+                  <div className="p-2 bg-pop-blue border-2 border-pop-black">
+                    <Trophy className="w-5 h-5 text-pop-yellow" />
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500">Best Buy</p>
-                    <p className="text-lg font-bold text-purple-600">
+                    <p className="text-xs font-comic text-pop-black">BEST BUY</p>
+                    <p className="text-lg font-comic text-pop-blue">
                       +{bestBuy.roi.toFixed(0)}% ROI
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   {bestBuy.item.coverImageUrl && (
-                    <div className="w-10 h-14 relative flex-shrink-0 rounded overflow-hidden">
-                      <Image
-                        src={bestBuy.item.coverImageUrl}
-                        alt=""
-                        fill
-                        className="object-cover"
-                        sizes="40px"
-                        unoptimized
-                      />
-                    </div>
+                    <img
+                      src={bestBuy.item.coverImageUrl}
+                      alt=""
+                      className="w-10 h-14 object-cover border-2 border-pop-black"
+                    />
                   )}
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      {bestBuy.item.comic.title}
+                    <p className="text-sm font-comic text-pop-black truncate">
+                      {bestBuy.item.comic.title?.toUpperCase()}
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs font-body text-pop-black/70">
                       #{bestBuy.item.comic.issueNumber}
                     </p>
                   </div>
@@ -398,37 +400,32 @@ export default function Home() {
             {biggestDecline && (
               <button
                 onClick={() => setShowBiggestDecline(true)}
-                className="bg-white rounded-xl p-4 shadow-sm border border-red-200 hover:shadow-md hover:border-red-300 transition-all text-left"
+                className="comic-panel bg-pop-white p-4 text-left hover:shadow-comic-lg"
               >
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2 bg-red-100 rounded-lg">
-                    <TrendingDown className="w-5 h-5 text-red-600" />
+                  <div className="p-2 bg-pop-red border-2 border-pop-black">
+                    <TrendingDown className="w-5 h-5 text-pop-white" />
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500">Biggest Decline</p>
-                    <p className="text-lg font-bold text-red-600">
+                    <p className="text-xs font-comic text-pop-black">BIGGEST DECLINE</p>
+                    <p className="text-lg font-comic text-pop-red">
                       ${biggestDecline.change.toFixed(2)}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   {biggestDecline.item.coverImageUrl && (
-                    <div className="w-10 h-14 relative flex-shrink-0 rounded overflow-hidden">
-                      <Image
-                        src={biggestDecline.item.coverImageUrl}
-                        alt=""
-                        fill
-                        className="object-cover"
-                        sizes="40px"
-                        unoptimized
-                      />
-                    </div>
+                    <img
+                      src={biggestDecline.item.coverImageUrl}
+                      alt=""
+                      className="w-10 h-14 object-cover border-2 border-pop-black"
+                    />
                   )}
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      {biggestDecline.item.comic.title}
+                    <p className="text-sm font-comic text-pop-black truncate">
+                      {biggestDecline.item.comic.title?.toUpperCase()}
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs font-body text-pop-black/70">
                       #{biggestDecline.item.comic.issueNumber}
                     </p>
                   </div>
@@ -441,40 +438,40 @@ export default function Home() {
         {/* Features - Only shown to non-logged-in users */}
         {isLoaded && !isSignedIn && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12 max-w-4xl mx-auto">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-primary-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Camera className="w-8 h-8 text-primary-600" />
+            <div className="comic-panel bg-pop-white p-6 text-center">
+              <div className="w-16 h-16 bg-pop-blue border-3 border-pop-black shadow-comic-sm flex items-center justify-center mx-auto mb-4">
+                <Camera className="w-8 h-8 text-pop-yellow" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Technopathic Recognition
+              <h3 className="font-comic text-lg text-pop-black mb-2">
+                TECHNOPATHIC RECOGNITION
               </h3>
-              <p className="text-gray-600">
+              <p className="font-body text-pop-black/80">
                 Upload a photo and we&apos;ll instantly identify the title, issue #,
                 publisher, creators, key info, and more.
               </p>
             </div>
 
-            <div className="text-center">
-              <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <TrendingUp className="w-8 h-8 text-green-600" />
+            <div className="comic-panel bg-pop-white p-6 text-center">
+              <div className="w-16 h-16 bg-pop-green border-3 border-pop-black shadow-comic-sm flex items-center justify-center mx-auto mb-4">
+                <TrendingUp className="w-8 h-8 text-pop-white" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Track Values
+              <h3 className="font-comic text-lg text-pop-black mb-2">
+                TRACK VALUES
               </h3>
-              <p className="text-gray-600">
+              <p className="font-body text-pop-black/80">
                 Monitor the market value of your comics with price history charts
                 and alerts for significant changes.
               </p>
             </div>
 
-            <div className="text-center">
-              <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Tag className="w-8 h-8 text-orange-600" />
+            <div className="comic-panel bg-pop-white p-6 text-center">
+              <div className="w-16 h-16 bg-pop-orange border-3 border-pop-black shadow-comic-sm flex items-center justify-center mx-auto mb-4">
+                <Tag className="w-8 h-8 text-pop-white" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Buy & Sell
+              <h3 className="font-comic text-lg text-pop-black mb-2">
+                BUY & SELL
               </h3>
-              <p className="text-gray-600">
+              <p className="font-body text-pop-black/80">
                 List your comics for sale and connect with other collectors. Secure
                 transactions powered by Stripe.
               </p>
@@ -484,44 +481,44 @@ export default function Home() {
 
         {/* How It Works - Only shown to non-logged-in users */}
         {isLoaded && !isSignedIn && (
-          <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 mb-8 max-w-4xl mx-auto">
-            <h2 className="text-2xl font-bold text-gray-900 text-center mb-8">
-              How It Works
+          <div className="comic-panel bg-pop-white p-8 mb-8 max-w-4xl mx-auto dots-yellow">
+            <h2 className="font-comic text-3xl text-pop-black text-center mb-8">
+              HOW IT WORKS!
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div className="text-center">
-                <div className="w-10 h-10 bg-primary-600 text-white rounded-full flex items-center justify-center mx-auto mb-3 font-bold">
+                <div className="w-12 h-12 bg-pop-red text-pop-white border-3 border-pop-black shadow-comic-sm flex items-center justify-center mx-auto mb-3 font-comic text-xl">
                   1
                 </div>
-                <h4 className="font-semibold text-gray-900 mb-1">Upload Photo</h4>
-                <p className="text-sm text-gray-600">
+                <h4 className="font-comic text-pop-black mb-1">UPLOAD PHOTO</h4>
+                <p className="text-sm font-body text-pop-black/80">
                   Take a photo or upload an image of your comic cover
                 </p>
               </div>
               <div className="text-center">
-                <div className="w-10 h-10 bg-primary-600 text-white rounded-full flex items-center justify-center mx-auto mb-3 font-bold">
+                <div className="w-12 h-12 bg-pop-blue text-pop-white border-3 border-pop-black shadow-comic-sm flex items-center justify-center mx-auto mb-3 font-comic text-xl">
                   2
                 </div>
-                <h4 className="font-semibold text-gray-900 mb-1">Analyze</h4>
-                <p className="text-sm text-gray-600">
+                <h4 className="font-comic text-pop-black mb-1">ANALYZE</h4>
+                <p className="text-sm font-body text-pop-black/80">
                   Uses our Technopathy to identify the book&apos;s details
                 </p>
               </div>
               <div className="text-center">
-                <div className="w-10 h-10 bg-primary-600 text-white rounded-full flex items-center justify-center mx-auto mb-3 font-bold">
+                <div className="w-12 h-12 bg-pop-yellow text-pop-black border-3 border-pop-black shadow-comic-sm flex items-center justify-center mx-auto mb-3 font-comic text-xl">
                   3
                 </div>
-                <h4 className="font-semibold text-gray-900 mb-1">Verify & Edit</h4>
-                <p className="text-sm text-gray-600">
+                <h4 className="font-comic text-pop-black mb-1">VERIFY & EDIT</h4>
+                <p className="text-sm font-body text-pop-black/80">
                   Review the details and make any necessary corrections
                 </p>
               </div>
               <div className="text-center">
-                <div className="w-10 h-10 bg-primary-600 text-white rounded-full flex items-center justify-center mx-auto mb-3 font-bold">
+                <div className="w-12 h-12 bg-pop-green text-pop-white border-3 border-pop-black shadow-comic-sm flex items-center justify-center mx-auto mb-3 font-comic text-xl">
                   4
                 </div>
-                <h4 className="font-semibold text-gray-900 mb-1">Save & Track</h4>
-                <p className="text-sm text-gray-600">
+                <h4 className="font-comic text-pop-black mb-1">SAVE & TRACK</h4>
+                <p className="text-sm font-body text-pop-black/80">
                   Add to your collection and track its value over time
                 </p>
               </div>
@@ -533,16 +530,16 @@ export default function Home() {
       {/* Collection Value Dashboard - Prominent Card for Logged-in Users */}
       {isLoaded && isSignedIn && stats.totalComics > 0 && (
         <div className="mb-8">
-          <div className="bg-gradient-to-r from-primary-600 to-primary-700 rounded-2xl p-6 shadow-lg text-white">
+          <div className="bg-pop-blue border-4 border-pop-black shadow-comic-lg p-6">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
-                <h2 className="text-lg font-medium opacity-90 mb-1">Collection Value</h2>
+                <h2 className="font-comic text-lg text-pop-yellow mb-1">COLLECTION VALUE</h2>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-4xl md:text-5xl font-bold">
+                  <span className="font-comic text-4xl md:text-5xl text-pop-white">
                     ${stats.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                   {stats.unpricedCount > 0 && (
-                    <span className="text-sm opacity-75">
+                    <span className="text-sm text-pop-white/75 font-body">
                       ({stats.unpricedCount} unpriced)
                     </span>
                   )}
@@ -550,16 +547,16 @@ export default function Home() {
               </div>
               <div className="flex items-center gap-6">
                 <div className="text-center">
-                  <p className="text-3xl font-bold">{stats.totalComics}</p>
-                  <p className="text-sm opacity-75">Comics</p>
+                  <p className="font-comic text-3xl text-pop-white">{stats.totalComics}</p>
+                  <p className="text-sm font-body text-pop-white/75">Comics</p>
                 </div>
-                <div className="h-12 w-px bg-white/20" />
+                <div className="h-12 w-px bg-pop-white/20" />
                 <Link
                   href="/collection"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg font-medium transition-colors"
+                  className="btn-pop btn-pop-yellow"
                 >
                   <BookOpen className="w-5 h-5" />
-                  View Collection
+                  VIEW COLLECTION
                 </Link>
               </div>
             </div>
@@ -570,60 +567,60 @@ export default function Home() {
       {/* Stats Cards */}
       {stats.totalComics > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-12">
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-blue-200">
+          <div className="comic-panel bg-pop-white p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <BookOpen className="w-5 h-5 text-blue-600" />
+              <div className="p-2 bg-pop-blue border-2 border-pop-black">
+                <BookOpen className="w-5 h-5 text-pop-white" />
               </div>
               <div>
-                <p className="text-xs text-gray-500">Comics</p>
-                <p className="text-xl font-bold text-gray-900">
+                <p className="text-xs font-comic text-pop-black/70">COMICS</p>
+                <p className="text-xl font-comic text-pop-black">
                   {stats.totalComics}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-purple-200">
+          <div className="comic-panel bg-pop-white p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <DollarSign className="w-5 h-5 text-purple-600" />
+              <div className="p-2 bg-pop-pink border-2 border-pop-black">
+                <DollarSign className="w-5 h-5 text-pop-white" />
               </div>
               <div>
-                <p className="text-xs text-gray-500">Total Cost</p>
-                <p className="text-xl font-bold text-gray-900">
+                <p className="text-xs font-comic text-pop-black/70">TOTAL COST</p>
+                <p className="text-xl font-comic text-pop-black">
                   ${stats.totalCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-green-200">
+          <div className="comic-panel bg-pop-white p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <TrendingUp className="w-5 h-5 text-green-600" />
+              <div className="p-2 bg-pop-green border-2 border-pop-black">
+                <TrendingUp className="w-5 h-5 text-pop-white" />
               </div>
               <div>
-                <p className="text-xs text-gray-500">Est. Value</p>
-                <p className="text-xl font-bold text-gray-900">
+                <p className="text-xs font-comic text-pop-black/70">EST. VALUE</p>
+                <p className="text-xl font-comic text-pop-black">
                   ${stats.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-orange-200">
+          <div className="comic-panel bg-pop-white p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-orange-100 rounded-lg">
-                <Receipt className="w-5 h-5 text-orange-600" />
+              <div className="p-2 bg-pop-orange border-2 border-pop-black">
+                <Receipt className="w-5 h-5 text-pop-white" />
               </div>
               <div>
-                <p className="text-xs text-gray-500">Sales ({salesStats.totalSales})</p>
-                <p className="text-xl font-bold text-gray-900">
+                <p className="text-xs font-comic text-pop-black/70">SALES ({salesStats.totalSales})</p>
+                <p className="text-xl font-comic text-pop-black">
                   ${salesStats.totalRevenue.toFixed(2)}
                 </p>
                 {salesStats.totalProfit !== 0 && (
-                  <p className={`text-xs ${salesStats.totalProfit >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  <p className={`text-xs font-body ${salesStats.totalProfit >= 0 ? 'text-pop-green' : 'text-pop-red'}`}>
                     {salesStats.totalProfit >= 0 ? '+' : ''}${salesStats.totalProfit.toFixed(2)} profit
                   </p>
                 )}
@@ -631,22 +628,22 @@ export default function Home() {
             </div>
           </div>
 
-          <div className={`bg-white rounded-xl p-4 shadow-sm border ${profitLoss >= 0 ? 'border-green-200' : 'border-red-200'}`}>
+          <div className="comic-panel bg-pop-white p-4">
             <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-lg ${profitLoss >= 0 ? 'bg-green-100' : 'bg-red-100'}`}>
+              <div className={`p-2 border-2 border-pop-black ${profitLoss >= 0 ? 'bg-pop-green' : 'bg-pop-red'}`}>
                 {profitLoss >= 0 ? (
-                  <ArrowUpRight className="w-5 h-5 text-green-600" />
+                  <ArrowUpRight className="w-5 h-5 text-pop-white" />
                 ) : (
-                  <ArrowDownRight className="w-5 h-5 text-red-600" />
+                  <ArrowDownRight className="w-5 h-5 text-pop-white" />
                 )}
               </div>
               <div>
-                <p className="text-xs text-gray-500">Profit/Loss</p>
-                <p className={`text-xl font-bold ${profitLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                <p className="text-xs font-comic text-pop-black/70">PROFIT/LOSS</p>
+                <p className={`text-xl font-comic ${profitLoss >= 0 ? 'text-pop-green' : 'text-pop-red'}`}>
                   {profitLoss >= 0 ? '+' : ''}{profitLoss.toFixed(2)}
                 </p>
                 {stats.totalCost > 0 && (
-                  <p className={`text-xs ${profitLoss >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  <p className={`text-xs font-body ${profitLoss >= 0 ? 'text-pop-green' : 'text-pop-red'}`}>
                     {profitLoss >= 0 ? '+' : ''}{profitLossPercent.toFixed(1)}%
                   </p>
                 )}
@@ -660,40 +657,40 @@ export default function Home() {
       <div className="mb-12">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl">
-              <Flame className="w-6 h-6 text-white" />
+            <div className="p-3 bg-pop-red border-3 border-pop-black shadow-comic-sm">
+              <Flame className="w-6 h-6 text-pop-yellow" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">
-                Professor&apos;s Hottest Books
+              <h2 className="font-comic text-2xl text-pop-black">
+                PROFESSOR&apos;S HOTTEST BOOKS!
               </h2>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm font-body text-pop-black/70">
                 Weekly market analysis of the most in-demand comics
               </p>
             </div>
           </div>
           <Link
             href="/hottest-books"
-            className="text-primary-600 hover:text-primary-700 text-sm font-medium flex items-center gap-1"
+            className="btn-pop btn-pop-blue text-sm"
           >
-            View All
+            VIEW ALL
             <ChevronRight className="w-4 h-4" />
           </Link>
         </div>
 
         {hotBooksLoading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
+            <Loader2 className="w-8 h-8 animate-spin text-pop-red" />
           </div>
         ) : hotBooksError ? (
           <div className="text-center py-8">
-            <p className="text-gray-500 mb-2">{hotBooksError}</p>
+            <p className="font-body text-pop-black/70 mb-2">{hotBooksError}</p>
             <button
               onClick={() => window.location.reload()}
-              className="inline-flex items-center gap-2 text-sm text-orange-600 hover:text-orange-700"
+              className="btn-pop btn-pop-yellow text-sm"
             >
               <RefreshCw className="w-4 h-4" />
-              Try Again
+              TRY AGAIN
             </button>
           </div>
         ) : (
@@ -702,35 +699,30 @@ export default function Home() {
               <Link
                 key={book.rank}
                 href="/hottest-books"
-                className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md hover:border-orange-200 transition-all"
+                className="comic-panel bg-pop-white p-4 hover:shadow-comic-lg"
               >
                 <div className="flex items-start gap-3 mb-3">
-                  <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-red-600 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                  <div className="w-10 h-10 bg-pop-red border-2 border-pop-black shadow-comic-sm flex items-center justify-center text-pop-white font-comic text-lg flex-shrink-0">
                     {book.rank}
                   </div>
                   {book.coverImageUrl && (
-                    <div className="w-12 h-18 relative flex-shrink-0 rounded overflow-hidden shadow-sm">
-                      <Image
-                        src={book.coverImageUrl}
-                        alt={`${book.title} #${book.issueNumber}`}
-                        fill
-                        className="object-cover"
-                        sizes="48px"
-                        unoptimized
-                      />
-                    </div>
+                    <img
+                      src={book.coverImageUrl}
+                      alt={`${book.title} #${book.issueNumber}`}
+                      className="w-12 h-18 object-cover border-2 border-pop-black shadow-comic-sm"
+                    />
                   )}
                 </div>
-                <h3 className="font-semibold text-gray-900 text-sm leading-tight mb-1">
-                  {book.title} #{book.issueNumber}
+                <h3 className="font-comic text-pop-black text-sm leading-tight mb-1">
+                  {book.title?.toUpperCase()} #{book.issueNumber}
                 </h3>
-                <p className="text-xs text-gray-500 mb-2">
+                <p className="text-xs font-body text-pop-black/70 mb-2">
                   {book.publisher}
                 </p>
-                <div className="flex items-center gap-1 text-sm">
-                  <DollarSign className="w-3 h-3 text-green-600" />
-                  <span className="font-medium text-green-600">${formatCurrency(book.priceRange.mid)}</span>
-                  <span className="text-gray-400 text-xs">mid</span>
+                <div className="price-tag text-sm">
+                  <DollarSign className="w-3 h-3" />
+                  <span>${formatCurrency(book.priceRange.mid)}</span>
+                  <span className="text-pop-black/60 text-xs">mid</span>
                 </div>
               </Link>
             ))}
@@ -742,15 +734,15 @@ export default function Home() {
       {recentlyViewed.length > 0 && (
         <div className="mb-12">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-              <Clock className="w-5 h-5 text-gray-500" />
-              Recently Viewed
+            <h2 className="font-comic text-xl text-pop-black flex items-center gap-2">
+              <Clock className="w-5 h-5 text-pop-blue" />
+              RECENTLY VIEWED
             </h2>
             <Link
               href="/collection"
-              className="text-primary-600 hover:text-primary-700 text-sm font-medium flex items-center gap-1"
+              className="btn-pop btn-pop-blue text-sm"
             >
-              View All
+              VIEW ALL
               <ChevronRight className="w-4 h-4" />
             </Link>
           </div>
@@ -759,36 +751,33 @@ export default function Home() {
               <div
                 key={item.id}
                 onClick={() => router.push("/collection")}
-                className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+                className="comic-card cursor-pointer"
               >
-                <div className="aspect-[2/3] bg-gray-100 relative">
+                <div className="aspect-[2/3] bg-pop-cream relative border-b-3 border-pop-black">
                   {item.coverImageUrl ? (
-                    <Image
+                    <img
                       src={item.coverImageUrl}
                       alt={`${item.comic.title} #${item.comic.issueNumber}`}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 20vw"
-                      unoptimized
+                      className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gray-900 text-3xl">
-                      <span className="text-green-400 font-bold italic drop-shadow-[0_0_8px_rgba(74,222,128,0.6)]">?</span>
+                    <div className="w-full h-full flex items-center justify-center dots-red">
+                      <span className="font-comic text-4xl text-pop-blue text-comic-outline">?</span>
                     </div>
                   )}
                   {item.comic.priceData?.estimatedValue && (
                     <div className="absolute bottom-2 right-2">
-                      <span className="px-2 py-1 bg-black/70 text-white text-xs font-bold rounded-lg">
+                      <span className="price-tag text-sm">
                         ${item.comic.priceData.estimatedValue.toFixed(0)}
                       </span>
                     </div>
                   )}
                 </div>
-                <div className="p-2">
-                  <p className="font-medium text-gray-900 text-sm truncate">
-                    {item.comic.title}
+                <div className="p-2 bg-pop-white">
+                  <p className="font-comic text-pop-black text-sm truncate">
+                    {item.comic.title?.toUpperCase()}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs font-body text-pop-black/70">
                     #{item.comic.issueNumber}
                   </p>
                 </div>
@@ -802,22 +791,22 @@ export default function Home() {
       {showBiggestIncrease && biggestIncrease && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
-            className="absolute inset-0 bg-black/50"
+            className="absolute inset-0 bg-pop-black/70"
             onClick={() => setShowBiggestIncrease(false)}
           />
-          <div className="relative bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl">
+          <div className="relative comic-panel bg-pop-white max-w-sm w-full p-6">
             <button
               onClick={() => setShowBiggestIncrease(false)}
-              className="absolute top-4 right-4 p-1 hover:bg-gray-100 rounded-full"
+              className="absolute top-4 right-4 p-1 bg-pop-red border-2 border-pop-black shadow-comic-sm hover:shadow-comic transition-all"
             >
-              <X className="w-5 h-5 text-gray-500" />
+              <X className="w-5 h-5 text-pop-white" />
             </button>
 
             <div className="flex items-center gap-2 mb-4">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <TrendingUp className="w-5 h-5 text-green-600" />
+              <div className="p-2 bg-pop-green border-2 border-pop-black">
+                <TrendingUp className="w-5 h-5 text-pop-white" />
               </div>
-              <h3 className="text-lg font-bold text-gray-900">Biggest Increase</h3>
+              <h3 className="font-comic text-lg text-pop-black">BIGGEST INCREASE</h3>
             </div>
 
             {/* Duration Filter */}
@@ -826,13 +815,13 @@ export default function Home() {
                 <button
                   key={days}
                   onClick={() => setIncreaseDuration(days)}
-                  className={`px-3 py-1 text-sm rounded-full transition-colors ${
+                  className={`px-3 py-1 font-comic text-sm border-2 border-pop-black transition-all ${
                     increaseDuration === days
-                      ? "bg-green-600 text-white"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      ? "bg-pop-green text-pop-white shadow-comic-sm"
+                      : "bg-pop-white text-pop-black hover:bg-pop-green/20"
                   }`}
                 >
-                  {days} days
+                  {days} DAYS
                 </button>
               ))}
             </div>
@@ -840,32 +829,27 @@ export default function Home() {
             {/* Book Info */}
             <div className="flex gap-4 mb-4">
               {biggestIncrease.item.coverImageUrl && (
-                <div className="w-24 h-36 relative flex-shrink-0 rounded-lg overflow-hidden shadow-md">
-                  <Image
-                    src={biggestIncrease.item.coverImageUrl}
-                    alt=""
-                    fill
-                    className="object-cover"
-                    sizes="96px"
-                    unoptimized
-                  />
-                </div>
+                <img
+                  src={biggestIncrease.item.coverImageUrl}
+                  alt=""
+                  className="w-24 h-36 object-cover border-3 border-pop-black shadow-comic"
+                />
               )}
               <div>
-                <h4 className="font-semibold text-gray-900">
-                  {biggestIncrease.item.comic.title}
+                <h4 className="font-comic text-pop-black">
+                  {biggestIncrease.item.comic.title?.toUpperCase()}
                 </h4>
-                <p className="text-sm text-gray-500 mb-3">
+                <p className="text-sm font-body text-pop-black/70 mb-3">
                   #{biggestIncrease.item.comic.issueNumber}
                 </p>
                 <div className="space-y-1">
-                  <p className="text-2xl font-bold text-green-600">
+                  <p className="font-comic text-2xl text-pop-green">
                     +${biggestIncrease.change.toFixed(2)}
                   </p>
-                  <p className="text-sm text-green-600">
+                  <p className="text-sm font-body text-pop-green">
                     +{biggestIncrease.changePercent.toFixed(1)}%
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs font-body text-pop-black/70">
                     Current: ${biggestIncrease.currentValue.toFixed(2)}
                   </p>
                 </div>
@@ -879,57 +863,52 @@ export default function Home() {
       {showBestBuy && bestBuy && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
-            className="absolute inset-0 bg-black/50"
+            className="absolute inset-0 bg-pop-black/70"
             onClick={() => setShowBestBuy(false)}
           />
-          <div className="relative bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl">
+          <div className="relative comic-panel bg-pop-white max-w-sm w-full p-6">
             <button
               onClick={() => setShowBestBuy(false)}
-              className="absolute top-4 right-4 p-1 hover:bg-gray-100 rounded-full"
+              className="absolute top-4 right-4 p-1 bg-pop-red border-2 border-pop-black shadow-comic-sm hover:shadow-comic transition-all"
             >
-              <X className="w-5 h-5 text-gray-500" />
+              <X className="w-5 h-5 text-pop-white" />
             </button>
 
             <div className="flex items-center gap-2 mb-4">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <Trophy className="w-5 h-5 text-purple-600" />
+              <div className="p-2 bg-pop-blue border-2 border-pop-black">
+                <Trophy className="w-5 h-5 text-pop-yellow" />
               </div>
-              <h3 className="text-lg font-bold text-gray-900">Best Buy</h3>
+              <h3 className="font-comic text-lg text-pop-black">BEST BUY!</h3>
             </div>
 
-            <p className="text-sm text-gray-500 mb-4">
+            <p className="text-sm font-body text-pop-black/70 mb-4">
               Highest ROI based on purchase price
             </p>
 
             {/* Book Info */}
             <div className="flex gap-4 mb-4">
               {bestBuy.item.coverImageUrl && (
-                <div className="w-24 h-36 relative flex-shrink-0 rounded-lg overflow-hidden shadow-md">
-                  <Image
-                    src={bestBuy.item.coverImageUrl}
-                    alt=""
-                    fill
-                    className="object-cover"
-                    sizes="96px"
-                    unoptimized
-                  />
-                </div>
+                <img
+                  src={bestBuy.item.coverImageUrl}
+                  alt=""
+                  className="w-24 h-36 object-cover border-3 border-pop-black shadow-comic"
+                />
               )}
               <div>
-                <h4 className="font-semibold text-gray-900">
-                  {bestBuy.item.comic.title}
+                <h4 className="font-comic text-pop-black">
+                  {bestBuy.item.comic.title?.toUpperCase()}
                 </h4>
-                <p className="text-sm text-gray-500 mb-3">
+                <p className="text-sm font-body text-pop-black/70 mb-3">
                   #{bestBuy.item.comic.issueNumber}
                 </p>
                 <div className="space-y-1">
-                  <p className="text-2xl font-bold text-purple-600">
+                  <p className="font-comic text-2xl text-pop-blue">
                     +{bestBuy.roi.toFixed(0)}% ROI
                   </p>
-                  <div className="text-xs text-gray-500 space-y-0.5">
+                  <div className="text-xs font-body text-pop-black/70 space-y-0.5">
                     <p>Paid: ${bestBuy.purchasePrice.toFixed(2)}</p>
                     <p>Value: ${bestBuy.currentValue.toFixed(2)}</p>
-                    <p className="text-green-600 font-medium">
+                    <p className="text-pop-green font-medium">
                       Profit: +${bestBuy.profit.toFixed(2)}
                     </p>
                   </div>
@@ -944,22 +923,22 @@ export default function Home() {
       {showBiggestDecline && biggestDecline && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
-            className="absolute inset-0 bg-black/50"
+            className="absolute inset-0 bg-pop-black/70"
             onClick={() => setShowBiggestDecline(false)}
           />
-          <div className="relative bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl">
+          <div className="relative comic-panel bg-pop-white max-w-sm w-full p-6">
             <button
               onClick={() => setShowBiggestDecline(false)}
-              className="absolute top-4 right-4 p-1 hover:bg-gray-100 rounded-full"
+              className="absolute top-4 right-4 p-1 bg-pop-red border-2 border-pop-black shadow-comic-sm hover:shadow-comic transition-all"
             >
-              <X className="w-5 h-5 text-gray-500" />
+              <X className="w-5 h-5 text-pop-white" />
             </button>
 
             <div className="flex items-center gap-2 mb-4">
-              <div className="p-2 bg-red-100 rounded-lg">
-                <TrendingDown className="w-5 h-5 text-red-600" />
+              <div className="p-2 bg-pop-red border-2 border-pop-black">
+                <TrendingDown className="w-5 h-5 text-pop-white" />
               </div>
-              <h3 className="text-lg font-bold text-gray-900">Biggest Decline</h3>
+              <h3 className="font-comic text-lg text-pop-black">BIGGEST DECLINE</h3>
             </div>
 
             {/* Duration Filter */}
@@ -968,13 +947,13 @@ export default function Home() {
                 <button
                   key={days}
                   onClick={() => setDeclineDuration(days)}
-                  className={`px-3 py-1 text-sm rounded-full transition-colors ${
+                  className={`px-3 py-1 font-comic text-sm border-2 border-pop-black transition-all ${
                     declineDuration === days
-                      ? "bg-red-600 text-white"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      ? "bg-pop-red text-pop-white shadow-comic-sm"
+                      : "bg-pop-white text-pop-black hover:bg-pop-red/20"
                   }`}
                 >
-                  {days} days
+                  {days} DAYS
                 </button>
               ))}
             </div>
@@ -982,32 +961,27 @@ export default function Home() {
             {/* Book Info */}
             <div className="flex gap-4 mb-4">
               {biggestDecline.item.coverImageUrl && (
-                <div className="w-24 h-36 relative flex-shrink-0 rounded-lg overflow-hidden shadow-md">
-                  <Image
-                    src={biggestDecline.item.coverImageUrl}
-                    alt=""
-                    fill
-                    className="object-cover"
-                    sizes="96px"
-                    unoptimized
-                  />
-                </div>
+                <img
+                  src={biggestDecline.item.coverImageUrl}
+                  alt=""
+                  className="w-24 h-36 object-cover border-3 border-pop-black shadow-comic"
+                />
               )}
               <div>
-                <h4 className="font-semibold text-gray-900">
-                  {biggestDecline.item.comic.title}
+                <h4 className="font-comic text-pop-black">
+                  {biggestDecline.item.comic.title?.toUpperCase()}
                 </h4>
-                <p className="text-sm text-gray-500 mb-3">
+                <p className="text-sm font-body text-pop-black/70 mb-3">
                   #{biggestDecline.item.comic.issueNumber}
                 </p>
                 <div className="space-y-1">
-                  <p className="text-2xl font-bold text-red-600">
+                  <p className="font-comic text-2xl text-pop-red">
                     ${biggestDecline.change.toFixed(2)}
                   </p>
-                  <p className="text-sm text-red-600">
+                  <p className="text-sm font-body text-pop-red">
                     {biggestDecline.changePercent.toFixed(1)}%
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs font-body text-pop-black/70">
                     Current: ${biggestDecline.currentValue.toFixed(2)}
                   </p>
                 </div>
@@ -1018,15 +992,15 @@ export default function Home() {
       )}
 
       {/* Footer */}
-      <footer className="mt-16 pt-8 border-t border-gray-200">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-gray-500">
+      <footer className="mt-16 pt-8 border-t-4 border-pop-black">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm font-body text-pop-black/70">
           <p>&copy; {new Date().getFullYear()} Collectors Chest. All rights reserved.</p>
           <div className="flex items-center gap-6">
-            <Link href="/privacy" className="hover:text-gray-700 transition-colors">
-              Privacy Policy
+            <Link href="/privacy" className="hover:text-pop-blue transition-colors font-comic">
+              PRIVACY
             </Link>
-            <Link href="/terms" className="hover:text-gray-700 transition-colors">
-              Terms of Service
+            <Link href="/terms" className="hover:text-pop-blue transition-colors font-comic">
+              TERMS
             </Link>
           </div>
         </div>
