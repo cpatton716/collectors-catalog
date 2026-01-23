@@ -172,6 +172,45 @@ Pull Marvel comic cover images and creator information directly from Marvel.com 
 
 ---
 
+### Book Trading Feature
+**Priority:** Medium
+**Status:** Pending
+
+Allow two users to agree to exchange books directly without money changing hands.
+
+**Use Cases:**
+- Trade duplicates for books you need
+- Exchange keys of similar value
+- Build relationships with other collectors
+
+**Potential Flow:**
+1. User A proposes a trade: "My [Book X] for your [Book Y]"
+2. User B receives trade offer notification
+3. User B can accept, decline, or counter-offer
+4. Both parties confirm final terms
+5. Trade is recorded, books move between collections
+6. Optional: Coordinate shipping via peer-to-peer messaging
+
+**Considerations:**
+- Value matching/fairness indicators (optional)
+- Trade history for reputation
+- Dispute resolution if trade goes wrong
+- Integration with peer-to-peer messaging feature
+- How to handle multi-book trades
+
+**Legal/TOS Requirements:**
+- Terms of Service must clearly state Collectors Chest is NOT responsible for trades
+- Users trade at their own risk
+- Platform facilitates connection only, not the transaction itself
+- Privacy Policy considerations for sharing user info during trades
+- Disclaimer: no guarantees on book condition, authenticity, or delivery
+
+**Related Features:**
+- Peer-to-peer messaging (for coordination)
+- User location (for local trades)
+
+---
+
 ### Username System for Privacy
 **Priority:** Medium
 **Status:** ✅ Complete (Jan 17, 2026)
