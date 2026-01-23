@@ -6,10 +6,20 @@ This log tracks session-by-session progress on Collectors Chest.
 
 ## Changes Since Last Deploy
 
-**Sessions since last deploy:** 1
-**Deploy Readiness:** Ready - All tests pass, build succeeds
+**Sessions since last deploy:** 0
+**Deploy Readiness:** Just deployed
 
 ### Accumulated Changes:
+(None yet)
+
+---
+
+## Deploy Log - January 23, 2026
+
+**Deployed to Netlify**
+
+### Changes Included:
+- **Lichtenstein Pop-Art Design** - New visual style merged into main
 - **Performance Optimization Phases 1-4** - Complete codebase optimization
   - Anthropic API cost reduced ~47% ($0.015 → ~$0.008/scan)
   - Combined 4 AI calls into 1-2 per scan
@@ -17,6 +27,36 @@ This log tracks session-by-session progress on Collectors Chest.
   - ISR for hot books page (1-hour revalidation)
   - Deleted ebay.ts, consolidated to single eBay implementation
   - Database performance indexes added
+- **Bug Fix:** Auction scheduled start time timezone issue
+- **Backlog Updates:** Added 6 new items (trade feature, peer-to-peer messaging, sale tracking, auction cancellation policy, user location, free trial fix)
+
+---
+
+## January 23, 2026
+
+### Session Summary
+Partner demo session. Switched between design branches to showcase options. Merged Lichtenstein pop-art design into main branch. Fixed auction timezone bug. Added multiple backlog items based on partner feedback.
+
+### Key Accomplishments
+- Demonstrated 3 design branches to partner (pop-art, retro-futuristic, vintage-newsprint)
+- Merged **pop-art-lichtenstein** design into main as the new default style
+- Fixed auction scheduled start time bug (was interpreting dates as UTC instead of local time)
+- Updated vintage-newsprint branch year from 2024 to 2026
+- Added 6 backlog items:
+  - User profile location
+  - Peer-to-peer messaging
+  - Track sale price when marking book as sold
+  - Auction cancellation policy (books with bids)
+  - Free trial not working (high priority)
+  - Book trading feature
+
+### Files Modified
+- `src/lib/auctionDb.ts` - Fixed timezone parsing for scheduled auctions
+- `BACKLOG.md` - Added 6 new items
+- Multiple design/styling files from Lichtenstein merge
+
+### Issues Encountered
+- Auction start time showing "2 hours" when user selected "tomorrow" - Root cause: JavaScript `new Date("2026-01-24")` parses as midnight UTC, not local time. Fixed by appending `T00:00:00` to parse as local midnight.
 
 ---
 
