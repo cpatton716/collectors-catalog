@@ -58,6 +58,28 @@ Form an LLC to protect personal assets before opening the marketplace to the pub
 
 ---
 
+### Free Trial Not Working
+**Priority:** High
+**Status:** Pending
+
+Starting a free trial does not work. Need a way to test premium features like Key Hunt for List and Quick Scanning.
+
+**Issue:**
+- Cannot initiate free trial from the app
+- Blocks testing of premium-gated features
+
+**Workarounds to Consider:**
+- Manual database flag to enable premium for test accounts
+- Dev-only bypass for premium features
+- Fix the actual trial flow
+
+**Blocked Features:**
+- Key Hunt for List
+- Quick Scanning
+- Other premium features
+
+---
+
 ### Create Stripe Account & Configure Billing
 **Priority:** Critical
 **Status:** Pending
@@ -137,6 +159,89 @@ Currently using a static list (`USE_STATIC_LIST = true`) to conserve API credits
 ---
 
 ## Pending Enhancements
+
+### Peer-to-Peer Messaging
+**Priority:** Medium
+**Status:** Pending
+
+Add direct messaging between users to facilitate communication around purchases and trades.
+
+**Use Cases:**
+- Negotiate bulk purchases from a seller's store
+- Ask questions about a listing before buying
+- Coordinate local pickup / in-person trades
+- Discuss combined shipping for multiple items
+- Other use cases TBD
+
+**Considerations:**
+- Spam/abuse prevention
+- Notification preferences (email, in-app, both)
+- Message history retention
+- Block/report functionality
+- Privacy controls
+
+**Potential Implementation:**
+- New `messages` table in Supabase
+- Real-time updates via Supabase subscriptions or polling
+- Conversation threads tied to listings or general user-to-user
+- Integration with existing notification system
+
+---
+
+### Track Sale Price When Marking Book as Sold
+**Priority:** Medium
+**Status:** Pending
+
+When a user marks a book as sold (removing it from collection), prompt them to enter the sale price so they can track proceeds and profit/loss even after the book leaves their collection.
+
+**Current Behavior:**
+- Book is removed from collection when marked as sold
+- No record of sale amount is captured
+
+**Proposed Flow:**
+1. User clicks "Mark as Sold" on a book
+2. Modal prompts for sale price (optional but encouraged)
+3. Sale is recorded in `sales` table with: book details, sale price, original purchase price, date
+4. Book is removed from active collection
+5. Sale history remains accessible for profit/loss tracking
+
+**Benefits:**
+- Accurate profit/loss calculations over time
+- Sales history for tax purposes
+- Better collection value analytics (realized vs unrealized gains)
+
+**Related:**
+- `src/lib/storage.ts` - Current sale tracking
+- `src/lib/db.ts` - Database operations
+- Home page sales stats display
+
+---
+
+### Auction Cancellation Policy (Books with Bids)
+**Priority:** Medium
+**Status:** Pending
+
+Define and implement policy for handling auction cancellations when a book already has bids.
+
+**Questions to Resolve:**
+- Should sellers be allowed to cancel/remove an auction with active bids?
+- What happens to existing bids if cancellation is allowed?
+- Should there be a penalty for cancelling auctions with bids?
+- How do we prevent sellers from listing the same book twice?
+
+**Potential Approaches:**
+1. **Disallow cancellation** - Once bids exist, auction must complete
+2. **Allow with restrictions** - Can cancel but bidders are notified, possible reputation impact
+3. **Time-based** - Can cancel within X hours of first bid, locked after that
+4. **TOS enforcement** - Prohibit duplicate listings and bad-faith cancellations in Terms of Service
+
+**Related Files:**
+- `src/lib/auctionDb.ts` - `cancelAuction` function
+- `src/app/terms/page.tsx` - Terms of Service
+
+**Note:** May need to check current behavior and update both code and TOS together.
+
+---
 
 ### Marvel Cover Images & Creator Data
 **Priority:** Medium
@@ -230,6 +335,33 @@ Added username system so sellers can display @username instead of email or real 
 - `src/app/api/username/route.ts` - Check/set API
 - `src/components/UsernameSettings.tsx` - Profile UI
 - `supabase/migrations/20260117_add_username.sql` - DB migration
+
+---
+
+### User Profile Location
+**Priority:** Medium
+**Status:** Pending
+
+Add location field to user profiles so collectors can see where books are located when browsing the marketplace or viewing collections.
+
+**Use Cases:**
+- Buyers can see where a seller is located before purchasing
+- Local collectors can find others nearby for in-person trades
+- Shipping cost estimates based on distance
+- Filter marketplace listings by region
+- Peer-to-peer sales and auctions: helps buyers estimate shipping costs and delivery times
+
+**Implementation:**
+- Add `location` field to profiles table (city, state/region, country)
+- Location input on profile settings (optional)
+- Privacy control: show full location, state/country only, or hide
+- Display location badge on seller listings and public profiles
+- Future: distance-based filtering in Shop
+
+**Privacy Considerations:**
+- Location should be optional (not required)
+- Allow granularity control (city vs state vs country)
+- Never show exact address
 
 ---
 

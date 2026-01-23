@@ -48,7 +48,11 @@ export async function createAuction(
   const feePercent = await getTransactionFeePercent(sellerId);
 
   // Support scheduled auctions with custom start date
-  const startTime = input.startDate ? new Date(input.startDate) : new Date();
+  // Note: Date-only strings like "2026-01-24" are parsed as UTC midnight,
+  // so we append T00:00:00 to parse as local midnight instead
+  const startTime = input.startDate
+    ? new Date(input.startDate + "T00:00:00")
+    : new Date();
   const endTime = new Date(startTime);
   endTime.setDate(endTime.getDate() + input.durationDays);
 
