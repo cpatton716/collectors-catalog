@@ -6,11 +6,68 @@ This log tracks session-by-session progress on Collectors Chest.
 
 ## Changes Since Last Deploy
 
-**Sessions since last deploy:** 0
-**Deploy Readiness:** Just deployed
+**Sessions since last deploy:** 1
+**Deploy Readiness:** Ready for testing
 
 ### Accumulated Changes:
-(None yet)
+- **Admin User Management** - Full admin panel with user search, profile viewing, trial reset, premium granting, and account suspension
+- **Admin Audit Logging** - All admin actions logged for accountability
+- **Admin Navigation Link** - Admins see "ADMIN" link in nav bar (database-backed is_admin check)
+- **Pop-Art Styling Updates** - Applied Lichtenstein theme to Collection, Shop, My Listings, Stats, and Scan pages
+- **Scan Progress Bar Fix** - Aligned progress stepper width with upload container
+- **Suspension System** - Protected routes check for suspended accounts
+- **Trial Management** - Start trial and reset trial API endpoints
+
+---
+
+## January 24, 2026
+
+### Session Summary
+Major admin features session. Built complete admin user management system with search, profile viewing, and account management actions. Applied Pop-Art styling across remaining pages. Added database-backed admin authentication with audit logging.
+
+### Key Accomplishments
+- Built admin user management panel (`/admin/users`) with:
+  - User search by email (partial match)
+  - Profile detail view (subscription, scans, trial status)
+  - Reset trial action
+  - Grant premium action (custom days)
+  - Suspend/unsuspend accounts with reason
+- Added `is_admin` field to profiles with database migration
+- Created centralized `adminAuth.ts` helper library
+- Added admin audit logging table for accountability
+- Added admin link to navigation (visible only to database admins)
+- Applied Pop-Art styling to Collection, Shop, My Listings, Stats, and Scan pages
+- Fixed scan page progress bar alignment
+- Added `isAdmin` to useSubscription hook for client-side admin detection
+- Added suspension checks to protected API routes (scan, auction, billing)
+
+### Files Added
+- `src/app/admin/users/page.tsx` - Admin user management UI
+- `src/app/api/admin/users/search/route.ts` - User search endpoint
+- `src/app/api/admin/users/[id]/route.ts` - User profile endpoint
+- `src/app/api/admin/users/[id]/reset-trial/route.ts` - Reset trial endpoint
+- `src/app/api/admin/users/[id]/grant-premium/route.ts` - Grant premium endpoint
+- `src/app/api/admin/users/[id]/suspend/route.ts` - Suspend/unsuspend endpoint
+- `src/app/api/billing/start-trial/route.ts` - Start trial endpoint
+- `src/app/api/billing/reset-trial/route.ts` - Reset trial endpoint (testing)
+- `src/lib/adminAuth.ts` - Centralized admin helpers and audit logging
+- `supabase/migrations/20260124_admin_features.sql` - Database migration
+
+### Files Modified
+- `src/components/Navigation.tsx` - Added admin link with useSubscription
+- `src/hooks/useSubscription.ts` - Added isAdmin state
+- `src/app/api/billing/status/route.ts` - Added isAdmin to response
+- `src/lib/db.ts` - Added is_admin to CachedProfile type
+- Multiple page files for Pop-Art styling updates
+
+### Database Changes
+- Added `is_admin` boolean to profiles table
+- Added `is_suspended`, `suspended_at`, `suspended_reason` to profiles table
+- Created `admin_audit_log` table for action tracking
+
+### Issues Encountered
+- Hardcoded admin user IDs didn't match test accounts - Switched to database-backed `is_admin` field
+- CachedProfile type missing `is_admin` - Added to type definition
 
 ---
 
