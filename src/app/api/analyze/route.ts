@@ -14,6 +14,7 @@ import {
   GUEST_SCAN_LIMIT,
 } from "@/lib/subscription";
 import { lookupKeyInfo } from "@/lib/keyComicsDatabase";
+import { isUserSuspended } from "@/lib/adminAuth";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -41,6 +42,19 @@ export async function POST(request: NextRequest) {
     const { userId } = await auth();
 
     if (userId) {
+      // Check if user is suspended
+      const suspensionStatus = await isUserSuspended(userId);
+      if (suspensionStatus.suspended) {
+        return NextResponse.json(
+          {
+            error: "account_suspended",
+            message: "Your account has been suspended.",
+            suspended: true,
+          },
+          { status: 403 }
+        );
+      }
+
       // Registered user - check subscription limits
       const profile = await getProfileByClerkId(userId);
       if (profile) {

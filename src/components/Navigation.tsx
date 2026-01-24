@@ -4,9 +4,10 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
-import { Camera, BookOpen, Home, LogIn, BarChart3, Brain, X, ChevronDown, ChevronUp, ShoppingBag, Gavel } from "lucide-react";
+import { Camera, BookOpen, Home, LogIn, BarChart3, Brain, X, ChevronDown, ChevronUp, ShoppingBag, Gavel, Shield } from "lucide-react";
 import { NotificationBell } from "./NotificationBell";
 import { ChestIcon } from "./icons/ChestIcon";
+import { useSubscription } from "@/hooks/useSubscription";
 
 // FAQ content for Ask the Professor
 const faqs = [
@@ -49,6 +50,7 @@ const faqs = [
 
 export function Navigation() {
   const pathname = usePathname();
+  const { isAdmin } = useSubscription();
   const [showProfessor, setShowProfessor] = useState(false);
   const [expandedFAQ, setExpandedFAQ] = useState<number | null>(null);
 
@@ -106,6 +108,20 @@ export function Navigation() {
                   <Gavel className="w-5 h-5" />
                   <span className="font-comic text-sm tracking-wide">MY LISTINGS</span>
                 </Link>
+                {/* Admin - admin users only */}
+                {isAdmin && (
+                  <Link
+                    href="/admin/users"
+                    className={`nav-link-pop flex items-center space-x-2 px-3 py-1.5 transition-all ${
+                      pathname.startsWith("/admin")
+                        ? "bg-pop-red text-pop-white border-2 border-pop-black shadow-comic-sm"
+                        : "text-pop-black hover:bg-pop-red/20"
+                    }`}
+                  >
+                    <Shield className="w-5 h-5" />
+                    <span className="font-comic text-sm tracking-wide">ADMIN</span>
+                  </Link>
+                )}
               </SignedIn>
             </div>
 

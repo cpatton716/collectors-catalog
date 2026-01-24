@@ -1,14 +1,7 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import { createClient } from "@supabase/supabase-js";
 import { Redis } from "@upstash/redis";
-
-// Admin user IDs
-const ADMIN_USER_IDS = process.env.ADMIN_USER_IDS?.split(",") || [];
-
-function isAdmin(userId: string): boolean {
-  return ADMIN_USER_IDS.includes(userId);
-}
+import { getAdminProfile } from "@/lib/adminAuth";
 
 // Service limits (free tier thresholds)
 const LIMITS = {
@@ -49,13 +42,9 @@ interface UsageMetric {
 
 export async function GET() {
   try {
-    const { userId } = await auth();
-
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    if (!isAdmin(userId)) {
+    // Check admin access using centralized helper
+    const adminProfile = await getAdminProfile();
+    if (!adminProfile) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

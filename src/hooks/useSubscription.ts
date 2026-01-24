@@ -13,6 +13,7 @@ export interface SubscriptionState {
 
   // User type
   isGuest: boolean;
+  isAdmin: boolean;
   tier: SubscriptionTier;
   status: SubscriptionStatus | null;
 
@@ -51,6 +52,8 @@ export interface SubscriptionState {
 
   // Actions
   refresh: () => Promise<void>;
+  startFreeTrial: () => Promise<{ success: boolean; error?: string; trialEndsAt?: Date }>;
+  resetTrial: () => Promise<{ success: boolean; error?: string }>; // For testing only
   startCheckout: (priceType: "monthly" | "annual" | "scan_pack", withTrial?: boolean) => Promise<string | null>;
   openBillingPortal: () => Promise<string | null>;
 }
@@ -69,7 +72,7 @@ export function useSubscription(): SubscriptionState {
   const { isSignedIn, isLoaded } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [data, setData] = useState<Omit<SubscriptionState, "isLoading" | "error" | "refresh" | "startCheckout" | "openBillingPortal"> | null>(null);
+  const [data, setData] = useState<Omit<SubscriptionState, "isLoading" | "error" | "refresh" | "startFreeTrial" | "resetTrial" | "startCheckout" | "openBillingPortal"> | null>(null);
 
   const fetchStatus = useCallback(async () => {
     if (!isLoaded) return;
@@ -87,6 +90,7 @@ export function useSubscription(): SubscriptionState {
 
       setData({
         isGuest: result.isGuest,
+        isAdmin: result.isAdmin || false,
         tier: result.tier,
         status: result.status,
         scansUsed: result.scansUsed,
@@ -112,6 +116,7 @@ export function useSubscription(): SubscriptionState {
       // Set default guest state on error
       setData({
         isGuest: !isSignedIn,
+        isAdmin: false,
         tier: isSignedIn ? "free" : "guest",
         status: null,
         scansUsed: 0,
@@ -143,6 +148,64 @@ export function useSubscription(): SubscriptionState {
   useEffect(() => {
     fetchStatus();
   }, [fetchStatus]);
+
+  const startFreeTrial = useCallback(
+    async (): Promise<{ success: boolean; error?: string; trialEndsAt?: Date }> => {
+      try {
+        const response = await fetch("/api/billing/start-trial", {
+          method: "POST",
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          return { success: false, error: result.error || "Failed to start trial" };
+        }
+
+        // Refresh subscription state to reflect the new trial
+        await fetchStatus();
+
+        return {
+          success: true,
+          trialEndsAt: result.trialEndsAt ? new Date(result.trialEndsAt) : undefined,
+        };
+      } catch (err) {
+        console.error("Start trial error:", err);
+        const errorMessage = err instanceof Error ? err.message : "Failed to start trial";
+        setError(errorMessage);
+        return { success: false, error: errorMessage };
+      }
+    },
+    [fetchStatus]
+  );
+
+  // Reset trial for testing purposes
+  const resetTrial = useCallback(
+    async (): Promise<{ success: boolean; error?: string }> => {
+      try {
+        const response = await fetch("/api/billing/reset-trial", {
+          method: "POST",
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          return { success: false, error: result.error || "Failed to reset trial" };
+        }
+
+        // Refresh subscription state
+        await fetchStatus();
+
+        return { success: true };
+      } catch (err) {
+        console.error("Reset trial error:", err);
+        const errorMessage = err instanceof Error ? err.message : "Failed to reset trial";
+        setError(errorMessage);
+        return { success: false, error: errorMessage };
+      }
+    },
+    [fetchStatus]
+  );
 
   const startCheckout = useCallback(
     async (priceType: "monthly" | "annual" | "scan_pack", withTrial = false): Promise<string | null> => {
@@ -195,6 +258,7 @@ export function useSubscription(): SubscriptionState {
       isLoading: true,
       error: null,
       isGuest: !isSignedIn,
+      isAdmin: false,
       tier: isSignedIn ? "free" : "guest",
       status: null,
       scansUsed: 0,
@@ -213,6 +277,8 @@ export function useSubscription(): SubscriptionState {
       canCreateListing: isSignedIn || false,
       features: defaultFeatures,
       refresh: fetchStatus,
+      startFreeTrial,
+      resetTrial,
       startCheckout,
       openBillingPortal,
     };
@@ -223,6 +289,8 @@ export function useSubscription(): SubscriptionState {
     error,
     ...data,
     refresh: fetchStatus,
+    startFreeTrial,
+    resetTrial,
     startCheckout,
     openBillingPortal,
   };

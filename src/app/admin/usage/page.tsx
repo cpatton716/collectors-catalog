@@ -339,6 +339,12 @@ export default function AdminUsagePage() {
             {/* Admin Links */}
             <div className="mt-6 flex gap-4">
               <Link
+                href="/admin/users"
+                className="text-sm text-blue-600 hover:underline"
+              >
+                → User Management
+              </Link>
+              <Link
                 href="/admin/key-info"
                 className="text-sm text-blue-600 hover:underline"
               >

@@ -307,7 +307,7 @@ export default function Home() {
         <div className="flex items-center justify-center gap-4 mb-12">
           <Link
             href="/scan"
-            className="btn-pop btn-pop-red text-xl px-8 py-4"
+            className="btn-pop btn-pop-blue text-xl px-8 py-4"
           >
             <Camera className="w-6 h-6" />
             {isLoaded && isSignedIn
@@ -438,9 +438,9 @@ export default function Home() {
         {/* Features - Only shown to non-logged-in users */}
         {isLoaded && !isSignedIn && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12 max-w-4xl mx-auto">
-            <div className="comic-panel bg-pop-white p-6 text-center">
-              <div className="w-16 h-16 bg-pop-blue border-3 border-pop-black shadow-comic-sm flex items-center justify-center mx-auto mb-4">
-                <Camera className="w-8 h-8 text-pop-yellow" />
+            <div className="bg-pop-white border-4 border-pop-black shadow-[6px_6px_0px_#000] p-6 text-center">
+              <div className="w-16 h-16 bg-pop-red border-3 border-pop-black shadow-comic-sm flex items-center justify-center mx-auto mb-4">
+                <Camera className="w-8 h-8 text-pop-white" />
               </div>
               <h3 className="font-comic text-lg text-pop-black mb-2">
                 TECHNOPATHIC RECOGNITION
@@ -451,8 +451,8 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="comic-panel bg-pop-white p-6 text-center">
-              <div className="w-16 h-16 bg-pop-green border-3 border-pop-black shadow-comic-sm flex items-center justify-center mx-auto mb-4">
+            <div className="bg-pop-white border-4 border-pop-black shadow-[6px_6px_0px_#000] p-6 text-center">
+              <div className="w-16 h-16 bg-pop-red border-3 border-pop-black shadow-comic-sm flex items-center justify-center mx-auto mb-4">
                 <TrendingUp className="w-8 h-8 text-pop-white" />
               </div>
               <h3 className="font-comic text-lg text-pop-black mb-2">
@@ -464,8 +464,8 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="comic-panel bg-pop-white p-6 text-center">
-              <div className="w-16 h-16 bg-pop-orange border-3 border-pop-black shadow-comic-sm flex items-center justify-center mx-auto mb-4">
+            <div className="bg-pop-white border-4 border-pop-black shadow-[6px_6px_0px_#000] p-6 text-center">
+              <div className="w-16 h-16 bg-pop-red border-3 border-pop-black shadow-comic-sm flex items-center justify-center mx-auto mb-4">
                 <Tag className="w-8 h-8 text-pop-white" />
               </div>
               <h3 className="font-comic text-lg text-pop-black mb-2">
@@ -481,7 +481,7 @@ export default function Home() {
 
         {/* How It Works - Only shown to non-logged-in users */}
         {isLoaded && !isSignedIn && (
-          <div className="comic-panel bg-pop-white p-8 mb-8 max-w-4xl mx-auto dots-yellow">
+          <div className="bg-pop-white border-4 border-pop-black shadow-[6px_6px_0px_#000] p-8 mb-8 max-w-4xl mx-auto">
             <h2 className="font-comic text-3xl text-pop-black text-center mb-8">
               HOW IT WORKS!
             </h2>
@@ -496,7 +496,7 @@ export default function Home() {
                 </p>
               </div>
               <div className="text-center">
-                <div className="w-12 h-12 bg-pop-blue text-pop-white border-3 border-pop-black shadow-comic-sm flex items-center justify-center mx-auto mb-3 font-comic text-xl">
+                <div className="w-12 h-12 bg-pop-red text-pop-white border-3 border-pop-black shadow-comic-sm flex items-center justify-center mx-auto mb-3 font-comic text-xl">
                   2
                 </div>
                 <h4 className="font-comic text-pop-black mb-1">ANALYZE</h4>
@@ -505,7 +505,7 @@ export default function Home() {
                 </p>
               </div>
               <div className="text-center">
-                <div className="w-12 h-12 bg-pop-yellow text-pop-black border-3 border-pop-black shadow-comic-sm flex items-center justify-center mx-auto mb-3 font-comic text-xl">
+                <div className="w-12 h-12 bg-pop-red text-pop-white border-3 border-pop-black shadow-comic-sm flex items-center justify-center mx-auto mb-3 font-comic text-xl">
                   3
                 </div>
                 <h4 className="font-comic text-pop-black mb-1">VERIFY & EDIT</h4>
@@ -514,7 +514,7 @@ export default function Home() {
                 </p>
               </div>
               <div className="text-center">
-                <div className="w-12 h-12 bg-pop-green text-pop-white border-3 border-pop-black shadow-comic-sm flex items-center justify-center mx-auto mb-3 font-comic text-xl">
+                <div className="w-12 h-12 bg-pop-red text-pop-white border-3 border-pop-black shadow-comic-sm flex items-center justify-center mx-auto mb-3 font-comic text-xl">
                   4
                 </div>
                 <h4 className="font-comic text-pop-black mb-1">SAVE & TRACK</h4>

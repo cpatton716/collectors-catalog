@@ -395,12 +395,12 @@ export default function ScanPage() {
       <div className="mb-8">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
+          className="flex items-center gap-2 text-pop-black font-bold hover:underline mb-4"
         >
           <ArrowLeft className="w-4 h-4" />
           Back
         </button>
-        <h1 className="text-3xl font-bold text-gray-900">Scan Book Cover</h1>
+        <h1 className="text-3xl font-black text-pop-black font-comic">SCAN BOOK COVER</h1>
         <p className="text-gray-600 mt-2">
           Upload a photo of your comic book cover to identify and add it to your
           collection.
@@ -410,7 +410,19 @@ export default function ScanPage() {
       {/* Progress Steps */}
       {state !== "error" && (
         <div className="mb-8">
-          <div className="flex items-center justify-between">
+          <div className="relative flex justify-between items-start">
+            {/* Background connecting line */}
+            <div className="absolute top-5 left-5 right-5 h-1 bg-gray-200 rounded" />
+            {/* Progress line overlay */}
+            <div
+              className="absolute top-5 left-5 h-1 bg-green-500 rounded transition-all duration-300"
+              style={{
+                width: getCurrentStepIndex() === 0
+                  ? '0%'
+                  : `calc(${(getCurrentStepIndex() / (STEPS.length - 1)) * 100}% - 40px)`
+              }}
+            />
+
             {STEPS.map((step, index) => {
               const currentIndex = getCurrentStepIndex();
               const isCompleted = index < currentIndex;
@@ -418,38 +430,29 @@ export default function ScanPage() {
               const Icon = step.icon;
 
               return (
-                <div key={step.id} className="flex-1 flex items-center">
-                  <div className="flex flex-col items-center">
-                    <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
-                        isCompleted
-                          ? "bg-green-500 text-white"
-                          : isCurrent
-                            ? "bg-primary-600 text-white"
-                            : "bg-gray-200 text-gray-400"
-                      }`}
-                    >
-                      {isCompleted ? (
-                        <Check className="w-5 h-5" />
-                      ) : (
-                        <Icon className="w-5 h-5" />
-                      )}
-                    </div>
-                    <span
-                      className={`text-xs mt-2 font-medium ${
-                        isCurrent ? "text-primary-600" : isCompleted ? "text-green-600" : "text-gray-400"
-                      }`}
-                    >
-                      {step.label}
-                    </span>
+                <div key={step.id} className="flex flex-col items-center relative z-10">
+                  <div
+                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+                      isCompleted
+                        ? "bg-green-500 text-white"
+                        : isCurrent
+                          ? "bg-primary-600 text-white"
+                          : "bg-gray-200 text-gray-400"
+                    }`}
+                  >
+                    {isCompleted ? (
+                      <Check className="w-5 h-5" />
+                    ) : (
+                      <Icon className="w-5 h-5" />
+                    )}
                   </div>
-                  {index < STEPS.length - 1 && (
-                    <div
-                      className={`flex-1 h-1 mx-2 rounded ${
-                        index < currentIndex ? "bg-green-500" : "bg-gray-200"
-                      }`}
-                    />
-                  )}
+                  <span
+                    className={`text-xs mt-2 font-medium ${
+                      isCurrent ? "text-primary-600" : isCompleted ? "text-green-600" : "text-gray-400"
+                    }`}
+                  >
+                    {step.label}
+                  </span>
                 </div>
               );
             })}
@@ -464,40 +467,40 @@ export default function ScanPage() {
           {isGuest && <GuestLimitBanner variant={isLimitReached ? "warning" : "info"} />}
 
           {isLimitReached ? (
-            <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
+            <div className="bg-pop-white border-3 border-pop-black p-8" style={{ boxShadow: "4px 4px 0px #000" }}>
               <GuestLimitBanner />
             </div>
           ) : (
-            <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
+            <div className="bg-pop-white border-3 border-pop-black p-8" style={{ boxShadow: "4px 4px 0px #000" }}>
               <ImageUpload onImageSelect={handleImageSelect} />
 
               {/* Alternative add methods */}
-              <div className="mt-8 pt-6 border-t border-gray-100">
-                <p className="text-sm text-gray-500 text-center mb-4">
+              <div className="mt-8 pt-6 border-t-2 border-pop-black">
+                <p className="text-sm text-gray-600 text-center mb-4 font-bold uppercase">
                   Other ways to add your books:
                 </p>
-                <div className="flex flex-wrap justify-center gap-6">
+                <div className="flex flex-wrap justify-center gap-4">
                   <button
                     onClick={() => setShowBarcodeScanner(true)}
-                    className="flex flex-col items-center justify-center w-36 h-24 bg-primary-50 text-primary-700 rounded-xl hover:bg-primary-100 transition-colors border border-primary-200"
+                    className="flex flex-col items-center justify-center w-36 h-24 bg-pop-white text-pop-black border-2 border-pop-black font-bold hover:shadow-[3px_3px_0px_#000] transition-all"
                   >
                     <ScanBarcode className="w-7 h-7 mb-2" />
-                    <span className="text-sm font-medium">Scan Barcode</span>
+                    <span className="text-sm">Scan Barcode</span>
                   </button>
                   <button
                     onClick={handleManualEntry}
-                    className="flex flex-col items-center justify-center w-36 h-24 bg-primary-50 text-primary-700 rounded-xl hover:bg-primary-100 transition-colors border border-primary-200"
+                    className="flex flex-col items-center justify-center w-36 h-24 bg-pop-white text-pop-black border-2 border-pop-black font-bold hover:shadow-[3px_3px_0px_#000] transition-all"
                   >
                     <PenLine className="w-7 h-7 mb-2" />
-                    <span className="text-sm font-medium">Enter Manually</span>
+                    <span className="text-sm">Enter Manually</span>
                   </button>
                   {isSignedIn && (
                     <button
                       onClick={() => setShowCSVImport(true)}
-                      className="hidden sm:flex flex-col items-center justify-center w-36 h-24 bg-primary-50 text-primary-700 rounded-xl hover:bg-primary-100 transition-colors border border-primary-200"
+                      className="hidden sm:flex flex-col items-center justify-center w-36 h-24 bg-pop-white text-pop-black border-2 border-pop-black font-bold hover:shadow-[3px_3px_0px_#000] transition-all"
                     >
                       <FileSpreadsheet className="w-7 h-7 mb-2" />
-                      <span className="text-sm font-medium">Import CSV</span>
+                      <span className="text-sm">Import CSV</span>
                     </button>
                   )}
                 </div>
@@ -509,7 +512,7 @@ export default function ScanPage() {
 
       {/* Analyzing State */}
       {state === "analyzing" && (
-        <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
+        <div className="bg-pop-white border-3 border-pop-black p-8" style={{ boxShadow: "4px 4px 0px #000" }}>
           <div className="flex flex-col md:flex-row gap-8">
             {/* Image Preview */}
             <div className="md:w-1/3">
@@ -560,12 +563,12 @@ export default function ScanPage() {
 
       {/* Error State */}
       {state === "error" && (
-        <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
+        <div className="bg-pop-white border-3 border-pop-black p-8" style={{ boxShadow: "4px 4px 0px #000" }}>
           <div className="flex flex-col md:flex-row gap-8">
             {/* Image Preview */}
             {imagePreview && (
               <div className="md:w-1/3">
-                <div className="aspect-[2/3] rounded-lg overflow-hidden bg-gray-100 relative">
+                <div className="aspect-[2/3] border-2 border-pop-black overflow-hidden bg-gray-100 relative">
                   <Image
                     src={imagePreview}
                     alt="Uploaded comic"
@@ -581,29 +584,32 @@ export default function ScanPage() {
             <div
               className={`${imagePreview ? "md:w-2/3" : "w-full"} flex flex-col items-center justify-center text-center`}
             >
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
-                <AlertCircle className="w-8 h-8 text-red-600" />
+              <div className="w-16 h-16 bg-pop-red border-3 border-pop-black flex items-center justify-center">
+                <AlertCircle className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mt-4">
+              <h3 className="text-xl font-black text-pop-black font-comic uppercase mt-4">
                 Couldn&apos;t Recognize Comic
               </h3>
               <p className="text-gray-600 mt-2 max-w-md">{error}</p>
-              <div className="flex items-center gap-3 mt-6">
+              <div className="flex flex-wrap items-center justify-center gap-3 mt-6">
                 <button
                   onClick={handleRetry}
-                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                  className="px-4 py-2 bg-pop-blue border-2 border-pop-black text-white font-bold"
+                  style={{ boxShadow: "2px 2px 0px #000" }}
                 >
                   Try Again
                 </button>
                 <button
                   onClick={handleManualEntry}
-                  className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="px-4 py-2 bg-pop-white border-2 border-pop-black text-pop-black font-bold"
+                  style={{ boxShadow: "2px 2px 0px #000" }}
                 >
                   Enter Manually
                 </button>
                 <button
                   onClick={handleCancel}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="px-4 py-2 bg-gray-200 border-2 border-pop-black text-pop-black font-bold"
+                  style={{ boxShadow: "2px 2px 0px #000" }}
                 >
                   Cancel
                 </button>
@@ -615,10 +621,10 @@ export default function ScanPage() {
 
       {/* Review State */}
       {state === "review" && comicDetails && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-pop-white border-3 border-pop-black overflow-hidden" style={{ boxShadow: "4px 4px 0px #000" }}>
           <div className="flex flex-col lg:flex-row">
             {/* Image Preview */}
-            <div className="lg:w-1/3 p-6 bg-gray-50 border-b lg:border-b-0 lg:border-r border-gray-100">
+            <div className="lg:w-1/3 p-6 bg-gray-50 border-b-3 lg:border-b-0 lg:border-r-3 border-pop-black">
               <div className="sticky top-6">
                 <div className="aspect-[2/3] rounded-lg overflow-hidden bg-gray-200 shadow-lg relative group">
                   {imagePreview ? (
@@ -684,11 +690,11 @@ export default function ScanPage() {
 
       {/* Saved State */}
       {state === "saved" && savedComic && (
-        <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
+        <div className="bg-pop-white border-3 border-pop-black p-8" style={{ boxShadow: "4px 4px 0px #000" }}>
           <div className="flex flex-col md:flex-row gap-8">
             {/* Image Preview */}
             <div className="md:w-1/3">
-              <div className="aspect-[2/3] rounded-lg overflow-hidden bg-gray-100 shadow-lg relative">
+              <div className="aspect-[2/3] border-3 border-pop-black overflow-hidden bg-gray-100 relative" style={{ boxShadow: "4px 4px 0px #000" }}>
                 {imagePreview ? (
                   <Image
                     src={imagePreview}
@@ -707,10 +713,10 @@ export default function ScanPage() {
 
             {/* Success Message */}
             <div className="md:w-2/3 flex flex-col items-center justify-center text-center">
-              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
-                <Check className="w-10 h-10 text-green-600" />
+              <div className="w-20 h-20 bg-pop-green border-3 border-pop-black flex items-center justify-center">
+                <Check className="w-10 h-10 text-white" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mt-6">
+              <h3 className="text-2xl font-black text-pop-black font-comic uppercase mt-6">
                 Added to Collection!
               </h3>
               <p className="text-gray-600 mt-2">
@@ -720,9 +726,9 @@ export default function ScanPage() {
               </p>
 
               {savedComic.comic.priceData?.estimatedValue && (
-                <div className="mt-4 px-4 py-2 bg-green-50 rounded-lg">
-                  <p className="text-sm text-green-700">
-                    Estimated Value: <span className="font-bold">${savedComic.comic.priceData.estimatedValue.toFixed(2)}</span>
+                <div className="mt-4 px-4 py-2 bg-pop-green border-2 border-pop-black">
+                  <p className="text-sm text-white font-bold">
+                    Estimated Value: <span className="font-black">${savedComic.comic.priceData.estimatedValue.toFixed(2)}</span>
                   </p>
                 </div>
               )}
@@ -730,14 +736,16 @@ export default function ScanPage() {
               <div className="flex flex-col sm:flex-row items-center gap-3 mt-8">
                 <button
                   onClick={handleAddAnother}
-                  className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2 font-medium"
+                  className="px-5 py-3 bg-pop-blue border-2 border-pop-black text-white font-bold flex items-center gap-2"
+                  style={{ boxShadow: "3px 3px 0px #000" }}
                 >
                   <Camera className="w-5 h-5" />
                   Scan Another Book
                 </button>
                 <button
                   onClick={() => router.push("/collection")}
-                  className="px-6 py-3 bg-white text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                  className="px-5 py-3 bg-pop-white border-2 border-pop-black text-pop-black font-bold"
+                  style={{ boxShadow: "3px 3px 0px #000" }}
                 >
                   View Collection
                 </button>

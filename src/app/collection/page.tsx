@@ -318,24 +318,24 @@ export default function CollectionPage() {
             )}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <button
             onClick={() => router.push("/stats")}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            className="inline-flex items-center gap-2 px-3 py-2 bg-pop-white border-2 border-pop-black text-pop-black font-bold hover:shadow-[2px_2px_0px_#000] transition-all"
           >
             <BarChart3 className="w-5 h-5" />
             <span className="hidden sm:inline">Stats</span>
           </button>
           <button
             onClick={() => setShowShareModal(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            className="inline-flex items-center gap-2 px-3 py-2 bg-pop-white border-2 border-pop-black text-pop-black font-bold hover:shadow-[2px_2px_0px_#000] transition-all"
           >
             <Share2 className="w-5 h-5" />
             <span className="hidden sm:inline">Share</span>
           </button>
           <button
             onClick={() => router.push("/scan")}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+            className="inline-flex items-center gap-2 px-3 py-2 bg-pop-blue border-2 border-pop-black text-white font-bold shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000] transition-all"
           >
             <Plus className="w-5 h-5" />
             Add Book
@@ -343,90 +343,72 @@ export default function CollectionPage() {
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-        <div className="bg-white rounded-lg p-4 shadow-sm border border-blue-200 flex items-center gap-4">
-          <div className="p-3 bg-blue-100 rounded-lg">
-            <BookOpen className="w-5 h-5 text-blue-600" />
-          </div>
-          <div>
-            <p className="text-sm text-gray-500">Comics{isFiltered && " (filtered)"}</p>
-            <p className="text-xl font-bold text-gray-900">{stats.count}</p>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg p-4 shadow-sm border border-purple-200 flex items-center gap-4">
-          <div className="p-3 bg-purple-100 rounded-lg">
-            <DollarSign className="w-5 h-5 text-purple-600" />
-          </div>
-          <div>
-            <p className="text-sm text-gray-500">Total Cost</p>
-            <p className="text-xl font-bold text-gray-900">
-              ${stats.totalCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </p>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg p-4 shadow-sm border border-green-200 flex items-center gap-4">
-          <div className="p-3 bg-green-100 rounded-lg">
-            <TrendingUp className="w-5 h-5 text-green-600" />
-          </div>
-          <div>
-            <p className="text-sm text-gray-500">Est. Value{stats.unpricedCount > 0 && ` (${stats.unpricedCount} unpriced)`}</p>
-            <p className="text-xl font-bold text-gray-900">
-              ${stats.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </p>
-          </div>
-        </div>
-        <div className={`bg-white rounded-lg p-4 shadow-sm border flex items-center gap-4 ${
-          salesStats.totalProfit >= 0 ? "border-blue-200" : "border-gray-100"
-        }`}>
-          <div className="p-3 bg-blue-100 rounded-lg flex-shrink-0">
-            <Receipt className="w-5 h-5 text-blue-600" />
+      {/* Stats Cards - Pop Art Style */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-8">
+        <div className="bg-pop-white border-3 border-pop-black p-3 shadow-[3px_3px_0px_#000] flex items-center gap-3">
+          <div className="w-10 h-10 bg-pop-blue border-2 border-pop-black flex items-center justify-center flex-shrink-0">
+            <BookOpen className="w-5 h-5 text-white" />
           </div>
           <div className="min-w-0">
-            <p className="text-sm text-gray-500">Sales ({salesStats.totalSales})</p>
-            <p className="text-xl font-bold text-gray-900">
-              ${salesStats.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </p>
-            {salesStats.totalProfit !== 0 && (
-              <p className={`text-xs ${
-                salesStats.totalProfit >= 0 ? "text-green-500" : "text-red-500"
-              }`}>
-                {salesStats.totalProfit >= 0 ? "+" : ""}${salesStats.totalProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} profit
-              </p>
-            )}
+            <p className="text-xs text-gray-600 uppercase font-bold truncate">Comics{isFiltered && "*"}</p>
+            <p className="text-xl font-black text-pop-black">{stats.count}</p>
           </div>
         </div>
-        <div className={`bg-white rounded-lg p-4 shadow-sm border flex items-center gap-4 ${
-          profitLoss >= 0 ? "border-green-200" : "border-red-200"
-        }`}>
-          <div className={`p-3 rounded-lg flex-shrink-0 ${
-            profitLoss >= 0 ? "bg-green-100" : "bg-red-100"
+        <div className="bg-pop-white border-3 border-pop-black p-3 shadow-[3px_3px_0px_#000] flex items-center gap-3">
+          <div className="w-10 h-10 bg-pop-red border-2 border-pop-black flex items-center justify-center flex-shrink-0">
+            <DollarSign className="w-5 h-5 text-white" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs text-gray-600 uppercase font-bold truncate">Cost</p>
+            <p className="text-xl font-black text-pop-black">
+              ${stats.totalCost.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+            </p>
+          </div>
+        </div>
+        <div className="bg-pop-white border-3 border-pop-black p-3 shadow-[3px_3px_0px_#000] flex items-center gap-3">
+          <div className="w-10 h-10 bg-pop-green border-2 border-pop-black flex items-center justify-center flex-shrink-0">
+            <TrendingUp className="w-5 h-5 text-white" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs text-gray-600 uppercase font-bold truncate">Value</p>
+            <p className="text-xl font-black text-pop-black">
+              ${stats.totalValue.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+            </p>
+          </div>
+        </div>
+        <div className="bg-pop-white border-3 border-pop-black p-3 shadow-[3px_3px_0px_#000] flex items-center gap-3">
+          <div className="w-10 h-10 bg-pop-blue border-2 border-pop-black flex items-center justify-center flex-shrink-0">
+            <Receipt className="w-5 h-5 text-white" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs text-gray-600 uppercase font-bold truncate">Sales ({salesStats.totalSales})</p>
+            <p className="text-xl font-black text-pop-black">
+              ${salesStats.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+            </p>
+          </div>
+        </div>
+        <div className={`bg-pop-white border-3 border-pop-black p-3 shadow-[3px_3px_0px_#000] flex items-center gap-3 col-span-2 md:col-span-1`}>
+          <div className={`w-10 h-10 border-2 border-pop-black flex items-center justify-center flex-shrink-0 ${
+            profitLoss >= 0 ? "bg-pop-green" : "bg-pop-red"
           }`}>
             {profitLoss >= 0 ? (
-              <ArrowUpRight className="w-5 h-5 text-green-600" />
+              <ArrowUpRight className="w-5 h-5 text-white" />
             ) : (
-              <ArrowDownRight className="w-5 h-5 text-red-600" />
+              <ArrowDownRight className="w-5 h-5 text-white" />
             )}
           </div>
           <div className="min-w-0">
-            <p className="text-sm text-gray-500">Profit/Loss</p>
-            <p className={`text-xl font-bold ${
-              profitLoss >= 0 ? "text-green-600" : "text-red-600"
+            <p className="text-xs text-gray-600 uppercase font-bold truncate">Profit/Loss</p>
+            <p className={`text-xl font-black ${
+              profitLoss >= 0 ? "text-pop-green" : "text-pop-red"
             }`}>
-              {profitLoss >= 0 ? "+" : ""}${profitLoss.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {profitLoss >= 0 ? "+" : ""}${profitLoss.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
             </p>
-            {stats.totalCost > 0 && (
-              <p className={`text-xs ${
-                profitLoss >= 0 ? "text-green-500" : "text-red-500"
-              }`}>
-                {profitLossPercent >= 0 ? "+" : ""}{profitLossPercent.toFixed(1)}%
-              </p>
-            )}
           </div>
         </div>
       </div>
 
-      {/* List Selector Tabs */}
+      {/* List Selector Tabs - Pop Art Style */}
       <div className="mb-4">
         <div className="flex flex-wrap gap-2">
           {lists.map((list) => {
@@ -443,17 +425,17 @@ export default function CollectionPage() {
               <button
                 key={list.id}
                 onClick={() => setSelectedList(list.id)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+                className={`px-4 py-2 text-sm font-bold transition-all flex items-center gap-2 border-2 border-pop-black ${
                   selectedList === list.id
-                    ? "bg-primary-600 text-white shadow-sm"
-                    : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
+                    ? "bg-pop-blue text-white shadow-[2px_2px_0px_#000]"
+                    : "bg-pop-white text-pop-black hover:shadow-[2px_2px_0px_#000]"
                 }`}
               >
                 {list.name}
-                <span className={`px-1.5 py-0.5 rounded text-xs ${
+                <span className={`px-1.5 py-0.5 text-xs font-black border border-pop-black ${
                   selectedList === list.id
-                    ? "bg-primary-500 text-white"
-                    : "bg-gray-100 text-gray-600"
+                    ? "bg-white text-pop-black"
+                    : "bg-gray-100 text-pop-black"
                 }`}>
                   {count}
                 </span>
@@ -463,8 +445,8 @@ export default function CollectionPage() {
         </div>
       </div>
 
-      {/* Filters Bar */}
-      <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 mb-6">
+      {/* Filters Bar - Pop Art Style */}
+      <div className="bg-pop-white border-3 border-pop-black p-4 shadow-[4px_4px_0px_#000] mb-6">
         <div className="flex flex-col gap-4">
           {/* Top Row - Search and View Toggle */}
           <div className="flex flex-col md:flex-row gap-4">
@@ -630,11 +612,11 @@ export default function CollectionPage() {
 
       {/* Collection Display */}
       {filteredCollection.length === 0 ? (
-        <div className="bg-white rounded-xl p-12 shadow-sm border border-gray-100 text-center">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <BookOpen className="w-8 h-8 text-gray-400" />
+        <div className="bg-pop-white border-3 border-pop-black p-12 shadow-[4px_4px_0px_#000] text-center">
+          <div className="w-20 h-20 bg-pop-yellow border-3 border-pop-black flex items-center justify-center mx-auto mb-4">
+            <BookOpen className="w-10 h-10 text-pop-black" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          <h3 className="text-2xl font-black text-pop-black mb-2 font-comic uppercase">
             {searchQuery || publisherFilter !== "all" || titleFilter !== "all" || showStarredOnly
               ? "No comics match your filters"
               : selectedList !== "collection"
@@ -657,14 +639,15 @@ export default function CollectionPage() {
                   setTitleFilter("all");
                   setShowStarredOnly(false);
                 }}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-pop-blue border-2 border-pop-black text-white font-bold shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000] transition-all"
               >
                 Clear All Filters
               </button>
             ) : (
               <button
                 onClick={() => router.push("/scan")}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                className="inline-flex items-center gap-2 px-5 py-3 bg-pop-blue border-3 border-pop-black text-white font-bold text-lg"
+                style={{ boxShadow: "4px 4px 0px #000" }}
               >
                 <Plus className="w-5 h-5" />
                 {selectedList !== "collection" ? "Scan a Book" : "Add Your First Comic"}
@@ -673,7 +656,7 @@ export default function CollectionPage() {
             {selectedList !== "collection" && collection.length > 0 && (
               <button
                 onClick={() => setSelectedList("collection")}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-white text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-pop-white border-2 border-pop-black text-pop-black font-bold shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000] transition-all"
               >
                 View All Comics
               </button>

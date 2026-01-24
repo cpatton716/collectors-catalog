@@ -51,15 +51,16 @@ export function CollectionStats({ collection, onComicClick }: CollectionStatsPro
 
   if (collection.length === 0) {
     return (
-      <div className="bg-white rounded-xl p-12 shadow-sm border border-gray-100 text-center">
-        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <BarChart3 className="w-8 h-8 text-gray-400" />
+      <div className="bg-pop-white border-3 border-pop-black p-12 text-center" style={{ boxShadow: "4px 4px 0px #000" }}>
+        <div className="w-16 h-16 bg-pop-yellow border-3 border-pop-black flex items-center justify-center mx-auto mb-4">
+          <BarChart3 className="w-8 h-8 text-pop-black" />
         </div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">No Statistics Available</h3>
+        <h3 className="text-xl font-black text-pop-black font-comic uppercase mb-2">No Statistics Available</h3>
         <p className="text-gray-600 mb-6">Add comics to your collection to see detailed statistics.</p>
         <button
           onClick={() => router.push("/scan")}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+          className="inline-flex items-center gap-2 px-5 py-3 bg-pop-blue border-2 border-pop-black text-white font-bold"
+          style={{ boxShadow: "3px 3px 0px #000" }}
         >
           <BookOpen className="w-5 h-5" />
           Add Your First Comic
@@ -71,12 +72,12 @@ export function CollectionStats({ collection, onComicClick }: CollectionStatsPro
   return (
     <div className="space-y-6">
       {/* Collection Overview */}
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+      <div className="bg-pop-white border-3 border-pop-black p-6" style={{ boxShadow: "4px 4px 0px #000" }}>
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-primary-100 rounded-lg">
-            <BookOpen className="w-5 h-5 text-primary-600" />
+          <div className="w-10 h-10 bg-pop-blue border-2 border-pop-black flex items-center justify-center">
+            <BookOpen className="w-5 h-5 text-white" />
           </div>
-          <h2 className="text-xl font-semibold text-gray-900">Collection Overview</h2>
+          <h2 className="text-xl font-black text-pop-black">Collection Overview</h2>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
@@ -153,12 +154,12 @@ export function CollectionStats({ collection, onComicClick }: CollectionStatsPro
       </div>
 
       {/* Financial Summary */}
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+      <div className="bg-pop-white border-3 border-pop-black p-6" style={{ boxShadow: "4px 4px 0px #000" }}>
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-green-100 rounded-lg">
-            <DollarSign className="w-5 h-5 text-green-600" />
+          <div className="w-10 h-10 bg-pop-green border-2 border-pop-black flex items-center justify-center">
+            <DollarSign className="w-5 h-5 text-white" />
           </div>
-          <h2 className="text-xl font-semibold text-gray-900">Financial Summary</h2>
+          <h2 className="text-xl font-black text-pop-black">Financial Summary</h2>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -212,12 +213,12 @@ export function CollectionStats({ collection, onComicClick }: CollectionStatsPro
       {/* Two Column Layout for Publisher and Decade Stats */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* By Publisher */}
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+        <div className="bg-pop-white border-3 border-pop-black p-6" style={{ boxShadow: "4px 4px 0px #000" }}>
           <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <Building className="w-5 h-5 text-purple-600" />
+            <div className="w-10 h-10 bg-pop-red border-2 border-pop-black flex items-center justify-center">
+              <Building className="w-5 h-5 text-white" />
             </div>
-            <h2 className="text-xl font-semibold text-gray-900">By Publisher</h2>
+            <h2 className="text-xl font-black text-pop-black">By Publisher</h2>
           </div>
 
           {topPublishers.length > 0 ? (
@@ -250,12 +251,12 @@ export function CollectionStats({ collection, onComicClick }: CollectionStatsPro
         </div>
 
         {/* By Decade */}
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+        <div className="bg-pop-white border-3 border-pop-black p-6" style={{ boxShadow: "4px 4px 0px #000" }}>
           <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-orange-100 rounded-lg">
-              <Calendar className="w-5 h-5 text-orange-600" />
+            <div className="w-10 h-10 bg-pop-orange border-2 border-pop-black flex items-center justify-center">
+              <Calendar className="w-5 h-5 text-white" />
             </div>
-            <h2 className="text-xl font-semibold text-gray-900">By Decade</h2>
+            <h2 className="text-xl font-black text-pop-black">By Decade</h2>
           </div>
 
           {decadeStats.length > 0 ? (
@@ -286,12 +287,12 @@ export function CollectionStats({ collection, onComicClick }: CollectionStatsPro
       </div>
 
       {/* Grading Breakdown */}
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+      <div className="bg-pop-white border-3 border-pop-black p-6" style={{ boxShadow: "4px 4px 0px #000" }}>
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-indigo-100 rounded-lg">
-            <Shield className="w-5 h-5 text-indigo-600" />
+          <div className="w-10 h-10 bg-pop-blue border-2 border-pop-black flex items-center justify-center">
+            <Shield className="w-5 h-5 text-white" />
           </div>
-          <h2 className="text-xl font-semibold text-gray-900">Grading Breakdown</h2>
+          <h2 className="text-xl font-black text-pop-black">Grading Breakdown</h2>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -374,12 +375,12 @@ export function CollectionStats({ collection, onComicClick }: CollectionStatsPro
       </div>
 
       {/* Key Comics */}
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+      <div className="bg-pop-white border-3 border-pop-black p-6" style={{ boxShadow: "4px 4px 0px #000" }}>
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-amber-100 rounded-lg">
-            <Key className="w-5 h-5 text-amber-600" />
+          <div className="w-10 h-10 bg-pop-yellow border-2 border-pop-black flex items-center justify-center">
+            <Key className="w-5 h-5 text-pop-black" />
           </div>
-          <h2 className="text-xl font-semibold text-gray-900">Key Comics</h2>
+          <h2 className="text-xl font-black text-pop-black">Key Comics</h2>
           <span className="ml-auto px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-sm font-medium">
             {keyComicStats.keyCount} Key Issues
           </span>

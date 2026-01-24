@@ -133,16 +133,16 @@ export default function StatsPage() {
         <div className="flex items-center gap-4">
           <button
             onClick={() => router.push("/collection")}
-            className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+            className="p-2 border-2 border-pop-black bg-pop-white hover:shadow-[2px_2px_0px_#000] transition-all"
           >
-            <ArrowLeft className="w-5 h-5 text-gray-600" />
+            <ArrowLeft className="w-5 h-5 text-pop-black" />
           </button>
           <div>
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary-100 rounded-lg">
-                <BarChart3 className="w-6 h-6 text-primary-600" />
+              <div className="w-10 h-10 bg-pop-blue border-2 border-pop-black flex items-center justify-center">
+                <BarChart3 className="w-5 h-5 text-white" />
               </div>
-              <h1 className="text-3xl font-bold text-gray-900">Collection Statistics</h1>
+              <h1 className="text-3xl font-black text-pop-black font-comic">COLLECTION STATISTICS</h1>
             </div>
             <p className="text-gray-600 mt-1 ml-14">
               Detailed analytics and insights for your comic collection
@@ -151,7 +151,7 @@ export default function StatsPage() {
         </div>
         <button
           onClick={handleRefresh}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-pop-white border-2 border-pop-black text-pop-black font-bold hover:shadow-[2px_2px_0px_#000] transition-all"
         >
           <RefreshCw className="w-5 h-5" />
           Refresh

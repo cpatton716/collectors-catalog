@@ -36,6 +36,7 @@ export function ScanLimitBanner({ variant = "info" }: ScanLimitBannerProps) {
     isTrialing,
     trialAvailable,
     canScan,
+    startFreeTrial,
     startCheckout,
     isLoading
   } = useSubscription();
@@ -133,23 +134,20 @@ export function ScanLimitBanner({ variant = "info" }: ScanLimitBannerProps) {
 
     // Info variant for guests
     if (variant === "info") {
-      const getCountColor = () => {
-        if (guestRemaining >= 4) return "text-green-600 bg-green-100";
-        if (guestRemaining >= 2) return "text-yellow-600 bg-yellow-100";
-        return "text-red-600 bg-red-100";
-      };
-
       return (
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-6">
+        <div className="bg-pop-yellow border-3 border-pop-black shadow-[4px_4px_0px_#000] p-4 mb-6">
           <div className="flex items-center justify-between">
-            <span className={`text-sm font-semibold px-2.5 py-1 rounded ${getCountColor()}`}>
-              {guestRemaining} guest scan{guestRemaining !== 1 ? "s" : ""} remaining
-            </span>
+            <div className="flex items-center gap-2">
+              <Zap className="w-5 h-5 text-pop-black" />
+              <span className="font-comic text-pop-black">
+                {guestRemaining} free scan{guestRemaining !== 1 ? "s" : ""} remaining
+              </span>
+            </div>
             <Link
               href="/sign-up"
-              className="text-sm font-medium text-primary-600 hover:text-primary-700"
+              className="font-comic text-pop-black hover:text-pop-blue transition-colors"
             >
-              Sign up for more →
+              Join waitlist →
             </Link>
           </div>
         </div>
@@ -171,8 +169,15 @@ export function ScanLimitBanner({ variant = "info" }: ScanLimitBannerProps) {
   };
 
   const handleStartTrial = async () => {
-    const url = await startCheckout("monthly", true);
-    if (url) window.location.href = url;
+    const result = await startFreeTrial();
+    if (result.success) {
+      // Show success - the page will refresh with updated subscription state
+      window.location.reload();
+    } else {
+      // If direct trial fails, try Stripe checkout as fallback
+      const url = await startCheckout("monthly", true);
+      if (url) window.location.href = url;
+    }
   };
 
   // Free user - limit reached

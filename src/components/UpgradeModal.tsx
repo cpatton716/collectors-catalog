@@ -69,7 +69,7 @@ export function UpgradeModal({
   scansUsed,
   monthResetDate,
 }: UpgradeModalProps) {
-  const { tier, trialAvailable, isTrialing, startCheckout, isLoading } = useSubscription();
+  const { tier, trialAvailable, isTrialing, startFreeTrial, startCheckout, isLoading } = useSubscription();
 
   // Handle escape key
   useEffect(() => {
@@ -94,6 +94,13 @@ export function UpgradeModal({
   const showTrialButton = tier === "free" && trialAvailable && !isTrialing;
 
   const handleStartTrial = async () => {
+    // Try direct trial first (works without Stripe)
+    const result = await startFreeTrial();
+    if (result.success) {
+      window.location.reload();
+      return;
+    }
+    // Fall back to Stripe checkout
     const url = await startCheckout("monthly", true);
     if (url) {
       window.location.href = url;

@@ -2,7 +2,7 @@
 
 > **Comprehensive map of pages, features, and service dependencies**
 
-*Last Updated: January 17, 2026*
+*Last Updated: January 24, 2026*
 
 ---
 
@@ -188,6 +188,23 @@
 
 ### Admin Pages
 
+**Admin Users:**
+- Chris Patton: `user_37wpeblFFxJ7XBc6vtJqOcAjLmg`
+- Aponte (Gmail): `user_38FjGVWN3L55MTzoMAwW0SCZkoR`
+
+Admin access is controlled via the `is_admin` field in the `profiles` table.
+
+#### User Management (`/admin/users`)
+
+| Feature | Services | Notes |
+|---------|----------|-------|
+| Search Users | 🗄️ | Search by email |
+| View Profile | 🗄️ | Full user details, scans, comics |
+| Reset Trial | 🗄️ | Clear trial dates, allow re-trial |
+| Grant Premium | 🗄️ | Give free premium days |
+| Suspend/Unsuspend | 🗄️ | Block user from actions |
+| Audit Logging | 🗄️ | All admin actions logged |
+
 #### Usage Dashboard (`/admin/usage`)
 
 | Feature | Services | Notes |
@@ -206,7 +223,7 @@
 | Approve/Reject | 🗄️ | Moderation actions |
 | Edit Before Approve | 🗄️ | Modify submitted key info |
 
-**Note:** Admin pages have no auth protection yet (security by obscurity).
+**Note:** Admin pages are protected by database `is_admin` check.
 
 ---
 
@@ -288,6 +305,11 @@
 
 | Route | Method | Purpose | Services |
 |-------|--------|---------|----------|
+| `/api/admin/users/search` | GET | Search users by email | 🗄️ |
+| `/api/admin/users/[id]` | GET | Get user details | 🗄️ |
+| `/api/admin/users/[id]/reset-trial` | POST | Reset user's trial | 🗄️ |
+| `/api/admin/users/[id]/grant-premium` | POST | Grant free premium days | 🗄️ |
+| `/api/admin/users/[id]/suspend` | POST | Suspend/unsuspend user | 🗄️ |
 | `/api/admin/usage` | GET | Service usage metrics | 🗄️ 🔴 🤖 |
 | `/api/admin/usage/check-alerts` | POST | Check limits, send alerts | 🗄️ 📧 |
 | `/api/admin/key-info` | GET | List pending submissions | 🗄️ |

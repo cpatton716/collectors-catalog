@@ -379,6 +379,22 @@ export default function AdminKeyInfoPage() {
             ))}
           </div>
         )}
+
+        {/* Admin Links */}
+        <div className="mt-8 flex gap-4">
+          <Link
+            href="/admin/users"
+            className="text-sm text-blue-600 hover:underline"
+          >
+            → User Management
+          </Link>
+          <Link
+            href="/admin/usage"
+            className="text-sm text-blue-600 hover:underline"
+          >
+            → Service Usage Monitor
+          </Link>
+        </div>
       </main>
     </div>
   );

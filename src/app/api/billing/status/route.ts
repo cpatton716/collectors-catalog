@@ -105,6 +105,7 @@ export async function GET() {
         shopBuying: true, // All registered users can buy
         cloudSync: true, // All registered users have cloud sync
       },
+      isAdmin: profile.is_admin === true,
     });
   } catch (error) {
     console.error("Error getting billing status:", error);

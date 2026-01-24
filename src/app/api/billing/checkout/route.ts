@@ -7,6 +7,7 @@ import {
   getSubscriptionStatus,
 } from "@/lib/subscription";
 import Stripe from "stripe";
+import { isUserSuspended } from "@/lib/adminAuth";
 
 // Initialize Stripe
 const stripe = process.env.STRIPE_SECRET_KEY
@@ -39,6 +40,19 @@ export async function POST(request: NextRequest) {
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Check if user is suspended
+    const suspensionStatus = await isUserSuspended(userId);
+    if (suspensionStatus.suspended) {
+      return NextResponse.json(
+        {
+          error: "account_suspended",
+          message: "Your account has been suspended.",
+          suspended: true,
+        },
+        { status: 403 }
+      );
     }
 
     const profile = await getProfileByClerkId(userId);

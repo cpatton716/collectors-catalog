@@ -4,27 +4,33 @@
 
 ### Unique Visual Identity
 **Priority:** Medium
-**Status:** Pending
+**Status:** ✅ Complete (Jan 23, 2026)
 
-Review and refresh the app's design to create a distinct visual identity that stands out from other projects. Currently, the design follows a generic pattern that looks similar to other apps.
+Implemented Lichtenstein pop-art design theme with distinct visual identity.
 
-**Areas to Explore:**
-- Color palette - move beyond standard blue/gray
-- Typography - consider comic-book inspired fonts for headers
-- Illustrations/graphics - custom artwork, comic-style elements
-- Micro-interactions and animations
-- Unique card designs for comics
-- Theme options (light/dark/comic themes)
-- Brand personality through UI details
+**Features Implemented:**
+- Pop-art color palette with bold primary colors
+- Comic-inspired halftone patterns and Ben-Day dots
+- Speech bubble elements and panel-style layouts
+- Custom card designs for comics
+- Cohesive brand personality throughout UI
 
-**Inspiration Sources:**
-- Comic book aesthetics (halftone dots, speech bubbles, panel layouts)
-- Vintage collector shop vibes
-- Trading card interfaces
-- Key Collector Comics app
-- CLZ Comics app
+**Design Branches Created:**
+- `design/pop-art-lichtenstein` ✅ (merged to main)
+- `design/retro-futuristic` (alternative option)
+- `design/vintage-newsprint` (alternative option)
 
-**Goal:** Make Collectors Chest instantly recognizable and memorable.
+### Color Palette Refinement
+**Priority:** Low
+**Status:** Pending (future consideration)
+
+Current palette uses Yellow for branding + Red for accents. May revisit with a more dramatic "Red & Black Only" palette for a mature, classic comic feel (like Sin City).
+
+**Option 1 - Red & Black Only (saved for future):**
+- Keep cream background and black borders
+- Use red as the ONLY accent color for all icons, buttons, badges
+- Remove blue, green, orange, yellow from accent uses
+- Very sophisticated, classic newspaper comics aesthetic
 
 ---
 
@@ -60,23 +66,26 @@ Form an LLC to protect personal assets before opening the marketplace to the pub
 
 ### Free Trial Not Working
 **Priority:** High
-**Status:** Pending
+**Status:** ✅ Complete (Jan 24, 2026)
 
-Starting a free trial does not work. Need a way to test premium features like Key Hunt for List and Quick Scanning.
+Fixed free trial functionality to work without Stripe configuration.
 
-**Issue:**
-- Cannot initiate free trial from the app
-- Blocks testing of premium-gated features
+**Solution:**
+- Created `/api/billing/start-trial` endpoint that directly starts a 7-day trial
+- Added `startFreeTrial()` method to `useSubscription` hook
+- Updated UI components (ScanLimitBanner, UpgradeModal, FeatureGate, pricing page) to try direct trial first, then fall back to Stripe checkout
+- Trial sets `subscription_status: "trialing"` and `trial_ends_at` in database
+- Premium features (Key Hunt, CSV Export, Stats, etc.) now accessible during trial
 
-**Workarounds to Consider:**
-- Manual database flag to enable premium for test accounts
-- Dev-only bypass for premium features
-- Fix the actual trial flow
+**Files Added:**
+- `src/app/api/billing/start-trial/route.ts`
 
-**Blocked Features:**
-- Key Hunt for List
-- Quick Scanning
-- Other premium features
+**Files Modified:**
+- `src/hooks/useSubscription.ts` - Added `startFreeTrial` action
+- `src/components/ScanLimitBanner.tsx` - Uses direct trial
+- `src/components/UpgradeModal.tsx` - Uses direct trial
+- `src/components/FeatureGate.tsx` - Uses direct trial
+- `src/app/pricing/page.tsx` - Uses direct trial
 
 ---
 
@@ -367,77 +376,32 @@ Add location field to user profiles so collectors can see where books are locate
 
 ### Migrate to Next.js Image Component
 **Priority:** Medium
-**Status:** Pending
+**Status:** ✅ Complete (Jan 2026)
 
-Migrate ~30 `<img>` elements to Next.js `<Image>` component for automatic image optimization, lazy loading, and better Core Web Vitals scores.
+Migrated to Next.js `<Image>` component across 15+ components for automatic image optimization, lazy loading, and better Core Web Vitals.
 
-**Benefits:**
-- Automatic lazy loading and format optimization (WebP)
-- Better LCP (Largest Contentful Paint) scores
-- Reduced bandwidth for users
-- Automatic responsive sizing
-
-**Challenges:**
-- External comic covers have unknown dimensions
-- Need to handle `fill` prop for dynamic images
-- May cause layout shifts if not configured properly
-
-**Files to Update:**
-- `src/components/ComicCard.tsx`
+**Files Updated:**
 - `src/components/ComicDetailModal.tsx`
-- `src/components/CollectionStats.tsx`
-- `src/app/collection/page.tsx`
-- `src/app/page.tsx`
-- `src/app/scan/page.tsx`
-- (and 20+ more - run `npm run lint` to see full list)
-
-**Note:** Currently suppressed in ESLint config. Re-enable `@next/next/no-img-element` rule after migration.
+- `src/components/ComicDetailsForm.tsx`
+- `src/components/ComicImage.tsx`
+- `src/components/LiveCameraCapture.tsx`
+- `src/components/ImageUpload.tsx`
+- `src/components/auction/` components
+- And more...
 
 ---
 
 ### Image Optimization & Resizing
 **Priority:** Medium
-**Status:** Pending
+**Status:** ✅ Complete (Jan 17, 2026)
 
-Implement image optimization to prevent oversized images from breaking layouts and reduce storage/bandwidth costs.
+Implemented client-side image compression to prevent oversized images and reduce storage costs.
 
-**Current Issues:**
-- Large cover images (like Marvel.com high-res images) can break modal layouts
-- No image compression on upload
-- External URL images vary wildly in size
-
-**Recommended Solutions:**
-
-1. **Client-Side Resize on Upload**
-   - Resize images to max 800x1200 before uploading to Supabase
-   - Use canvas API or library like `browser-image-compression`
-   - Maintains quality while reducing file size by 70-90%
-
-2. **Server-Side Processing**
-   - Use Sharp or similar library in API routes
-   - Process images on upload before storing
-   - Generate multiple sizes (thumbnail, medium, full)
-
-3. **CDN with Image Transformation** (Recommended for scale)
-   - Cloudinary, imgix, or Cloudflare Images
-   - Transform images on-the-fly with URL parameters
-   - Automatic WebP conversion, lazy loading support
-   - Cost: ~$0-10/mo for current scale
-
-4. **Supabase Image Transformations**
-   - Supabase Storage has built-in image transformations
-   - Add `?width=800&height=1200` to image URLs
-   - Free with Supabase, but limited options
-
-**Implementation Priority:**
-1. Start with client-side resize (free, immediate impact)
-2. Add Supabase transformations for existing images
-3. Consider CDN if scaling beyond free tiers
-
-**Files to Update:**
-- `src/app/api/analyze/route.ts` - Where images are processed
-- `src/components/ImageUpload.tsx` (if exists) - Upload handling
-- Listing/auction modals - Image display
+**Implementation:**
+- Client-side compression targeting 400KB (down from 1.5MB average)
+- Created `src/lib/imageOptimization.ts` utility
+- Integrated into `ImageUpload.tsx` and `LiveCameraCapture.tsx` components
+- Maintains quality while reducing file size by 70-90%
 
 ---
 

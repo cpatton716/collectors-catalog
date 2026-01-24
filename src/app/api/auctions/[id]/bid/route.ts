@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { getProfileByClerkId } from "@/lib/db";
 import { placeBid } from "@/lib/auctionDb";
 import { rateLimiters, checkRateLimit } from "@/lib/rateLimit";
+import { isUserSuspended } from "@/lib/adminAuth";
 
 // POST - Place a bid
 export async function POST(
@@ -13,6 +14,19 @@ export async function POST(
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Check if user is suspended
+    const suspensionStatus = await isUserSuspended(userId);
+    if (suspensionStatus.suspended) {
+      return NextResponse.json(
+        {
+          error: "account_suspended",
+          message: "Your account has been suspended.",
+          suspended: true,
+        },
+        { status: 403 }
+      );
     }
 
     // Rate limit check - prevent bid flooding/sniping bots

@@ -70,24 +70,31 @@ export function GuestLimitBanner({ variant = "info" }: GuestLimitBannerProps) {
     );
   }
 
-  // Info variant - subtle reminder with color-coded count
+  // Info variant - prominent pop-art style banner
   if (variant === "info") {
-    // Color coding: green (7-10), yellow (4-6), red (0-3)
-    const getCountColor = () => {
-      if (remaining >= 7) return "text-green-600 bg-green-100";
-      if (remaining >= 4) return "text-yellow-600 bg-yellow-100";
-      return "text-red-600 bg-red-100";
-    };
-
     return (
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-6">
+      <div
+        className="border-4 border-pop-black p-4 mb-6"
+        style={{
+          background: "var(--pop-yellow)",
+          boxShadow: "4px 4px 0px var(--pop-black)"
+        }}
+      >
         <div className="flex items-center justify-between">
-          <span className={`text-sm font-semibold px-2.5 py-1 rounded ${getCountColor()}`}>
-            {remaining} free scan{remaining !== 1 ? "s" : ""} remaining
-          </span>
+          <div className="flex items-center gap-3">
+            <div
+              className="w-12 h-12 border-3 border-pop-black flex items-center justify-center text-2xl font-bold"
+              style={{ background: "var(--pop-white)", color: "var(--pop-black)" }}
+            >
+              {remaining}
+            </div>
+            <span className="font-comic text-pop-black text-lg">
+              FREE SCANS LEFT
+            </span>
+          </div>
           <Link
             href="/sign-up"
-            className="text-sm font-medium text-primary-600 hover:text-primary-700"
+            className="font-comic text-pop-black hover:underline"
           >
             Join waitlist →
           </Link>

@@ -79,61 +79,62 @@ export default function MyListingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       {/* Header */}
-      <div className="bg-white border-b">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">My Listings</h1>
-              <p className="text-gray-600 mt-1">
-                Manage your auctions and items for sale
-              </p>
-            </div>
-            <button
-              onClick={() => router.push("/collection")}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Create Listing</span>
-            </button>
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-black text-pop-black font-comic">MY LISTINGS</h1>
+            <p className="text-gray-600 mt-1">
+              Manage your auctions and items for sale
+            </p>
           </div>
+          <button
+            onClick={() => router.push("/collection")}
+            className="flex items-center gap-2 px-4 py-2 bg-pop-blue border-2 border-pop-black text-white font-bold transition-all"
+            style={{ boxShadow: "3px 3px 0px #000" }}
+          >
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">Create Listing</span>
+          </button>
         </div>
 
-        {/* Tabs */}
-        <div className="container mx-auto px-4">
-          <div className="flex border-b overflow-x-auto">
-            <button
-              onClick={() => setActiveTab("active")}
-              className={`flex items-center gap-2 px-4 py-3 border-b-2 whitespace-nowrap transition-colors ${
-                activeTab === "active"
-                  ? "border-blue-600 text-blue-600"
-                  : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              Active
-              {activeListings.length > 0 && (
-                <span className="ml-1 px-2 py-0.5 bg-blue-100 text-blue-600 text-xs rounded-full">
-                  {activeListings.length}
-                </span>
-              )}
-            </button>
-            <button
-              onClick={() => setActiveTab("ended")}
-              className={`flex items-center gap-2 px-4 py-3 border-b-2 whitespace-nowrap transition-colors ${
-                activeTab === "ended"
-                  ? "border-blue-600 text-blue-600"
-                  : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              Ended
-              {endedListings.length > 0 && (
-                <span className="ml-1 px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">
-                  {endedListings.length}
-                </span>
-              )}
-            </button>
-          </div>
+        {/* Tabs - Pop Art Style */}
+        <div className="flex gap-2 mt-6">
+          <button
+            onClick={() => setActiveTab("active")}
+            className={`flex items-center gap-2 px-4 py-2 font-bold border-2 border-pop-black transition-all ${
+              activeTab === "active"
+                ? "bg-pop-blue text-white shadow-[3px_3px_0px_#000]"
+                : "bg-pop-white text-pop-black hover:shadow-[2px_2px_0px_#000]"
+            }`}
+          >
+            Active
+            {activeListings.length > 0 && (
+              <span className={`px-1.5 py-0.5 text-xs font-black border border-pop-black ${
+                activeTab === "active" ? "bg-white text-pop-black" : "bg-pop-blue text-white"
+              }`}>
+                {activeListings.length}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab("ended")}
+            className={`flex items-center gap-2 px-4 py-2 font-bold border-2 border-pop-black transition-all ${
+              activeTab === "ended"
+                ? "bg-pop-blue text-white shadow-[3px_3px_0px_#000]"
+                : "bg-pop-white text-pop-black hover:shadow-[2px_2px_0px_#000]"
+            }`}
+          >
+            Ended
+            {endedListings.length > 0 && (
+              <span className={`px-1.5 py-0.5 text-xs font-black border border-pop-black ${
+                activeTab === "ended" ? "bg-white text-pop-black" : "bg-gray-200 text-pop-black"
+              }`}>
+                {endedListings.length}
+              </span>
+            )}
+          </button>
         </div>
       </div>
 
@@ -157,15 +158,18 @@ export default function MyListingsPage() {
         ) : activeTab === "active" ? (
           <>
             {activeListings.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
-                <Tag className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                <p className="text-lg font-medium">No active listings</p>
-                <p className="mt-2">
+              <div className="bg-pop-white border-3 border-pop-black p-12 text-center" style={{ boxShadow: "4px 4px 0px #000" }}>
+                <div className="w-16 h-16 bg-pop-yellow border-3 border-pop-black flex items-center justify-center mx-auto mb-4">
+                  <Tag className="w-8 h-8 text-pop-black" />
+                </div>
+                <p className="text-xl font-black text-pop-black font-comic uppercase">No active listings</p>
+                <p className="mt-2 text-gray-600">
                   Create your first listing from your collection!
                 </p>
                 <button
                   onClick={() => router.push("/collection")}
-                  className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className="mt-4 px-5 py-3 bg-pop-blue border-2 border-pop-black text-white font-bold"
+                  style={{ boxShadow: "3px 3px 0px #000" }}
                 >
                   Go to Collection
                 </button>
@@ -175,8 +179,10 @@ export default function MyListingsPage() {
                 {/* Active Fixed-Price Listings */}
                 {activeFixedPrice.length > 0 && (
                   <div>
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                      <Tag className="w-5 h-5 text-green-600" />
+                    <h2 className="text-lg font-black text-pop-black mb-4 flex items-center gap-2">
+                      <div className="w-8 h-8 bg-pop-green border-2 border-pop-black flex items-center justify-center">
+                        <Tag className="w-4 h-4 text-white" />
+                      </div>
                       For Sale ({activeFixedPrice.length})
                     </h2>
                     <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
@@ -194,8 +200,10 @@ export default function MyListingsPage() {
                 {/* Active Auctions */}
                 {activeAuctions.length > 0 && (
                   <div>
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                      <Gavel className="w-5 h-5 text-blue-600" />
+                    <h2 className="text-lg font-black text-pop-black mb-4 flex items-center gap-2">
+                      <div className="w-8 h-8 bg-pop-blue border-2 border-pop-black flex items-center justify-center">
+                        <Gavel className="w-4 h-4 text-white" />
+                      </div>
                       Auctions ({activeAuctions.length})
                     </h2>
                     <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
@@ -216,10 +224,12 @@ export default function MyListingsPage() {
         ) : (
           <>
             {endedListings.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
-                <Clock className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                <p className="text-lg font-medium">No ended listings</p>
-                <p className="mt-2">Your completed listings will appear here.</p>
+              <div className="bg-pop-white border-3 border-pop-black p-12 text-center" style={{ boxShadow: "4px 4px 0px #000" }}>
+                <div className="w-16 h-16 bg-pop-yellow border-3 border-pop-black flex items-center justify-center mx-auto mb-4">
+                  <Clock className="w-8 h-8 text-pop-black" />
+                </div>
+                <p className="text-xl font-black text-pop-black font-comic uppercase">No ended listings</p>
+                <p className="mt-2 text-gray-600">Your completed listings will appear here.</p>
               </div>
             ) : (
               <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">

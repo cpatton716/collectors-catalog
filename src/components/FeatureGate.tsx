@@ -71,7 +71,7 @@ export function FeatureGate({
   fallback,
   showUpgradePrompt = true,
 }: FeatureGateProps) {
-  const { features, isLoading, tier, isTrialing, startCheckout } = useSubscription();
+  const { features, isLoading, tier, isTrialing, startFreeTrial, startCheckout } = useSubscription();
 
   // Show loading state
   if (isLoading) {
@@ -100,7 +100,15 @@ export function FeatureGate({
   const info = featureInfo[feature];
 
   const handleUpgradeClick = async () => {
-    // If free tier, start trial; otherwise go to pricing
+    // If free tier, try direct trial first
+    if (tier === "free" && !isTrialing) {
+      const result = await startFreeTrial();
+      if (result.success) {
+        window.location.reload();
+        return;
+      }
+    }
+    // Fall back to Stripe checkout
     const url = await startCheckout("monthly", tier === "free" && !isTrialing);
     if (url) {
       window.location.href = url;
@@ -108,16 +116,16 @@ export function FeatureGate({
   };
 
   return (
-    <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-xl p-6 text-center">
-      <div className="inline-flex items-center justify-center w-12 h-12 bg-indigo-100 rounded-full mb-4">
-        <Lock className="w-6 h-6 text-indigo-600" />
+    <div className="bg-pop-white border-3 border-pop-black p-8 text-center" style={{ boxShadow: "4px 4px 0px #000" }}>
+      <div className="w-16 h-16 bg-pop-yellow border-3 border-pop-black flex items-center justify-center mx-auto mb-4">
+        <Lock className="w-8 h-8 text-pop-black" />
       </div>
 
-      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+      <h3 className="text-xl font-black text-pop-black font-comic uppercase mb-2">
         {info.name} is a Premium Feature
       </h3>
 
-      <p className="text-gray-600 mb-4 max-w-sm mx-auto">
+      <p className="text-gray-600 mb-6 max-w-sm mx-auto">
         {info.description}
       </p>
 
@@ -125,14 +133,16 @@ export function FeatureGate({
         {tier === "free" && !isTrialing && (
           <button
             onClick={handleUpgradeClick}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+            className="px-5 py-3 bg-pop-blue border-2 border-pop-black text-white font-bold transition-all hover:shadow-[3px_3px_0px_#000]"
+            style={{ boxShadow: "2px 2px 0px #000" }}
           >
             Start 7-Day Free Trial
           </button>
         )}
         <a
           href="/pricing"
-          className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+          className="px-5 py-3 bg-pop-white border-2 border-pop-black text-pop-black font-bold transition-all hover:shadow-[3px_3px_0px_#000]"
+          style={{ boxShadow: "2px 2px 0px #000" }}
         >
           View Pricing
         </a>
@@ -181,14 +191,22 @@ export function FeatureButton({
   className = "",
   disabled = false,
 }: FeatureButtonProps) {
-  const { features, isLoading, tier, isTrialing, startCheckout } = useSubscription();
+  const { features, isLoading, tier, isTrialing, startFreeTrial, startCheckout } = useSubscription();
   const hasAccess = features[feature];
 
   const handleClick = async () => {
     if (hasAccess) {
       onClick();
     } else {
-      // Redirect to upgrade
+      // If free tier, try direct trial first
+      if (tier === "free" && !isTrialing) {
+        const result = await startFreeTrial();
+        if (result.success) {
+          window.location.reload();
+          return;
+        }
+      }
+      // Fall back to Stripe checkout
       const url = await startCheckout("monthly", tier === "free" && !isTrialing);
       if (url) {
         window.location.href = url;

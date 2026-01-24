@@ -211,42 +211,38 @@ function ShopPageContent() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       {/* Header */}
-      <div className="bg-white border-b">
-        <div className="container mx-auto px-4 py-6">
-          <h1 className="text-2xl font-bold text-gray-900">Shop</h1>
-          <p className="text-gray-600 mt-1">
-            Find your next addition to the collection
-          </p>
-        </div>
+      <div className="container mx-auto px-4 py-6">
+        <h1 className="text-3xl font-black text-pop-black font-comic">SHOP</h1>
+        <p className="text-gray-600 mt-1">
+          Find your next addition to the collection
+        </p>
 
-        {/* Tabs */}
-        <div className="container mx-auto px-4">
-          <div className="flex border-b">
-            <button
-              onClick={() => setActiveTab("buy-now")}
-              className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${
-                activeTab === "buy-now"
-                  ? "border-green-600 text-green-600"
-                  : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              <Tag className="w-4 h-4" />
-              Buy Now
-            </button>
-            <button
-              onClick={() => setActiveTab("auctions")}
-              className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${
-                activeTab === "auctions"
-                  ? "border-blue-600 text-blue-600"
-                  : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              <Gavel className="w-4 h-4" />
-              Auctions
-            </button>
-          </div>
+        {/* Tabs - Pop Art Style */}
+        <div className="flex gap-2 mt-6">
+          <button
+            onClick={() => setActiveTab("buy-now")}
+            className={`flex items-center gap-2 px-4 py-2 font-bold border-2 border-pop-black transition-all ${
+              activeTab === "buy-now"
+                ? "bg-pop-green text-white shadow-[3px_3px_0px_#000]"
+                : "bg-pop-white text-pop-black hover:shadow-[2px_2px_0px_#000]"
+            }`}
+          >
+            <Tag className="w-4 h-4" />
+            Buy Now
+          </button>
+          <button
+            onClick={() => setActiveTab("auctions")}
+            className={`flex items-center gap-2 px-4 py-2 font-bold border-2 border-pop-black transition-all ${
+              activeTab === "auctions"
+                ? "bg-pop-blue text-white shadow-[3px_3px_0px_#000]"
+                : "bg-pop-white text-pop-black hover:shadow-[2px_2px_0px_#000]"
+            }`}
+          >
+            <Gavel className="w-4 h-4" />
+            Auctions
+          </button>
         </div>
       </div>
 
@@ -254,36 +250,33 @@ function ShopPageContent() {
       <div className="container mx-auto px-4 py-6">
         {activeTab === "buy-now" ? (
           <>
-            {/* Buy Now Search & Filters */}
-            <div className="mb-6 space-y-4">
+            {/* Buy Now Search & Filters - Pop Art Style */}
+            <div className="bg-pop-white border-3 border-pop-black p-4 mb-6" style={{ boxShadow: "4px 4px 0px #000" }}>
               {/* Search */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <div className="relative mb-4">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                 <input
                   type="text"
                   placeholder="Search listings..."
                   value={listingSearchQuery}
                   onChange={(e) => setListingSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white text-gray-900"
+                  className="w-full pl-10 pr-4 py-3 border-2 border-pop-black focus:ring-2 focus:ring-pop-green bg-white text-gray-900 font-medium"
                 />
               </div>
 
               {/* Sort */}
               <div className="flex flex-wrap items-center gap-3">
-                <div className="relative">
-                  <select
-                    value={listingSortBy}
-                    onChange={(e) => setListingSortBy(e.target.value as ListingSortBy)}
-                    className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-10 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                  >
-                    {LISTING_SORT_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
-                </div>
+                <select
+                  value={listingSortBy}
+                  onChange={(e) => setListingSortBy(e.target.value as ListingSortBy)}
+                  className="appearance-none bg-white border-2 border-pop-black px-4 py-2 pr-10 font-bold focus:ring-2 focus:ring-pop-green"
+                >
+                  {LISTING_SORT_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
@@ -291,10 +284,12 @@ function ShopPageContent() {
             {isLoadingListings ? (
               <LoadingSkeleton />
             ) : filteredListings.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
-                <Tag className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                <p className="text-lg font-medium">No listings found</p>
-                <p className="mt-2">
+              <div className="bg-pop-white border-3 border-pop-black p-12 text-center" style={{ boxShadow: "4px 4px 0px #000" }}>
+                <div className="w-16 h-16 bg-pop-yellow border-3 border-pop-black flex items-center justify-center mx-auto mb-4">
+                  <Tag className="w-8 h-8 text-pop-black" />
+                </div>
+                <p className="text-xl font-black text-pop-black font-comic uppercase">No listings found</p>
+                <p className="mt-2 text-gray-600">
                   {listingSearchQuery
                     ? "Try adjusting your search"
                     : "Check back soon for new listings"}
@@ -315,45 +310,42 @@ function ShopPageContent() {
           </>
         ) : (
           <>
-            {/* Auctions Search & Filters */}
-            <div className="mb-6 space-y-4">
+            {/* Auctions Search & Filters - Pop Art Style */}
+            <div className="bg-pop-white border-3 border-pop-black p-4 mb-6" style={{ boxShadow: "4px 4px 0px #000" }}>
               {/* Search */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <div className="relative mb-4">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                 <input
                   type="text"
                   placeholder="Search auctions..."
                   value={auctionSearchQuery}
                   onChange={(e) => setAuctionSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900"
+                  className="w-full pl-10 pr-4 py-3 border-2 border-pop-black focus:ring-2 focus:ring-pop-blue bg-white text-gray-900 font-medium"
                 />
               </div>
 
               {/* Filter/Sort Bar */}
               <div className="flex flex-wrap items-center gap-3">
                 {/* Sort Dropdown */}
-                <div className="relative">
-                  <select
-                    value={auctionSortBy}
-                    onChange={(e) => setAuctionSortBy(e.target.value as AuctionSortBy)}
-                    className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-10 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    {AUCTION_SORT_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
-                </div>
+                <select
+                  value={auctionSortBy}
+                  onChange={(e) => setAuctionSortBy(e.target.value as AuctionSortBy)}
+                  className="appearance-none bg-white border-2 border-pop-black px-4 py-2 pr-10 font-bold focus:ring-2 focus:ring-pop-blue"
+                >
+                  {AUCTION_SORT_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
 
                 {/* Filter Toggles */}
                 <button
                   onClick={() => setEndingSoonOnly(!endingSoonOnly)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
+                  className={`flex items-center gap-2 px-4 py-2 border-2 border-pop-black font-bold transition-all ${
                     endingSoonOnly
-                      ? "bg-orange-100 border-orange-300 text-orange-700"
-                      : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                      ? "bg-pop-orange text-white shadow-[2px_2px_0px_#000]"
+                      : "bg-pop-white text-pop-black hover:shadow-[2px_2px_0px_#000]"
                   }`}
                 >
                   <Clock className="w-4 h-4" />
@@ -362,10 +354,10 @@ function ShopPageContent() {
 
                 <button
                   onClick={() => setHasBuyItNow(!hasBuyItNow)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
+                  className={`flex items-center gap-2 px-4 py-2 border-2 border-pop-black font-bold transition-all ${
                     hasBuyItNow
-                      ? "bg-green-100 border-green-300 text-green-700"
-                      : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                      ? "bg-pop-green text-white shadow-[2px_2px_0px_#000]"
+                      : "bg-pop-white text-pop-black hover:shadow-[2px_2px_0px_#000]"
                   }`}
                 >
                   <Tag className="w-4 h-4" />
@@ -378,10 +370,12 @@ function ShopPageContent() {
             {isLoadingAuctions ? (
               <LoadingSkeleton />
             ) : filteredAuctions.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
-                <Gavel className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                <p className="text-lg font-medium">No auctions found</p>
-                <p className="mt-2">
+              <div className="bg-pop-white border-3 border-pop-black p-12 text-center" style={{ boxShadow: "4px 4px 0px #000" }}>
+                <div className="w-16 h-16 bg-pop-yellow border-3 border-pop-black flex items-center justify-center mx-auto mb-4">
+                  <Gavel className="w-8 h-8 text-pop-black" />
+                </div>
+                <p className="text-xl font-black text-pop-black font-comic uppercase">No auctions found</p>
+                <p className="mt-2 text-gray-600">
                   {auctionSearchQuery
                     ? "Try adjusting your search"
                     : "Check back soon for new listings"}

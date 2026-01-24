@@ -40,6 +40,7 @@ interface CachedProfile {
   public_slug: string | null;
   public_display_name: string | null;
   public_bio: string | null;
+  is_admin: boolean;
   created_at: string;
   updated_at: string;
 }

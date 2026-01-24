@@ -9,7 +9,7 @@ type BillingInterval = "monthly" | "annual";
 
 export default function PricingPage() {
   const [billingInterval, setBillingInterval] = useState<BillingInterval>("monthly");
-  const { tier, isTrialing, trialAvailable, startCheckout, isLoading, isGuest } = useSubscription();
+  const { tier, isTrialing, trialAvailable, startFreeTrial, startCheckout, isLoading, isGuest } = useSubscription();
 
   const monthlyPrice = 4.99;
   const annualPrice = 49.99;
@@ -17,6 +17,15 @@ export default function PricingPage() {
   const savings = Math.round(((monthlyPrice * 12 - annualPrice) / (monthlyPrice * 12)) * 100);
 
   const handleUpgrade = async (interval: BillingInterval) => {
+    // If trial is available, try direct trial first (works without Stripe)
+    if (trialAvailable) {
+      const result = await startFreeTrial();
+      if (result.success) {
+        window.location.reload();
+        return;
+      }
+    }
+    // Fall back to Stripe checkout
     const url = await startCheckout(interval, trialAvailable);
     if (url) {
       window.location.href = url;
