@@ -228,8 +228,6 @@ When the user says **"Deploy"**, perform the following steps:
    - Log the deploy date and summary in DEV_LOG.md
    - **IMPORTANT:** Batch the DEV_LOG update into the same commit OR commit it locally without pushing (to avoid triggering a second Netlify build)
 
-**Deploy Budget:** User has limited Netlify build minutes. Always remind them of this and confirm the deploy is worth it.
-
 ## Changes Since Last Deploy Tracking
 
 Maintain a "Changes Since Last Deploy" section at the top of DEV_LOG.md with:

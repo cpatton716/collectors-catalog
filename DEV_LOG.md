@@ -6,10 +6,18 @@ This log tracks session-by-session progress on Collectors Chest.
 
 ## Changes Since Last Deploy
 
-**Sessions since last deploy:** 1
-**Deploy Readiness:** Ready for testing
+**Sessions since last deploy:** 0
+**Deploy Readiness:** Deployed
 
-### Accumulated Changes:
+*(No changes since last deploy)*
+
+---
+
+## Deploy Log - January 25, 2026
+
+**Deployed to Netlify**
+
+### Changes Included:
 - **Admin User Management** - Full admin panel with user search, profile viewing, trial reset, premium granting, and account suspension
 - **Admin Audit Logging** - All admin actions logged for accountability
 - **Admin Navigation Link** - Admins see "ADMIN" link in nav bar (database-backed is_admin check)
