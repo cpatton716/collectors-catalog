@@ -1,11 +1,8 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
-import {
-  getPublicProfile,
-  getPublicComics,
-  getPublicLists,
-  calculatePublicStats,
-} from "@/lib/db";
+
+import { calculatePublicStats, getPublicComics, getPublicLists, getPublicProfile } from "@/lib/db";
+
 import { PublicCollectionView } from "./PublicCollectionView";
 
 interface Props {
@@ -26,10 +23,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   return {
     title: `${displayName}'s Collection | Collectors Chest`,
-    description: profile.publicBio || `Check out ${displayName}'s comic book collection on Collectors Chest.`,
+    description:
+      profile.publicBio || `Check out ${displayName}'s comic book collection on Collectors Chest.`,
     openGraph: {
       title: `${displayName}'s Comic Collection`,
-      description: profile.publicBio || `Check out ${displayName}'s comic book collection on Collectors Chest.`,
+      description:
+        profile.publicBio ||
+        `Check out ${displayName}'s comic book collection on Collectors Chest.`,
       type: "profile",
     },
   };
@@ -52,12 +52,5 @@ export default async function PublicProfilePage({ params }: Props) {
   // Calculate stats
   const stats = calculatePublicStats(comics);
 
-  return (
-    <PublicCollectionView
-      profile={profile}
-      comics={comics}
-      lists={lists}
-      stats={stats}
-    />
-  );
+  return <PublicCollectionView profile={profile} comics={comics} lists={lists} stats={stats} />;
 }

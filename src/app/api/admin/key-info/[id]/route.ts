@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { approveSubmission, rejectSubmission } from "@/lib/keyComicsDb";
+
 import { getAdminProfile } from "@/lib/adminAuth";
+import { approveSubmission, rejectSubmission } from "@/lib/keyComicsDb";
 
 // POST - Approve or reject a submission
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Check admin access using centralized helper
     const adminProfile = await getAdminProfile();
@@ -26,10 +24,7 @@ export async function POST(
     }
 
     if (action === "reject" && !reason) {
-      return NextResponse.json(
-        { error: "Rejection reason is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Rejection reason is required" }, { status: 400 });
     }
 
     let result;
@@ -45,15 +40,13 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      message: action === "approve"
-        ? "Submission approved and added to key comics database"
-        : "Submission rejected",
+      message:
+        action === "approve"
+          ? "Submission approved and added to key comics database"
+          : "Submission rejected",
     });
   } catch (error) {
     console.error("Error processing submission:", error);
-    return NextResponse.json(
-      { error: "Failed to process submission" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to process submission" }, { status: 500 });
   }
 }

@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
+
 import { createClient } from "@supabase/supabase-js";
+
 import Anthropic from "@anthropic-ai/sdk";
-import { lookupEbaySoldPrices, isFindingApiConfigured } from "@/lib/ebayFinding";
+
 import { cacheGet, cacheSet, generateEbayPriceCacheKey } from "@/lib/cache";
+import { isFindingApiConfigured, lookupEbaySoldPrices } from "@/lib/ebayFinding";
+
 import { PriceData } from "@/types/comic";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -14,7 +18,7 @@ const anthropic = new Anthropic({
 });
 
 // Configuration
-const PRICES_CACHE_HOURS = 24;  // Refresh prices once per day
+const PRICES_CACHE_HOURS = 24; // Refresh prices once per day
 
 export interface HotBook {
   id?: string;
@@ -91,7 +95,7 @@ async function fetchEbayPrices(
       }
       // Extract price range from cached data
       if (cachedResult.recentSales && cachedResult.recentSales.length > 0) {
-        const prices = cachedResult.recentSales.map(s => s.price).sort((a, b) => a - b);
+        const prices = cachedResult.recentSales.map((s) => s.price).sort((a, b) => a - b);
         return {
           low: prices[0],
           mid: prices[Math.floor(prices.length / 2)],
@@ -108,7 +112,7 @@ async function fetchEbayPrices(
       // Cache the result
       cacheSet(cacheKey, priceData, "ebayPrice").catch(() => {});
 
-      const prices = priceData.recentSales.map(s => s.price).sort((a, b) => a - b);
+      const prices = priceData.recentSales.map((s) => s.price).sort((a, b) => a - b);
       return {
         low: prices[0],
         mid: prices[Math.floor(prices.length / 2)],
@@ -146,7 +150,7 @@ async function updateBookPrices(bookId: string, title: string, issueNumber: stri
     // Also record in history
     await supabase.from("hot_books_history").upsert({
       hot_book_id: bookId,
-      rank: 0,  // Will be updated separately
+      rank: 0, // Will be updated separately
       price_low: prices.low,
       price_mid: prices.mid,
       price_high: prices.high,
@@ -274,21 +278,20 @@ export async function GET() {
 
         // Update prices asynchronously (fire and forget for this request)
         Promise.all(
-          booksToUpdate.map((book) =>
-            updateBookPrices(book.id, book.title, book.issue_number)
-          )
-        ).then(() => {
-
-          // Log the refresh
-          supabase.from("hot_books_refresh_log").insert({
-            refresh_type: "prices_only",
-            data_source: "ebay",
-            books_updated: booksToUpdate.length,
-            success: true,
+          booksToUpdate.map((book) => updateBookPrices(book.id, book.title, book.issue_number))
+        )
+          .then(() => {
+            // Log the refresh
+            supabase.from("hot_books_refresh_log").insert({
+              refresh_type: "prices_only",
+              data_source: "ebay",
+              books_updated: booksToUpdate.length,
+              success: true,
+            });
+          })
+          .catch((err) => {
+            console.error("Error updating hot book prices:", err);
           });
-        }).catch((err) => {
-          console.error("Error updating hot book prices:", err);
-        });
       }
 
       // Return current data immediately
@@ -307,27 +310,33 @@ export async function GET() {
 
       // Store in database
       for (const book of aiBooks) {
-        const normalizedTitle = book.title.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
+        const normalizedTitle = book.title
+          .toLowerCase()
+          .replace(/[^a-z0-9\s]/g, "")
+          .trim();
 
-        await supabase.from("hot_books").upsert({
-          title: book.title,
-          title_normalized: normalizedTitle,
-          issue_number: book.issueNumber,
-          publisher: book.publisher,
-          release_year: book.year,
-          key_info: book.keyFacts,
-          why_hot: book.whyHot,
-          price_low: book.priceRange.low,
-          price_mid: book.priceRange.mid,
-          price_high: book.priceRange.high,
-          price_source: "ai_estimate",
-          current_rank: book.rank,
-          data_source: "ai",
-          prices_updated_at: new Date().toISOString(),
-          metadata_updated_at: new Date().toISOString(),
-        }, {
-          onConflict: "title_normalized,issue_number",
-        });
+        await supabase.from("hot_books").upsert(
+          {
+            title: book.title,
+            title_normalized: normalizedTitle,
+            issue_number: book.issueNumber,
+            publisher: book.publisher,
+            release_year: book.year,
+            key_info: book.keyFacts,
+            why_hot: book.whyHot,
+            price_low: book.priceRange.low,
+            price_mid: book.priceRange.mid,
+            price_high: book.priceRange.high,
+            price_source: "ai_estimate",
+            current_rank: book.rank,
+            data_source: "ai",
+            prices_updated_at: new Date().toISOString(),
+            metadata_updated_at: new Date().toISOString(),
+          },
+          {
+            onConflict: "title_normalized,issue_number",
+          }
+        );
       }
 
       // Log the refresh

@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect } from "react";
-import { X, Zap, Crown, Check, Target, Download, BarChart3, ShoppingBag } from "lucide-react";
+
+import { BarChart3, Check, Crown, Download, ShoppingBag, Target, X, Zap } from "lucide-react";
+
 import { useSubscription } from "@/hooks/useSubscription";
 
 type UpgradeReason =
@@ -20,7 +22,10 @@ interface UpgradeModalProps {
   monthResetDate?: Date | null;
 }
 
-const reasonContent: Record<UpgradeReason, { title: string; description: string; icon: React.ReactNode }> = {
+const reasonContent: Record<
+  UpgradeReason,
+  { title: string; description: string; icon: React.ReactNode }
+> = {
   scan_limit: {
     title: "You've used all your scans",
     description: "Upgrade to Premium for unlimited scanning",
@@ -69,7 +74,8 @@ export function UpgradeModal({
   scansUsed,
   monthResetDate,
 }: UpgradeModalProps) {
-  const { tier, trialAvailable, isTrialing, startFreeTrial, startCheckout, isLoading } = useSubscription();
+  const { tier, trialAvailable, isTrialing, startFreeTrial, startCheckout, isLoading } =
+    useSubscription();
 
   // Handle escape key
   useEffect(() => {
@@ -121,10 +127,7 @@ export function UpgradeModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/50 transition-opacity"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/50 transition-opacity" onClick={onClose} />
 
       {/* Modal */}
       <div className="relative w-full max-w-md bg-white rounded-2xl shadow-xl transform transition-all">
@@ -138,15 +141,9 @@ export function UpgradeModal({
           </button>
 
           <div className="flex flex-col items-center text-center">
-            <div className="mb-4 p-3 bg-white/20 rounded-full">
-              {content.icon}
-            </div>
-            <h2 className="text-xl font-bold mb-2">
-              {content.title}
-            </h2>
-            <p className="text-indigo-200">
-              {content.description}
-            </p>
+            <div className="mb-4 p-3 bg-white/20 rounded-full">{content.icon}</div>
+            <h2 className="text-xl font-bold mb-2">{content.title}</h2>
+            <p className="text-indigo-200">{content.description}</p>
 
             {reason === "scan_limit" && scansUsed !== undefined && (
               <div className="mt-4 bg-white/10 rounded-lg px-4 py-2 text-sm">

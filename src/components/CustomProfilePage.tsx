@@ -1,33 +1,37 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import { useUser, useClerk } from "@clerk/nextjs";
-import { useSubscription } from "@/hooks/useSubscription";
-import { useDebounce } from "@/hooks/useDebounce";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+import Image from "next/image";
+import Link from "next/link";
+
+import { useClerk, useUser } from "@clerk/nextjs";
+
 import {
-  User,
-  Shield,
-  CreditCard,
-  Camera,
-  Loader2,
-  Check,
-  X,
   AlertCircle,
   AtSign,
-  Mail,
-  Key,
-  Smartphone,
-  Monitor,
-  LogOut,
-  Link as LinkIcon,
-  Crown,
-  Zap,
-  ExternalLink,
   Calendar,
+  Camera,
+  Check,
+  CreditCard,
+  Crown,
+  ExternalLink,
+  Key,
+  Link as LinkIcon,
+  Loader2,
+  LogOut,
+  Mail,
+  Monitor,
+  Shield,
+  Smartphone,
   Trash2,
+  User,
+  X,
+  Zap,
 } from "lucide-react";
-import Link from "next/link";
-import Image from "next/image";
+
+import { useDebounce } from "@/hooks/useDebounce";
+import { useSubscription } from "@/hooks/useSubscription";
 
 // Tab types
 type TabId = "profile" | "security" | "billing";
@@ -74,19 +78,23 @@ export function CustomProfilePage() {
   const [isLoadingUsername, setIsLoadingUsername] = useState(true);
   const [isSavingUsername, setIsSavingUsername] = useState(false);
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
-  const [usernameAvailability, setUsernameAvailability] = useState<UsernameAvailability | null>(null);
+  const [usernameAvailability, setUsernameAvailability] = useState<UsernameAvailability | null>(
+    null
+  );
   const [usernameError, setUsernameError] = useState<string | null>(null);
   const [usernameSuccess, setUsernameSuccess] = useState(false);
   const debouncedUsername = useDebounce(username, 500);
 
   // Sessions state
-  const [sessions, setSessions] = useState<Array<{
-    id: string;
-    device: string;
-    browser: string;
-    lastActive: Date;
-    isCurrent: boolean;
-  }>>([]);
+  const [sessions, setSessions] = useState<
+    Array<{
+      id: string;
+      device: string;
+      browser: string;
+      lastActive: Date;
+      isCurrent: boolean;
+    }>
+  >([]);
   const [isLoadingSessions, setIsLoadingSessions] = useState(false);
   const [isRevokingSession, setIsRevokingSession] = useState<string | null>(null);
 
@@ -175,7 +183,10 @@ export function CustomProfilePage() {
       const userSessions = await user.getSessions();
       const formattedSessions = userSessions.map((session) => {
         // Get device info from session's latestActivity if available
-        const activity = session.latestActivity as { deviceType?: string; browserName?: string } | null;
+        const activity = session.latestActivity as {
+          deviceType?: string;
+          browserName?: string;
+        } | null;
         return {
           id: session.id,
           device: activity?.deviceType || "Desktop",
@@ -191,7 +202,6 @@ export function CustomProfilePage() {
       setIsLoadingSessions(false);
     }
   };
-
 
   // Update profile
   const handleUpdateProfile = async () => {
@@ -319,7 +329,10 @@ export function CustomProfilePage() {
     firstName !== (user?.firstName || "") || lastName !== (user?.lastName || "");
   const hasUsernameChanges = username !== (originalUsername || "");
   const canSaveUsername =
-    hasUsernameChanges && usernameAvailability?.available && !isCheckingUsername && !isSavingUsername;
+    hasUsernameChanges &&
+    usernameAvailability?.available &&
+    !isCheckingUsername &&
+    !isSavingUsername;
 
   if (!isUserLoaded) {
     return (
@@ -457,9 +470,7 @@ export function CustomProfilePage() {
                     <Mail className="w-4 h-4 text-gray-400" />
                     <span className="text-gray-700">{user?.primaryEmailAddress?.emailAddress}</span>
                   </div>
-                  <p className="text-xs text-gray-400 mt-1">
-                    Contact support to change your email
-                  </p>
+                  <p className="text-xs text-gray-400 mt-1">Contact support to change your email</p>
                 </div>
 
                 {/* Save Profile Button */}
@@ -553,11 +564,13 @@ export function CustomProfilePage() {
                           {usernameAvailability.error}
                         </p>
                       )}
-                    {usernameAvailability?.available && username.length >= 3 && hasUsernameChanges && (
-                      <p className="mt-2 text-sm text-green-600">
-                        {usernameAvailability.display} is available!
-                      </p>
-                    )}
+                    {usernameAvailability?.available &&
+                      username.length >= 3 &&
+                      hasUsernameChanges && (
+                        <p className="mt-2 text-sm text-green-600">
+                          {usernameAvailability.display} is available!
+                        </p>
+                      )}
 
                     <ul className="mt-3 text-xs text-gray-400 space-y-0.5">
                       <li>3-20 characters, letters, numbers, underscores only</li>
@@ -624,9 +637,7 @@ export function CustomProfilePage() {
                   <LinkIcon className="w-4 h-4" />
                   Connected Accounts
                 </h3>
-                <p className="text-xs text-gray-500 mb-4">
-                  Link your accounts for easier sign-in
-                </p>
+                <p className="text-xs text-gray-500 mb-4">Link your accounts for easier sign-in</p>
 
                 <div className="space-y-3">
                   {user?.externalAccounts && user.externalAccounts.length > 0 ? (
@@ -788,8 +799,8 @@ export function CustomProfilePage() {
                     {tier === "premium"
                       ? "Unlimited scans, all features included"
                       : isTrialing
-                      ? `Trial ends ${formatDate(trialEndsAt)}`
-                      : "10 scans per month, basic features"}
+                        ? `Trial ends ${formatDate(trialEndsAt)}`
+                        : "10 scans per month, basic features"}
                   </p>
                 </div>
 
@@ -847,8 +858,8 @@ export function CustomProfilePage() {
                             scansUsed >= 10
                               ? "bg-red-500"
                               : scansUsed >= 7
-                              ? "bg-amber-500"
-                              : "bg-green-500"
+                                ? "bg-amber-500"
+                                : "bg-green-500"
                           }`}
                           style={{ width: `${Math.min(100, (scansUsed / 10) * 100)}%` }}
                         />
@@ -867,22 +878,28 @@ export function CustomProfilePage() {
               {/* Feature Comparison */}
               <div className="border-t border-gray-100 pt-6">
                 <h3 className="text-sm font-medium text-gray-700 mb-3">
-                  {tier === "premium" || isTrialing ? "Your Premium Features" : "Upgrade to Premium"}
+                  {tier === "premium" || isTrialing
+                    ? "Your Premium Features"
+                    : "Upgrade to Premium"}
                 </h3>
                 <ul className="space-y-2">
                   {[
                     { feature: "Unlimited scans", included: tier === "premium" || isTrialing },
-                    { feature: "Key Hunt (offline lookups)", included: tier === "premium" || isTrialing },
+                    {
+                      feature: "Key Hunt (offline lookups)",
+                      included: tier === "premium" || isTrialing,
+                    },
                     { feature: "CSV export", included: tier === "premium" || isTrialing },
                     { feature: "Advanced statistics", included: tier === "premium" || isTrialing },
                     { feature: "Unlimited listings", included: tier === "premium" || isTrialing },
-                    { feature: "5% seller fee (vs 8%)", included: tier === "premium" || isTrialing },
+                    {
+                      feature: "5% seller fee (vs 8%)",
+                      included: tier === "premium" || isTrialing,
+                    },
                   ].map((item) => (
                     <li key={item.feature} className="flex items-center gap-2 text-sm">
                       <Check
-                        className={`w-4 h-4 ${
-                          item.included ? "text-green-500" : "text-gray-300"
-                        }`}
+                        className={`w-4 h-4 ${item.included ? "text-green-500" : "text-gray-300"}`}
                       />
                       <span className={item.included ? "text-gray-900" : "text-gray-500"}>
                         {item.feature}

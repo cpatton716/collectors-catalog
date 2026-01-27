@@ -24,10 +24,11 @@
  *   error?: string;
  * }
  */
-
 import { NextRequest, NextResponse } from "next/server";
-import { lookupEbaySoldPrices, isFindingApiConfigured } from "@/lib/ebayFinding";
+
 import { cacheGet, cacheSet, generateEbayPriceCacheKey } from "@/lib/cache";
+import { isFindingApiConfigured, lookupEbaySoldPrices } from "@/lib/ebayFinding";
+
 import { PriceData } from "@/types/comic";
 
 interface EbayPriceRequest {
@@ -51,7 +52,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<EbayPrice
   try {
     // Parse request body
     const body = await request.json();
-    const { title, issueNumber, grade, isSlabbed, isGraded, gradingCompany } = body as EbayPriceRequest;
+    const { title, issueNumber, grade, isSlabbed, isGraded, gradingCompany } =
+      body as EbayPriceRequest;
 
     // Validate required fields
     if (!title || typeof title !== "string" || title.trim().length === 0) {
@@ -74,7 +76,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<EbayPrice
     const company = gradingCompany?.trim();
 
     // Generate cache key
-    const cacheKey = generateEbayPriceCacheKey(cleanTitle, cleanIssue || "", numericGrade, slabbed, company);
+    const cacheKey = generateEbayPriceCacheKey(
+      cleanTitle,
+      cleanIssue || "",
+      numericGrade,
+      slabbed,
+      company
+    );
 
     // 1. Check Redis cache first
     const cachedResult = await cacheGet<PriceData | { noData: true }>(cacheKey, "ebayPrice");

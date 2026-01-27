@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { cacheGet, cacheSet } from "@/lib/cache";
 
 const COMIC_VINE_API_KEY = process.env.COMIC_VINE_API_KEY;
@@ -53,14 +54,19 @@ export async function POST(request: NextRequest) {
 
     if (!barcode) {
       return NextResponse.json(
-        { error: "No barcode was detected. Please try scanning again with the barcode clearly visible." },
+        {
+          error:
+            "No barcode was detected. Please try scanning again with the barcode clearly visible.",
+        },
         { status: 400 }
       );
     }
 
     if (!COMIC_VINE_API_KEY) {
       return NextResponse.json(
-        { error: "Barcode lookup is temporarily unavailable. Try scanning the cover image instead." },
+        {
+          error: "Barcode lookup is temporarily unavailable. Try scanning the cover image instead.",
+        },
         { status: 500 }
       );
     }
@@ -81,7 +87,6 @@ export async function POST(request: NextRequest) {
 
     const searchUrl = `${COMIC_VINE_BASE_URL}/issues/?api_key=${COMIC_VINE_API_KEY}&format=json&filter=upc:${upcWithoutCheckDigit}&field_list=id,name,issue_number,cover_date,image,volume,person_credits`;
 
-
     const response = await fetch(searchUrl, {
       headers: {
         "User-Agent": "ComicTracker/1.0",
@@ -91,7 +96,10 @@ export async function POST(request: NextRequest) {
     if (!response.ok) {
       console.error("Comic Vine API error:", response.status);
       return NextResponse.json(
-        { error: "We couldn't look up this barcode right now. Please try again or scan the cover instead." },
+        {
+          error:
+            "We couldn't look up this barcode right now. Please try again or scan the cover instead.",
+        },
         { status: 500 }
       );
     }
@@ -112,7 +120,10 @@ export async function POST(request: NextRequest) {
 
       if (altData.error !== "OK" || !altData.results || altData.results.length === 0) {
         return NextResponse.json(
-          { error: "We couldn't find this comic by barcode. This sometimes happens with older or variant issues. Try scanning the cover instead!" },
+          {
+            error:
+              "We couldn't find this comic by barcode. This sometimes happens with older or variant issues. Try scanning the cover instead!",
+          },
           { status: 404 }
         );
       }
@@ -176,7 +187,10 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Error in barcode lookup:", error);
     return NextResponse.json(
-      { error: "Something went wrong while looking up this barcode. Please try again or scan the cover instead." },
+      {
+        error:
+          "Something went wrong while looking up this barcode. Please try again or scan the cover instead.",
+      },
       { status: 500 }
     );
   }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { resetAllMonthlyScans } from "@/lib/subscription";
 
 /**
@@ -32,7 +33,6 @@ export async function GET(request: NextRequest) {
   try {
     const result = await resetAllMonthlyScans();
 
-
     return NextResponse.json({
       success: true,
       message: `Reset monthly scan counts for ${result.updated} users`,
@@ -40,10 +40,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("[cron/reset-scans] Error:", error);
-    return NextResponse.json(
-      { error: "Failed to reset scan counts" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to reset scan counts" }, { status: 500 });
   }
 }
 

@@ -18,6 +18,7 @@ const CACHE_PREFIX = {
   cert: "cache:cert:", // Phase 2: CGC/CBCS cert lookups (immutable)
   profile: "cache:profile:", // Phase 3: User profiles (short TTL for freshness)
   titleSuggest: "cache:title:", // Phase 4: Title autocomplete (reduce AI calls)
+  webhook: "cache:webhook:", // Webhook idempotency (prevent duplicate processing)
 } as const;
 
 // TTL values in seconds
@@ -29,6 +30,7 @@ const CACHE_TTL = {
   cert: 60 * 60 * 24 * 365, // 1 year (certificates are permanent)
   profile: 60 * 5, // 5 minutes (short for subscription/settings changes)
   titleSuggest: 60 * 60 * 24, // 24 hours (title data is stable)
+  webhook: 60 * 60, // 1 hour (prevent duplicate webhook processing)
 } as const;
 
 /**
@@ -88,10 +90,7 @@ export async function cacheSet<T>(
  * @param key - Cache key (will be prefixed automatically)
  * @param prefix - Cache prefix type
  */
-export async function cacheDelete(
-  key: string,
-  prefix: keyof typeof CACHE_PREFIX
-): Promise<void> {
+export async function cacheDelete(key: string, prefix: keyof typeof CACHE_PREFIX): Promise<void> {
   if (!redis) return;
 
   try {
@@ -155,10 +154,7 @@ export function generateEbayPriceCacheKey(
 /**
  * Generate cache key for comic metadata lookup
  */
-export function generateComicMetadataCacheKey(
-  title: string,
-  issueNumber: string
-): string {
+export function generateComicMetadataCacheKey(title: string, issueNumber: string): string {
   return `${title.toLowerCase().trim()}|${issueNumber.toLowerCase().trim()}`;
 }
 
@@ -181,7 +177,7 @@ export function hashImageData(base64Image: string): string {
   let hash = 0;
   for (let i = 0; i < sample.length; i++) {
     const char = sample.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
+    hash = (hash << 5) - hash + char;
     hash = hash & hash; // Convert to 32-bit integer
   }
   return `${hash.toString(16)}_${base64Image.length}`;

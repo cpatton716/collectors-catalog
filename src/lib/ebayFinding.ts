@@ -11,8 +11,7 @@
  * eBay Finding API Documentation:
  *   https://developer.ebay.com/Devzone/finding/Concepts/FindingAPIGuide.html
  */
-
-import { RecentSale, PriceData, GradeEstimate } from "@/types/comic";
+import { GradeEstimate, PriceData, RecentSale } from "@/types/comic";
 
 // ============================================
 // Types
@@ -51,10 +50,8 @@ export interface FindingPriceResult {
 // Configuration
 // ============================================
 
-const FINDING_API_SANDBOX_URL =
-  "https://svcs.sandbox.ebay.com/services/search/FindingService/v1";
-const FINDING_API_PRODUCTION_URL =
-  "https://svcs.ebay.com/services/search/FindingService/v1";
+const FINDING_API_SANDBOX_URL = "https://svcs.sandbox.ebay.com/services/search/FindingService/v1";
+const FINDING_API_PRODUCTION_URL = "https://svcs.ebay.com/services/search/FindingService/v1";
 
 // eBay category ID for collectible comics
 const COMIC_BOOK_CATEGORY_ID = "259104";
@@ -118,10 +115,7 @@ export function buildSearchKeywords(params: FindingSearchParams): string {
 /**
  * Build XML request body for findCompletedItems operation
  */
-function buildFindCompletedItemsRequest(
-  keywords: string,
-  limit: number
-): string {
+function buildFindCompletedItemsRequest(keywords: string, limit: number): string {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <findCompletedItemsRequest xmlns="http://www.ebay.com/marketplace/search/v1/services">
   <keywords>${escapeXml(keywords)}</keywords>
@@ -175,7 +169,6 @@ export async function findCompletedItems(
   const requestBody = buildFindCompletedItemsRequest(keywords, limit);
 
   try {
-
     const response = await fetch(baseUrl, {
       method: "POST",
       headers: {
@@ -190,11 +183,7 @@ export async function findCompletedItems(
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(
-        "[ebay-finding] Request failed:",
-        response.status,
-        errorText
-      );
+      console.error("[ebay-finding] Request failed:", response.status, errorText);
       return null;
     }
 
@@ -217,9 +206,7 @@ function parseFindingResponse(
 
   try {
     // Navigate the nested response structure
-    const response = (
-      data.findCompletedItemsResponse as Record<string, unknown>[]
-    )?.[0];
+    const response = (data.findCompletedItemsResponse as Record<string, unknown>[])?.[0];
     if (!response) {
       return emptyResult(searchQuery);
     }
@@ -227,15 +214,15 @@ function parseFindingResponse(
     const ack = (response.ack as string[])?.[0];
     if (ack !== "Success") {
       const errorMessage = (
-        (response.errorMessage as Record<string, unknown>[])?.[0]
-          ?.error as Record<string, unknown>[]
+        (response.errorMessage as Record<string, unknown>[])?.[0]?.error as Record<
+          string,
+          unknown
+        >[]
       )?.[0]?.message;
       return emptyResult(searchQuery);
     }
 
-    const searchResult = (
-      response.searchResult as Record<string, unknown>[]
-    )?.[0];
+    const searchResult = (response.searchResult as Record<string, unknown>[])?.[0];
     const itemArray = (searchResult?.item as Record<string, unknown>[]) || [];
     const totalEntries = parseInt(
       ((searchResult as Record<string, unknown>)?.["@count"] as string) || "0",
@@ -243,33 +230,22 @@ function parseFindingResponse(
     );
 
     for (const item of itemArray) {
-      const sellingStatus = (
-        item.sellingStatus as Record<string, unknown>[]
-      )?.[0];
-      const currentPrice = (
-        sellingStatus?.currentPrice as Record<string, unknown>[]
-      )?.[0];
-      const priceValue = parseFloat(
-        (currentPrice?.["__value__"] as string) || "0"
-      );
+      const sellingStatus = (item.sellingStatus as Record<string, unknown>[])?.[0];
+      const currentPrice = (sellingStatus?.currentPrice as Record<string, unknown>[])?.[0];
+      const priceValue = parseFloat((currentPrice?.["__value__"] as string) || "0");
 
       if (priceValue > 0) {
-        const listingInfo = (
-          item.listingInfo as Record<string, unknown>[]
-        )?.[0];
+        const listingInfo = (item.listingInfo as Record<string, unknown>[])?.[0];
         const endTime = (listingInfo?.endTime as string[])?.[0] || "";
 
         const condition = (item.condition as Record<string, unknown>[])?.[0];
-        const conditionName =
-          (condition?.conditionDisplayName as string[])?.[0] || "Unknown";
+        const conditionName = (condition?.conditionDisplayName as string[])?.[0] || "Unknown";
 
         items.push({
           itemId: (item.itemId as string[])?.[0] || "",
           title: (item.title as string[])?.[0] || "",
           price: priceValue,
-          currency:
-            (currentPrice?.["@currencyId"] as string) ||
-            "USD",
+          currency: (currentPrice?.["@currencyId"] as string) || "USD",
           soldDate: endTime,
           condition: conditionName,
           itemUrl: (item.viewItemURL as string[])?.[0] || "",
@@ -312,9 +288,7 @@ function calculatePriceStats(
   }
 
   // Sort by date (most recent first)
-  items.sort(
-    (a, b) => new Date(b.soldDate).getTime() - new Date(a.soldDate).getTime()
-  );
+  items.sort((a, b) => new Date(b.soldDate).getTime() - new Date(a.soldDate).getTime());
 
   // Filter outliers (remove prices more than 3x the median)
   const prices = items.map((item) => item.price).sort((a, b) => a - b);
@@ -373,8 +347,7 @@ export function convertFindingToPriceData(
     };
   });
 
-  const mostRecentSaleDate =
-    recentSales.length > 0 ? recentSales[0].date : null;
+  const mostRecentSaleDate = recentSales.length > 0 ? recentSales[0].date : null;
 
   // Generate grade estimates from the average price
   const basePrice = result.averagePrice || 0;
@@ -383,13 +356,9 @@ export function convertFindingToPriceData(
   // Determine the estimated value based on requested grade
   let estimatedValue = result.averagePrice;
   if (requestedGrade && gradeEstimates.length > 0) {
-    const gradeEstimate = gradeEstimates.find(
-      (g) => g.grade === requestedGrade
-    );
+    const gradeEstimate = gradeEstimates.find((g) => g.grade === requestedGrade);
     if (gradeEstimate) {
-      estimatedValue = isSlabbed
-        ? gradeEstimate.slabbedValue
-        : gradeEstimate.rawValue;
+      estimatedValue = isSlabbed ? gradeEstimate.slabbedValue : gradeEstimate.rawValue;
     }
   }
 
@@ -409,10 +378,7 @@ export function convertFindingToPriceData(
  * Generate grade-based price estimates
  * Uses typical comic book price multipliers relative to 9.4 grade
  */
-function generateGradeEstimates(
-  basePrice: number,
-  isSlabbed?: boolean
-): GradeEstimate[] {
+function generateGradeEstimates(basePrice: number, isSlabbed?: boolean): GradeEstimate[] {
   // Multipliers relative to 9.4 raw grade
   const gradeData: {
     grade: number;

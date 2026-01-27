@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+
 import { ArrowLeft } from "lucide-react";
 
 export default function TermsOfServicePage() {
@@ -17,7 +18,7 @@ export default function TermsOfServicePage() {
             Back to Home
           </Link>
           <h1 className="text-3xl font-bold text-gray-900">Terms of Service</h1>
-          <p className="text-gray-600 mt-2">Last updated: January 14, 2026</p>
+          <p className="text-gray-600 mt-2">Last updated: January 27, 2026</p>
         </div>
       </div>
 
@@ -28,14 +29,13 @@ export default function TermsOfServicePage() {
 
           <h2>1. Acceptance of Terms</h2>
           <p>
-            By accessing or using Collectors Chest (&quot;Service&quot;), you agree to be bound by these Terms
-            of Service (&quot;Terms&quot;). If you do not agree to these Terms, please do not use our Service.
+            By accessing or using Collectors Chest (&quot;Service&quot;), you agree to be bound by
+            these Terms of Service (&quot;Terms&quot;). If you do not agree to these Terms, please
+            do not use our Service.
           </p>
 
           <h2>2. Description of Service</h2>
-          <p>
-            Collectors Chest is a comic book collection management platform that provides:
-          </p>
+          <p>Collectors Chest is a comic book collection management platform that provides:</p>
           <ul>
             <li>AI-powered comic cover recognition</li>
             <li>Collection tracking and management</li>
@@ -44,9 +44,7 @@ export default function TermsOfServicePage() {
           </ul>
 
           <h2>3. User Accounts</h2>
-          <p>
-            To access certain features, you must create an account. You are responsible for:
-          </p>
+          <p>To access certain features, you must create an account. You are responsible for:</p>
           <ul>
             <li>Maintaining the confidentiality of your account credentials</li>
             <li>All activities that occur under your account</li>
@@ -73,14 +71,41 @@ export default function TermsOfServicePage() {
 
           <h3>4.3 Transaction Fees</h3>
           <p>
-            Collectors Chest may charge transaction fees on marketplace sales. Current fee structures
-            will be clearly displayed before listing or purchasing.
+            Collectors Chest may charge transaction fees on marketplace sales. Current fee
+            structures will be clearly displayed before listing or purchasing.
           </p>
 
           <h3>4.4 Disputes</h3>
           <p>
-            We encourage buyers and sellers to resolve disputes directly. Collectors Chest may, at its
-            discretion, mediate disputes but is not obligated to do so.
+            We encourage buyers and sellers to resolve disputes directly. Collectors Chest may, at
+            its discretion, mediate disputes but is not obligated to do so.
+          </p>
+
+          <h3>4.5 Listing Cancellation Policy</h3>
+          <p>The following rules govern the cancellation of marketplace listings:</p>
+          <ul>
+            <li>
+              <strong>Auctions:</strong> Once a bid has been placed on an auction, the listing
+              cannot be cancelled. Sellers must honor all bids and complete the transaction with the
+              winning bidder.
+            </li>
+            <li>
+              <strong>Auctions without bids:</strong> Auctions that have received no bids may be
+              cancelled at any time before the auction ends.
+            </li>
+            <li>
+              <strong>Fixed-price listings:</strong> Fixed-price listings may be cancelled at any
+              time. If there are pending offers on the listing, all offer-makers will be notified of
+              the cancellation.
+            </li>
+            <li>
+              <strong>Duplicate listings:</strong> Each comic may only have one active listing at a
+              time. Creating duplicate listings for the same item is prohibited.
+            </li>
+          </ul>
+          <p>
+            Repeated bad-faith cancellations or failure to honor completed transactions may result
+            in account suspension or negative reputation impact.
           </p>
 
           <h2>5. Prohibited Conduct</h2>
@@ -118,27 +143,28 @@ export default function TermsOfServicePage() {
           <p>
             TO THE MAXIMUM EXTENT PERMITTED BY LAW, COLLECTORS CHEST SHALL NOT BE LIABLE FOR ANY
             INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING BUT NOT
-            LIMITED TO LOSS OF PROFITS, DATA, OR GOODWILL, ARISING OUT OF OR IN CONNECTION WITH
-            YOUR USE OF THE SERVICE.
+            LIMITED TO LOSS OF PROFITS, DATA, OR GOODWILL, ARISING OUT OF OR IN CONNECTION WITH YOUR
+            USE OF THE SERVICE.
           </p>
 
           <h2>10. Disclaimer of Warranties</h2>
           <p>
-            THE SERVICE IS PROVIDED &quot;AS IS&quot; AND &quot;AS AVAILABLE&quot; WITHOUT WARRANTIES OF ANY KIND,
-            EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO IMPLIED WARRANTIES OF
-            MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
+            THE SERVICE IS PROVIDED &quot;AS IS&quot; AND &quot;AS AVAILABLE&quot; WITHOUT
+            WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO IMPLIED
+            WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
           </p>
 
           <h2>11. Indemnification</h2>
           <p>
             You agree to indemnify and hold harmless Collectors Chest and its affiliates from any
-            claims, damages, or expenses arising from your use of the Service or violation of these Terms.
+            claims, damages, or expenses arising from your use of the Service or violation of these
+            Terms.
           </p>
 
           <h2>12. Termination</h2>
           <p>
-            We may suspend or terminate your account at any time for violation of these Terms. You may
-            delete your account at any time through your profile settings.
+            We may suspend or terminate your account at any time for violation of these Terms. You
+            may delete your account at any time through your profile settings.
           </p>
 
           <h2>13. Changes to Terms</h2>
@@ -154,9 +180,7 @@ export default function TermsOfServicePage() {
           </p>
 
           <h2>15. Contact</h2>
-          <p>
-            For questions about these Terms, please contact us at:
-          </p>
+          <p>For questions about these Terms, please contact us at:</p>
           <ul>
             <li>Email: legal@collectors-chest.com</li>
           </ul>

@@ -12,11 +12,13 @@ export function ServiceWorkerProvider({ children }: { children: React.ReactNode 
     navigator.serviceWorker
       .register("/sw.js")
       .then((registration) => {
-
         // Check for updates periodically
-        setInterval(() => {
-          registration.update();
-        }, 60 * 60 * 1000); // Check every hour
+        setInterval(
+          () => {
+            registration.update();
+          },
+          60 * 60 * 1000
+        ); // Check every hour
       })
       .catch((error) => {
         console.error("[SW] Service worker registration failed:", error);

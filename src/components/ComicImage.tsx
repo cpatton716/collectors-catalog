@@ -1,7 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import { useState } from "react";
+
+import Image from "next/image";
 
 interface ComicImageProps {
   src: string | null | undefined;
@@ -45,12 +46,15 @@ export function ComicImage({
   const showPlaceholder = !src || hasError;
 
   // Convert aspect ratio string to CSS class (empty for "fill" mode)
-  const aspectClass = aspectRatio === "fill" ? "w-full h-full" : {
-    "2/3": "aspect-[2/3]",
-    "1/1.5": "aspect-[1/1.5]",
-    "1/1": "aspect-square",
-    "4/3": "aspect-[4/3]",
-  }[aspectRatio];
+  const aspectClass =
+    aspectRatio === "fill"
+      ? "w-full h-full"
+      : {
+          "2/3": "aspect-[2/3]",
+          "1/1.5": "aspect-[1/1.5]",
+          "1/1": "aspect-square",
+          "4/3": "aspect-[4/3]",
+        }[aspectRatio];
 
   return (
     <div
@@ -67,9 +71,7 @@ export function ComicImage({
       ) : (
         <>
           {/* Loading skeleton */}
-          {isLoading && (
-            <div className="absolute inset-0 bg-gray-200 animate-pulse" />
-          )}
+          {isLoading && <div className="absolute inset-0 bg-gray-200 animate-pulse" />}
           <Image
             src={src}
             alt={alt}

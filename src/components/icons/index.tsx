@@ -21,7 +21,6 @@
  * import { TreasureChest } from "@/components/icons";
  * <TreasureChest className="w-6 h-6 text-primary-600" />
  */
-
 import { SVGProps } from "react";
 
 interface IconProps extends SVGProps<SVGSVGElement> {

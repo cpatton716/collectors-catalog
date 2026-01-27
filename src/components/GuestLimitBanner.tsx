@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { AlertCircle, Sparkles, Mail } from "lucide-react";
+
+import { AlertCircle, Mail, Sparkles } from "lucide-react";
+
 import { useGuestScans } from "@/hooks/useGuestScans";
 
 interface GuestLimitBannerProps {
@@ -22,7 +24,8 @@ export function GuestLimitBanner({ variant = "info" }: GuestLimitBannerProps) {
           <div className="flex-1">
             <h3 className="font-semibold text-red-800">Free Scan Limit Reached</h3>
             <p className="text-sm text-red-700 mt-1">
-              You&apos;ve used all 10 free scans. Join our waitlist to be notified when full registration opens.
+              You&apos;ve used all 10 free scans. Join our waitlist to be notified when full
+              registration opens.
             </p>
             <div className="mt-3 flex gap-3">
               <Link
@@ -55,7 +58,8 @@ export function GuestLimitBanner({ variant = "info" }: GuestLimitBannerProps) {
               {remaining} Free Scan{remaining !== 1 ? "s" : ""} Remaining
             </h3>
             <p className="text-sm text-amber-700 mt-1">
-              We&apos;re currently in private beta. Join the waitlist to be first in line when we open registration.
+              We&apos;re currently in private beta. Join the waitlist to be first in line when we
+              open registration.
             </p>
             <Link
               href="/sign-up"
@@ -77,7 +81,7 @@ export function GuestLimitBanner({ variant = "info" }: GuestLimitBannerProps) {
         className="border-4 border-pop-black p-4 mb-6"
         style={{
           background: "var(--pop-yellow)",
-          boxShadow: "4px 4px 0px var(--pop-black)"
+          boxShadow: "4px 4px 0px var(--pop-black)",
         }}
       >
         <div className="flex items-center justify-between">
@@ -88,14 +92,9 @@ export function GuestLimitBanner({ variant = "info" }: GuestLimitBannerProps) {
             >
               {remaining}
             </div>
-            <span className="font-comic text-pop-black text-lg">
-              FREE SCANS LEFT
-            </span>
+            <span className="font-comic text-pop-black text-lg">FREE SCANS LEFT</span>
           </div>
-          <Link
-            href="/sign-up"
-            className="font-comic text-pop-black hover:underline"
-          >
+          <Link href="/sign-up" className="font-comic text-pop-black hover:underline">
             Join waitlist →
           </Link>
         </div>

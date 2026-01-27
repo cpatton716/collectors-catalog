@@ -1,5 +1,3 @@
-import { supabase, supabaseAdmin } from "./supabase";
-import { CollectionItem, PriceData, ConditionLabel } from "@/types/comic";
 import {
   Auction,
   AuctionFilters,
@@ -26,19 +24,39 @@ import {
   calculateSellerReputation,
   getBidIncrement,
 } from "@/types/auction";
-import { getTransactionFeePercent, getSubscriptionStatus } from "./subscription";
+import { CollectionItem, ConditionLabel, PriceData } from "@/types/comic";
+
+import { getSubscriptionStatus, getTransactionFeePercent } from "./subscription";
+import { supabase, supabaseAdmin } from "./supabase";
 
 // ============================================================================
 // AUCTION CRUD
 // ============================================================================
 
 /**
+ * Check if a comic already has an active listing
+ */
+async function hasActiveListing(comicId: string): Promise<boolean> {
+  const { data } = await supabase
+    .from("auctions")
+    .select("id")
+    .eq("comic_id", comicId)
+    .in("status", ["active", "ended"]) // ended but not sold/cancelled
+    .limit(1)
+    .single();
+
+  return !!data;
+}
+
+/**
  * Create a new auction
  */
-export async function createAuction(
-  sellerId: string,
-  input: CreateAuctionInput
-): Promise<Auction> {
+export async function createAuction(sellerId: string, input: CreateAuctionInput): Promise<Auction> {
+  // Check for duplicate listing
+  if (await hasActiveListing(input.comicId)) {
+    throw new Error("This comic already has an active listing");
+  }
+
   const listingType = input.listingType || "auction";
 
   // Get seller's subscription tier and fee at time of listing
@@ -50,9 +68,7 @@ export async function createAuction(
   // Support scheduled auctions with custom start date
   // Note: Date-only strings like "2026-01-24" are parsed as UTC midnight,
   // so we append T00:00:00 to parse as local midnight instead
-  const startTime = input.startDate
-    ? new Date(input.startDate + "T00:00:00")
-    : new Date();
+  const startTime = input.startDate ? new Date(input.startDate + "T00:00:00") : new Date();
   const endTime = new Date(startTime);
   endTime.setDate(endTime.getDate() + input.durationDays);
 
@@ -94,6 +110,11 @@ export async function createFixedPriceListing(
   sellerId: string,
   input: CreateFixedPriceListingInput
 ): Promise<Auction> {
+  // Check for duplicate listing
+  if (await hasActiveListing(input.comicId)) {
+    throw new Error("This comic already has an active listing");
+  }
+
   // Get seller's subscription tier and fee at time of listing
   const subscriptionStatus = await getSubscriptionStatus(sellerId);
   const sellerTier = subscriptionStatus?.tier || "free";
@@ -140,10 +161,7 @@ export async function createFixedPriceListing(
 /**
  * Get a single auction by ID
  */
-export async function getAuction(
-  auctionId: string,
-  userId?: string
-): Promise<Auction | null> {
+export async function getAuction(auctionId: string, userId?: string): Promise<Auction | null> {
   const { data, error } = await supabase
     .from("auctions")
     .select(
@@ -200,15 +218,13 @@ export async function getActiveAuctions(
   limit = 50,
   offset = 0
 ): Promise<{ auctions: Auction[]; total: number }> {
-  let query = supabase
-    .from("auctions")
-    .select(
-      `
+  let query = supabase.from("auctions").select(
+    `
       *,
       comics(*)
     `,
-      { count: "exact" }
-    );
+    { count: "exact" }
+  );
 
   // When filtering by sellerId, show all statuses (for My Listings page)
   // Otherwise, only show active listings (for Shop page)
@@ -292,10 +308,7 @@ export async function getActiveAuctions(
 /**
  * Get auctions by seller
  */
-export async function getSellerAuctions(
-  sellerId: string,
-  status?: string
-): Promise<Auction[]> {
+export async function getSellerAuctions(sellerId: string, status?: string): Promise<Auction[]> {
   let query = supabase
     .from("auctions")
     .select(
@@ -398,6 +411,32 @@ export async function cancelAuction(
     return { success: false, error: "Cannot cancel auction with bids" };
   }
 
+  // For fixed-price listings, get pending offers to notify buyers
+  if (auction.listing_type === "fixed_price") {
+    const { data: pendingOffers } = await supabase
+      .from("offers")
+      .select("id, buyer_id")
+      .eq("listing_id", auctionId)
+      .in("status", ["pending", "countered"]);
+
+    if (pendingOffers && pendingOffers.length > 0) {
+      // Update all pending offers to auto_rejected
+      await supabaseAdmin
+        .from("offers")
+        .update({
+          status: "auto_rejected",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("listing_id", auctionId)
+        .in("status", ["pending", "countered"]);
+
+      // Notify each buyer that the listing was cancelled
+      for (const offer of pendingOffers) {
+        await createNotification(offer.buyer_id, "listing_cancelled", auctionId, offer.id);
+      }
+    }
+  }
+
   // Use supabaseAdmin to bypass RLS
   const { error } = await supabaseAdmin
     .from("auctions")
@@ -457,10 +496,7 @@ export async function markSoldOutsideApp(
   }
 
   // Delete the comic from collection
-  const { error: comicError } = await supabase
-    .from("comics")
-    .delete()
-    .eq("id", auction.comic_id);
+  const { error: comicError } = await supabase.from("comics").delete().eq("id", auction.comic_id);
 
   if (comicError) {
     // Note: Listing is already marked sold, but comic deletion failed
@@ -548,9 +584,7 @@ export async function placeBid(
       .order("bidder_number", { ascending: false })
       .limit(1);
 
-    bidderNumber = maxBidderData?.[0]?.bidder_number
-      ? maxBidderData[0].bidder_number + 1
-      : 1;
+    bidderNumber = maxBidderData?.[0]?.bidder_number ? maxBidderData[0].bidder_number + 1 : 1;
   }
 
   // Proxy bidding logic
@@ -589,18 +623,12 @@ export async function placeBid(
 
     if (maxBid > currentWinningBid.max_bid) {
       // New bidder wins
-      newCurrentBid = Math.min(
-        currentWinningBid.max_bid + increment,
-        maxBid
-      );
+      newCurrentBid = Math.min(currentWinningBid.max_bid + increment, maxBid);
       isHighBidder = true;
       outbidUserId = currentWinningBid.bidder_id;
 
       // Mark old bid as not winning
-      await supabase
-        .from("bids")
-        .update({ is_winning: false })
-        .eq("id", currentWinningBid.id);
+      await supabase.from("bids").update({ is_winning: false }).eq("id", currentWinningBid.id);
     } else if (maxBid === currentWinningBid.max_bid) {
       // Tie goes to first bidder
       newCurrentBid = maxBid;
@@ -614,10 +642,7 @@ export async function placeBid(
       isHighBidder = false;
 
       // Update current bid amount
-      await supabase
-        .from("auctions")
-        .update({ current_bid: newCurrentBid })
-        .eq("id", auctionId);
+      await supabase.from("auctions").update({ current_bid: newCurrentBid }).eq("id", auctionId);
     }
   }
 
@@ -655,9 +680,7 @@ export async function placeBid(
 
   return {
     success: true,
-    message: isHighBidder
-      ? "You are the high bidder!"
-      : "You have been outbid",
+    message: isHighBidder ? "You are the high bidder!" : "You have been outbid",
     bid: transformDbBid(newBid),
     currentBid: newCurrentBid,
     isHighBidder,
@@ -812,10 +835,7 @@ export async function purchaseFixedPriceListing(
 /**
  * Add auction to watchlist
  */
-export async function addToWatchlist(
-  userId: string,
-  auctionId: string
-): Promise<void> {
+export async function addToWatchlist(userId: string, auctionId: string): Promise<void> {
   const { error } = await supabase.from("auction_watchlist").insert({
     user_id: userId,
     auction_id: auctionId,
@@ -830,10 +850,7 @@ export async function addToWatchlist(
 /**
  * Remove auction from watchlist
  */
-export async function removeFromWatchlist(
-  userId: string,
-  auctionId: string
-): Promise<void> {
+export async function removeFromWatchlist(userId: string, auctionId: string): Promise<void> {
   const { error } = await supabase
     .from("auction_watchlist")
     .delete()
@@ -872,10 +889,7 @@ export async function getUserWatchlist(userId: string): Promise<WatchlistItem[]>
 /**
  * Check if user is watching an auction
  */
-export async function isWatching(
-  userId: string,
-  auctionId: string
-): Promise<boolean> {
+export async function isWatching(userId: string, auctionId: string): Promise<boolean> {
   const { data } = await supabase
     .from("auction_watchlist")
     .select("id")
@@ -1139,10 +1153,7 @@ export async function respondToCounterOffer(
 /**
  * Get offers for a listing (seller view)
  */
-export async function getOffersForListing(
-  listingId: string,
-  sellerId: string
-): Promise<Offer[]> {
+export async function getOffersForListing(listingId: string, sellerId: string): Promise<Offer[]> {
   const { data, error } = await supabase
     .from("offers")
     .select("*, profiles!offers_buyer_id_fkey(id, display_name, public_display_name)")
@@ -1220,6 +1231,7 @@ export async function createNotification(
     // Listing expiration notifications
     listing_expiring: "Listing expiring soon",
     listing_expired: "Listing has expired",
+    listing_cancelled: "Listing cancelled",
   };
 
   const messages: Record<NotificationType, string> = {
@@ -1239,6 +1251,7 @@ export async function createNotification(
     // Listing expiration messages
     listing_expiring: "Your listing will expire in 24 hours. Consider renewing.",
     listing_expired: "Your listing has expired. Relist to continue selling.",
+    listing_cancelled: "A listing you made an offer on has been cancelled by the seller.",
   };
 
   await supabase.from("notifications").insert({
@@ -1289,10 +1302,7 @@ export async function getUserNotifications(
  * Mark notification as read
  */
 export async function markNotificationRead(notificationId: string): Promise<void> {
-  await supabase
-    .from("notifications")
-    .update({ is_read: true })
-    .eq("id", notificationId);
+  await supabase.from("notifications").update({ is_read: true }).eq("id", notificationId);
 }
 
 /**
@@ -1373,10 +1383,7 @@ export async function submitSellerRating(
 /**
  * Get ratings for a seller
  */
-export async function getSellerRatings(
-  sellerId: string,
-  limit = 20
-): Promise<SellerRating[]> {
+export async function getSellerRatings(sellerId: string, limit = 20): Promise<SellerRating[]> {
   const { data, error } = await supabase
     .from("seller_ratings")
     .select("*")
@@ -1496,19 +1503,13 @@ export async function processEndedAuctions(): Promise<{
           .eq("auction_id", auction.id);
 
         for (const watcher of watchers || []) {
-          if (
-            watcher.user_id !== winningBid.bidder_id &&
-            watcher.user_id !== auction.seller_id
-          ) {
+          if (watcher.user_id !== winningBid.bidder_id && watcher.user_id !== auction.seller_id) {
             await createNotification(watcher.user_id, "ended", auction.id);
           }
         }
       } else {
         // No bids, just end it
-        await supabase
-          .from("auctions")
-          .update({ status: "ended" })
-          .eq("id", auction.id);
+        await supabase.from("auctions").update({ status: "ended" }).eq("id", auction.id);
       }
 
       processed++;
@@ -1609,7 +1610,12 @@ function transformDbAuction(data: Record<string, unknown>): Auction {
 
     // Generate a fallback display name from email if no name is set
     let fallbackName: string | null = null;
-    if (!profile.display_name && !profile.public_display_name && !profile.username && profile.email) {
+    if (
+      !profile.display_name &&
+      !profile.public_display_name &&
+      !profile.username &&
+      profile.email
+    ) {
       const email = profile.email as string;
       const emailUsername = email.split("@")[0];
       fallbackName = emailUsername;
@@ -1620,13 +1626,16 @@ function transformDbAuction(data: Record<string, unknown>): Auction {
       displayName: (profile.display_name as string | null) || fallbackName,
       publicDisplayName: profile.public_display_name as string | null,
       username: profile.username as string | null,
-      displayPreference: profile.display_preference as "username_only" | "display_name_only" | "both" | null,
+      displayPreference: profile.display_preference as
+        | "username_only"
+        | "display_name_only"
+        | "both"
+        | null,
       positiveRatings: (profile.positive_ratings as number) || 0,
       negativeRatings: (profile.negative_ratings as number) || 0,
       sellerSince: profile.seller_since as string | null,
       totalRatings:
-        ((profile.positive_ratings as number) || 0) +
-        ((profile.negative_ratings as number) || 0),
+        ((profile.positive_ratings as number) || 0) + ((profile.negative_ratings as number) || 0),
       positivePercentage: percentage,
       reputation,
     };
@@ -1663,10 +1672,12 @@ export async function expireOffers(): Promise<{ expired: number; errors: string[
   // Get offers that need to expire with related data for emails
   const { data: expiredOffers, error: fetchError } = await supabase
     .from("offers")
-    .select(`
+    .select(
+      `
       id, buyer_id, seller_id, listing_id, amount, status,
       auctions!inner(id, comic_id, collection_items!inner(id, comic))
-    `)
+    `
+    )
     .eq("status", "pending")
     .lt("expires_at", new Date().toISOString());
 
@@ -1683,7 +1694,10 @@ export async function expireOffers(): Promise<{ expired: number; errors: string[
   const { error: updateError } = await supabase
     .from("offers")
     .update({ status: "expired", updated_at: new Date().toISOString() })
-    .in("id", expiredOffers.map(o => o.id));
+    .in(
+      "id",
+      expiredOffers.map((o) => o.id)
+    );
 
   if (updateError) {
     errors.push(`Failed to update expired offers: ${updateError.message}`);
@@ -1707,7 +1721,11 @@ export async function expireOffers(): Promise<{ expired: number; errors: string[
  * Expire old fixed-price listings (30 day expiration)
  * Also creates notifications for expiring/expired listings
  */
-export async function expireListings(): Promise<{ expired: number; expiring: number; errors: string[] }> {
+export async function expireListings(): Promise<{
+  expired: number;
+  expiring: number;
+  errors: string[];
+}> {
   const errors: string[] = [];
   const now = new Date();
   const oneDayFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
@@ -1764,7 +1782,10 @@ export async function expireListings(): Promise<{ expired: number; expiring: num
   const { error: updateError } = await supabase
     .from("auctions")
     .update({ status: "cancelled", updated_at: now.toISOString() })
-    .in("id", expiredListings.map(l => l.id));
+    .in(
+      "id",
+      expiredListings.map((l) => l.id)
+    );
 
   if (updateError) {
     errors.push(`Failed to update expired listings: ${updateError.message}`);

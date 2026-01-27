@@ -1,22 +1,25 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+
+import Link from "next/link";
+
 import { useUser } from "@clerk/nextjs";
+
 import {
   Activity,
-  Database,
-  Server,
-  DollarSign,
-  Users,
-  RefreshCw,
   AlertTriangle,
-  CheckCircle,
-  XCircle,
-  ExternalLink,
   BarChart3,
+  CheckCircle,
+  Database,
+  DollarSign,
+  ExternalLink,
+  RefreshCw,
+  Server,
+  Users,
+  XCircle,
   Zap,
 } from "lucide-react";
-import Link from "next/link";
 
 interface UsageMetric {
   name: string;
@@ -87,11 +90,7 @@ function StatusBadge({ status }: { status: "ok" | "warning" | "critical" }) {
 function ProgressBar({ percentage, status }: { percentage: number; status: string }) {
   const width = Math.min(percentage * 100, 100);
   const colorClass =
-    status === "critical"
-      ? "bg-red-500"
-      : status === "warning"
-        ? "bg-amber-500"
-        : "bg-green-500";
+    status === "critical" ? "bg-red-500" : status === "warning" ? "bg-amber-500" : "bg-green-500";
 
   return (
     <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -167,10 +166,7 @@ export default function AdminUsagePage() {
         <div className="max-w-6xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Link
-                href="/collection"
-                className="text-gray-500 hover:text-gray-700"
-              >
+              <Link href="/collection" className="text-gray-500 hover:text-gray-700">
                 ← Back
               </Link>
               <div className="h-6 w-px bg-gray-200" />
@@ -209,7 +205,9 @@ export default function AdminUsagePage() {
             <div className="mb-8 p-6 bg-white rounded-xl shadow-sm border">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900 mb-1">Overall System Status</h2>
+                  <h2 className="text-lg font-semibold text-gray-900 mb-1">
+                    Overall System Status
+                  </h2>
                   <p className="text-sm text-gray-500">
                     Last checked: {new Date(data.checkedAt).toLocaleString()}
                   </p>
@@ -338,16 +336,10 @@ export default function AdminUsagePage() {
 
             {/* Admin Links */}
             <div className="mt-6 flex gap-4">
-              <Link
-                href="/admin/users"
-                className="text-sm text-blue-600 hover:underline"
-              >
+              <Link href="/admin/users" className="text-sm text-blue-600 hover:underline">
                 → User Management
               </Link>
-              <Link
-                href="/admin/key-info"
-                className="text-sm text-blue-600 hover:underline"
-              >
+              <Link href="/admin/key-info" className="text-sm text-blue-600 hover:underline">
                 → Key Info Moderation
               </Link>
             </div>

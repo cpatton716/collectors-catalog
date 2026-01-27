@@ -1,21 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import { CollectionItem, UserList } from "@/types/comic";
-import { PublicProfile, PublicCollectionStats } from "@/lib/db";
-import { PublicComicCard } from "@/components/PublicComicCard";
-import { PublicComicModal } from "@/components/PublicComicModal";
-import { ComicImage } from "@/components/ComicImage";
+
 import {
   BookOpen,
-  DollarSign,
   Building,
   Calendar,
+  DollarSign,
   Grid3X3,
   List,
   Search,
   User,
 } from "lucide-react";
+
+import { PublicCollectionStats, PublicProfile } from "@/lib/db";
+
+import { ComicImage } from "@/components/ComicImage";
+import { PublicComicCard } from "@/components/PublicComicCard";
+import { PublicComicModal } from "@/components/PublicComicModal";
+
+import { CollectionItem, UserList } from "@/types/comic";
 
 interface Props {
   profile: PublicProfile;
@@ -63,14 +67,11 @@ export function PublicCollectionView({ profile, comics, lists, stats }: Props) {
           return (a.comic.title || "").localeCompare(b.comic.title || "");
         case "value":
           return (
-            (b.comic.priceData?.estimatedValue || 0) -
-            (a.comic.priceData?.estimatedValue || 0)
+            (b.comic.priceData?.estimatedValue || 0) - (a.comic.priceData?.estimatedValue || 0)
           );
         case "date":
         default:
-          return (
-            new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime()
-          );
+          return new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime();
       }
     });
 
@@ -89,11 +90,10 @@ export function PublicCollectionView({ profile, comics, lists, stats }: Props) {
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
               {displayName}&apos;s Collection
             </h1>
-            {profile.publicBio && (
-              <p className="text-gray-600 mt-2">{profile.publicBio}</p>
-            )}
+            {profile.publicBio && <p className="text-gray-600 mt-2">{profile.publicBio}</p>}
             <p className="text-sm text-gray-400 mt-2">
-              Member since {new Date(profile.createdAt).toLocaleDateString("en-US", {
+              Member since{" "}
+              {new Date(profile.createdAt).toLocaleDateString("en-US", {
                 month: "long",
                 year: "numeric",
               })}
@@ -121,7 +121,11 @@ export function PublicCollectionView({ profile, comics, lists, stats }: Props) {
           <div>
             <p className="text-sm text-gray-500">Est. Value</p>
             <p className="text-xl font-bold text-gray-900">
-              ${stats.totalValue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+              $
+              {stats.totalValue.toLocaleString(undefined, {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0,
+              })}
             </p>
           </div>
         </div>
@@ -256,11 +260,7 @@ export function PublicCollectionView({ profile, comics, lists, stats }: Props) {
       ) : viewMode === "grid" ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
           {filteredComics.map((item) => (
-            <PublicComicCard
-              key={item.id}
-              item={item}
-              onClick={() => setSelectedComic(item)}
-            />
+            <PublicComicCard key={item.id} item={item} onClick={() => setSelectedComic(item)} />
           ))}
         </div>
       ) : (
@@ -300,18 +300,14 @@ export function PublicCollectionView({ profile, comics, lists, stats }: Props) {
                       </p>
                       <p className="text-sm text-gray-500">
                         Issue #{comic.issueNumber || "?"}
-                        {comic.variant && (
-                          <span className="text-gray-400"> - {comic.variant}</span>
-                        )}
+                        {comic.variant && <span className="text-gray-400"> - {comic.variant}</span>}
                       </p>
                     </div>
                   </div>
 
                   {/* Publisher */}
                   <div className="col-span-3">
-                    <p className="text-sm text-gray-600 truncate">
-                      {comic.publisher || "Unknown"}
-                    </p>
+                    <p className="text-sm text-gray-600 truncate">{comic.publisher || "Unknown"}</p>
                     {comic.releaseYear && (
                       <p className="text-xs text-gray-400">{comic.releaseYear}</p>
                     )}
@@ -320,9 +316,7 @@ export function PublicCollectionView({ profile, comics, lists, stats }: Props) {
                   {/* Est. Value */}
                   <div className="col-span-3 text-right">
                     {estimatedValue ? (
-                      <p className="font-medium text-gray-900">
-                        ${estimatedValue.toFixed(2)}
-                      </p>
+                      <p className="font-medium text-gray-900">${estimatedValue.toFixed(2)}</p>
                     ) : (
                       <span className="text-sm text-gray-400">-</span>
                     )}
@@ -341,10 +335,7 @@ export function PublicCollectionView({ profile, comics, lists, stats }: Props) {
 
       {/* Comic Detail Modal */}
       {selectedComic && (
-        <PublicComicModal
-          item={selectedComic}
-          onClose={() => setSelectedComic(null)}
-        />
+        <PublicComicModal item={selectedComic} onClose={() => setSelectedComic(null)} />
       )}
     </div>
   );

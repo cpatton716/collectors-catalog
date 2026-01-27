@@ -1,29 +1,32 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+
+import Link from "next/link";
+
 import { useUser } from "@clerk/nextjs";
+
 import {
-  Users,
-  Search,
-  RefreshCw,
   AlertTriangle,
-  User,
-  Mail,
-  Calendar,
-  CreditCard,
-  Scan,
+  Ban,
   BookOpen,
+  Calendar,
+  CheckCircle,
+  Clock,
+  CreditCard,
+  Gift,
+  Loader2,
+  Mail,
+  RefreshCw,
+  RotateCcw,
+  Scan,
+  Search,
   ShieldAlert,
   ShieldCheck,
-  Gift,
-  RotateCcw,
-  Ban,
-  CheckCircle,
+  User,
+  Users,
   XCircle,
-  Clock,
-  Loader2,
 } from "lucide-react";
-import Link from "next/link";
 
 interface UserSearchResult {
   id: string;
@@ -199,10 +202,9 @@ export default function AdminUsersPage() {
     setError(null);
 
     try {
-      const response = await fetch(
-        `/api/admin/users/${selectedUser.id}/reset-trial`,
-        { method: "POST" }
-      );
+      const response = await fetch(`/api/admin/users/${selectedUser.id}/reset-trial`, {
+        method: "POST",
+      });
       if (!response.ok) {
         throw new Error("Failed to reset trial");
       }
@@ -221,14 +223,11 @@ export default function AdminUsersPage() {
     setError(null);
 
     try {
-      const response = await fetch(
-        `/api/admin/users/${selectedUser.id}/grant-premium`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ days }),
-        }
-      );
+      const response = await fetch(`/api/admin/users/${selectedUser.id}/grant-premium`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ days }),
+      });
       if (!response.ok) {
         throw new Error("Failed to grant premium");
       }
@@ -250,17 +249,14 @@ export default function AdminUsersPage() {
     const suspend = !selectedUser.is_suspended;
 
     try {
-      const response = await fetch(
-        `/api/admin/users/${selectedUser.id}/suspend`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            suspend,
-            reason: suspend ? suspendReason : undefined,
-          }),
-        }
-      );
+      const response = await fetch(`/api/admin/users/${selectedUser.id}/suspend`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          suspend,
+          reason: suspend ? suspendReason : undefined,
+        }),
+      });
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || "Failed to update suspension");
@@ -322,7 +318,10 @@ export default function AdminUsersPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Users className="w-8 h-8" />
-              <h1 className="text-2xl font-bold tracking-wide" style={{ fontFamily: "var(--font-bangers)" }}>
+              <h1
+                className="text-2xl font-bold tracking-wide"
+                style={{ fontFamily: "var(--font-bangers)" }}
+              >
                 User Management
               </h1>
             </div>
@@ -336,7 +335,10 @@ export default function AdminUsersPage() {
       <div className="max-w-6xl mx-auto px-4">
         {/* Messages */}
         {error && (
-          <div className="comic-panel p-4 mb-6" style={{ borderColor: "var(--pop-red)", background: "#fff0f0" }}>
+          <div
+            className="comic-panel p-4 mb-6"
+            style={{ borderColor: "var(--pop-red)", background: "#fff0f0" }}
+          >
             <div className="flex items-center gap-2" style={{ color: "var(--pop-red)" }}>
               <AlertTriangle className="w-5 h-5" />
               <p className="font-bold">{error}</p>
@@ -345,7 +347,10 @@ export default function AdminUsersPage() {
         )}
 
         {successMessage && (
-          <div className="comic-panel p-4 mb-6" style={{ borderColor: "var(--pop-green)", background: "#f0fff0" }}>
+          <div
+            className="comic-panel p-4 mb-6"
+            style={{ borderColor: "var(--pop-green)", background: "#f0fff0" }}
+          >
             <div className="flex items-center gap-2" style={{ color: "var(--pop-green)" }}>
               <CheckCircle className="w-5 h-5" />
               <p className="font-bold">{successMessage}</p>
@@ -388,7 +393,10 @@ export default function AdminUsersPage() {
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Results List */}
           <div className="comic-panel overflow-hidden">
-            <div className="p-4 border-b-4 border-black" style={{ background: "var(--pop-yellow)" }}>
+            <div
+              className="p-4 border-b-4 border-black"
+              style={{ background: "var(--pop-yellow)" }}
+            >
               <h3 className="font-bold" style={{ fontFamily: "var(--font-bangers)" }}>
                 Results {searchResults.length > 0 && `(${searchResults.length})`}
               </h3>
@@ -415,9 +423,7 @@ export default function AdminUsersPage() {
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0 flex-1">
-                          <p className="font-bold truncate">
-                            {user.email || "No email"}
-                          </p>
+                          <p className="font-bold truncate">{user.email || "No email"}</p>
                           {user.username && (
                             <p className="text-sm text-gray-600">@{user.username}</p>
                           )}
@@ -439,14 +445,20 @@ export default function AdminUsersPage() {
 
           {/* User Details Panel */}
           <div className="comic-panel overflow-hidden">
-            <div className="p-4 border-b-4 border-black" style={{ background: "var(--pop-blue)", color: "white" }}>
+            <div
+              className="p-4 border-b-4 border-black"
+              style={{ background: "var(--pop-blue)", color: "white" }}
+            >
               <h3 className="font-bold" style={{ fontFamily: "var(--font-bangers)" }}>
                 User Details
               </h3>
             </div>
             {isLoadingUser ? (
               <div className="p-8 text-center">
-                <RefreshCw className="w-8 h-8 mx-auto animate-spin" style={{ color: "var(--pop-blue)" }} />
+                <RefreshCw
+                  className="w-8 h-8 mx-auto animate-spin"
+                  style={{ color: "var(--pop-blue)" }}
+                />
               </div>
             ) : selectedUser ? (
               <div className="p-4 space-y-4">
@@ -454,9 +466,7 @@ export default function AdminUsersPage() {
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <Mail className="w-4 h-4 text-gray-400" />
-                    <span className="font-bold">
-                      {selectedUser.email || "No email"}
-                    </span>
+                    <span className="font-bold">{selectedUser.email || "No email"}</span>
                   </div>
                   {selectedUser.username && (
                     <div className="flex items-center gap-2">
@@ -577,9 +587,7 @@ export default function AdminUsersPage() {
                       onClick={toggleSuspension}
                       disabled={isPerformingAction || selectedUser.is_admin}
                       className={`w-full btn-pop text-sm disabled:opacity-50 ${
-                        selectedUser.is_suspended
-                          ? "btn-pop-green"
-                          : "btn-pop-red"
+                        selectedUser.is_suspended ? "btn-pop-green" : "btn-pop-red"
                       }`}
                     >
                       {selectedUser.is_suspended ? (

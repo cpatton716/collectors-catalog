@@ -1,9 +1,11 @@
 "use client";
 
+import { useEffect } from "react";
+
+import { useAuth, useUser } from "@clerk/nextjs";
+
 import posthog from "posthog-js";
 import { PostHogProvider as PHProvider } from "posthog-js/react";
-import { useEffect } from "react";
-import { useAuth, useUser } from "@clerk/nextjs";
 
 // Initialize PostHog only on client side
 if (typeof window !== "undefined" && process.env.NEXT_PUBLIC_POSTHOG_KEY) {

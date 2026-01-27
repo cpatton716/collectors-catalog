@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { auth } from "@clerk/nextjs/server";
-import { getProfileByClerkId } from "@/lib/db";
+
+import { isUserSuspended } from "@/lib/adminAuth";
 import {
-  getUserNotifications,
   getUnreadNotificationCount,
-  markNotificationRead,
+  getUserNotifications,
   markAllNotificationsRead,
+  markNotificationRead,
 } from "@/lib/auctionDb";
+import { getProfileByClerkId } from "@/lib/db";
 
 // GET - Get user's notifications
 export async function GET(request: NextRequest) {
@@ -39,10 +42,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error fetching notifications:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch notifications" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch notifications" }, { status: 500 });
   }
 }
 
@@ -52,6 +52,12 @@ export async function PATCH(request: NextRequest) {
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Check if user is suspended
+    const suspensionStatus = await isUserSuspended(userId);
+    if (suspensionStatus.suspended) {
+      return NextResponse.json({ error: "Your account has been suspended." }, { status: 403 });
     }
 
     const profile = await getProfileByClerkId(userId);
@@ -67,18 +73,12 @@ export async function PATCH(request: NextRequest) {
     } else if (notificationId) {
       await markNotificationRead(notificationId);
     } else {
-      return NextResponse.json(
-        { error: "notificationId or markAll is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "notificationId or markAll is required" }, { status: 400 });
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error marking notifications:", error);
-    return NextResponse.json(
-      { error: "Failed to update notifications" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to update notifications" }, { status: 500 });
   }
 }

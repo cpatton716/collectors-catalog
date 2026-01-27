@@ -1,10 +1,14 @@
 "use client";
 
 import { useState } from "react";
+
 import Link from "next/link";
-import { AlertCircle, Sparkles, Zap, Calendar, ShoppingCart, Gift } from "lucide-react";
+
+import { AlertCircle, Calendar, Gift, ShoppingCart, Sparkles, Zap } from "lucide-react";
+
 import { useGuestScans } from "@/hooks/useGuestScans";
 import { useSubscription } from "@/hooks/useSubscription";
+
 import { EmailCaptureModal } from "./EmailCaptureModal";
 
 interface ScanLimitBannerProps {
@@ -38,7 +42,7 @@ export function ScanLimitBanner({ variant = "info" }: ScanLimitBannerProps) {
     canScan,
     startFreeTrial,
     startCheckout,
-    isLoading
+    isLoading,
   } = useSubscription();
 
   const [showEmailCapture, setShowEmailCapture] = useState(false);
@@ -66,8 +70,7 @@ export function ScanLimitBanner({ variant = "info" }: ScanLimitBannerProps) {
                   You&apos;ve used all {totalLimit} free guest scans.
                   {!hasBonusScans
                     ? " Get 5 bonus scans or create a free account for 10 scans per month!"
-                    : " Create a free account to get 10 scans per month!"
-                  }
+                    : " Create a free account to get 10 scans per month!"}
                 </p>
                 <div className="mt-3 flex flex-wrap gap-3">
                   {!hasBonusScans && (
@@ -191,9 +194,7 @@ export function ScanLimitBanner({ variant = "info" }: ScanLimitBannerProps) {
             <p className="text-sm text-red-700 mt-1">
               You&apos;ve used all 10 scans this month.
               {monthResetDate && (
-                <span className="text-red-600">
-                  {" "}Resets {formatResetDate(monthResetDate)}.
-                </span>
+                <span className="text-red-600"> Resets {formatResetDate(monthResetDate)}.</span>
               )}
             </p>
             <div className="mt-3 flex flex-wrap gap-3">
@@ -233,9 +234,7 @@ export function ScanLimitBanner({ variant = "info" }: ScanLimitBannerProps) {
               {scansRemaining} Scan{scansRemaining !== 1 ? "s" : ""} Remaining This Month
             </h3>
             <p className="text-sm text-amber-700 mt-1">
-              {monthResetDate && (
-                <>Resets {formatResetDate(monthResetDate)}. </>
-              )}
+              {monthResetDate && <>Resets {formatResetDate(monthResetDate)}. </>}
               Get unlimited scans with Premium!
             </p>
             <div className="mt-2 flex flex-wrap gap-3">

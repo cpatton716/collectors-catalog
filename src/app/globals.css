@@ -8,18 +8,18 @@
 
 :root {
   /* Pop Art Colors */
-  --pop-red: #ED1C24;
-  --pop-red-dark: #C41E3A;
-  --pop-yellow: #FFF200;
-  --pop-yellow-dark: #E6D200;
-  --pop-blue: #0066FF;
-  --pop-blue-dark: #0052CC;
+  --pop-red: #ed1c24;
+  --pop-red-dark: #c41e3a;
+  --pop-yellow: #fff200;
+  --pop-yellow-dark: #e6d200;
+  --pop-blue: #0066ff;
+  --pop-blue-dark: #0052cc;
   --pop-black: #000000;
-  --pop-white: #FFFFFF;
-  --pop-cream: #FFF8E7;
-  --pop-pink: #FF69B4;
-  --pop-orange: #FF6B35;
-  --pop-green: #00CC66;
+  --pop-white: #ffffff;
+  --pop-cream: #fff8e7;
+  --pop-pink: #ff69b4;
+  --pop-orange: #ff6b35;
+  --pop-green: #00cc66;
 
   /* Ben-Day dot size */
   --dot-size: 8px;
@@ -31,7 +31,7 @@ body {
   color: var(--pop-black);
   background-color: var(--pop-cream);
   min-height: 100vh;
-  font-family: var(--font-comic-neue), 'Comic Sans MS', sans-serif;
+  font-family: var(--font-comic-neue), "Comic Sans MS", sans-serif;
 }
 
 /* ============================================
@@ -78,7 +78,9 @@ body {
   background:
     radial-gradient(rgba(237, 28, 36, 0.2) 20%, transparent 20%),
     linear-gradient(135deg, var(--pop-cream) 0%, #fff 100%);
-  background-size: var(--dot-spacing) var(--dot-spacing), 100% 100%;
+  background-size:
+    var(--dot-spacing) var(--dot-spacing),
+    100% 100%;
 }
 
 /* ============================================
@@ -95,7 +97,7 @@ body {
 }
 
 .speech-bubble::after {
-  content: '';
+  content: "";
   position: absolute;
   bottom: -20px;
   left: 30px;
@@ -106,7 +108,7 @@ body {
 }
 
 .speech-bubble::before {
-  content: '';
+  content: "";
   position: absolute;
   bottom: -28px;
   left: 26px;
@@ -127,7 +129,7 @@ body {
 }
 
 .thought-bubble::after {
-  content: '';
+  content: "";
   position: absolute;
   bottom: -30px;
   left: 40px;
@@ -139,7 +141,7 @@ body {
 }
 
 .thought-bubble::before {
-  content: '';
+  content: "";
   position: absolute;
   bottom: -45px;
   left: 30px;
@@ -379,7 +381,7 @@ body {
 }
 
 .nav-link-pop::after {
-  content: '';
+  content: "";
   position: absolute;
   bottom: 0;
   left: 0;
@@ -423,8 +425,13 @@ body {
    ============================================ */
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .animate-pulse {
@@ -450,9 +457,16 @@ body {
 }
 
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px) rotate(-2deg); }
-  75% { transform: translateX(5px) rotate(2deg); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px) rotate(-2deg);
+  }
+  75% {
+    transform: translateX(5px) rotate(2deg);
+  }
 }
 
 .animate-shake {
@@ -492,12 +506,17 @@ body {
 
 /* Skeleton loading */
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 .skeleton {
-  background: linear-gradient(90deg,
+  background: linear-gradient(
+    90deg,
     var(--pop-cream) 25%,
     var(--pop-yellow) 50%,
     var(--pop-cream) 75%

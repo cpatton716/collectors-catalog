@@ -1,7 +1,9 @@
 "use client";
 
+import { Award, DollarSign } from "lucide-react";
+
 import { CollectionItem } from "@/types/comic";
-import { DollarSign, Award } from "lucide-react";
+
 import { ComicImage } from "./ComicImage";
 
 interface PublicComicCardProps {
@@ -57,14 +59,10 @@ export function PublicComicCard({ item, onClick }: PublicComicCardProps) {
 
       {/* Info */}
       <div className="p-3">
-        <h3 className="font-semibold text-gray-900 truncate">
-          {comic.title || "Unknown Title"}
-        </h3>
+        <h3 className="font-semibold text-gray-900 truncate">{comic.title || "Unknown Title"}</h3>
         <p className="text-sm text-gray-600 mt-1">
           #{comic.issueNumber || "?"}
-          {comic.variant && (
-            <span className="text-gray-400 ml-1">({comic.variant})</span>
-          )}
+          {comic.variant && <span className="text-gray-400 ml-1">({comic.variant})</span>}
         </p>
         <p className="text-xs text-gray-500 mt-1 truncate">
           {comic.publisher || "Unknown Publisher"}

@@ -1,4 +1,4 @@
-import { GradeEstimate, PriceData, CollectionItem } from "@/types/comic";
+import { CollectionItem, GradeEstimate, PriceData } from "@/types/comic";
 
 /**
  * Calculate the estimated value for a comic at a specific grade
@@ -33,7 +33,7 @@ export function calculateValueAtGrade(
   }
 
   // Get the appropriate value (raw or slabbed)
-  const getValue = (est: GradeEstimate) => isSlabbed ? est.slabbedValue : est.rawValue;
+  const getValue = (est: GradeEstimate) => (isSlabbed ? est.slabbedValue : est.rawValue);
 
   // Edge cases
   if (!upper && lower) {
@@ -54,7 +54,7 @@ export function calculateValueAtGrade(
   }
 
   // Exact match found
-  const exact = estimates.find(e => e.grade === grade);
+  const exact = estimates.find((e) => e.grade === grade);
   if (exact) {
     return getValue(exact);
   }
@@ -122,7 +122,11 @@ export function getComicValue(item: CollectionItem): number {
   const { comic, conditionGrade, isGraded } = item;
 
   // If there's a condition grade and grade estimates are available, use grade-aware pricing
-  if (conditionGrade !== null && comic.priceData?.gradeEstimates && comic.priceData.gradeEstimates.length > 0) {
+  if (
+    conditionGrade !== null &&
+    comic.priceData?.gradeEstimates &&
+    comic.priceData.gradeEstimates.length > 0
+  ) {
     const gradeValue = calculateValueAtGrade(comic.priceData, conditionGrade, isGraded);
     if (gradeValue !== null) {
       return gradeValue;

@@ -1,16 +1,22 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+
 import { useRouter } from "next/navigation";
+
 import { useUser } from "@clerk/nextjs";
+
+import { ArrowLeft, BarChart3, RefreshCw } from "lucide-react";
+
 import { storage } from "@/lib/storage";
-import { CollectionItem, UserList } from "@/types/comic";
+
 import { CollectionStats } from "@/components/CollectionStats";
 import { ComicDetailModal } from "@/components/ComicDetailModal";
+import { FeatureGate } from "@/components/FeatureGate";
 import { CollectionPageSkeleton } from "@/components/Skeleton";
 import { useToast } from "@/components/Toast";
-import { ArrowLeft, BarChart3, RefreshCw } from "lucide-react";
-import { FeatureGate } from "@/components/FeatureGate";
+
+import { CollectionItem, UserList } from "@/types/comic";
 
 export default function StatsPage() {
   const router = useRouter();
@@ -106,10 +112,7 @@ export default function StatsPage() {
         isStarred: !item.isStarred,
       });
       setCollection(updatedCollection);
-      showToast(
-        item.isStarred ? "Removed from favorites" : "Added to favorites",
-        "success"
-      );
+      showToast(item.isStarred ? "Removed from favorites" : "Added to favorites", "success");
       const updatedItem = updatedCollection.find((c) => c.id === itemId);
       if (updatedItem && selectedItem?.id === itemId) {
         setSelectedItem(updatedItem);
@@ -142,7 +145,9 @@ export default function StatsPage() {
               <div className="w-10 h-10 bg-pop-blue border-2 border-pop-black flex items-center justify-center">
                 <BarChart3 className="w-5 h-5 text-white" />
               </div>
-              <h1 className="text-3xl font-black text-pop-black font-comic">COLLECTION STATISTICS</h1>
+              <h1 className="text-3xl font-black text-pop-black font-comic">
+                COLLECTION STATISTICS
+              </h1>
             </div>
             <p className="text-gray-600 mt-1 ml-14">
               Detailed analytics and insights for your comic collection

@@ -1,11 +1,13 @@
 "use client";
 
+import { Clock, Gavel, Package, ShoppingCart } from "lucide-react";
+
 import { Auction, formatPrice } from "@/types/auction";
-import { Gavel, ShoppingCart, Package, Clock } from "lucide-react";
-import { AuctionCountdown } from "./AuctionCountdown";
-import { WatchlistButton } from "./WatchlistButton";
-import { SellerBadgeCompact } from "./SellerBadge";
+
 import { ComicImage } from "../ComicImage";
+import { AuctionCountdown } from "./AuctionCountdown";
+import { SellerBadgeCompact } from "./SellerBadge";
+import { WatchlistButton } from "./WatchlistButton";
 
 interface AuctionCardProps {
   auction: Auction;

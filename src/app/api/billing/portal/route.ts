@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
+
 import { auth } from "@clerk/nextjs/server";
-import { getProfileByClerkId } from "@/lib/db";
+
 import Stripe from "stripe";
+
+import { getProfileByClerkId } from "@/lib/db";
 
 // Initialize Stripe
 const stripe = process.env.STRIPE_SECRET_KEY
@@ -17,10 +20,7 @@ const stripe = process.env.STRIPE_SECRET_KEY
 export async function POST() {
   try {
     if (!stripe) {
-      return NextResponse.json(
-        { error: "Payment system not configured" },
-        { status: 503 }
-      );
+      return NextResponse.json({ error: "Payment system not configured" }, { status: 503 });
     }
 
     const { userId } = await auth();
@@ -50,9 +50,6 @@ export async function POST() {
     return NextResponse.json({ url: session.url });
   } catch (error) {
     console.error("Error creating billing portal session:", error);
-    return NextResponse.json(
-      { error: "Failed to create billing portal session" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to create billing portal session" }, { status: 500 });
   }
 }

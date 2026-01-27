@@ -1,23 +1,85 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+
+import Image from "next/image";
+import { useRouter, useSearchParams } from "next/navigation";
+
 import { useUser } from "@clerk/nextjs";
+
+import {
+  AlertCircle,
+  ArrowLeft,
+  Camera,
+  Check,
+  ClipboardCheck,
+  FileSpreadsheet,
+  Loader2,
+  PenLine,
+  Save,
+  ScanBarcode,
+  Sparkles,
+  Wand2,
+  X,
+  ZoomIn,
+} from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
-import { ImageUpload } from "@/components/ImageUpload";
-import { ComicDetailsForm } from "@/components/ComicDetailsForm";
-import { GuestLimitBanner } from "@/components/GuestLimitBanner";
+
+import { StorageQuotaError, storage } from "@/lib/storage";
+
+import { useCollection } from "@/hooks/useCollection";
+import { MilestoneType, useGuestScans } from "@/hooks/useGuestScans";
+
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { CSVImport } from "@/components/CSVImport";
-import { SignUpPromptModal } from "@/components/SignUpPromptModal";
-import { storage, StorageQuotaError } from "@/lib/storage";
-import { ComicDetails, CollectionItem } from "@/types/comic";
-import { useToast } from "@/components/Toast";
-import { useGuestScans, MilestoneType } from "@/hooks/useGuestScans";
-import { useCollection } from "@/hooks/useCollection";
-import Image from "next/image";
-import { Loader2, AlertCircle, ArrowLeft, Wand2, Check, Camera, Sparkles, ClipboardCheck, Save, ScanBarcode, PenLine, FileSpreadsheet, ZoomIn, X } from "lucide-react";
+import { ComicDetailsForm } from "@/components/ComicDetailsForm";
+import { GuestLimitBanner } from "@/components/GuestLimitBanner";
+import { ImageUpload } from "@/components/ImageUpload";
 import { analytics } from "@/components/PostHogProvider";
+import { SignUpPromptModal } from "@/components/SignUpPromptModal";
+import { useToast } from "@/components/Toast";
+
+import { CollectionItem, ComicDetails } from "@/types/comic";
+
+// Component that handles bonus scan verification from URL params
+// Must be wrapped in Suspense because it uses useSearchParams
+function BonusVerificationHandler({
+  addBonusScans,
+  showToast,
+}: {
+  addBonusScans: () => void;
+  showToast: (message: string, type: "success" | "error" | "info") => void;
+}) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const bonusStatus = searchParams.get("bonus_status");
+    const bonusMessage = searchParams.get("bonus_message");
+    const bonusGranted = searchParams.get("bonus_granted");
+
+    if (bonusStatus && bonusMessage) {
+      // Show appropriate toast based on status
+      if (bonusStatus === "success" && bonusGranted === "true") {
+        addBonusScans();
+        showToast(bonusMessage, "success");
+      } else if (bonusStatus === "already_verified") {
+        showToast(bonusMessage, "info");
+      } else if (bonusStatus === "expired" || bonusStatus === "error") {
+        showToast(bonusMessage, "error");
+      }
+
+      // Clean up URL params
+      const url = new URL(window.location.href);
+      url.searchParams.delete("bonus_status");
+      url.searchParams.delete("bonus_message");
+      url.searchParams.delete("bonus_granted");
+      router.replace(url.pathname, { scroll: false });
+    }
+  }, [searchParams, addBonusScans, showToast, router]);
+
+  return null; // This component just handles the side effect
+}
 
 type ScanState = "upload" | "analyzing" | "review" | "saved" | "error";
 
@@ -117,7 +179,8 @@ export default function ScanPage() {
   const router = useRouter();
   const { isSignedIn } = useUser();
   const { showToast } = useToast();
-  const { isLimitReached, isGuest, incrementScan, count, markMilestoneShown } = useGuestScans();
+  const { isLimitReached, isGuest, incrementScan, count, markMilestoneShown, addBonusScans } =
+    useGuestScans();
   const { addToCollection } = useCollection();
   const [state, setState] = useState<ScanState>("upload");
   const [imagePreview, setImagePreview] = useState<string>("");
@@ -177,8 +240,14 @@ export default function ScanPage() {
           // Edge function timeout or other non-JSON error
           const errorText = await response.text();
           console.error("Non-JSON error response:", errorText);
-          if (response.status === 504 || errorText.includes("edge") || errorText.includes("timeout")) {
-            throw new Error("The image took too long to process. Please try a smaller image or take a new photo.");
+          if (
+            response.status === 504 ||
+            errorText.includes("edge") ||
+            errorText.includes("timeout")
+          ) {
+            throw new Error(
+              "The image took too long to process. Please try a smaller image or take a new photo."
+            );
           }
           throw new Error("Something went wrong. Please try again with a different image.");
         }
@@ -199,7 +268,9 @@ export default function ScanPage() {
     } catch (err) {
       console.error("Error analyzing comic:", err);
       setError(
-        err instanceof Error ? err.message : "We couldn't recognize this comic. Please try a clearer photo or enter the details manually."
+        err instanceof Error
+          ? err.message
+          : "We couldn't recognize this comic. Please try a clearer photo or enter the details manually."
       );
       setState("error");
 
@@ -363,7 +434,9 @@ export default function ScanPage() {
     } catch (err) {
       console.error("Barcode lookup error:", err);
       showToast(
-        err instanceof Error ? err.message : "We couldn't find this comic. Try scanning the cover instead.",
+        err instanceof Error
+          ? err.message
+          : "We couldn't find this comic. Try scanning the cover instead.",
         "error"
       );
     } finally {
@@ -391,6 +464,11 @@ export default function ScanPage() {
 
   return (
     <div className="max-w-4xl mx-auto">
+      {/* Handle bonus scan verification from email link */}
+      <Suspense fallback={null}>
+        <BonusVerificationHandler addBonusScans={addBonusScans} showToast={showToast} />
+      </Suspense>
+
       {/* Header */}
       <div className="mb-8">
         <button
@@ -402,8 +480,7 @@ export default function ScanPage() {
         </button>
         <h1 className="text-3xl font-black text-pop-black font-comic">SCAN BOOK COVER</h1>
         <p className="text-gray-600 mt-2">
-          Upload a photo of your comic book cover to identify and add it to your
-          collection.
+          Upload a photo of your comic book cover to identify and add it to your collection.
         </p>
       </div>
 
@@ -417,9 +494,10 @@ export default function ScanPage() {
             <div
               className="absolute top-5 left-5 h-1 bg-green-500 rounded transition-all duration-300"
               style={{
-                width: getCurrentStepIndex() === 0
-                  ? '0%'
-                  : `calc(${(getCurrentStepIndex() / (STEPS.length - 1)) * 100}% - 40px)`
+                width:
+                  getCurrentStepIndex() === 0
+                    ? "0%"
+                    : `calc(${(getCurrentStepIndex() / (STEPS.length - 1)) * 100}% - 40px)`,
               }}
             />
 
@@ -440,15 +518,15 @@ export default function ScanPage() {
                           : "bg-gray-200 text-gray-400"
                     }`}
                   >
-                    {isCompleted ? (
-                      <Check className="w-5 h-5" />
-                    ) : (
-                      <Icon className="w-5 h-5" />
-                    )}
+                    {isCompleted ? <Check className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
                   </div>
                   <span
                     className={`text-xs mt-2 font-medium ${
-                      isCurrent ? "text-primary-600" : isCompleted ? "text-green-600" : "text-gray-400"
+                      isCurrent
+                        ? "text-primary-600"
+                        : isCompleted
+                          ? "text-green-600"
+                          : "text-gray-400"
                     }`}
                   >
                     {step.label}
@@ -467,11 +545,17 @@ export default function ScanPage() {
           {isGuest && <GuestLimitBanner variant={isLimitReached ? "warning" : "info"} />}
 
           {isLimitReached ? (
-            <div className="bg-pop-white border-3 border-pop-black p-8" style={{ boxShadow: "4px 4px 0px #000" }}>
+            <div
+              className="bg-pop-white border-3 border-pop-black p-8"
+              style={{ boxShadow: "4px 4px 0px #000" }}
+            >
               <GuestLimitBanner />
             </div>
           ) : (
-            <div className="bg-pop-white border-3 border-pop-black p-8" style={{ boxShadow: "4px 4px 0px #000" }}>
+            <div
+              className="bg-pop-white border-3 border-pop-black p-8"
+              style={{ boxShadow: "4px 4px 0px #000" }}
+            >
               <ImageUpload onImageSelect={handleImageSelect} />
 
               {/* Alternative add methods */}
@@ -512,7 +596,10 @@ export default function ScanPage() {
 
       {/* Analyzing State */}
       {state === "analyzing" && (
-        <div className="bg-pop-white border-3 border-pop-black p-8" style={{ boxShadow: "4px 4px 0px #000" }}>
+        <div
+          className="bg-pop-white border-3 border-pop-black p-8"
+          style={{ boxShadow: "4px 4px 0px #000" }}
+        >
           <div className="flex flex-col md:flex-row gap-8">
             {/* Image Preview */}
             <div className="md:w-1/3">
@@ -539,9 +626,7 @@ export default function ScanPage() {
                   <Loader2 className="w-24 h-24 text-primary-300 animate-spin" />
                 </div>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mt-6">
-                Analyzing Comic Cover
-              </h3>
+              <h3 className="text-xl font-semibold text-gray-900 mt-6">Analyzing Comic Cover</h3>
               <p className="text-gray-600 mt-2">
                 Hang tight! We&apos;re identifying the title, issue #, publisher, and more...
               </p>
@@ -551,9 +636,7 @@ export default function ScanPage() {
               </div>
               {currentFact && (
                 <div className="mt-6 p-4 bg-primary-50 rounded-lg border border-primary-100 max-w-md">
-                  <p className="text-sm text-primary-800 italic">
-                    &ldquo;{currentFact}&rdquo;
-                  </p>
+                  <p className="text-sm text-primary-800 italic">&ldquo;{currentFact}&rdquo;</p>
                 </div>
               )}
             </div>
@@ -563,7 +646,10 @@ export default function ScanPage() {
 
       {/* Error State */}
       {state === "error" && (
-        <div className="bg-pop-white border-3 border-pop-black p-8" style={{ boxShadow: "4px 4px 0px #000" }}>
+        <div
+          className="bg-pop-white border-3 border-pop-black p-8"
+          style={{ boxShadow: "4px 4px 0px #000" }}
+        >
           <div className="flex flex-col md:flex-row gap-8">
             {/* Image Preview */}
             {imagePreview && (
@@ -621,7 +707,10 @@ export default function ScanPage() {
 
       {/* Review State */}
       {state === "review" && comicDetails && (
-        <div className="bg-pop-white border-3 border-pop-black overflow-hidden" style={{ boxShadow: "4px 4px 0px #000" }}>
+        <div
+          className="bg-pop-white border-3 border-pop-black overflow-hidden"
+          style={{ boxShadow: "4px 4px 0px #000" }}
+        >
           <div className="flex flex-col lg:flex-row">
             {/* Image Preview */}
             <div className="lg:w-1/3 p-6 bg-gray-50 border-b-3 lg:border-b-0 lg:border-r-3 border-pop-black">
@@ -654,15 +743,11 @@ export default function ScanPage() {
                   )}
                 </div>
                 {imagePreview && (
-                  <p className="text-xs text-gray-500 text-center mt-2">
-                    Tap image to enlarge
-                  </p>
+                  <p className="text-xs text-gray-500 text-center mt-2">Tap image to enlarge</p>
                 )}
                 {!imagePreview && (
                   <div className="mt-4">
-                    <ImageUpload
-                      onImageSelect={(_, preview) => setImagePreview(preview)}
-                    />
+                    <ImageUpload onImageSelect={(_, preview) => setImagePreview(preview)} />
                   </div>
                 )}
               </div>
@@ -670,9 +755,7 @@ export default function ScanPage() {
 
             {/* Form */}
             <div className="lg:w-2/3 p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">
-                Verify Comic Details
-              </h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">Verify Comic Details</h2>
               <ComicDetailsForm
                 key={comicDetails.id}
                 comic={comicDetails}
@@ -690,11 +773,17 @@ export default function ScanPage() {
 
       {/* Saved State */}
       {state === "saved" && savedComic && (
-        <div className="bg-pop-white border-3 border-pop-black p-8" style={{ boxShadow: "4px 4px 0px #000" }}>
+        <div
+          className="bg-pop-white border-3 border-pop-black p-8"
+          style={{ boxShadow: "4px 4px 0px #000" }}
+        >
           <div className="flex flex-col md:flex-row gap-8">
             {/* Image Preview */}
             <div className="md:w-1/3">
-              <div className="aspect-[2/3] border-3 border-pop-black overflow-hidden bg-gray-100 relative" style={{ boxShadow: "4px 4px 0px #000" }}>
+              <div
+                className="aspect-[2/3] border-3 border-pop-black overflow-hidden bg-gray-100 relative"
+                style={{ boxShadow: "4px 4px 0px #000" }}
+              >
                 {imagePreview ? (
                   <Image
                     src={imagePreview}
@@ -721,14 +810,17 @@ export default function ScanPage() {
               </h3>
               <p className="text-gray-600 mt-2">
                 <span className="font-semibold">{savedComic.comic.title}</span>
-                {savedComic.comic.issueNumber && ` #${savedComic.comic.issueNumber}`}
-                {" "}has been saved.
+                {savedComic.comic.issueNumber && ` #${savedComic.comic.issueNumber}`} has been
+                saved.
               </p>
 
               {savedComic.comic.priceData?.estimatedValue && (
                 <div className="mt-4 px-4 py-2 bg-pop-green border-2 border-pop-black">
                   <p className="text-sm text-white font-bold">
-                    Estimated Value: <span className="font-black">${savedComic.comic.priceData.estimatedValue.toFixed(2)}</span>
+                    Estimated Value:{" "}
+                    <span className="font-black">
+                      ${savedComic.comic.priceData.estimatedValue.toFixed(2)}
+                    </span>
                   </p>
                 </div>
               )}
@@ -812,9 +904,7 @@ export default function ScanPage() {
           </button>
 
           {/* Hint text */}
-          <p className="absolute top-4 left-4 text-white/70 text-sm">
-            Tap anywhere to close
-          </p>
+          <p className="absolute top-4 left-4 text-white/70 text-sm">Tap anywhere to close</p>
 
           {/* Enlarged image */}
           <div

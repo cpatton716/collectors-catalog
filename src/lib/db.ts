@@ -1,6 +1,7 @@
+import { CollectionItem, SaleRecord, UserList } from "@/types/comic";
+
+import { cacheDelete, cacheGet, cacheSet } from "./cache";
 import { supabase, supabaseAdmin } from "./supabase";
-import { CollectionItem, UserList, SaleRecord } from "@/types/comic";
-import { cacheGet, cacheSet, cacheDelete } from "./cache";
 
 // Profile management
 export async function getOrCreateProfile(clerkUserId: string, email?: string) {
@@ -81,10 +82,12 @@ export async function invalidateProfileCache(clerkUserId: string): Promise<void>
 export async function getUserComics(profileId: string): Promise<CollectionItem[]> {
   const { data, error } = await supabase
     .from("comics")
-    .select(`
+    .select(
+      `
       *,
       comic_lists(list_id)
-    `)
+    `
+    )
     .eq("user_id", profileId)
     .order("date_added", { ascending: false });
 
@@ -97,11 +100,7 @@ export async function getUserComics(profileId: string): Promise<CollectionItem[]
 export async function addComic(profileId: string, item: CollectionItem) {
   const dbComic = transformCollectionItemToDbComic(item, profileId);
 
-  const { data, error } = await supabase
-    .from("comics")
-    .insert(dbComic)
-    .select()
-    .single();
+  const { data, error } = await supabase.from("comics").insert(dbComic).select().single();
 
   if (error) throw error;
 
@@ -121,7 +120,10 @@ export async function addComic(profileId: string, item: CollectionItem) {
  * Ensure a comic exists in Supabase (sync from localStorage if needed)
  * Used when creating listings - the comic must exist in Supabase for the foreign key
  */
-export async function ensureComicInSupabase(profileId: string, item: CollectionItem): Promise<string> {
+export async function ensureComicInSupabase(
+  profileId: string,
+  item: CollectionItem
+): Promise<string> {
   // Check if comic already exists
   const { data: existing } = await supabaseAdmin
     .from("comics")
@@ -139,11 +141,7 @@ export async function ensureComicInSupabase(profileId: string, item: CollectionI
     ...transformCollectionItemToDbComic(item, profileId),
   };
 
-  const { data, error } = await supabaseAdmin
-    .from("comics")
-    .insert(dbComic)
-    .select()
-    .single();
+  const { data, error } = await supabaseAdmin.from("comics").insert(dbComic).select().single();
 
   if (error) throw error;
 
@@ -184,10 +182,7 @@ export async function updateComic(comicId: string, updates: Partial<CollectionIt
   if (updates.askingPrice !== undefined) dbUpdates.asking_price = updates.askingPrice;
   if (updates.isStarred !== undefined) dbUpdates.is_starred = updates.isStarred;
 
-  const { error } = await supabase
-    .from("comics")
-    .update(dbUpdates)
-    .eq("id", comicId);
+  const { error } = await supabase.from("comics").update(dbUpdates).eq("id", comicId);
 
   if (error) throw error;
 }
@@ -244,11 +239,7 @@ export async function deleteList(listId: string): Promise<void> {
   await supabase.from("comic_lists").delete().eq("list_id", listId);
 
   // Then delete the list (only if not default)
-  const { error } = await supabase
-    .from("lists")
-    .delete()
-    .eq("id", listId)
-    .eq("is_default", false);
+  const { error } = await supabase.from("lists").delete().eq("id", listId).eq("is_default", false);
 
   if (error) throw error;
 }
@@ -399,11 +390,7 @@ export async function migrateLocalDataToCloud(
   // Import comics
   for (const item of comics) {
     const dbComic = transformCollectionItemToDbComic(item, profileId);
-    const { data: newComic } = await supabase
-      .from("comics")
-      .insert(dbComic)
-      .select()
-      .single();
+    const { data: newComic } = await supabase.from("comics").insert(dbComic).select().single();
 
     if (newComic && item.listIds.length > 0) {
       const listInserts = item.listIds
@@ -551,10 +538,7 @@ export async function saveComicMetadata(metadata: {
 /**
  * Increment lookup count for a comic (for analytics/popularity)
  */
-export async function incrementComicLookupCount(
-  title: string,
-  issueNumber: string
-): Promise<void> {
+export async function incrementComicLookupCount(title: string, issueNumber: string): Promise<void> {
   // The trigger handles incrementing on update, so we just touch the record
   await supabase
     .from("comic_metadata")
@@ -677,9 +661,7 @@ export interface PublicCollectionStats {
 /**
  * Get a public profile by slug or user ID
  */
-export async function getPublicProfile(
-  slugOrId: string
-): Promise<PublicProfile | null> {
+export async function getPublicProfile(slugOrId: string): Promise<PublicProfile | null> {
   // Try by slug first, then by ID
   const { data, error } = await supabase
     .from("profiles")
@@ -706,15 +688,15 @@ export async function getPublicProfile(
 /**
  * Get comics for a public profile (read-only)
  */
-export async function getPublicComics(
-  profileId: string
-): Promise<CollectionItem[]> {
+export async function getPublicComics(profileId: string): Promise<CollectionItem[]> {
   const { data, error } = await supabase
     .from("comics")
-    .select(`
+    .select(
+      `
       *,
       comic_lists(list_id)
-    `)
+    `
+    )
     .eq("user_id", profileId)
     .order("date_added", { ascending: false });
 
@@ -748,9 +730,7 @@ export async function getPublicLists(profileId: string): Promise<UserList[]> {
 /**
  * Calculate stats for a public collection
  */
-export function calculatePublicStats(
-  comics: CollectionItem[]
-): PublicCollectionStats {
+export function calculatePublicStats(comics: CollectionItem[]): PublicCollectionStats {
   const totalComics = comics.length;
   const totalValue = comics.reduce(
     (sum, item) => sum + (item.comic.priceData?.estimatedValue || 0),
@@ -776,7 +756,10 @@ export function calculatePublicStats(
   );
 
   const oldestComic = sortedByYear[0]
-    ? { title: sortedByYear[0].comic.title || "Unknown", year: sortedByYear[0].comic.releaseYear || "" }
+    ? {
+        title: sortedByYear[0].comic.title || "Unknown",
+        year: sortedByYear[0].comic.releaseYear || "",
+      }
     : null;
 
   const newestComic = sortedByYear[sortedByYear.length - 1]
@@ -918,10 +901,7 @@ export async function updatePublicProfileSettings(
     updates.public_slug = settings.publicSlug;
   }
 
-  const { error } = await supabase
-    .from("profiles")
-    .update(updates)
-    .eq("id", profileId);
+  const { error } = await supabase.from("profiles").update(updates).eq("id", profileId);
 
   if (error) {
     return { success: false, error: error.message };
@@ -958,12 +938,6 @@ export async function getSharingSettings(profileId: string): Promise<{
 /**
  * Toggle list sharing visibility
  */
-export async function toggleListSharing(
-  listId: string,
-  isShared: boolean
-): Promise<void> {
-  await supabase
-    .from("lists")
-    .update({ is_shared: isShared })
-    .eq("id", listId);
+export async function toggleListSharing(listId: string, isShared: boolean): Promise<void> {
+  await supabase.from("lists").update({ is_shared: isShared }).eq("id", listId);
 }

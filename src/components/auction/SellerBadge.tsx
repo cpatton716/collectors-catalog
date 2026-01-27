@@ -1,7 +1,8 @@
 "use client";
 
-import { SellerProfile } from "@/types/auction";
 import { Shield, Skull, User } from "lucide-react";
+
+import { SellerProfile } from "@/types/auction";
 
 interface SellerBadgeProps {
   seller: SellerProfile;
@@ -36,12 +37,7 @@ function getSellerDisplayName(seller: SellerProfile): string {
   return publicDisplayName || displayName || "Seller";
 }
 
-export function SellerBadge({
-  seller,
-  size = "md",
-  showCount = true,
-  onClick,
-}: SellerBadgeProps) {
+export function SellerBadge({ seller, size = "md", showCount = true, onClick }: SellerBadgeProps) {
   const { reputation, positivePercentage, totalRatings } = seller;
   const name = getSellerDisplayName(seller);
 
@@ -96,17 +92,11 @@ export function SellerBadge({
         onClick ? "cursor-pointer hover:opacity-80" : ""
       }`}
     >
-      <div
-        className={`flex items-center gap-1 px-2 py-1 rounded-full ${styles.bgColor}`}
-      >
+      <div className={`flex items-center gap-1 px-2 py-1 rounded-full ${styles.bgColor}`}>
         <Icon className={`${iconSizes[size]} ${styles.iconColor}`} />
-        <span className={`font-medium ${styles.textColor}`}>
-          {name}
-        </span>
+        <span className={`font-medium ${styles.textColor}`}>{name}</span>
         {showCount && totalRatings > 0 && (
-          <span className={`${styles.textColor} opacity-75`}>
-            ({positivePercentage}%)
-          </span>
+          <span className={`${styles.textColor} opacity-75`}>({positivePercentage}%)</span>
         )}
       </div>
     </div>
@@ -138,9 +128,7 @@ export function SellerBadgeCompact({
   const Icon = styles.icon;
 
   if (totalRatings === 0) {
-    return (
-      <span className="text-xs text-gray-500">New Seller</span>
-    );
+    return <span className="text-xs text-gray-500">New Seller</span>;
   }
 
   return (
@@ -151,9 +139,7 @@ export function SellerBadgeCompact({
       }`}
     >
       <Icon className={`w-3 h-3 ${styles.color}`} />
-      <span className={`text-xs font-medium ${styles.color}`}>
-        {positivePercentage}%
-      </span>
+      <span className={`text-xs font-medium ${styles.color}`}>{positivePercentage}%</span>
     </button>
   );
 }

@@ -1,10 +1,12 @@
 "use client";
 
+import { MessageSquare, Package, ShoppingCart, Tag } from "lucide-react";
+
 import { Auction, formatPrice } from "@/types/auction";
-import { Tag, Package, ShoppingCart, MessageSquare } from "lucide-react";
-import { WatchlistButton } from "./WatchlistButton";
-import { SellerBadgeCompact } from "./SellerBadge";
+
 import { ComicImage } from "../ComicImage";
+import { SellerBadgeCompact } from "./SellerBadge";
+import { WatchlistButton } from "./WatchlistButton";
 
 interface ListingCardProps {
   listing: Auction;
@@ -19,15 +21,7 @@ export function ListingCard({
   onWatchlistChange,
   showSeller = true,
 }: ListingCardProps) {
-  const {
-    id,
-    startingPrice,
-    shippingCost,
-    comic,
-    seller,
-    isWatching,
-    acceptsOffers,
-  } = listing;
+  const { id, startingPrice, shippingCost, comic, seller, isWatching, acceptsOffers } = listing;
 
   const coverImageUrl = comic?.coverImageUrl;
   const title = comic?.comic?.title || "Unknown Title";

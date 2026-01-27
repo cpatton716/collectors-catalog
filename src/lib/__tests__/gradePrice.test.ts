@@ -4,16 +4,16 @@
  * Tests the critical pricing logic used for comic valuations.
  * These functions determine collection values displayed to users.
  */
+import { CollectionItem, GradeEstimate, PriceData } from "@/types/comic";
 
 import {
-  calculateValueAtGrade,
-  getGradeLabel,
-  formatGradeEstimate,
-  getPriceComparison,
-  getComicValue,
   calculateCollectionValue,
+  calculateValueAtGrade,
+  formatGradeEstimate,
+  getComicValue,
+  getGradeLabel,
+  getPriceComparison,
 } from "../gradePrice";
-import { PriceData, GradeEstimate, CollectionItem } from "@/types/comic";
 
 // Test fixtures
 const createGradeEstimates = (): GradeEstimate[] => [

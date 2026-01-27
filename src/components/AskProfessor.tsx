@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Brain, X, ChevronDown, ChevronUp } from "lucide-react";
+
+import { Brain, ChevronDown, ChevronUp, X } from "lucide-react";
 
 interface FAQItem {
   question: string;
@@ -108,9 +109,7 @@ export default function AskProfessor() {
                   </div>
                   <div>
                     <h2 className="text-xl font-bold text-yellow-400">Ask the Professor</h2>
-                    <p className="text-blue-200 text-sm">
-                      Your guide to Collectors Chest
-                    </p>
+                    <p className="text-blue-200 text-sm">Your guide to Collectors Chest</p>
                   </div>
                 </div>
                 <button
@@ -125,22 +124,17 @@ export default function AskProfessor() {
             {/* FAQ List */}
             <div className="overflow-y-auto max-h-[calc(80vh-120px)] p-4">
               <p className="text-gray-600 text-sm mb-4">
-                Welcome, collector! Here are answers to commonly asked questions.
-                Can&apos;t find what you need? We&apos;re always adding more.
+                Welcome, collector! Here are answers to commonly asked questions. Can&apos;t find
+                what you need? We&apos;re always adding more.
               </p>
               <div className="space-y-2">
                 {faqs.map((faq, index) => (
-                  <div
-                    key={index}
-                    className="border border-gray-200 rounded-lg overflow-hidden"
-                  >
+                  <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
                     <button
                       onClick={() => toggleFAQ(index)}
                       className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 transition-colors"
                     >
-                      <span className="font-medium text-gray-900 pr-4">
-                        {faq.question}
-                      </span>
+                      <span className="font-medium text-gray-900 pr-4">{faq.question}</span>
                       {expandedIndex === index ? (
                         <ChevronUp className="w-5 h-5 text-gray-500 flex-shrink-0" />
                       ) : (

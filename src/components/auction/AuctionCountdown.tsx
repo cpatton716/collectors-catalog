@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+
 import { Clock } from "lucide-react";
+
 import { calculateTimeRemaining } from "@/types/auction";
 
 interface AuctionCountdownProps {
@@ -10,11 +12,7 @@ interface AuctionCountdownProps {
   size?: "sm" | "md" | "lg";
 }
 
-export function AuctionCountdown({
-  endTime,
-  onEnd,
-  size = "md",
-}: AuctionCountdownProps) {
+export function AuctionCountdown({ endTime, onEnd, size = "md" }: AuctionCountdownProps) {
   const [timeLeft, setTimeLeft] = useState(calculateTimeRemaining(endTime));
 
   useEffect(() => {
@@ -47,8 +45,8 @@ export function AuctionCountdown({
   const urgencyClass = timeLeft.isUrgent
     ? "text-red-600 animate-pulse"
     : timeLeft.isEndingSoon
-    ? "text-orange-600"
-    : "text-gray-700";
+      ? "text-orange-600"
+      : "text-gray-700";
 
   const sizeClasses = {
     sm: "text-xs",

@@ -1,6 +1,6 @@
 "use client";
 
-import { WifiOff, CloudOff, Check, AlertCircle } from "lucide-react";
+import { AlertCircle, Check, CloudOff, WifiOff } from "lucide-react";
 
 interface OfflineIndicatorProps {
   pendingCount?: number;
@@ -17,25 +17,19 @@ export function OfflineIndicator({ pendingCount = 0, syncResult }: OfflineIndica
       {pendingCount > 0 && (
         <div className="flex items-center gap-1.5">
           <CloudOff className="w-3.5 h-3.5 text-white/80" />
-          <span className="text-xs text-white/80">
-            {pendingCount} pending
-          </span>
+          <span className="text-xs text-white/80">{pendingCount} pending</span>
         </div>
       )}
       {syncResult && syncResult.synced > 0 && (
         <div className="flex items-center gap-1.5">
           <Check className="w-3.5 h-3.5 text-green-300" />
-          <span className="text-xs text-white/80">
-            {syncResult.synced} synced
-          </span>
+          <span className="text-xs text-white/80">{syncResult.synced} synced</span>
         </div>
       )}
       {syncResult && syncResult.failed > 0 && (
         <div className="flex items-center gap-1.5">
           <AlertCircle className="w-3.5 h-3.5 text-red-300" />
-          <span className="text-xs text-white/80">
-            {syncResult.failed} failed
-          </span>
+          <span className="text-xs text-white/80">{syncResult.failed} failed</span>
         </div>
       )}
     </div>
@@ -74,10 +68,7 @@ export function SyncNotification({ synced, failed, onDismiss }: SyncNotification
               {failed > 0 && `${failed} failed`}
             </p>
           </div>
-          <button
-            onClick={onDismiss}
-            className="text-gray-400 hover:text-white transition-colors"
-          >
+          <button onClick={onDismiss} className="text-gray-400 hover:text-white transition-colors">
             <span className="sr-only">Dismiss</span>
             &times;
           </button>

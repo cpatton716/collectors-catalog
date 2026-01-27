@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { auth } from "@clerk/nextjs/server";
-import { getProfileByClerkId } from "@/lib/db";
-import { getAuction } from "@/lib/auctionDb";
+
 import Stripe from "stripe";
+
+import { getAuction } from "@/lib/auctionDb";
+import { getProfileByClerkId } from "@/lib/db";
 
 // Initialize Stripe (conditionally - only if key exists)
 const stripe = process.env.STRIPE_SECRET_KEY
@@ -16,10 +19,7 @@ export async function POST(request: NextRequest) {
   try {
     // Check if Stripe is configured
     if (!stripe) {
-      return NextResponse.json(
-        { error: "Payment system not configured" },
-        { status: 503 }
-      );
+      return NextResponse.json({ error: "Payment system not configured" }, { status: 503 });
     }
 
     const { userId } = await auth();
@@ -36,10 +36,7 @@ export async function POST(request: NextRequest) {
     const { auctionId } = body;
 
     if (!auctionId) {
-      return NextResponse.json(
-        { error: "Auction ID is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Auction ID is required" }, { status: 400 });
     }
 
     // Get auction details
@@ -58,10 +55,7 @@ export async function POST(request: NextRequest) {
 
     // Check payment status
     if (auction.paymentStatus !== "pending") {
-      return NextResponse.json(
-        { error: "This auction is not awaiting payment" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "This auction is not awaiting payment" }, { status: 400 });
     }
 
     // Calculate total (winning bid + shipping)
@@ -77,9 +71,7 @@ export async function POST(request: NextRequest) {
             product_data: {
               name: `${auction.comic?.comic?.title || "Comic"} #${auction.comic?.comic?.issueNumber || "?"}`,
               description: `Auction winner - includes shipping`,
-              images: auction.comic?.coverImageUrl
-                ? [auction.comic.coverImageUrl]
-                : undefined,
+              images: auction.comic?.coverImageUrl ? [auction.comic.coverImageUrl] : undefined,
             },
             unit_amount: Math.round(total * 100), // Stripe expects cents
           },
@@ -99,9 +91,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ url: session.url });
   } catch (error) {
     console.error("Error creating checkout session:", error);
-    return NextResponse.json(
-      { error: "Failed to create checkout session" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to create checkout session" }, { status: 500 });
   }
 }

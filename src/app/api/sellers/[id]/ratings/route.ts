@@ -1,18 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { auth } from "@clerk/nextjs/server";
+
+import { getSellerProfile, getSellerRatings, submitSellerRating } from "@/lib/auctionDb";
 import { getProfileByClerkId } from "@/lib/db";
-import {
-  getSellerRatings,
-  getSellerProfile,
-  submitSellerRating,
-} from "@/lib/auctionDb";
+
 import { RatingType } from "@/types/auction";
 
 // GET - Get seller ratings
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: sellerId } = await params;
 
@@ -34,18 +30,12 @@ export async function GET(
     });
   } catch (error) {
     console.error("Error fetching seller ratings:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch seller ratings" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch seller ratings" }, { status: 500 });
   }
 }
 
 // POST - Submit seller rating
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { userId } = await auth();
     if (!userId) {
@@ -94,9 +84,6 @@ export async function POST(
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error submitting rating:", error);
-    return NextResponse.json(
-      { error: "Failed to submit rating" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to submit rating" }, { status: 500 });
   }
 }

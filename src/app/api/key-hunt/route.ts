@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { auth } from "@clerk/nextjs/server";
+
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -142,13 +144,13 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     if (!title || !issueNumber) {
-      return NextResponse.json(
-        { error: "Title and issue number are required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Title and issue number are required" }, { status: 400 });
     }
 
-    const titleNormalized = title.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
+    const titleNormalized = title
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, "")
+      .trim();
 
     // Check if already in list
     const { data: existing } = await supabase
@@ -265,10 +267,12 @@ export async function PATCH(request: NextRequest) {
     // Build update object with snake_case keys
     const dbUpdates: Record<string, unknown> = {};
     if (updates.targetPriceLow !== undefined) dbUpdates.target_price_low = updates.targetPriceLow;
-    if (updates.targetPriceHigh !== undefined) dbUpdates.target_price_high = updates.targetPriceHigh;
+    if (updates.targetPriceHigh !== undefined)
+      dbUpdates.target_price_high = updates.targetPriceHigh;
     if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
     if (updates.priority !== undefined) dbUpdates.priority = updates.priority;
-    if (updates.notifyPriceDrop !== undefined) dbUpdates.notify_price_drop = updates.notifyPriceDrop;
+    if (updates.notifyPriceDrop !== undefined)
+      dbUpdates.notify_price_drop = updates.notifyPriceDrop;
     if (updates.notifyThreshold !== undefined) dbUpdates.notify_threshold = updates.notifyThreshold;
 
     const { data, error } = await supabase

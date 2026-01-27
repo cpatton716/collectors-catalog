@@ -1,17 +1,21 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
-import { useAuth } from "@clerk/nextjs";
+import { Suspense, useEffect, useState } from "react";
+
 import { useSearchParams } from "next/navigation";
+
+import { useAuth } from "@clerk/nextjs";
+
+import { ChevronDown, Clock, Gavel, Search, Tag } from "lucide-react";
+
 import {
-  Gavel,
-  Tag,
-  Clock,
-  ChevronDown,
-  Search,
-} from "lucide-react";
+  AuctionCard,
+  AuctionDetailModal,
+  ListingCard,
+  ListingDetailModal,
+} from "@/components/auction";
+
 import { Auction, AuctionSortBy, ListingSortBy } from "@/types/auction";
-import { AuctionCard, AuctionDetailModal, ListingCard, ListingDetailModal } from "@/components/auction";
 
 type ShopTab = "buy-now" | "auctions";
 
@@ -159,19 +163,11 @@ function ShopPageContent() {
   };
 
   const handleAuctionWatchlistChange = (auctionId: string, isWatching: boolean) => {
-    setAuctions((prev) =>
-      prev.map((a) =>
-        a.id === auctionId ? { ...a, isWatching } : a
-      )
-    );
+    setAuctions((prev) => prev.map((a) => (a.id === auctionId ? { ...a, isWatching } : a)));
   };
 
   const handleListingWatchlistChange = (listingId: string, isWatching: boolean) => {
-    setListings((prev) =>
-      prev.map((l) =>
-        l.id === listingId ? { ...l, isWatching } : l
-      )
-    );
+    setListings((prev) => prev.map((l) => (l.id === listingId ? { ...l, isWatching } : l)));
   };
 
   // Filter auctions by search query (client-side)
@@ -196,10 +192,7 @@ function ShopPageContent() {
   const LoadingSkeleton = () => (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
       {[...Array(10)].map((_, i) => (
-        <div
-          key={i}
-          className="bg-white rounded-xl shadow-md overflow-hidden animate-pulse"
-        >
+        <div key={i} className="bg-white rounded-xl shadow-md overflow-hidden animate-pulse">
           <div className="aspect-[2/3] bg-gray-200" />
           <div className="p-3 space-y-2">
             <div className="h-4 bg-gray-200 rounded w-3/4" />
@@ -215,9 +208,7 @@ function ShopPageContent() {
       {/* Header */}
       <div className="container mx-auto px-4 py-6">
         <h1 className="text-3xl font-black text-pop-black font-comic">SHOP</h1>
-        <p className="text-gray-600 mt-1">
-          Find your next addition to the collection
-        </p>
+        <p className="text-gray-600 mt-1">Find your next addition to the collection</p>
 
         {/* Tabs - Pop Art Style */}
         <div className="flex gap-2 mt-6">
@@ -251,7 +242,10 @@ function ShopPageContent() {
         {activeTab === "buy-now" ? (
           <>
             {/* Buy Now Search & Filters - Pop Art Style */}
-            <div className="bg-pop-white border-3 border-pop-black p-4 mb-6" style={{ boxShadow: "4px 4px 0px #000" }}>
+            <div
+              className="bg-pop-white border-3 border-pop-black p-4 mb-6"
+              style={{ boxShadow: "4px 4px 0px #000" }}
+            >
               {/* Search */}
               <div className="relative mb-4">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
@@ -284,11 +278,16 @@ function ShopPageContent() {
             {isLoadingListings ? (
               <LoadingSkeleton />
             ) : filteredListings.length === 0 ? (
-              <div className="bg-pop-white border-3 border-pop-black p-12 text-center" style={{ boxShadow: "4px 4px 0px #000" }}>
+              <div
+                className="bg-pop-white border-3 border-pop-black p-12 text-center"
+                style={{ boxShadow: "4px 4px 0px #000" }}
+              >
                 <div className="w-16 h-16 bg-pop-yellow border-3 border-pop-black flex items-center justify-center mx-auto mb-4">
                   <Tag className="w-8 h-8 text-pop-black" />
                 </div>
-                <p className="text-xl font-black text-pop-black font-comic uppercase">No listings found</p>
+                <p className="text-xl font-black text-pop-black font-comic uppercase">
+                  No listings found
+                </p>
                 <p className="mt-2 text-gray-600">
                   {listingSearchQuery
                     ? "Try adjusting your search"
@@ -311,7 +310,10 @@ function ShopPageContent() {
         ) : (
           <>
             {/* Auctions Search & Filters - Pop Art Style */}
-            <div className="bg-pop-white border-3 border-pop-black p-4 mb-6" style={{ boxShadow: "4px 4px 0px #000" }}>
+            <div
+              className="bg-pop-white border-3 border-pop-black p-4 mb-6"
+              style={{ boxShadow: "4px 4px 0px #000" }}
+            >
               {/* Search */}
               <div className="relative mb-4">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
@@ -370,11 +372,16 @@ function ShopPageContent() {
             {isLoadingAuctions ? (
               <LoadingSkeleton />
             ) : filteredAuctions.length === 0 ? (
-              <div className="bg-pop-white border-3 border-pop-black p-12 text-center" style={{ boxShadow: "4px 4px 0px #000" }}>
+              <div
+                className="bg-pop-white border-3 border-pop-black p-12 text-center"
+                style={{ boxShadow: "4px 4px 0px #000" }}
+              >
                 <div className="w-16 h-16 bg-pop-yellow border-3 border-pop-black flex items-center justify-center mx-auto mb-4">
                   <Gavel className="w-8 h-8 text-pop-black" />
                 </div>
-                <p className="text-xl font-black text-pop-black font-comic uppercase">No auctions found</p>
+                <p className="text-xl font-black text-pop-black font-comic uppercase">
+                  No auctions found
+                </p>
                 <p className="mt-2 text-gray-600">
                   {auctionSearchQuery
                     ? "Try adjusting your search"

@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
+
 import { auth } from "@clerk/nextjs/server";
+
 import { getProfileByClerkId } from "@/lib/db";
 import {
+  FREE_MONTHLY_SCAN_LIMIT,
+  GUEST_SCAN_LIMIT,
+  canCreateListing,
   getSubscriptionStatus,
   hasUsedTrial,
-  canCreateListing,
-  GUEST_SCAN_LIMIT,
-  FREE_MONTHLY_SCAN_LIMIT,
 } from "@/lib/subscription";
 
 /**
@@ -55,10 +57,7 @@ export async function GET() {
     // Get full subscription status
     const status = await getSubscriptionStatus(profile.id);
     if (!status) {
-      return NextResponse.json(
-        { error: "Could not get subscription status" },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "Could not get subscription status" }, { status: 500 });
     }
 
     // Check trial availability
@@ -77,9 +76,10 @@ export async function GET() {
       status: status.status,
       scansRemaining: status.scansRemaining,
       scansUsed: status.scansUsed,
-      monthlyLimit: status.tier === "premium" || status.isTrialing
-        ? null // Unlimited
-        : FREE_MONTHLY_SCAN_LIMIT,
+      monthlyLimit:
+        status.tier === "premium" || status.isTrialing
+          ? null // Unlimited
+          : FREE_MONTHLY_SCAN_LIMIT,
       canScan: status.canScan,
       isTrialing: status.isTrialing,
       trialAvailable,
@@ -109,9 +109,6 @@ export async function GET() {
     });
   } catch (error) {
     console.error("Error getting billing status:", error);
-    return NextResponse.json(
-      { error: "Failed to get subscription status" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to get subscription status" }, { status: 500 });
   }
 }

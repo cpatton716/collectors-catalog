@@ -1,10 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Target, Check, Loader2, LogIn } from "lucide-react";
-import { useKeyHunt, AddToKeyHuntParams } from "@/hooks/useKeyHunt";
-import { useUser } from "@clerk/nextjs";
+
 import Link from "next/link";
+
+import { useUser } from "@clerk/nextjs";
+
+import { Check, Loader2, LogIn, Target } from "lucide-react";
+
+import { AddToKeyHuntParams, useKeyHunt } from "@/hooks/useKeyHunt";
 
 interface AddToKeyHuntButtonProps {
   title: string;
@@ -170,11 +174,7 @@ export function AddToKeyHuntButton({
         `}
         title="Add to Key Hunt"
       >
-        {isAdding ? (
-          <Loader2 className="w-5 h-5 animate-spin" />
-        ) : (
-          <Target className="w-5 h-5" />
-        )}
+        {isAdding ? <Loader2 className="w-5 h-5 animate-spin" /> : <Target className="w-5 h-5" />}
       </button>
     );
   }

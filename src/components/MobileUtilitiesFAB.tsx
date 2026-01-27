@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+
+import { usePathname, useRouter } from "next/navigation";
+
 import { Plus } from "lucide-react";
 
 export function MobileUtilitiesFAB() {

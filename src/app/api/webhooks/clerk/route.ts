@@ -1,6 +1,8 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
+
 import { Webhook } from "svix";
+
 import { supabase } from "@/lib/supabase";
 
 // Clerk webhook types
@@ -17,10 +19,7 @@ export async function POST(req: Request) {
 
   if (!WEBHOOK_SECRET) {
     console.error("Missing CLERK_WEBHOOK_SECRET environment variable");
-    return NextResponse.json(
-      { error: "Webhook secret not configured" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Webhook secret not configured" }, { status: 500 });
   }
 
   // Get headers for verification
@@ -30,10 +29,7 @@ export async function POST(req: Request) {
   const svixSignature = headerPayload.get("svix-signature");
 
   if (!svixId || !svixTimestamp || !svixSignature) {
-    return NextResponse.json(
-      { error: "Missing svix headers" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Missing svix headers" }, { status: 400 });
   }
 
   // Get the body
@@ -52,10 +48,7 @@ export async function POST(req: Request) {
     }) as ClerkWebhookEvent;
   } catch (err) {
     console.error("Webhook verification failed:", err);
-    return NextResponse.json(
-      { error: "Invalid signature" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
   // Handle the user.deleted event
@@ -80,10 +73,7 @@ export async function POST(req: Request) {
       // But let's be explicit for audit purposes
 
       // 1. Delete sales records
-      const { error: salesError } = await supabase
-        .from("sales")
-        .delete()
-        .eq("user_id", profileId);
+      const { error: salesError } = await supabase.from("sales").delete().eq("user_id", profileId);
 
       if (salesError) {
         console.error("Error deleting sales:", salesError);
@@ -97,10 +87,7 @@ export async function POST(req: Request) {
 
       if (userComics && userComics.length > 0) {
         const comicIds = userComics.map((c) => c.id);
-        await supabase
-          .from("comic_lists")
-          .delete()
-          .in("comic_id", comicIds);
+        await supabase.from("comic_lists").delete().in("comic_id", comicIds);
       }
 
       // 3. Delete comics
@@ -114,10 +101,7 @@ export async function POST(req: Request) {
       }
 
       // 4. Delete lists
-      const { error: listsError } = await supabase
-        .from("lists")
-        .delete()
-        .eq("user_id", profileId);
+      const { error: listsError } = await supabase.from("lists").delete().eq("user_id", profileId);
 
       if (listsError) {
         console.error("Error deleting lists:", listsError);
@@ -131,20 +115,13 @@ export async function POST(req: Request) {
 
       if (deleteProfileError) {
         console.error("Error deleting profile:", deleteProfileError);
-        return NextResponse.json(
-          { error: "Failed to delete user data" },
-          { status: 500 }
-        );
+        return NextResponse.json({ error: "Failed to delete user data" }, { status: 500 });
       }
 
       return NextResponse.json({ received: true, deleted: true });
-
     } catch (err) {
       console.error("Error processing user deletion:", err);
-      return NextResponse.json(
-        { error: "Failed to process deletion" },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "Failed to process deletion" }, { status: 500 });
     }
   }
 

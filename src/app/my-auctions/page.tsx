@@ -1,18 +1,22 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useAuth } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+
+import { useAuth } from "@clerk/nextjs";
+
+import { Clock, Gavel, Plus, Tag, Trophy } from "lucide-react";
+
 import {
-  Gavel,
-  Tag,
-  Trophy,
-  Clock,
-  Plus,
-} from "lucide-react";
+  AuctionCard,
+  AuctionDetailModal,
+  ListingCard,
+  ListingDetailModal,
+} from "@/components/auction";
+
 import { Auction, formatPrice } from "@/types/auction";
-import { AuctionCard, AuctionDetailModal, ListingCard, ListingDetailModal } from "@/components/auction";
 
 type ListingsTab = "active" | "ended";
 
@@ -85,9 +89,7 @@ export default function MyListingsPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-black text-pop-black font-comic">MY LISTINGS</h1>
-            <p className="text-gray-600 mt-1">
-              Manage your auctions and items for sale
-            </p>
+            <p className="text-gray-600 mt-1">Manage your auctions and items for sale</p>
           </div>
           <button
             onClick={() => router.push("/collection")}
@@ -111,9 +113,11 @@ export default function MyListingsPage() {
           >
             Active
             {activeListings.length > 0 && (
-              <span className={`px-1.5 py-0.5 text-xs font-black border border-pop-black ${
-                activeTab === "active" ? "bg-white text-pop-black" : "bg-pop-blue text-white"
-              }`}>
+              <span
+                className={`px-1.5 py-0.5 text-xs font-black border border-pop-black ${
+                  activeTab === "active" ? "bg-white text-pop-black" : "bg-pop-blue text-white"
+                }`}
+              >
                 {activeListings.length}
               </span>
             )}
@@ -128,9 +132,11 @@ export default function MyListingsPage() {
           >
             Ended
             {endedListings.length > 0 && (
-              <span className={`px-1.5 py-0.5 text-xs font-black border border-pop-black ${
-                activeTab === "ended" ? "bg-white text-pop-black" : "bg-gray-200 text-pop-black"
-              }`}>
+              <span
+                className={`px-1.5 py-0.5 text-xs font-black border border-pop-black ${
+                  activeTab === "ended" ? "bg-white text-pop-black" : "bg-gray-200 text-pop-black"
+                }`}
+              >
                 {endedListings.length}
               </span>
             )}
@@ -143,10 +149,7 @@ export default function MyListingsPage() {
         {isLoading ? (
           <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
             {[...Array(4)].map((_, i) => (
-              <div
-                key={i}
-                className="bg-white rounded-xl shadow-md overflow-hidden animate-pulse"
-              >
+              <div key={i} className="bg-white rounded-xl shadow-md overflow-hidden animate-pulse">
                 <div className="aspect-[2/3] bg-gray-200" />
                 <div className="p-3 space-y-2">
                   <div className="h-4 bg-gray-200 rounded w-3/4" />
@@ -158,11 +161,16 @@ export default function MyListingsPage() {
         ) : activeTab === "active" ? (
           <>
             {activeListings.length === 0 ? (
-              <div className="bg-pop-white border-3 border-pop-black p-12 text-center" style={{ boxShadow: "4px 4px 0px #000" }}>
+              <div
+                className="bg-pop-white border-3 border-pop-black p-12 text-center"
+                style={{ boxShadow: "4px 4px 0px #000" }}
+              >
                 <div className="w-16 h-16 bg-pop-yellow border-3 border-pop-black flex items-center justify-center mx-auto mb-4">
                   <Tag className="w-8 h-8 text-pop-black" />
                 </div>
-                <p className="text-xl font-black text-pop-black font-comic uppercase">No active listings</p>
+                <p className="text-xl font-black text-pop-black font-comic uppercase">
+                  No active listings
+                </p>
                 <p className="mt-2 text-gray-600">
                   Create your first listing from your collection!
                 </p>
@@ -224,11 +232,16 @@ export default function MyListingsPage() {
         ) : (
           <>
             {endedListings.length === 0 ? (
-              <div className="bg-pop-white border-3 border-pop-black p-12 text-center" style={{ boxShadow: "4px 4px 0px #000" }}>
+              <div
+                className="bg-pop-white border-3 border-pop-black p-12 text-center"
+                style={{ boxShadow: "4px 4px 0px #000" }}
+              >
                 <div className="w-16 h-16 bg-pop-yellow border-3 border-pop-black flex items-center justify-center mx-auto mb-4">
                   <Clock className="w-8 h-8 text-pop-black" />
                 </div>
-                <p className="text-xl font-black text-pop-black font-comic uppercase">No ended listings</p>
+                <p className="text-xl font-black text-pop-black font-comic uppercase">
+                  No ended listings
+                </p>
                 <p className="mt-2 text-gray-600">Your completed listings will appear here.</p>
               </div>
             ) : (
@@ -252,16 +265,22 @@ export default function MyListingsPage() {
                       )}
                       <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
                         <span className="px-3 py-1 bg-gray-900 text-white text-sm rounded-full">
-                          {listing.status === "sold" ? "Sold" : listing.status === "cancelled" ? "Cancelled" : "Ended"}
+                          {listing.status === "sold"
+                            ? "Sold"
+                            : listing.status === "cancelled"
+                              ? "Cancelled"
+                              : "Ended"}
                         </span>
                       </div>
                       {/* Listing type badge */}
                       <div className="absolute top-2 left-2">
-                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                          listing.listingType === "auction"
-                            ? "bg-blue-100 text-blue-700"
-                            : "bg-green-100 text-green-700"
-                        }`}>
+                        <span
+                          className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                            listing.listingType === "auction"
+                              ? "bg-blue-100 text-blue-700"
+                              : "bg-green-100 text-green-700"
+                          }`}
+                        >
                           {listing.listingType === "auction" ? "Auction" : "Sale"}
                         </span>
                       </div>

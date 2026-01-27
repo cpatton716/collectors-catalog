@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { createClient } from "@supabase/supabase-js";
+
 import { Redis } from "@upstash/redis";
+
 import { Resend } from "resend";
 
 // This endpoint can be called by a cron job to check usage and send alerts
@@ -247,9 +250,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error checking alerts:", error);
-    return NextResponse.json(
-      { error: "Failed to check alerts" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to check alerts" }, { status: 500 });
   }
 }

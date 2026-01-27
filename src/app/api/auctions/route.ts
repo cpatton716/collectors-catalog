@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { auth } from "@clerk/nextjs/server";
-import { getProfileByClerkId, ensureComicInSupabase } from "@/lib/db";
-import {
-  createAuction,
-  createFixedPriceListing,
-  getActiveAuctions,
-} from "@/lib/auctionDb";
-import { AuctionFilters, AuctionSortBy, ListingType, MIN_STARTING_PRICE, MIN_FIXED_PRICE } from "@/types/auction";
+
 import { isUserSuspended } from "@/lib/adminAuth";
+import { createAuction, createFixedPriceListing, getActiveAuctions } from "@/lib/auctionDb";
+import { ensureComicInSupabase, getProfileByClerkId } from "@/lib/db";
+
+import {
+  AuctionFilters,
+  AuctionSortBy,
+  ListingType,
+  MIN_FIXED_PRICE,
+  MIN_STARTING_PRICE,
+} from "@/types/auction";
 
 // GET - List active auctions/listings with filters
 export async function GET(request: NextRequest) {
@@ -65,10 +70,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error fetching auctions:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch auctions" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch auctions" }, { status: 500 });
   }
 }
 
@@ -135,10 +137,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (detailImages && (!Array.isArray(detailImages) || detailImages.length > 4)) {
-      return NextResponse.json(
-        { error: "Maximum 4 detail images allowed" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Maximum 4 detail images allowed" }, { status: 400 });
     }
 
     // Handle fixed-price listing
@@ -217,10 +216,7 @@ export async function POST(request: NextRequest) {
       const selectedDate = new Date(startDate);
       const now = new Date();
       if (selectedDate <= now) {
-        return NextResponse.json(
-          { error: "Start date must be in the future" },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: "Start date must be in the future" }, { status: 400 });
       }
     }
 
@@ -240,6 +236,12 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Error creating listing:", error);
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
+
+    // Return 400 for user errors like duplicate listings
+    if (errorMessage.includes("already has an active listing")) {
+      return NextResponse.json({ error: errorMessage }, { status: 400 });
+    }
+
     return NextResponse.json(
       { error: `Failed to create listing: ${errorMessage}` },
       { status: 500 }

@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
+
 import { createClient } from "@supabase/supabase-js";
+
 import { Redis } from "@upstash/redis";
+
 import { getAdminProfile } from "@/lib/adminAuth";
 
 // Service limits (free tier thresholds)
@@ -69,9 +72,7 @@ export async function GET() {
       const profilesCount = profilesResult.count || 0;
 
       // Get database size using pg_database_size
-      const { data: sizeData, error: sizeError } = await supabase.rpc(
-        "get_database_size"
-      );
+      const { data: sizeData, error: sizeError } = await supabase.rpc("get_database_size");
 
       if (!sizeError && sizeData !== null) {
         const dbSizeBytes = sizeData;
@@ -210,12 +211,7 @@ export async function GET() {
         limit: 10, // $10 budget
         unit: "USD",
         percentage: estimatedCost / 10,
-        status:
-          estimatedCost >= 9
-            ? "critical"
-            : estimatedCost >= 7
-              ? "warning"
-              : "ok",
+        status: estimatedCost >= 9 ? "critical" : estimatedCost >= 7 ? "warning" : "ok",
         dashboard: "https://console.anthropic.com",
       });
     } catch (e) {
@@ -225,8 +221,7 @@ export async function GET() {
     // Calculate overall status
     const criticalCount = metrics.filter((m) => m.status === "critical").length;
     const warningCount = metrics.filter((m) => m.status === "warning").length;
-    const overallStatus =
-      criticalCount > 0 ? "critical" : warningCount > 0 ? "warning" : "ok";
+    const overallStatus = criticalCount > 0 ? "critical" : warningCount > 0 ? "warning" : "ok";
 
     return NextResponse.json({
       metrics,
@@ -237,9 +232,6 @@ export async function GET() {
     });
   } catch (error) {
     console.error("Error fetching usage metrics:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch usage metrics" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch usage metrics" }, { status: 500 });
   }
 }

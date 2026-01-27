@@ -1,22 +1,25 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+
+import Link from "next/link";
+
 import { useUser } from "@clerk/nextjs";
+
 import {
-  Key,
-  Check,
-  X,
-  ExternalLink,
-  MessageSquare,
-  Loader2,
-  RefreshCw,
   AlertTriangle,
-  Database,
-  Clock,
+  Check,
   CheckCircle,
+  Clock,
+  Database,
+  ExternalLink,
+  Key,
+  Loader2,
+  MessageSquare,
+  RefreshCw,
+  X,
   XCircle,
 } from "lucide-react";
-import Link from "next/link";
 
 interface Submission {
   id: string;
@@ -382,16 +385,10 @@ export default function AdminKeyInfoPage() {
 
         {/* Admin Links */}
         <div className="mt-8 flex gap-4">
-          <Link
-            href="/admin/users"
-            className="text-sm text-blue-600 hover:underline"
-          >
+          <Link href="/admin/users" className="text-sm text-blue-600 hover:underline">
             → User Management
           </Link>
-          <Link
-            href="/admin/usage"
-            className="text-sm text-blue-600 hover:underline"
-          >
+          <Link href="/admin/usage" className="text-sm text-blue-600 hover:underline">
             → Service Usage Monitor
           </Link>
         </div>

@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from "react";
+
 import Image from "next/image";
+
+import { BookPlus, Check, Heart, Loader2, X } from "lucide-react";
+
 import { ComicDetails, GradeEstimate } from "@/types/comic";
-import { Heart, BookPlus, X, Check, Loader2 } from "lucide-react";
 
 interface QuickResultCardProps {
   comic: ComicDetails;
@@ -14,11 +17,8 @@ interface QuickResultCardProps {
 
 // All standard CGC/CBCS grades
 const ALL_GRADES = [
-  10, 9.9, 9.8, 9.6, 9.4, 9.2, 9.0,
-  8.5, 8.0, 7.5, 7.0,
-  6.5, 6.0, 5.5, 5.0,
-  4.5, 4.0, 3.5, 3.0,
-  2.5, 2.0, 1.8, 1.5, 1.0, 0.5
+  10, 9.9, 9.8, 9.6, 9.4, 9.2, 9.0, 8.5, 8.0, 7.5, 7.0, 6.5, 6.0, 5.5, 5.0, 4.5, 4.0, 3.5, 3.0, 2.5,
+  2.0, 1.8, 1.5, 1.0, 0.5,
 ];
 
 export function QuickResultCard({
@@ -70,7 +70,12 @@ export function QuickResultCard({
 
   const quickActions = [
     { id: "want-list", label: "Want", icon: Heart, color: "bg-pink-500 hover:bg-pink-600" },
-    { id: "collection", label: "Collection", icon: BookPlus, color: "bg-primary-500 hover:bg-primary-600" },
+    {
+      id: "collection",
+      label: "Collection",
+      icon: BookPlus,
+      color: "bg-primary-500 hover:bg-primary-600",
+    },
     { id: "passed-on", label: "Pass", icon: X, color: "bg-gray-500 hover:bg-gray-600" },
   ];
 
@@ -114,17 +119,13 @@ export function QuickResultCard({
             {comic.publisher || "Unknown Publisher"}
             {comic.releaseYear && ` (${comic.releaseYear})`}
           </p>
-          {comic.variant && (
-            <p className="text-xs text-gray-500 mt-1 truncate">{comic.variant}</p>
-          )}
+          {comic.variant && <p className="text-xs text-gray-500 mt-1 truncate">{comic.variant}</p>}
 
           {/* Key info */}
           {comic.keyInfo && comic.keyInfo.length > 0 && (
             <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-lg">
               <p className="text-xs font-medium text-amber-800">Key Issue</p>
-              <p className="text-xs text-amber-700 line-clamp-2">
-                {comic.keyInfo.join(", ")}
-              </p>
+              <p className="text-xs text-amber-700 line-clamp-2">{comic.keyInfo.join(", ")}</p>
             </div>
           )}
         </div>
@@ -209,11 +210,7 @@ export function QuickResultCard({
               onClick={() => handleAddToList(action.id)}
               disabled={isAdding || isAdded}
               className={`flex flex-col items-center gap-1 py-3 rounded-xl text-white font-medium transition-all ${
-                isAdded
-                  ? "bg-green-500"
-                  : isAdding
-                  ? "bg-gray-400"
-                  : action.color
+                isAdded ? "bg-green-500" : isAdding ? "bg-gray-400" : action.color
               }`}
             >
               {isAdding ? (

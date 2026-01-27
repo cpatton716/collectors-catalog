@@ -1,6 +1,9 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
+
+import Anthropic from "@anthropic-ai/sdk";
+
 import { getComicMetadata, saveComicMetadata } from "@/lib/db";
+import { checkRateLimit, getRateLimitIdentifier, rateLimiters } from "@/lib/rateLimit";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -30,11 +33,25 @@ interface ComicVineIssue {
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit to protect Anthropic API costs
+    const identifier = getRateLimitIdentifier(
+      null,
+      request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip")
+    );
+    const { success: rateLimitSuccess, response: rateLimitResponse } = await checkRateLimit(
+      rateLimiters.lookup,
+      identifier
+    );
+    if (!rateLimitSuccess) return rateLimitResponse;
+
     const { barcode } = await request.json();
 
     if (!barcode) {
       return NextResponse.json(
-        { error: "No barcode was detected. Please try scanning again with the barcode clearly visible." },
+        {
+          error:
+            "No barcode was detected. Please try scanning again with the barcode clearly visible.",
+        },
         { status: 400 }
       );
     }
@@ -76,7 +93,10 @@ export async function POST(request: NextRequest) {
 
     if (!comicDetails || !comicDetails.title) {
       return NextResponse.json(
-        { error: "We couldn't find this comic by barcode. This sometimes happens with older or variant issues. Try scanning the cover instead!" },
+        {
+          error:
+            "We couldn't find this comic by barcode. This sometimes happens with older or variant issues. Try scanning the cover instead!",
+        },
         { status: 404 }
       );
     }
@@ -85,7 +105,6 @@ export async function POST(request: NextRequest) {
     try {
       const dbResult = await getComicMetadata(comicDetails.title, comicDetails.issueNumber || "1");
       if (dbResult && dbResult.priceData) {
-
         return NextResponse.json({
           comic: {
             id: `quick-${Date.now()}`,
@@ -197,8 +216,13 @@ Rules:
 
         if (parsed.gradeEstimates) {
           priceData = {
-            estimatedValue: parsed.estimatedValue || parsed.gradeEstimates.find((g: { grade: number }) => g.grade === 9.4)?.rawValue || null,
-            recentSales: parsed.recentSale ? [{ price: parsed.recentSale.price, date: parsed.recentSale.date }] : [],
+            estimatedValue:
+              parsed.estimatedValue ||
+              parsed.gradeEstimates.find((g: { grade: number }) => g.grade === 9.4)?.rawValue ||
+              null,
+            recentSales: parsed.recentSale
+              ? [{ price: parsed.recentSale.price, date: parsed.recentSale.date }]
+              : [],
             mostRecentSale: parsed.recentSale || null,
             mostRecentSaleDate: parsed.recentSale?.date || null,
             isAveraged: true,

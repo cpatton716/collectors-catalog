@@ -1,20 +1,55 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
+
 import { auth } from "@clerk/nextjs/server";
-import { lookupEbaySoldPrices, isFindingApiConfigured } from "@/lib/ebayFinding";
+
+import Anthropic from "@anthropic-ai/sdk";
+
+import { isUserSuspended } from "@/lib/adminAuth";
+import {
+  cacheGet,
+  cacheSet,
+  generateEbayPriceCacheKey,
+  hashImageData,
+  isCacheAvailable,
+} from "@/lib/cache";
 import { lookupCertification } from "@/lib/certLookup";
 import { getProfileByClerkId } from "@/lib/db";
-import { PriceData } from "@/types/comic";
-import { rateLimiters, checkRateLimit, getRateLimitIdentifier } from "@/lib/rateLimit";
-import { cacheGet, cacheSet, generateEbayPriceCacheKey, hashImageData, isCacheAvailable } from "@/lib/cache";
-import {
-  canUserScan,
-  incrementScanCount,
-  getSubscriptionStatus,
-  GUEST_SCAN_LIMIT,
-} from "@/lib/subscription";
+import { isFindingApiConfigured, lookupEbaySoldPrices } from "@/lib/ebayFinding";
 import { lookupKeyInfo } from "@/lib/keyComicsDatabase";
-import { isUserSuspended } from "@/lib/adminAuth";
+import { checkRateLimit, getRateLimitIdentifier, rateLimiters } from "@/lib/rateLimit";
+import {
+  GUEST_SCAN_LIMIT,
+  canUserScan,
+  getSubscriptionStatus,
+  incrementScanCount,
+} from "@/lib/subscription";
+
+import { PriceData } from "@/types/comic";
+
+// Interface for comic details from AI analysis
+interface ComicDetails {
+  title: string | null;
+  issueNumber: string | null;
+  publisher: string | null;
+  releaseYear: string | null;
+  variant: string | null;
+  writer: string | null;
+  coverArtist: string | null;
+  interiorArtist: string | null;
+  confidence?: string;
+  isSlabbed: boolean;
+  gradingCompany: string | null;
+  grade: string | null;
+  certificationNumber: string | null;
+  isSignatureSeries?: boolean;
+  signedBy?: string | null;
+  keyInfo: string[];
+  labelType?: string;
+  pageQuality?: string;
+  gradeDate?: string;
+  graderNotes?: string;
+  priceData?: (PriceData & { priceSource: "ebay" | "ai" }) | null;
+}
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -29,7 +64,10 @@ export async function POST(request: NextRequest) {
 
   try {
     // Rate limit check - protect expensive AI endpoint
-    const identifier = getRateLimitIdentifier(null, request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip"));
+    const identifier = getRateLimitIdentifier(
+      null,
+      request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip")
+    );
     const { success: rateLimitSuccess, response: rateLimitResponse } = await checkRateLimit(
       rateLimiters.analyze,
       identifier
@@ -95,22 +133,30 @@ export async function POST(request: NextRequest) {
 
     const { image, mediaType } = await request.json();
 
-
     if (!image) {
-      return NextResponse.json({ error: "No image was received. Please try uploading your photo again." }, { status: 400 });
+      return NextResponse.json(
+        { error: "No image was received. Please try uploading your photo again." },
+        { status: 400 }
+      );
     }
 
     // Check if image is too large (base64 adds ~33% overhead, so 20MB base64 ≈ 15MB image)
     if (image.length > 20 * 1024 * 1024) {
       return NextResponse.json(
-        { error: "This image is too large. Please use a smaller image (under 10MB) or try taking a new photo." },
+        {
+          error:
+            "This image is too large. Please use a smaller image (under 10MB) or try taking a new photo.",
+        },
         { status: 400 }
       );
     }
 
     if (!process.env.ANTHROPIC_API_KEY) {
       return NextResponse.json(
-        { error: "Our comic recognition service is temporarily unavailable. Please try again in a few minutes." },
+        {
+          error:
+            "Our comic recognition service is temporarily unavailable. Please try again in a few minutes.",
+        },
         { status: 500 }
       );
     }
@@ -141,8 +187,7 @@ export async function POST(request: NextRequest) {
     }>(imageHash, "aiAnalyze");
 
     // If we have a cached result, use it but still get fresh pricing
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let comicDetails: any;
+    let comicDetails: ComicDetails;
     let usedCache = false;
 
     if (cachedAnalysis && cachedAnalysis.title) {
@@ -151,23 +196,23 @@ export async function POST(request: NextRequest) {
     } else {
       // No cache hit - run the AI image analysis
       const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 1024,
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "image",
-              source: {
-                type: "base64",
-                media_type: mediaType || "image/jpeg",
-                data: base64Data,
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1024,
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "image",
+                source: {
+                  type: "base64",
+                  media_type: mediaType || "image/jpeg",
+                  data: base64Data,
+                },
               },
-            },
-            {
-              type: "text",
-              text: `You are an expert comic book identifier and grading specialist. Analyze this comic book cover image and extract as much information as possible.
+              {
+                type: "text",
+                text: `You are an expert comic book identifier and grading specialist. Analyze this comic book cover image and extract as much information as possible.
 
 Look carefully at:
 1. The title of the comic series (usually prominently displayed)
@@ -211,16 +256,18 @@ Important:
 - For publisher, use the full name (e.g., "Marvel Comics" not just "Marvel")
 - Pay special attention to the grading label if present - it contains valuable info
 - The CGC/CBCS label typically shows: grade, title, issue, date, and signature info`,
-            },
-          ],
-        },
-      ],
+              },
+            ],
+          },
+        ],
       });
 
       // Extract the text content from the response
       const textContent = response.content.find((block) => block.type === "text");
       if (!textContent || textContent.type !== "text") {
-        throw new Error("We couldn't analyze this image. Please try a clearer photo of the comic cover.");
+        throw new Error(
+          "We couldn't analyze this image. Please try a clearer photo of the comic cover."
+        );
       }
 
       // Parse the JSON response
@@ -265,7 +312,9 @@ Important:
       } catch (parseError) {
         console.error("Failed to parse Claude response:", textContent.text);
         console.error("Parse error:", parseError);
-        throw new Error("We had trouble reading the comic details. Please try a different photo with the cover clearly visible.");
+        throw new Error(
+          "We had trouble reading the comic details. Please try a different photo with the cover clearly visible."
+        );
       }
     } // End of else block (no cache hit)
 
@@ -276,7 +325,6 @@ Important:
 
     // If this is a slabbed comic with a certification number, look up from grading company
     if (comicDetails.isSlabbed && comicDetails.certificationNumber && comicDetails.gradingCompany) {
-
       try {
         const certResult = await lookupCertification(
           comicDetails.gradingCompany,
@@ -284,7 +332,6 @@ Important:
         );
 
         if (certResult.success && certResult.data) {
-
           // Merge cert data with AI data (cert takes priority for overlapping fields)
           if (certResult.data.title) {
             comicDetails.title = certResult.data.title;
@@ -328,10 +375,9 @@ Important:
             // Split by periods or newlines to create array of key facts
             comicDetails.keyInfo = certResult.data.keyComments
               .split(/[.\n]+/)
-              .map(s => s.trim())
-              .filter(s => s.length > 0);
+              .map((s) => s.trim())
+              .filter((s) => s.length > 0);
           }
-
         } else {
           // Continue with AI-detected data
         }
@@ -348,7 +394,8 @@ Important:
     // ============================================
 
     // Check what info is missing
-    const missingCreatorInfo = !comicDetails.writer || !comicDetails.coverArtist || !comicDetails.interiorArtist;
+    const missingCreatorInfo =
+      !comicDetails.writer || !comicDetails.coverArtist || !comicDetails.interiorArtist;
     const missingBasicInfo = !comicDetails.publisher || !comicDetails.releaseYear;
 
     // First, check our curated key comics database (fast, guaranteed accurate, FREE)
@@ -362,14 +409,17 @@ Important:
 
     // Only call AI if we need to fill in missing information
     const needsKeyInfoFromAI = !databaseKeyInfo || databaseKeyInfo.length === 0;
-    const needsAIVerification = comicDetails.title && comicDetails.issueNumber &&
+    const needsAIVerification =
+      comicDetails.title &&
+      comicDetails.issueNumber &&
       (missingCreatorInfo || missingBasicInfo || needsKeyInfoFromAI);
 
     if (needsAIVerification) {
       try {
         // Build a list of what we need
         const missingFields: string[] = [];
-        if (missingCreatorInfo) missingFields.push("creators (writer, coverArtist, interiorArtist)");
+        if (missingCreatorInfo)
+          missingFields.push("creators (writer, coverArtist, interiorArtist)");
         if (missingBasicInfo) missingFields.push("publication info (publisher, releaseYear)");
         if (needsKeyInfoFromAI) missingFields.push("key collector facts");
 
@@ -447,7 +497,6 @@ Rules:
 
     // Price/Value lookup - Try eBay first, fall back to AI
     if (comicDetails.title && comicDetails.issueNumber) {
-
       const isSlabbed = comicDetails.isSlabbed || false;
       const grade = comicDetails.grade ? parseFloat(comicDetails.grade) : 9.4;
       let priceDataFound = false;
@@ -506,9 +555,7 @@ Rules:
       // 2. Fall back to AI estimates if eBay didn't return results
       if (!priceDataFound) {
         try {
-          const gradeInfo = comicDetails.grade
-            ? `Grade: ${comicDetails.grade}`
-            : "Raw/Ungraded";
+          const gradeInfo = comicDetails.grade ? `Grade: ${comicDetails.grade}` : "Raw/Ungraded";
           const signatureInfo = comicDetails.isSignatureSeries
             ? `Signature Series signed by ${comicDetails.signedBy || "unknown"}`
             : "";
@@ -593,20 +640,24 @@ Important:
 
             // Process the sales data according to business rules
             const now = new Date();
-            const sixMonthsAgo = new Date(now.getTime() - (180 * 24 * 60 * 60 * 1000));
+            const sixMonthsAgo = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000);
 
-            const processedSales = priceInfo.recentSales.map((sale: { price: number; date: string; source: string; daysAgo?: number }) => {
-              const saleDate = new Date(sale.date);
-              return {
-                price: sale.price,
-                date: sale.date,
-                source: sale.source || "eBay",
-                isOlderThan6Months: saleDate < sixMonthsAgo
-              };
-            });
+            const processedSales = priceInfo.recentSales.map(
+              (sale: { price: number; date: string; source: string; daysAgo?: number }) => {
+                const saleDate = new Date(sale.date);
+                return {
+                  price: sale.price,
+                  date: sale.date,
+                  source: sale.source || "eBay",
+                  isOlderThan6Months: saleDate < sixMonthsAgo,
+                };
+              }
+            );
 
             // Filter to recent sales (within 6 months)
-            const recentSales = processedSales.filter((s: { isOlderThan6Months: boolean }) => !s.isOlderThan6Months);
+            const recentSales = processedSales.filter(
+              (s: { isOlderThan6Months: boolean }) => !s.isOlderThan6Months
+            );
 
             let estimatedValue: number | null = null;
             let isAveraged = false;
@@ -614,8 +665,9 @@ Important:
             let mostRecentSaleDate: string | null = null;
 
             // Sort by date to find most recent
-            const sortedSales = [...processedSales].sort((a: { date: string }, b: { date: string }) =>
-              new Date(b.date).getTime() - new Date(a.date).getTime()
+            const sortedSales = [...processedSales].sort(
+              (a: { date: string }, b: { date: string }) =>
+                new Date(b.date).getTime() - new Date(a.date).getTime()
             );
 
             if (sortedSales.length > 0) {
@@ -625,12 +677,15 @@ Important:
             if (recentSales.length >= 3) {
               // Average of last 3 recent sales
               const last3 = recentSales.slice(0, 3);
-              estimatedValue = last3.reduce((sum: number, s: { price: number }) => sum + s.price, 0) / 3;
+              estimatedValue =
+                last3.reduce((sum: number, s: { price: number }) => sum + s.price, 0) / 3;
               isAveraged = true;
               disclaimer = "Technopathic estimate - actual prices may vary.";
             } else if (recentSales.length > 0) {
               // Average of available recent sales
-              estimatedValue = recentSales.reduce((sum: number, s: { price: number }) => sum + s.price, 0) / recentSales.length;
+              estimatedValue =
+                recentSales.reduce((sum: number, s: { price: number }) => sum + s.price, 0) /
+                recentSales.length;
               isAveraged = recentSales.length > 1;
               disclaimer = "Technopathic estimate - actual prices may vary.";
             } else if (processedSales.length > 0) {
@@ -643,12 +698,14 @@ Important:
             // Process grade estimates if available
             let gradeEstimates = undefined;
             if (priceInfo.gradeEstimates && Array.isArray(priceInfo.gradeEstimates)) {
-              gradeEstimates = priceInfo.gradeEstimates.map((ge: { grade: number; label: string; rawValue: number; slabbedValue: number }) => ({
-                grade: ge.grade,
-                label: ge.label,
-                rawValue: Math.round(ge.rawValue * 100) / 100,
-                slabbedValue: Math.round(ge.slabbedValue * 100) / 100,
-              }));
+              gradeEstimates = priceInfo.gradeEstimates.map(
+                (ge: { grade: number; label: string; rawValue: number; slabbedValue: number }) => ({
+                  grade: ge.grade,
+                  label: ge.label,
+                  rawValue: Math.round(ge.rawValue * 100) / 100,
+                  slabbedValue: Math.round(ge.slabbedValue * 100) / 100,
+                })
+              );
             }
 
             // Determine base grade for the estimate
@@ -664,7 +721,6 @@ Important:
               baseGrade,
               priceSource: "ai",
             };
-
           }
         } catch (priceError) {
           console.error("AI Price lookup failed:", priceError);
@@ -691,13 +747,19 @@ Important:
 
     if (error instanceof Anthropic.APIError) {
       return NextResponse.json(
-        { error: "Our comic recognition service is temporarily busy. Please wait a moment and try again." },
+        {
+          error:
+            "Our comic recognition service is temporarily busy. Please wait a moment and try again.",
+        },
         { status: error.status || 500 }
       );
     }
 
     return NextResponse.json(
-      { error: "Something went wrong while analyzing your comic. Please try again or use a different photo." },
+      {
+        error:
+          "Something went wrong while analyzing your comic. Please try again or use a different photo.",
+      },
       { status: 500 }
     );
   }

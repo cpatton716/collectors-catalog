@@ -1,4 +1,5 @@
 import { getHotBooks } from "@/lib/hotBooksData";
+
 import HotBooksClient from "./HotBooksClient";
 
 // ISR: Revalidate every hour (3600 seconds)

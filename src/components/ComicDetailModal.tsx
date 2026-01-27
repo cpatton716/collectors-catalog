@@ -1,42 +1,46 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
-import { CollectionItem, UserList, GRADE_SCALE } from "@/types/comic";
-import { VariantsModal } from "./VariantsModal";
-import { GradePricingBreakdown } from "./GradePricingBreakdown";
+import { useEffect, useMemo, useState } from "react";
+
+import Image from "next/image";
+
 import {
-  X,
-  Trash2,
-  ListPlus,
-  Tag,
-  DollarSign,
-  TrendingUp,
-  Info,
-  Calendar,
-  User,
-  Building,
-  Palette,
-  PenTool,
+  AlertTriangle,
   Award,
-  Plus,
+  Building,
+  Calendar,
   Check,
-  Star,
-  Pencil,
+  CheckCircle,
+  DollarSign,
+  ExternalLink,
+  Eye,
+  FileCheck,
+  Info,
   KeyRound,
   Layers,
-  ZoomIn,
-  AlertTriangle,
-  ExternalLink,
-  FileCheck,
-  Store,
-  Eye,
-  CheckCircle,
+  ListPlus,
   PackageMinus,
+  Palette,
+  PenTool,
+  Pencil,
+  Plus,
+  Star,
+  Store,
+  Tag,
+  Trash2,
+  TrendingUp,
+  User,
+  X,
+  ZoomIn,
 } from "lucide-react";
-import Image from "next/image";
-import { ListInShopModal } from "./auction/ListInShopModal";
-import { SuggestKeyInfoModal } from "./SuggestKeyInfoModal";
+
+import { CollectionItem, GRADE_SCALE, UserList } from "@/types/comic";
+
 import { ComicImage } from "./ComicImage";
+import { GradePricingBreakdown } from "./GradePricingBreakdown";
+import { SuggestKeyInfoModal } from "./SuggestKeyInfoModal";
+import { VariantsModal } from "./VariantsModal";
+import { ListInShopModal } from "./auction/ListInShopModal";
 
 // Helper to generate certification verification URLs
 function getCertVerificationUrl(certNumber: string, gradingCompany: string): string | null {
@@ -97,8 +101,14 @@ export function ComicDetailModal({
   const [salePrice, setSalePrice] = useState<string>(
     item.askingPrice?.toString() || item.comic.priceData?.estimatedValue?.toString() || ""
   );
-  const [activeListing, setActiveListing] = useState<{ id: string; listingType: string; bidCount?: number } | null>(null);
-  const [showSellerAction, setShowSellerAction] = useState<"mark_as_sold" | "pull_off_shelf" | null>(null);
+  const [activeListing, setActiveListing] = useState<{
+    id: string;
+    listingType: string;
+    bidCount?: number;
+  } | null>(null);
+  const [showSellerAction, setShowSellerAction] = useState<
+    "mark_as_sold" | "pull_off_shelf" | null
+  >(null);
   const [isProcessingAction, setIsProcessingAction] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -218,10 +228,7 @@ export function ComicDetailModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/50"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
       {/* Modal */}
       <div className="relative bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
@@ -238,7 +245,7 @@ export function ComicDetailModal({
           <div className="hidden md:flex md:w-1/3 bg-gray-100 p-6 items-center justify-center">
             <div
               onClick={() => item.coverImageUrl && setShowImageLightbox(true)}
-              className={`aspect-[2/3] w-full max-w-[250px] rounded-lg overflow-hidden shadow-lg relative ${item.coverImageUrl ? 'cursor-pointer group' : ''}`}
+              className={`aspect-[2/3] w-full max-w-[250px] rounded-lg overflow-hidden shadow-lg relative ${item.coverImageUrl ? "cursor-pointer group" : ""}`}
             >
               <ComicImage
                 src={item.coverImageUrl}
@@ -264,7 +271,7 @@ export function ComicDetailModal({
               {/* Mobile Cover Thumbnail */}
               <div
                 onClick={() => item.coverImageUrl && setShowImageLightbox(true)}
-                className={`flex-shrink-0 w-20 h-30 rounded-lg overflow-hidden shadow-md ${item.coverImageUrl ? 'cursor-pointer' : ''}`}
+                className={`flex-shrink-0 w-20 h-30 rounded-lg overflow-hidden shadow-md ${item.coverImageUrl ? "cursor-pointer" : ""}`}
               >
                 <ComicImage
                   src={item.coverImageUrl}
@@ -278,12 +285,8 @@ export function ComicDetailModal({
                 <h2 className="text-xl font-bold text-gray-900 leading-tight">
                   {comic.title || "Unknown Title"}
                 </h2>
-                <p className="text-base text-gray-600">
-                  Issue #{comic.issueNumber || "?"}
-                </p>
-                {comic.variant && (
-                  <p className="text-sm text-gray-400">{comic.variant}</p>
-                )}
+                <p className="text-base text-gray-600">Issue #{comic.issueNumber || "?"}</p>
+                {comic.variant && <p className="text-sm text-gray-400">{comic.variant}</p>}
                 {variantCount > 1 && (
                   <button
                     onClick={() => setShowVariantsModal(true)}
@@ -305,9 +308,7 @@ export function ComicDetailModal({
                   </h2>
                   <p className="text-lg text-gray-600">
                     Issue #{comic.issueNumber || "?"}
-                    {comic.variant && (
-                      <span className="text-gray-400 ml-2">({comic.variant})</span>
-                    )}
+                    {comic.variant && <span className="text-gray-400 ml-2">({comic.variant})</span>}
                   </p>
                   {/* View Variants Link */}
                   {variantCount > 1 && (
@@ -351,90 +352,98 @@ export function ComicDetailModal({
             </div>
 
             {/* Grading Details Section - only show for graded books */}
-            {item.isGraded && (comic.certificationNumber || comic.pageQuality || comic.gradeDate || comic.graderNotes) && (
-              <div className="mb-6 p-4 bg-slate-50 border border-slate-200 rounded-lg">
-                <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
-                  <FileCheck className="w-4 h-4" />
-                  Grading Details
-                </h3>
-                <div className="space-y-3">
-                  {/* Certification Number with Link */}
-                  {comic.certificationNumber && item.gradingCompany && (
-                    <div>
-                      <p className="text-xs font-medium text-slate-500 mb-1">Certification #</p>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-mono text-slate-700">{comic.certificationNumber}</span>
-                        {getCertVerificationUrl(comic.certificationNumber, item.gradingCompany) && (
-                          <a
-                            href={getCertVerificationUrl(comic.certificationNumber, item.gradingCompany) || "#"}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 hover:underline"
-                          >
-                            <ExternalLink className="w-3 h-3" />
-                            Verify
-                          </a>
-                        )}
+            {item.isGraded &&
+              (comic.certificationNumber ||
+                comic.pageQuality ||
+                comic.gradeDate ||
+                comic.graderNotes) && (
+                <div className="mb-6 p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                  <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                    <FileCheck className="w-4 h-4" />
+                    Grading Details
+                  </h3>
+                  <div className="space-y-3">
+                    {/* Certification Number with Link */}
+                    {comic.certificationNumber && item.gradingCompany && (
+                      <div>
+                        <p className="text-xs font-medium text-slate-500 mb-1">Certification #</p>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-mono text-slate-700">
+                            {comic.certificationNumber}
+                          </span>
+                          {getCertVerificationUrl(
+                            comic.certificationNumber,
+                            item.gradingCompany
+                          ) && (
+                            <a
+                              href={
+                                getCertVerificationUrl(
+                                  comic.certificationNumber,
+                                  item.gradingCompany
+                                ) || "#"
+                              }
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 hover:underline"
+                            >
+                              <ExternalLink className="w-3 h-3" />
+                              Verify
+                            </a>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {/* Page Quality */}
-                  {comic.pageQuality && (
-                    <div>
-                      <p className="text-xs font-medium text-slate-500 mb-1">Page Quality</p>
-                      <p className="text-sm text-slate-700">{comic.pageQuality}</p>
-                    </div>
-                  )}
+                    {/* Page Quality */}
+                    {comic.pageQuality && (
+                      <div>
+                        <p className="text-xs font-medium text-slate-500 mb-1">Page Quality</p>
+                        <p className="text-sm text-slate-700">{comic.pageQuality}</p>
+                      </div>
+                    )}
 
-                  {/* Grade Date */}
-                  {comic.gradeDate && (
-                    <div>
-                      <p className="text-xs font-medium text-slate-500 mb-1">Grade Date</p>
-                      <p className="text-sm text-slate-700">{comic.gradeDate}</p>
-                    </div>
-                  )}
+                    {/* Grade Date */}
+                    {comic.gradeDate && (
+                      <div>
+                        <p className="text-xs font-medium text-slate-500 mb-1">Grade Date</p>
+                        <p className="text-sm text-slate-700">{comic.gradeDate}</p>
+                      </div>
+                    )}
 
-                  {/* Grader Notes */}
-                  {comic.graderNotes && (
-                    <div>
-                      <p className="text-xs font-medium text-slate-500 mb-1">Grader Notes</p>
-                      <p className="text-sm text-slate-700 whitespace-pre-wrap">{comic.graderNotes}</p>
-                    </div>
-                  )}
+                    {/* Grader Notes */}
+                    {comic.graderNotes && (
+                      <div>
+                        <p className="text-xs font-medium text-slate-500 mb-1">Grader Notes</p>
+                        <p className="text-sm text-slate-700 whitespace-pre-wrap">
+                          {comic.graderNotes}
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
             {/* Info Grid */}
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div className="flex items-center gap-2 text-sm">
                 <Building className="w-4 h-4 text-gray-400" />
                 <span className="text-gray-600">Publisher:</span>
-                <span className="font-medium text-gray-900">
-                  {comic.publisher || "Unknown"}
-                </span>
+                <span className="font-medium text-gray-900">{comic.publisher || "Unknown"}</span>
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <Calendar className="w-4 h-4 text-gray-400" />
                 <span className="text-gray-600">Year:</span>
-                <span className="font-medium text-gray-900">
-                  {comic.releaseYear || "Unknown"}
-                </span>
+                <span className="font-medium text-gray-900">{comic.releaseYear || "Unknown"}</span>
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <PenTool className="w-4 h-4 text-gray-400" />
                 <span className="text-gray-600">Writer:</span>
-                <span className="font-medium text-gray-900">
-                  {comic.writer || "Unknown"}
-                </span>
+                <span className="font-medium text-gray-900">{comic.writer || "Unknown"}</span>
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <Palette className="w-4 h-4 text-gray-400" />
                 <span className="text-gray-600">Cover Artist:</span>
-                <span className="font-medium text-gray-900">
-                  {comic.coverArtist || "Unknown"}
-                </span>
+                <span className="font-medium text-gray-900">{comic.coverArtist || "Unknown"}</span>
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <User className="w-4 h-4 text-gray-400" />
@@ -512,10 +521,11 @@ export function ComicDetailModal({
                     {comic.priceData.mostRecentSaleDate && (
                       <p className="text-xs text-gray-500 mt-1">
                         Most recent sale:{" "}
-                        {new Date(comic.priceData.mostRecentSaleDate).toLocaleDateString(
-                          "en-US",
-                          { month: "short", day: "numeric", year: "numeric" }
-                        )}
+                        {new Date(comic.priceData.mostRecentSaleDate).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
                       </p>
                     )}
                   </div>
@@ -546,7 +556,8 @@ export function ComicDetailModal({
                     <p className="text-xs text-amber-700 flex items-start gap-2">
                       <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
                       <span>
-                        <span className="font-semibold">Technopathic Estimate:</span> No eBay sales data found. This price is a technopathic estimate and may not be accurate.
+                        <span className="font-semibold">Technopathic Estimate:</span> No eBay sales
+                        data found. This price is a technopathic estimate and may not be accurate.
                       </span>
                     </p>
                   </div>
@@ -554,11 +565,15 @@ export function ComicDetailModal({
 
                 {/* Signature Series Price Note */}
                 {comic.isSignatureSeries && (
-                  <div className={`mt-3 pt-3 border-t border-blue-200 bg-blue-50 ${comic.priceData.priceSource === "ai" ? "" : "-mx-4 -mb-4 px-4 py-3 rounded-b-lg"}`}>
+                  <div
+                    className={`mt-3 pt-3 border-t border-blue-200 bg-blue-50 ${comic.priceData.priceSource === "ai" ? "" : "-mx-4 -mb-4 px-4 py-3 rounded-b-lg"}`}
+                  >
                     <p className="text-xs text-blue-700 flex items-start gap-2">
                       <Info className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
                       <span>
-                        <span className="font-semibold">Signature Series:</span> Price based on unsigned copies. Signed/authenticated comics often command a premium depending on the signer.
+                        <span className="font-semibold">Signature Series:</span> Price based on
+                        unsigned copies. Signed/authenticated comics often command a premium
+                        depending on the signer.
                       </span>
                     </p>
                   </div>
@@ -586,9 +601,7 @@ export function ComicDetailModal({
             {/* Purchase Info & Profit/Loss */}
             {item.purchasePrice && (
               <div className="mb-6">
-                <h3 className="text-sm font-semibold text-gray-900 mb-2">
-                  Investment Summary
-                </h3>
+                <h3 className="text-sm font-semibold text-gray-900 mb-2">Investment Summary</h3>
                 <div className="bg-gray-50 rounded-lg p-3 space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Purchase Price:</span>
@@ -610,10 +623,13 @@ export function ComicDetailModal({
                           const profitLoss = comic.priceData.estimatedValue - item.purchasePrice;
                           const profitPercent = (profitLoss / item.purchasePrice) * 100;
                           return (
-                            <span className={`font-bold ${profitLoss >= 0 ? "text-green-600" : "text-red-600"}`}>
+                            <span
+                              className={`font-bold ${profitLoss >= 0 ? "text-green-600" : "text-red-600"}`}
+                            >
                               {profitLoss >= 0 ? "+" : ""}${profitLoss.toFixed(2)}
                               <span className="text-xs font-normal ml-1">
-                                ({profitPercent >= 0 ? "+" : ""}{profitPercent.toFixed(1)}%)
+                                ({profitPercent >= 0 ? "+" : ""}
+                                {profitPercent.toFixed(1)}%)
                               </span>
                             </span>
                           );
@@ -667,7 +683,7 @@ export function ComicDetailModal({
               {activeListing ? (
                 <>
                   <a
-                    href={`/shop?listing=${activeListing.id}&tab=${activeListing.listingType === 'auction' ? 'auctions' : 'buy-now'}`}
+                    href={`/shop?listing=${activeListing.id}&tab=${activeListing.listingType === "auction" ? "auctions" : "buy-now"}`}
                     className="w-full px-4 py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2 font-semibold text-lg"
                   >
                     <Eye className="w-6 h-6" />
@@ -689,13 +705,19 @@ export function ComicDetailModal({
                     {/* Pull off the Shelf */}
                     <button
                       onClick={() => setShowSellerAction("pull_off_shelf")}
-                      disabled={activeListing.listingType === "auction" && (activeListing.bidCount || 0) > 0}
+                      disabled={
+                        activeListing.listingType === "auction" && (activeListing.bidCount || 0) > 0
+                      }
                       className={`flex-1 px-3 py-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 text-sm font-medium ${
                         activeListing.listingType === "auction" && (activeListing.bidCount || 0) > 0
                           ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                           : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                       }`}
-                      title={activeListing.listingType === "auction" && (activeListing.bidCount || 0) > 0 ? "Cannot remove auction with bids" : undefined}
+                      title={
+                        activeListing.listingType === "auction" && (activeListing.bidCount || 0) > 0
+                          ? "Cannot remove auction with bids"
+                          : undefined
+                      }
                     >
                       <PackageMinus className="w-4 h-4" />
                       Pull off Shelf
@@ -709,7 +731,9 @@ export function ComicDetailModal({
                         <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
                         <div className="flex-1">
                           <h5 className="font-medium text-amber-800">
-                            {showSellerAction === "mark_as_sold" ? "Mark as Sold?" : "Pull off the Shelf?"}
+                            {showSellerAction === "mark_as_sold"
+                              ? "Mark as Sold?"
+                              : "Pull off the Shelf?"}
                           </h5>
                           <p className="text-sm text-amber-700 mt-1">
                             {showSellerAction === "mark_as_sold"
@@ -732,8 +756,8 @@ export function ComicDetailModal({
                               {isProcessingAction
                                 ? "Processing..."
                                 : showSellerAction === "mark_as_sold"
-                                ? "Yes, Mark as Sold"
-                                : "Yes, Pull it"}
+                                  ? "Yes, Mark as Sold"
+                                  : "Yes, Pull it"}
                             </button>
                             <button
                               onClick={() => {
@@ -795,105 +819,105 @@ export function ComicDetailModal({
                         }}
                       />
                       <div className="absolute bottom-full left-0 mb-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-20">
-                      {!hasCustomLists && !showCreateList ? (
-                        <div className="px-4 py-3 text-center">
-                          <p className="text-sm text-gray-500 mb-3">
-                            You don&apos;t have any custom lists yet.
-                          </p>
-                          <button
-                            onClick={() => setShowCreateList(true)}
-                            className="px-3 py-1.5 bg-primary-600 text-white rounded-lg text-sm hover:bg-primary-700 transition-colors flex items-center gap-1 mx-auto"
-                          >
-                            <Plus className="w-4 h-4" />
-                            Create New List
-                          </button>
-                        </div>
-                      ) : showCreateList ? (
-                        <div className="px-3 py-2">
-                          <input
-                            type="text"
-                            value={newListName}
-                            onChange={(e) => setNewListName(e.target.value)}
-                            placeholder="List name..."
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm mb-2 bg-white text-gray-900"
-                            autoFocus
-                          />
-                          <div className="flex gap-2">
-                            <button
-                              onClick={handleCreateList}
-                              disabled={!newListName.trim()}
-                              className="flex-1 px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition-colors disabled:opacity-50"
-                            >
-                              Create & Add
-                            </button>
-                            <button
-                              onClick={() => {
-                                setShowCreateList(false);
-                                setNewListName("");
-                              }}
-                              className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition-colors"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <>
-                          {/* Default Lists */}
-                          <div className="px-3 py-1">
-                            <p className="text-xs text-gray-400 uppercase font-medium mb-1">
-                              Default Lists
+                        {!hasCustomLists && !showCreateList ? (
+                          <div className="px-4 py-3 text-center">
+                            <p className="text-sm text-gray-500 mb-3">
+                              You don&apos;t have any custom lists yet.
                             </p>
-                            {lists
-                              .filter((l) => l.isDefault && l.id !== "collection")
-                              .map((list) => (
-                                <button
-                                  key={list.id}
-                                  onClick={() => toggleList(list.id)}
-                                  className="w-full px-2 py-1.5 text-left text-sm text-gray-900 hover:bg-gray-100 rounded flex items-center justify-between"
-                                >
-                                  <span>{list.name}</span>
-                                  {isInList(list.id) && (
-                                    <Check className="w-4 h-4 text-green-600" />
-                                  )}
-                                </button>
-                              ))}
-                          </div>
-
-                          {/* Custom Lists */}
-                          {customLists.length > 0 && (
-                            <div className="px-3 py-1 border-t mt-1 pt-1">
-                              <p className="text-xs text-gray-400 uppercase font-medium mb-1">
-                                Custom Lists
-                              </p>
-                              {customLists.map((list) => (
-                                <button
-                                  key={list.id}
-                                  onClick={() => toggleList(list.id)}
-                                  className="w-full px-2 py-1.5 text-left text-sm text-gray-900 hover:bg-gray-100 rounded flex items-center justify-between"
-                                >
-                                  <span>{list.name}</span>
-                                  {isInList(list.id) && (
-                                    <Check className="w-4 h-4 text-green-600" />
-                                  )}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-
-                          {/* Create New */}
-                          <div className="border-t mt-1 pt-1 px-3">
                             <button
                               onClick={() => setShowCreateList(true)}
-                              className="w-full px-2 py-1.5 text-left text-sm text-primary-600 hover:bg-primary-50 rounded flex items-center gap-1"
+                              className="px-3 py-1.5 bg-primary-600 text-white rounded-lg text-sm hover:bg-primary-700 transition-colors flex items-center gap-1 mx-auto"
                             >
                               <Plus className="w-4 h-4" />
                               Create New List
                             </button>
                           </div>
-                        </>
-                      )}
-                    </div>
+                        ) : showCreateList ? (
+                          <div className="px-3 py-2">
+                            <input
+                              type="text"
+                              value={newListName}
+                              onChange={(e) => setNewListName(e.target.value)}
+                              placeholder="List name..."
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm mb-2 bg-white text-gray-900"
+                              autoFocus
+                            />
+                            <div className="flex gap-2">
+                              <button
+                                onClick={handleCreateList}
+                                disabled={!newListName.trim()}
+                                className="flex-1 px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition-colors disabled:opacity-50"
+                              >
+                                Create & Add
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setShowCreateList(false);
+                                  setNewListName("");
+                                }}
+                                className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition-colors"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            {/* Default Lists */}
+                            <div className="px-3 py-1">
+                              <p className="text-xs text-gray-400 uppercase font-medium mb-1">
+                                Default Lists
+                              </p>
+                              {lists
+                                .filter((l) => l.isDefault && l.id !== "collection")
+                                .map((list) => (
+                                  <button
+                                    key={list.id}
+                                    onClick={() => toggleList(list.id)}
+                                    className="w-full px-2 py-1.5 text-left text-sm text-gray-900 hover:bg-gray-100 rounded flex items-center justify-between"
+                                  >
+                                    <span>{list.name}</span>
+                                    {isInList(list.id) && (
+                                      <Check className="w-4 h-4 text-green-600" />
+                                    )}
+                                  </button>
+                                ))}
+                            </div>
+
+                            {/* Custom Lists */}
+                            {customLists.length > 0 && (
+                              <div className="px-3 py-1 border-t mt-1 pt-1">
+                                <p className="text-xs text-gray-400 uppercase font-medium mb-1">
+                                  Custom Lists
+                                </p>
+                                {customLists.map((list) => (
+                                  <button
+                                    key={list.id}
+                                    onClick={() => toggleList(list.id)}
+                                    className="w-full px-2 py-1.5 text-left text-sm text-gray-900 hover:bg-gray-100 rounded flex items-center justify-between"
+                                  >
+                                    <span>{list.name}</span>
+                                    {isInList(list.id) && (
+                                      <Check className="w-4 h-4 text-green-600" />
+                                    )}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Create New */}
+                            <div className="border-t mt-1 pt-1 px-3">
+                              <button
+                                onClick={() => setShowCreateList(true)}
+                                className="w-full px-2 py-1.5 text-left text-sm text-primary-600 hover:bg-primary-50 rounded flex items-center gap-1"
+                              >
+                                <Plus className="w-4 h-4" />
+                                Create New List
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </>
                   )}
                 </div>
@@ -908,8 +932,8 @@ export function ComicDetailModal({
                 </button>
               </div>
 
-              {/* Mark as Sold Button (if for sale - legacy flow) */}
-              {item.forSale && !activeListing && (
+              {/* Mark as Sold Button - available for all comics without active listings */}
+              {!activeListing && (
                 <button
                   onClick={() => setShowSoldConfirm(true)}
                   className="w-full px-3 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors flex items-center justify-center gap-2 text-sm font-medium"
@@ -963,17 +987,21 @@ export function ComicDetailModal({
                     placeholder="Enter sale price"
                   />
                   {item.purchasePrice && salePrice && parseFloat(salePrice) > 0 && (
-                    <p className={`text-xs mt-1 ${
-                      parseFloat(salePrice) >= item.purchasePrice ? "text-green-600" : "text-red-600"
-                    }`}>
+                    <p
+                      className={`text-xs mt-1 ${
+                        parseFloat(salePrice) >= item.purchasePrice
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }`}
+                    >
                       {parseFloat(salePrice) >= item.purchasePrice ? "Profit" : "Loss"}: $
                       {Math.abs(parseFloat(salePrice) - item.purchasePrice).toFixed(2)}
                     </p>
                   )}
                 </div>
                 <p className="text-xs text-gray-500 mb-3">
-                  Note: In the future, you&apos;ll be able to select the buyer and the comic
-                  will automatically transfer to their collection.
+                  Note: In the future, you&apos;ll be able to select the buyer and the comic will
+                  automatically transfer to their collection.
                 </p>
                 <div className="flex gap-2">
                   <button

@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { X, Search, ChevronDown } from "lucide-react";
-import { TitleAutocomplete } from "./TitleAutocomplete";
+
+import { ChevronDown, Search, X } from "lucide-react";
+
 import { GRADE_SCALE } from "@/types/comic";
+
+import { TitleAutocomplete } from "./TitleAutocomplete";
 
 interface KeyHuntManualEntryProps {
   isOpen: boolean;
@@ -21,11 +24,7 @@ const QUICK_GRADES = [
   { value: 2.0, label: "GD (2.0)" },
 ];
 
-export function KeyHuntManualEntry({
-  isOpen,
-  onClose,
-  onSubmit,
-}: KeyHuntManualEntryProps) {
+export function KeyHuntManualEntry({ isOpen, onClose, onSubmit }: KeyHuntManualEntryProps) {
   const [title, setTitle] = useState("");
   const [years, setYears] = useState<string | undefined>(undefined);
   const [issueNumber, setIssueNumber] = useState("");
@@ -79,26 +78,18 @@ export function KeyHuntManualEntry({
         <div className="px-6 py-4 space-y-5">
           {/* Title with Autocomplete */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Comic Title
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Comic Title</label>
             <TitleAutocomplete
               value={title}
               onChange={handleTitleChange}
               placeholder="e.g., Amazing Spider-Man"
             />
-            {years && (
-              <p className="text-xs text-gray-500 mt-1">
-                Series: {years}
-              </p>
-            )}
+            {years && <p className="text-xs text-gray-500 mt-1">Series: {years}</p>}
           </div>
 
           {/* Issue Number */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Issue Number
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Issue Number</label>
             <input
               type="text"
               value={issueNumber}
@@ -111,9 +102,7 @@ export function KeyHuntManualEntry({
 
           {/* Grade Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Condition Grade
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Condition Grade</label>
 
             {/* Quick Grade Buttons */}
             <div className="grid grid-cols-3 gap-2 mb-3">
@@ -141,9 +130,7 @@ export function KeyHuntManualEntry({
             >
               {showAllGrades ? "Hide" : "More grades"}
               <ChevronDown
-                className={`w-4 h-4 transition-transform ${
-                  showAllGrades ? "rotate-180" : ""
-                }`}
+                className={`w-4 h-4 transition-transform ${showAllGrades ? "rotate-180" : ""}`}
               />
             </button>
 

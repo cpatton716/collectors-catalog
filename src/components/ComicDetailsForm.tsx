@@ -1,20 +1,39 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import {
-  ComicDetails,
-  CollectionItem,
-  PUBLISHERS,
-  GRADING_COMPANIES,
-  GRADE_SCALE,
-  GradingCompany,
-} from "@/types/comic";
+import { useEffect, useState } from "react";
+
 import Image from "next/image";
-import { AlertCircle, AlertTriangle, CheckCircle, Loader2, DollarSign, TrendingUp, Info, Search, ExternalLink, Plus, X, KeyRound, RefreshCw } from "lucide-react";
-import { TitleAutocomplete } from "./TitleAutocomplete";
-import { GradePricingBreakdown } from "./GradePricingBreakdown";
-import { AddToKeyHuntButton } from "./AddToKeyHuntButton";
+
+import {
+  AlertCircle,
+  AlertTriangle,
+  CheckCircle,
+  DollarSign,
+  ExternalLink,
+  Info,
+  KeyRound,
+  Loader2,
+  Plus,
+  RefreshCw,
+  Search,
+  TrendingUp,
+  X,
+} from "lucide-react";
+
 import { calculateValueAtGrade } from "@/lib/gradePrice";
+
+import {
+  CollectionItem,
+  ComicDetails,
+  GRADE_SCALE,
+  GRADING_COMPANIES,
+  GradingCompany,
+  PUBLISHERS,
+} from "@/types/comic";
+
+import { AddToKeyHuntButton } from "./AddToKeyHuntButton";
+import { GradePricingBreakdown } from "./GradePricingBreakdown";
+import { TitleAutocomplete } from "./TitleAutocomplete";
 
 // Helper to generate certification verification URLs
 function getCertVerificationUrl(certNumber: string, gradingCompany: string): string | null {
@@ -59,16 +78,22 @@ export function ComicDetailsForm({
   });
 
   // Grading state - initialized from AI detection or existing item
-  const [isGraded, setIsGraded] = useState(existingItem?.isGraded || initialComic.isSlabbed || false);
+  const [isGraded, setIsGraded] = useState(
+    existingItem?.isGraded || initialComic.isSlabbed || false
+  );
   const [gradingCompany, setGradingCompany] = useState<GradingCompany | "">(
     (existingItem?.gradingCompany as GradingCompany) || initialComic.gradingCompany || ""
   );
-  const [grade, setGrade] = useState(existingItem?.conditionGrade?.toString() || initialComic.grade || "");
+  const [grade, setGrade] = useState(
+    existingItem?.conditionGrade?.toString() || initialComic.grade || ""
+  );
   const [isSignatureSeries, setIsSignatureSeries] = useState(
     initialComic.isSignatureSeries || false
   );
   const [signedBy, setSignedBy] = useState(initialComic.signedBy || "");
-  const [certificationNumber, setCertificationNumber] = useState(initialComic.certificationNumber || "");
+  const [certificationNumber, setCertificationNumber] = useState(
+    initialComic.certificationNumber || ""
+  );
   const [isLookingUpCert, setIsLookingUpCert] = useState(false);
 
   // Other form state - initialized from existing item in edit mode
@@ -92,7 +117,9 @@ export function ComicDetailsForm({
   const [originalTitle] = useState(initialComic.title || "");
   const [originalIssue] = useState(initialComic.issueNumber || "");
   const [showRelookupPrompt, setShowRelookupPrompt] = useState(false);
-  const [pendingRelookup, setPendingRelookup] = useState<{ title: string; issue: string } | null>(null);
+  const [pendingRelookup, setPendingRelookup] = useState<{ title: string; issue: string } | null>(
+    null
+  );
 
   // Auto-populate publisher when title is selected
   useEffect(() => {
@@ -151,7 +178,7 @@ export function ComicDetailsForm({
           body: JSON.stringify({
             title: comic.title,
             issueNumber: comic.issueNumber,
-            lookupType: "full"
+            lookupType: "full",
           }),
         });
 
@@ -184,7 +211,7 @@ export function ComicDetailsForm({
               writer: prev.writer || data.writer,
               coverArtist: prev.coverArtist || data.coverArtist,
               interiorArtist: prev.interiorArtist || data.interiorArtist,
-              keyInfo: prev.keyInfo?.length ? prev.keyInfo : (data.keyInfo || []),
+              keyInfo: prev.keyInfo?.length ? prev.keyInfo : data.keyInfo || [],
               priceData: prev.priceData || data.priceData,
             };
           });
@@ -200,7 +227,15 @@ export function ComicDetailsForm({
 
     const debounce = setTimeout(lookupDetails, 800);
     return () => clearTimeout(debounce);
-  }, [comic.title, comic.issueNumber, comic.writer, comic.coverArtist, comic.releaseYear, lastLookedUpTitle, lastLookedUpIssue]);
+  }, [
+    comic.title,
+    comic.issueNumber,
+    comic.writer,
+    comic.coverArtist,
+    comic.releaseYear,
+    lastLookedUpTitle,
+    lastLookedUpIssue,
+  ]);
 
   // Update form when initialComic changes (e.g., when API returns data)
   useEffect(() => {
@@ -221,18 +256,32 @@ export function ComicDetailsForm({
     if (mode !== "edit") return;
 
     const titleChanged = comic.title && comic.title !== originalTitle && originalTitle !== "";
-    const issueChanged = comic.issueNumber && comic.issueNumber !== originalIssue && originalIssue !== "";
+    const issueChanged =
+      comic.issueNumber && comic.issueNumber !== originalIssue && originalIssue !== "";
 
     // Only show prompt if both title and issue are filled and at least one changed
     if ((titleChanged || issueChanged) && comic.title && comic.issueNumber) {
       // Check if we already have metadata that might be stale
-      const hasExistingMetadata = comic.writer || comic.coverArtist || comic.publisher || comic.releaseYear;
+      const hasExistingMetadata =
+        comic.writer || comic.coverArtist || comic.publisher || comic.releaseYear;
       if (hasExistingMetadata && !showRelookupPrompt && !isLookingUpDetails) {
         setPendingRelookup({ title: comic.title, issue: comic.issueNumber });
         setShowRelookupPrompt(true);
       }
     }
-  }, [comic.title, comic.issueNumber, originalTitle, originalIssue, mode, comic.writer, comic.coverArtist, comic.publisher, comic.releaseYear, showRelookupPrompt, isLookingUpDetails]);
+  }, [
+    comic.title,
+    comic.issueNumber,
+    originalTitle,
+    originalIssue,
+    mode,
+    comic.writer,
+    comic.coverArtist,
+    comic.publisher,
+    comic.releaseYear,
+    showRelookupPrompt,
+    isLookingUpDetails,
+  ]);
 
   // Handle re-lookup confirmation
   const handleRelookup = async () => {
@@ -248,7 +297,7 @@ export function ComicDetailsForm({
         body: JSON.stringify({
           title: pendingRelookup.title,
           issueNumber: pendingRelookup.issue,
-          lookupType: "full"
+          lookupType: "full",
         }),
       });
 
@@ -338,7 +387,10 @@ export function ComicDetailsForm({
             isSignatureSeries: data.data.signatures ? true : prev.isSignatureSeries,
             // Map keyComments to keyInfo if present
             keyInfo: data.data.keyComments
-              ? data.data.keyComments.split(/[.\n]+/).map((s: string) => s.trim()).filter((s: string) => s.length > 0)
+              ? data.data.keyComments
+                  .split(/[.\n]+/)
+                  .map((s: string) => s.trim())
+                  .filter((s: string) => s.length > 0)
               : prev.keyInfo,
           }));
           if (data.data.grade) {
@@ -430,11 +482,11 @@ export function ComicDetailsForm({
         <div className="flex items-start gap-3 p-4 rounded-lg bg-amber-50 border border-amber-200">
           <RefreshCw className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
           <div className="flex-1">
-            <p className="text-sm font-medium text-amber-800">
-              Title or issue number changed
-            </p>
+            <p className="text-sm font-medium text-amber-800">Title or issue number changed</p>
             <p className="text-sm text-amber-700 mt-1">
-              Would you like to look up new details for &quot;{pendingRelookup.title} #{pendingRelookup.issue}&quot;? This will update the publisher, year, creative team, and key info.
+              Would you like to look up new details for &quot;{pendingRelookup.title} #
+              {pendingRelookup.issue}&quot;? This will update the publisher, year, creative team,
+              and key info.
             </p>
             <div className="flex gap-2 mt-3">
               <button
@@ -460,7 +512,9 @@ export function ComicDetailsForm({
       {/* Basic Info */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className={`block text-sm font-medium mb-1 ${!comic.title && comic.issueNumber ? "text-red-600" : "text-gray-700"}`}>
+          <label
+            className={`block text-sm font-medium mb-1 ${!comic.title && comic.issueNumber ? "text-red-600" : "text-gray-700"}`}
+          >
             Title <span className="text-red-500">*</span>
           </label>
           <TitleAutocomplete
@@ -479,7 +533,9 @@ export function ComicDetailsForm({
             required
             className={!comic.title && comic.issueNumber ? "border-red-300 bg-red-50" : ""}
           />
-          <p className={`text-xs mt-1 ${!comic.title && comic.issueNumber ? "text-red-600" : "text-gray-500"}`}>
+          <p
+            className={`text-xs mt-1 ${!comic.title && comic.issueNumber ? "text-red-600" : "text-gray-500"}`}
+          >
             {!comic.title && comic.issueNumber ? (
               <span className="flex items-center gap-1">
                 <AlertTriangle className="w-3 h-3" />
@@ -492,7 +548,9 @@ export function ComicDetailsForm({
         </div>
 
         <div>
-          <label className={`block text-sm font-medium mb-1 ${!comic.issueNumber && comic.title ? "text-red-600" : "text-gray-700"}`}>
+          <label
+            className={`block text-sm font-medium mb-1 ${!comic.issueNumber && comic.title ? "text-red-600" : "text-gray-700"}`}
+          >
             Issue Number <span className="text-red-500">*</span>
           </label>
           <input
@@ -514,9 +572,7 @@ export function ComicDetailsForm({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Publisher
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Publisher</label>
           <select
             value={comic.publisher || ""}
             onChange={(e) => updateComic("publisher", e.target.value)}
@@ -532,9 +588,7 @@ export function ComicDetailsForm({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Release Year
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Release Year</label>
           <input
             type="text"
             value={comic.releaseYear || ""}
@@ -545,9 +599,7 @@ export function ComicDetailsForm({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Variant
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Variant</label>
           <input
             type="text"
             value={comic.variant || ""}
@@ -560,10 +612,14 @@ export function ComicDetailsForm({
 
       {/* Cover Image Section - show for adding new cover or updating existing */}
       {comic.title && onCoverImageChange && (
-        <div className={`p-4 rounded-lg space-y-3 order-first md:order-none ${coverImageUrl ? 'bg-gray-50 border border-gray-200' : 'bg-blue-50 border border-blue-200'}`}>
+        <div
+          className={`p-4 rounded-lg space-y-3 order-first md:order-none ${coverImageUrl ? "bg-gray-50 border border-gray-200" : "bg-blue-50 border border-blue-200"}`}
+        >
           <div>
-            <p className={`text-sm font-medium ${coverImageUrl ? 'text-gray-900' : 'text-blue-900'}`}>
-              {coverImageUrl ? 'Cover Image' : 'Add a cover image'}
+            <p
+              className={`text-sm font-medium ${coverImageUrl ? "text-gray-900" : "text-blue-900"}`}
+            >
+              {coverImageUrl ? "Cover Image" : "Add a cover image"}
             </p>
             {!coverImageUrl && (
               <>
@@ -780,9 +836,7 @@ export function ComicDetailsForm({
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Writer
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Writer</label>
             <input
               type="text"
               value={comic.writer || ""}
@@ -793,30 +847,22 @@ export function ComicDetailsForm({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Cover Artist
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Cover Artist</label>
             <input
               type="text"
               value={comic.coverArtist || ""}
-              onChange={(e) =>
-                updateComic("coverArtist", e.target.value || null)
-              }
+              onChange={(e) => updateComic("coverArtist", e.target.value || null)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white text-gray-900"
               placeholder="e.g., Todd McFarlane"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Interior Artist
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Interior Artist</label>
             <input
               type="text"
               value={comic.interiorArtist || ""}
-              onChange={(e) =>
-                updateComic("interiorArtist", e.target.value || null)
-              }
+              onChange={(e) => updateComic("interiorArtist", e.target.value || null)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white text-gray-900"
               placeholder="e.g., John Romita"
             />
@@ -911,9 +957,7 @@ export function ComicDetailsForm({
               onChange={(e) => setIsGraded(e.target.checked)}
               className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
             />
-            <span className="text-sm text-gray-700">
-              Professionally Graded (Slabbed)
-            </span>
+            <span className="text-sm text-gray-700">Professionally Graded (Slabbed)</span>
           </label>
         </div>
 
@@ -940,9 +984,7 @@ export function ComicDetailsForm({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Grade
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Grade</label>
                 <select
                   value={grade}
                   onChange={(e) => setGrade(e.target.value)}
@@ -986,20 +1028,23 @@ export function ComicDetailsForm({
                 </button>
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                Enter the cert number from the label to fetch details from {gradingCompany || "the grading company"}
+                Enter the cert number from the label to fetch details from{" "}
+                {gradingCompany || "the grading company"}
               </p>
               {/* Clickable link to verification page */}
-              {certificationNumber && gradingCompany && getCertVerificationUrl(certificationNumber, gradingCompany) && (
-                <a
-                  href={getCertVerificationUrl(certificationNumber, gradingCompany) || "#"}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 mt-2 text-sm text-primary-600 hover:text-primary-700 hover:underline"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  View on {gradingCompany} website
-                </a>
-              )}
+              {certificationNumber &&
+                gradingCompany &&
+                getCertVerificationUrl(certificationNumber, gradingCompany) && (
+                  <a
+                    href={getCertVerificationUrl(certificationNumber, gradingCompany) || "#"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 mt-2 text-sm text-primary-600 hover:text-primary-700 hover:underline"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    View on {gradingCompany} website
+                  </a>
+                )}
             </div>
 
             {/* Grading Details Section - from cert lookup */}
@@ -1033,7 +1078,9 @@ export function ComicDetailsForm({
                     <label className="block text-xs font-medium text-slate-500 mb-1">
                       Grader Notes
                     </label>
-                    <p className="text-sm text-slate-700 whitespace-pre-wrap">{comic.graderNotes}</p>
+                    <p className="text-sm text-slate-700 whitespace-pre-wrap">
+                      {comic.graderNotes}
+                    </p>
                   </div>
                 )}
               </div>
@@ -1055,9 +1102,7 @@ export function ComicDetailsForm({
 
               {isSignatureSeries && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Signed By
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Signed By</label>
                   <input
                     type="text"
                     value={signedBy}
@@ -1073,114 +1118,127 @@ export function ComicDetailsForm({
       </div>
 
       {/* Estimated Value */}
-      {comic.priceData && comic.priceData.estimatedValue && (() => {
-        // Calculate grade-adjusted value
-        const selectedGrade = grade ? parseFloat(grade) : null;
-        const gradeAdjustedValue = selectedGrade && comic.priceData?.gradeEstimates
-          ? calculateValueAtGrade(comic.priceData, selectedGrade, isGraded)
-          : comic.priceData.estimatedValue;
-        const displayValue = gradeAdjustedValue || comic.priceData.estimatedValue;
+      {comic.priceData &&
+        comic.priceData.estimatedValue &&
+        (() => {
+          // Calculate grade-adjusted value
+          const selectedGrade = grade ? parseFloat(grade) : null;
+          const gradeAdjustedValue =
+            selectedGrade && comic.priceData?.gradeEstimates
+              ? calculateValueAtGrade(comic.priceData, selectedGrade, isGraded)
+              : comic.priceData.estimatedValue;
+          const displayValue = gradeAdjustedValue || comic.priceData.estimatedValue;
 
-        return (
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900 mb-1 flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-green-600" />
-                  Estimated Value
-                  {selectedGrade && comic.priceData?.gradeEstimates && (
-                    <span className="text-xs font-normal text-gray-500">
-                      ({isGraded ? "slabbed" : "raw"} {selectedGrade})
+          return (
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900 mb-1 flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-green-600" />
+                    Estimated Value
+                    {selectedGrade && comic.priceData?.gradeEstimates && (
+                      <span className="text-xs font-normal text-gray-500">
+                        ({isGraded ? "slabbed" : "raw"} {selectedGrade})
+                      </span>
+                    )}
+                  </h3>
+                  <div className="flex items-baseline gap-1">
+                    <DollarSign className="w-5 h-5 text-green-600" />
+                    <span className="text-3xl font-bold text-green-700">
+                      {displayValue.toLocaleString("en-US", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
                     </span>
+                  </div>
+                  {comic.priceData.mostRecentSaleDate && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Most recent sale:{" "}
+                      {new Date(comic.priceData.mostRecentSaleDate).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </p>
                   )}
-                </h3>
-                <div className="flex items-baseline gap-1">
-                  <DollarSign className="w-5 h-5 text-green-600" />
-                  <span className="text-3xl font-bold text-green-700">
-                    {displayValue.toLocaleString("en-US", {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
-                  </span>
                 </div>
-                {comic.priceData.mostRecentSaleDate && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Most recent sale: {new Date(comic.priceData.mostRecentSaleDate).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-                  </p>
+
+                {/* Recent Sales Summary */}
+                {comic.priceData.recentSales.length > 0 && (
+                  <div className="text-right">
+                    <p className="text-xs text-gray-500 mb-1">Recent Sales</p>
+                    <div className="space-y-0.5">
+                      {comic.priceData.recentSales.slice(0, 3).map((sale, idx) => (
+                        <p key={idx} className="text-xs text-gray-600">
+                          ${sale.price.toLocaleString()}
+                          <span className="text-gray-400 ml-1">
+                            (
+                            {new Date(sale.date).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                            })}
+                            )
+                          </span>
+                        </p>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
 
-              {/* Recent Sales Summary */}
-              {comic.priceData.recentSales.length > 0 && (
-                <div className="text-right">
-                  <p className="text-xs text-gray-500 mb-1">Recent Sales</p>
-                  <div className="space-y-0.5">
-                    {comic.priceData.recentSales.slice(0, 3).map((sale, idx) => (
-                      <p key={idx} className="text-xs text-gray-600">
-                        ${sale.price.toLocaleString()}
-                        <span className="text-gray-400 ml-1">
-                          ({new Date(sale.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })})
-                        </span>
-                      </p>
-                    ))}
-                  </div>
+              {/* AI Price Warning */}
+              {comic.priceData.priceSource === "ai" && (
+                <div className="mt-3 pt-3 border-t border-amber-200 bg-amber-50 -mx-4 -mb-4 px-4 py-3 rounded-b-lg">
+                  <p className="text-xs text-amber-700 flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <span>
+                      <span className="font-semibold">Technopathic Estimate:</span> No eBay sales
+                      data found for this comic. This price is a technopathic estimate and may not
+                      be accurate. Use caution when making buying or selling decisions.
+                    </span>
+                  </p>
                 </div>
               )}
+
+              {/* Signature Series Price Note */}
+              {isSignatureSeries && (
+                <div
+                  className={`mt-3 pt-3 border-t border-blue-200 bg-blue-50 ${comic.priceData.priceSource === "ai" ? "" : "-mx-4 -mb-4 px-4 py-3 rounded-b-lg"}`}
+                >
+                  <p className="text-xs text-blue-700 flex items-start gap-2">
+                    <Info className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <span>
+                      <span className="font-semibold">Signature Series:</span> Price based on
+                      unsigned copies. Signed/authenticated comics often command a premium depending
+                      on the signer.
+                    </span>
+                  </p>
+                </div>
+              )}
+
+              {/* Disclaimer - only show for eBay data */}
+              {comic.priceData.disclaimer && comic.priceData.priceSource !== "ai" && (
+                <div className="mt-3 pt-3 border-t border-green-200">
+                  <p className="text-xs text-gray-500 flex items-start gap-1">
+                    <Info className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                    {comic.priceData.disclaimer}
+                  </p>
+                </div>
+              )}
+
+              {/* Grade-aware pricing breakdown */}
+              <GradePricingBreakdown
+                priceData={comic.priceData}
+                currentGrade={selectedGrade}
+                isSlabbed={isGraded}
+              />
             </div>
-
-            {/* AI Price Warning */}
-            {comic.priceData.priceSource === "ai" && (
-              <div className="mt-3 pt-3 border-t border-amber-200 bg-amber-50 -mx-4 -mb-4 px-4 py-3 rounded-b-lg">
-                <p className="text-xs text-amber-700 flex items-start gap-2">
-                  <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                  <span>
-                    <span className="font-semibold">Technopathic Estimate:</span> No eBay sales data found for this comic. This price is a technopathic estimate and may not be accurate. Use caution when making buying or selling decisions.
-                  </span>
-                </p>
-              </div>
-            )}
-
-            {/* Signature Series Price Note */}
-            {isSignatureSeries && (
-              <div className={`mt-3 pt-3 border-t border-blue-200 bg-blue-50 ${comic.priceData.priceSource === "ai" ? "" : "-mx-4 -mb-4 px-4 py-3 rounded-b-lg"}`}>
-                <p className="text-xs text-blue-700 flex items-start gap-2">
-                  <Info className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
-                  <span>
-                    <span className="font-semibold">Signature Series:</span> Price based on unsigned copies. Signed/authenticated comics often command a premium depending on the signer.
-                  </span>
-                </p>
-              </div>
-            )}
-
-            {/* Disclaimer - only show for eBay data */}
-            {comic.priceData.disclaimer && comic.priceData.priceSource !== "ai" && (
-              <div className="mt-3 pt-3 border-t border-green-200">
-                <p className="text-xs text-gray-500 flex items-start gap-1">
-                  <Info className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                  {comic.priceData.disclaimer}
-                </p>
-              </div>
-            )}
-
-            {/* Grade-aware pricing breakdown */}
-            <GradePricingBreakdown
-              priceData={comic.priceData}
-              currentGrade={selectedGrade}
-              isSlabbed={isGraded}
-            />
-          </div>
-        );
-      })()}
+          );
+        })()}
 
       {/* Purchase Info */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-900 mb-3">
-          Purchase Info
-        </h3>
+        <h3 className="text-sm font-semibold text-gray-900 mb-3">Purchase Info</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1201,9 +1259,7 @@ export function ComicDetailsForm({
 
       {/* Notes */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Notes
-        </label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
         <textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
@@ -1231,9 +1287,13 @@ export function ComicDetailsForm({
             releaseYear={comic.releaseYear || undefined}
             coverImageUrl={coverImageUrl}
             keyInfo={comic.keyInfo}
-            currentPriceLow={comic.priceData?.estimatedValue ? comic.priceData.estimatedValue * 0.8 : undefined}
+            currentPriceLow={
+              comic.priceData?.estimatedValue ? comic.priceData.estimatedValue * 0.8 : undefined
+            }
             currentPriceMid={comic.priceData?.estimatedValue || undefined}
-            currentPriceHigh={comic.priceData?.estimatedValue ? comic.priceData.estimatedValue * 1.2 : undefined}
+            currentPriceHigh={
+              comic.priceData?.estimatedValue ? comic.priceData.estimatedValue * 1.2 : undefined
+            }
             addedFrom="scan"
             variant="compact"
           />

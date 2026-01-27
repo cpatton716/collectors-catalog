@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
-import { X, Camera, Loader2, AlertCircle, RefreshCw, Settings } from "lucide-react";
+import { AlertCircle, Camera, Loader2, RefreshCw, Settings, X } from "lucide-react";
 
 interface BarcodeScannerProps {
   onScan: (barcode: string) => void;
@@ -43,21 +44,31 @@ export function BarcodeScanner({ onScan, onClose, isProcessing }: BarcodeScanner
     if (errorStr.includes("NotAllowedError") || errorStr.includes("Permission denied")) {
       return {
         type: "permission_denied",
-        message: "Camera access was denied. Please allow camera permissions in your browser settings and try again.",
+        message:
+          "Camera access was denied. Please allow camera permissions in your browser settings and try again.",
         canRetry: true,
       };
     }
-    if (errorStr.includes("NotFoundError") || errorStr.includes("DevicesNotFoundError") || errorStr.includes("Requested device not found")) {
+    if (
+      errorStr.includes("NotFoundError") ||
+      errorStr.includes("DevicesNotFoundError") ||
+      errorStr.includes("Requested device not found")
+    ) {
       return {
         type: "not_found",
         message: "No camera found on this device. Please ensure your device has a camera.",
         canRetry: false,
       };
     }
-    if (errorStr.includes("NotReadableError") || errorStr.includes("TrackStartError") || errorStr.includes("Could not start video source")) {
+    if (
+      errorStr.includes("NotReadableError") ||
+      errorStr.includes("TrackStartError") ||
+      errorStr.includes("Could not start video source")
+    ) {
       return {
         type: "not_readable",
-        message: "Camera is in use by another application. Please close other apps using the camera and try again.",
+        message:
+          "Camera is in use by another application. Please close other apps using the camera and try again.",
         canRetry: true,
       };
     }
@@ -95,10 +106,10 @@ export function BarcodeScanner({ onScan, onClose, isProcessing }: BarcodeScanner
   const requestCameraPermission = useCallback(async (): Promise<boolean> => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" }
+        video: { facingMode: "environment" },
       });
       // Permission granted, stop the test stream
-      stream.getTracks().forEach(track => track.stop());
+      stream.getTracks().forEach((track) => track.stop());
       return true;
     } catch (err) {
       console.error("Permission request failed:", err);
@@ -111,7 +122,8 @@ export function BarcodeScanner({ onScan, onClose, isProcessing }: BarcodeScanner
     if (scannerRef.current) {
       try {
         const state = scannerRef.current.getState();
-        if (state === 2) { // SCANNING state
+        if (state === 2) {
+          // SCANNING state
           await scannerRef.current.stop();
         }
       } catch (err) {
@@ -145,7 +157,8 @@ export function BarcodeScanner({ onScan, onClose, isProcessing }: BarcodeScanner
     if (permissionStatus === "denied") {
       setError({
         type: "permission_denied",
-        message: "Camera access was previously denied. Please enable camera permissions in your browser settings.",
+        message:
+          "Camera access was previously denied. Please enable camera permissions in your browser settings.",
         canRetry: true,
       });
       setScannerState("error");
@@ -170,7 +183,7 @@ export function BarcodeScanner({ onScan, onClose, isProcessing }: BarcodeScanner
     setScannerState("starting");
 
     // Wait for DOM to be ready
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     if (!mountedRef.current || !document.getElementById("barcode-reader")) {
       return;
@@ -308,7 +321,9 @@ export function BarcodeScanner({ onScan, onClose, isProcessing }: BarcodeScanner
                 <button
                   onClick={() => {
                     // Open browser settings instructions
-                    alert("To enable camera:\n\n1. Click the lock/info icon in your browser's address bar\n2. Find 'Camera' in the permissions list\n3. Change it to 'Allow'\n4. Refresh this page");
+                    alert(
+                      "To enable camera:\n\n1. Click the lock/info icon in your browser's address bar\n2. Find 'Camera' in the permissions list\n3. Change it to 'Allow'\n4. Refresh this page"
+                    );
                   }}
                   className="flex items-center justify-center gap-2 px-6 py-3 bg-white/20 text-white rounded-lg font-medium hover:bg-white/30 transition-colors"
                 >

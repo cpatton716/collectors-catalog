@@ -1,16 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
-import { createNotification } from "@/lib/auctionDb";
-import {
-  getProfileByStripeCustomerId,
-  upgradeToPremium,
-  downgradeToFree,
-  updateSubscriptionStatus,
-  addPurchasedScans,
-  startTrial,
-  SCAN_PACK_AMOUNT,
-} from "@/lib/subscription";
+
 import Stripe from "stripe";
+
+import { createNotification } from "@/lib/auctionDb";
+import { cacheGet, cacheSet } from "@/lib/cache";
+import {
+  SCAN_PACK_AMOUNT,
+  addPurchasedScans,
+  downgradeToFree,
+  getProfileByStripeCustomerId,
+  startTrial,
+  updateSubscriptionStatus,
+  upgradeToPremium,
+} from "@/lib/subscription";
+import { supabase } from "@/lib/supabase";
 
 // Initialize Stripe (conditionally)
 const stripe = process.env.STRIPE_SECRET_KEY
@@ -31,10 +34,7 @@ export async function POST(request: NextRequest) {
     const signature = request.headers.get("stripe-signature");
 
     if (!signature) {
-      return NextResponse.json(
-        { error: "Missing signature" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Missing signature" }, { status: 400 });
     }
 
     // Verify webhook signature
@@ -43,11 +43,18 @@ export async function POST(request: NextRequest) {
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
     } catch (err) {
       console.error("Webhook signature verification failed:", err);
-      return NextResponse.json(
-        { error: "Invalid signature" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
     }
+
+    // Idempotency check - prevent duplicate event processing
+    const eventIdKey = `stripe_event_${event.id}`;
+    const alreadyProcessed = await cacheGet<boolean>(eventIdKey, "webhook");
+    if (alreadyProcessed) {
+      return NextResponse.json({ received: true, duplicate: true });
+    }
+
+    // Mark event as being processed (1 hour TTL)
+    await cacheSet(eventIdKey, true, "webhook");
 
     // Handle the event
     switch (event.type) {
@@ -107,10 +114,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ received: true });
   } catch (error) {
     console.error("Webhook error:", error);
-    return NextResponse.json(
-      { error: "Webhook handler failed" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Webhook handler failed" }, { status: 500 });
   }
 }
 
@@ -147,6 +151,23 @@ async function handleScanPackPurchase(profileId: string) {
 async function handleAuctionPayment(metadata: Record<string, string>) {
   const { auctionId, sellerId, buyerId } = metadata;
 
+  // Get auction details with comic data for sale record
+  const { data: auctionData, error: fetchError } = await supabase
+    .from("auctions")
+    .select(
+      `
+      *,
+      comics(*)
+    `
+    )
+    .eq("id", auctionId)
+    .single();
+
+  if (fetchError || !auctionData) {
+    console.error("Error fetching auction:", fetchError);
+    return;
+  }
+
   // Update auction payment status
   const { error: updateError } = await supabase
     .from("auctions")
@@ -161,12 +182,37 @@ async function handleAuctionPayment(metadata: Record<string, string>) {
     return;
   }
 
+  // Record the sale to seller's sales history
+  const comic = auctionData.comics as Record<string, unknown>;
+  if (comic) {
+    const salePrice =
+      auctionData.winning_bid || auctionData.current_bid || auctionData.starting_price;
+    const purchasePrice = comic.purchase_price as number | null;
+
+    const { error: saleError } = await supabase.from("sales").insert({
+      user_id: sellerId,
+      comic_title: comic.title as string,
+      comic_issue_number: comic.issue_number as string | null,
+      comic_variant: comic.variant as string | null,
+      comic_publisher: comic.publisher as string | null,
+      cover_image_url: comic.cover_image_url as string | null,
+      purchase_price: purchasePrice,
+      sale_price: salePrice,
+      profit: salePrice - (purchasePrice || 0),
+      buyer_id: buyerId,
+    });
+
+    if (saleError) {
+      console.error("Error recording sale:", saleError);
+      // Don't return - sale record is secondary to payment status update
+    }
+  }
+
   // Notify seller
   await createNotification(sellerId, "payment_received", auctionId);
 
   // Request rating from buyer
   await createNotification(buyerId, "rating_request", auctionId);
-
 }
 
 // ============================================
@@ -183,9 +229,10 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
   }
 
   // Access current_period_end - may be on subscription directly or first item
-  const periodEnd = (subscription as unknown as { current_period_end?: number }).current_period_end
-    || subscription.items?.data?.[0]?.current_period_end
-    || Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60; // Default to 30 days
+  const periodEnd =
+    (subscription as unknown as { current_period_end?: number }).current_period_end ||
+    subscription.items?.data?.[0]?.current_period_end ||
+    Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60; // Default to 30 days
   const currentPeriodEnd = new Date(periodEnd * 1000);
 
   // Check if this is a trial
@@ -207,9 +254,10 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   }
 
   // Access current_period_end - may be on subscription directly or first item
-  const periodEnd = (subscription as unknown as { current_period_end?: number }).current_period_end
-    || subscription.items?.data?.[0]?.current_period_end
-    || Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60;
+  const periodEnd =
+    (subscription as unknown as { current_period_end?: number }).current_period_end ||
+    subscription.items?.data?.[0]?.current_period_end ||
+    Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60;
   const currentPeriodEnd = new Date(periodEnd * 1000);
 
   // Map Stripe status to our status

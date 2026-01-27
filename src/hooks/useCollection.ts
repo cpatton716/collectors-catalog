@@ -1,23 +1,26 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
+
 import { useUser } from "@clerk/nextjs";
-import { CollectionItem, UserList, SaleRecord } from "@/types/comic";
-import { storage } from "@/lib/storage";
+
 import {
+  addComic,
+  addComicToList as addComicToListDb,
+  createList as createListDb,
+  deleteComic,
+  deleteList as deleteListDb,
   getOrCreateProfile,
   getUserComics,
   getUserLists,
-  addComic,
-  updateComic as updateComicDb,
-  deleteComic,
-  recordSale as recordSaleDb,
-  createList as createListDb,
-  deleteList as deleteListDb,
-  addComicToList as addComicToListDb,
-  removeComicFromList as removeComicFromListDb,
   getUserSales,
+  recordSale as recordSaleDb,
+  removeComicFromList as removeComicFromListDb,
+  updateComic as updateComicDb,
 } from "@/lib/db";
+import { storage } from "@/lib/storage";
+
+import { CollectionItem, SaleRecord, UserList } from "@/types/comic";
 
 export interface CollectionStats {
   totalComics: number;
@@ -87,10 +90,7 @@ export function useCollection(): UseCollectionReturn {
     async function loadProfile() {
       if (isLoaded && isSignedIn && user) {
         try {
-          const profile = await getOrCreateProfile(
-            user.id,
-            user.primaryEmailAddress?.emailAddress
-          );
+          const profile = await getOrCreateProfile(user.id, user.primaryEmailAddress?.emailAddress);
           setProfileId(profile.id);
         } catch (err) {
           console.error("Failed to load profile:", err);
@@ -360,10 +360,7 @@ export function useCollection(): UseCollectionReturn {
       (sum, item) => sum + (item.comic.priceData?.estimatedValue || item.averagePrice || 0),
       0
     );
-    const totalCost = collection.reduce(
-      (sum, item) => sum + (item.purchasePrice || 0),
-      0
-    );
+    const totalCost = collection.reduce((sum, item) => sum + (item.purchasePrice || 0), 0);
     const forSaleCount = collection.filter((item) => item.forSale).length;
     const profitLoss = totalValue - totalCost;
 

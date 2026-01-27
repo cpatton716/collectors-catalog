@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { auth } from "@clerk/nextjs/server";
+
+import { respondToCounterOffer, respondToOffer } from "@/lib/auctionDb";
 import { getProfileByClerkId } from "@/lib/db";
-import { respondToOffer, respondToCounterOffer } from "@/lib/auctionDb";
+
 import { MIN_FIXED_PRICE } from "@/types/auction";
 
 // PATCH - Seller responds to an offer (accept, reject, or counter)
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { userId } = await auth();
     if (!userId) {
@@ -50,27 +50,18 @@ export async function PATCH(
     });
 
     if (!result.success) {
-      return NextResponse.json(
-        { error: result.error },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: result.error }, { status: 400 });
     }
 
     return NextResponse.json({ offer: result.offer });
   } catch (error) {
     console.error("Error responding to offer:", error);
-    return NextResponse.json(
-      { error: "Failed to respond to offer" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to respond to offer" }, { status: 500 });
   }
 }
 
 // POST - Buyer responds to a counter-offer (accept or reject only)
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { userId } = await auth();
     if (!userId) {
@@ -97,18 +88,12 @@ export async function POST(
     const result = await respondToCounterOffer(profile.id, offerId, action);
 
     if (!result.success) {
-      return NextResponse.json(
-        { error: result.error },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: result.error }, { status: 400 });
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error responding to counter-offer:", error);
-    return NextResponse.json(
-      { error: "Failed to respond to counter-offer" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to respond to counter-offer" }, { status: 500 });
   }
 }

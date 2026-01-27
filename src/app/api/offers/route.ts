@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { auth } from "@clerk/nextjs/server";
-import { getProfileByClerkId } from "@/lib/db";
+
 import { createOffer, getBuyerOffers } from "@/lib/auctionDb";
+import { getProfileByClerkId } from "@/lib/db";
+
 import { MIN_FIXED_PRICE } from "@/types/auction";
 
 // GET - Get buyer's offers
@@ -22,10 +25,7 @@ export async function GET() {
     return NextResponse.json({ offers });
   } catch (error) {
     console.error("Error fetching offers:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch offers" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch offers" }, { status: 500 });
   }
 }
 
@@ -47,10 +47,7 @@ export async function POST(request: NextRequest) {
 
     // Validation
     if (!listingId) {
-      return NextResponse.json(
-        { error: "Listing ID is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Listing ID is required" }, { status: 400 });
     }
 
     if (typeof amount !== "number" || amount < MIN_FIXED_PRICE) {
@@ -63,18 +60,12 @@ export async function POST(request: NextRequest) {
     const result = await createOffer(profile.id, { listingId, amount });
 
     if (!result.success) {
-      return NextResponse.json(
-        { error: result.error },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: result.error }, { status: 400 });
     }
 
     return NextResponse.json({ offer: result.offer }, { status: 201 });
   } catch (error) {
     console.error("Error creating offer:", error);
-    return NextResponse.json(
-      { error: "Failed to create offer" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to create offer" }, { status: 500 });
   }
 }

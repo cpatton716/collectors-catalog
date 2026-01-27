@@ -60,24 +60,8 @@ export function ChestIcon({ className = "", size = 32 }: ChestIconProps) {
       />
 
       {/* Metal bands */}
-      <rect
-        x="36"
-        y="92"
-        width="120"
-        height="8"
-        fill="#DAA520"
-        stroke="#B8860B"
-        strokeWidth="1"
-      />
-      <rect
-        x="36"
-        y="130"
-        width="120"
-        height="6"
-        fill="#DAA520"
-        stroke="#B8860B"
-        strokeWidth="1"
-      />
+      <rect x="36" y="92" width="120" height="8" fill="#DAA520" stroke="#B8860B" strokeWidth="1" />
+      <rect x="36" y="130" width="120" height="6" fill="#DAA520" stroke="#B8860B" strokeWidth="1" />
 
       {/* Lock plate */}
       <rect

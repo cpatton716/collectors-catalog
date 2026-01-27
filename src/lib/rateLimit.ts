@@ -1,6 +1,7 @@
+import { NextResponse } from "next/server";
+
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
-import { NextResponse } from "next/server";
 
 // Initialize Redis only when environment variables are present
 const redis =

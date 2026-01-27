@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { Search, Clock, DollarSign, Database } from "lucide-react";
+import { useMemo, useState } from "react";
+
+import { Clock, Database, DollarSign, Search } from "lucide-react";
+
 import { CachedLookup, getAllCachedLookups, searchCachedLookups } from "@/lib/offlineCache";
 
 interface KeyHuntOfflineSearchProps {
@@ -38,9 +40,7 @@ export function KeyHuntOfflineSearch({ onSelectResult }: KeyHuntOfflineSearchPro
       <div className="p-6 text-center">
         <Database className="w-12 h-12 text-gray-500 mx-auto mb-3" />
         <p className="text-white font-medium mb-1">No Cached Results</p>
-        <p className="text-gray-400 text-sm">
-          Previous lookups will appear here when offline
-        </p>
+        <p className="text-gray-400 text-sm">Previous lookups will appear here when offline</p>
       </div>
     );
   }
@@ -85,21 +85,15 @@ export function KeyHuntOfflineSearch({ onSelectResult }: KeyHuntOfflineSearchPro
                     </p>
                     <div className="flex items-center gap-3 mt-1">
                       {item.data.publisher && (
-                        <span className="text-xs text-gray-400">
-                          {item.data.publisher}
-                        </span>
+                        <span className="text-xs text-gray-400">{item.data.publisher}</span>
                       )}
-                      <span className="text-xs text-gray-500">
-                        Grade: {item.data.grade}
-                      </span>
+                      <span className="text-xs text-gray-500">Grade: {item.data.grade}</span>
                     </div>
                   </div>
                   <div className="text-right flex-shrink-0">
                     <div className="flex items-center gap-1 text-green-400">
                       <DollarSign className="w-3.5 h-3.5" />
-                      <span className="font-semibold">
-                        {formatPrice(item.data.averagePrice)}
-                      </span>
+                      <span className="font-semibold">{formatPrice(item.data.averagePrice)}</span>
                     </div>
                     <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
                       <Clock className="w-3 h-3" />

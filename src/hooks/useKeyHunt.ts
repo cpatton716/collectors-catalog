@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
+
 import { useUser } from "@clerk/nextjs";
 
 export interface KeyHuntItem {
@@ -78,7 +79,9 @@ export function useKeyHunt() {
 
   // Add to Key Hunt list
   const addToKeyHunt = useCallback(
-    async (params: AddToKeyHuntParams): Promise<{ success: boolean; error?: string; item?: KeyHuntItem }> => {
+    async (
+      params: AddToKeyHuntParams
+    ): Promise<{ success: boolean; error?: string; item?: KeyHuntItem }> => {
       if (!isSignedIn) {
         return { success: false, error: "Please sign in to add to your Key Hunt list" };
       }
@@ -145,7 +148,17 @@ export function useKeyHunt() {
   const updateKeyHuntItem = useCallback(
     async (
       itemId: string,
-      updates: Partial<Pick<KeyHuntItem, "targetPriceLow" | "targetPriceHigh" | "notes" | "priority" | "notifyPriceDrop" | "notifyThreshold">>
+      updates: Partial<
+        Pick<
+          KeyHuntItem,
+          | "targetPriceLow"
+          | "targetPriceHigh"
+          | "notes"
+          | "priority"
+          | "notifyPriceDrop"
+          | "notifyThreshold"
+        >
+      >
     ): Promise<{ success: boolean; error?: string }> => {
       if (!isSignedIn) {
         return { success: false, error: "Please sign in" };
@@ -166,9 +179,7 @@ export function useKeyHunt() {
 
         // Update local state
         if (data.item) {
-          setItems((prev) =>
-            prev.map((item) => (item.id === itemId ? data.item : item))
-          );
+          setItems((prev) => prev.map((item) => (item.id === itemId ? data.item : item)));
         }
 
         return { success: true };
@@ -182,11 +193,16 @@ export function useKeyHunt() {
   // Check if a book is in the Key Hunt list
   const isInKeyHunt = useCallback(
     (title: string, issueNumber: string): boolean => {
-      const normalizedTitle = title.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
+      const normalizedTitle = title
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, "")
+        .trim();
       return items.some(
         (item) =>
-          item.title.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim() === normalizedTitle &&
-          item.issueNumber === issueNumber
+          item.title
+            .toLowerCase()
+            .replace(/[^a-z0-9\s]/g, "")
+            .trim() === normalizedTitle && item.issueNumber === issueNumber
       );
     },
     [items]
@@ -195,11 +211,16 @@ export function useKeyHunt() {
   // Get a specific item from Key Hunt list
   const getKeyHuntItem = useCallback(
     (title: string, issueNumber: string): KeyHuntItem | undefined => {
-      const normalizedTitle = title.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
+      const normalizedTitle = title
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, "")
+        .trim();
       return items.find(
         (item) =>
-          item.title.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim() === normalizedTitle &&
-          item.issueNumber === issueNumber
+          item.title
+            .toLowerCase()
+            .replace(/[^a-z0-9\s]/g, "")
+            .trim() === normalizedTitle && item.issueNumber === issueNumber
       );
     },
     [items]

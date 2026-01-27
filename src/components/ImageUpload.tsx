@@ -1,10 +1,14 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+
 import Image from "next/image";
-import { Upload, X, Image as ImageIcon, Camera, FolderOpen } from "lucide-react";
+
+import { Camera, FolderOpen, Image as ImageIcon, Upload, X } from "lucide-react";
+
+import { formatBytes, quickCompress } from "@/lib/imageOptimization";
+
 import { LiveCameraCapture } from "./LiveCameraCapture";
-import { quickCompress, formatBytes } from "@/lib/imageOptimization";
 
 interface ImageUploadProps {
   onImageSelect: (file: File, preview: string) => void;
@@ -23,13 +27,13 @@ export function ImageUpload({ onImageSelect, disabled }: ImageUploadProps) {
   useEffect(() => {
     // Detect mobile device
     const checkMobile = () => {
-      const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-      const isSmallScreen = window.matchMedia('(max-width: 768px)').matches;
+      const isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+      const isSmallScreen = window.matchMedia("(max-width: 768px)").matches;
       setIsMobile(isTouchDevice && isSmallScreen);
     };
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   const acceptedTypes = ["image/jpeg", "image/jpg", "image/png"];
@@ -42,8 +46,11 @@ export function ImageUpload({ onImageSelect, disabled }: ImageUploadProps) {
     const fileName = file.name.toLowerCase();
 
     // Check for HEIC/HEIF by extension if type isn't set (iOS sometimes doesn't set type)
-    const isHeic = fileName.endsWith('.heic') || fileName.endsWith('.heif') ||
-                   fileType.includes('heic') || fileType.includes('heif');
+    const isHeic =
+      fileName.endsWith(".heic") ||
+      fileName.endsWith(".heif") ||
+      fileType.includes("heic") ||
+      fileType.includes("heif");
 
     if (!acceptedTypes.includes(fileType) && !isHeic) {
       return "This file type isn't supported. Please use a JPEG, JPG, or PNG image.";
@@ -55,25 +62,27 @@ export function ImageUpload({ onImageSelect, disabled }: ImageUploadProps) {
   };
 
   // Compress image using optimized compression utility
-  const compressImage = useCallback(async (file: File): Promise<{ file: File; preview: string }> => {
-    try {
-      // Use the optimized compression with aggressive settings
-      const compressedDataUrl = await quickCompress(file, maxDimension, targetSize);
+  const compressImage = useCallback(
+    async (file: File): Promise<{ file: File; preview: string }> => {
+      try {
+        // Use the optimized compression with aggressive settings
+        const compressedDataUrl = await quickCompress(file, maxDimension, targetSize);
 
-      // Convert data URL to File
-      const response = await fetch(compressedDataUrl);
-      const blob = await response.blob();
-      const compressedFile = new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), {
-        type: 'image/jpeg'
-      });
+        // Convert data URL to File
+        const response = await fetch(compressedDataUrl);
+        const blob = await response.blob();
+        const compressedFile = new File([blob], file.name.replace(/\.[^.]+$/, ".jpg"), {
+          type: "image/jpeg",
+        });
 
-
-      return { file: compressedFile, preview: compressedDataUrl };
-    } catch (error) {
-      console.error('Compression error:', error);
-      throw new Error('Failed to compress image');
-    }
-  }, [maxDimension, targetSize]);
+        return { file: compressedFile, preview: compressedDataUrl };
+      } catch (error) {
+        console.error("Compression error:", error);
+        throw new Error("Failed to compress image");
+      }
+    },
+    [maxDimension, targetSize]
+  );
 
   const handleFile = useCallback(
     async (file: File) => {
@@ -87,11 +96,16 @@ export function ImageUpload({ onImageSelect, disabled }: ImageUploadProps) {
 
       // Check if HEIC - browser can't process these directly
       const fileName = file.name.toLowerCase();
-      const isHeic = fileName.endsWith('.heic') || fileName.endsWith('.heif') ||
-                     file.type.includes('heic') || file.type.includes('heif');
+      const isHeic =
+        fileName.endsWith(".heic") ||
+        fileName.endsWith(".heif") ||
+        file.type.includes("heic") ||
+        file.type.includes("heif");
 
       if (isHeic) {
-        setError("HEIC format isn't supported yet. Please take a new photo or convert the image to JPEG first.");
+        setError(
+          "HEIC format isn't supported yet. Please take a new photo or convert the image to JPEG first."
+        );
         return;
       }
 
@@ -115,8 +129,8 @@ export function ImageUpload({ onImageSelect, disabled }: ImageUploadProps) {
           reader.readAsDataURL(file);
         }
       } catch (err) {
-        console.error('Error processing image:', err);
-        setError('Could not process this image. Please try a different photo.');
+        console.error("Error processing image:", err);
+        setError("Could not process this image. Please try a different photo.");
       }
     },
     [onImageSelect, compressImage]
@@ -217,12 +231,8 @@ export function ImageUpload({ onImageSelect, disabled }: ImageUploadProps) {
                 <Camera className="w-10 h-10 text-primary-600" />
               </div>
               <div>
-                <p className="text-lg font-medium text-primary-700">
-                  Take a Photo
-                </p>
-                <p className="text-sm text-primary-600 mt-1">
-                  Opens your camera
-                </p>
+                <p className="text-lg font-medium text-primary-700">Take a Photo</p>
+                <p className="text-sm text-primary-600 mt-1">Opens your camera</p>
               </div>
             </div>
           </button>
@@ -262,9 +272,7 @@ export function ImageUpload({ onImageSelect, disabled }: ImageUploadProps) {
             disabled={disabled}
           />
 
-          <p className="text-xs text-gray-400 text-center">
-            Supports: JPEG, JPG, PNG (max 10MB)
-          </p>
+          <p className="text-xs text-gray-400 text-center">Supports: JPEG, JPG, PNG (max 10MB)</p>
         </div>
       ) : (
         // Desktop: Drag and drop
@@ -290,9 +298,7 @@ export function ImageUpload({ onImageSelect, disabled }: ImageUploadProps) {
           />
 
           <div className="flex flex-col items-center space-y-4">
-            <div
-              className={`p-4 rounded-full ${isDragging ? "bg-primary-100" : "bg-gray-100"}`}
-            >
+            <div className={`p-4 rounded-full ${isDragging ? "bg-primary-100" : "bg-gray-100"}`}>
               {isDragging ? (
                 <ImageIcon className="w-10 h-10 text-primary-600" />
               ) : (
@@ -302,16 +308,10 @@ export function ImageUpload({ onImageSelect, disabled }: ImageUploadProps) {
 
             <div>
               <p className="text-lg font-medium text-gray-700">
-                {isDragging
-                  ? "Drop your comic cover here"
-                  : "Upload a comic book cover"}
+                {isDragging ? "Drop your comic cover here" : "Upload a comic book cover"}
               </p>
-              <p className="text-sm text-gray-500 mt-1">
-                Drag and drop or click to select
-              </p>
-              <p className="text-xs text-gray-400 mt-2">
-                Supports: JPEG, JPG, PNG (max 10MB)
-              </p>
+              <p className="text-sm text-gray-500 mt-1">Drag and drop or click to select</p>
+              <p className="text-xs text-gray-400 mt-2">Supports: JPEG, JPG, PNG (max 10MB)</p>
             </div>
           </div>
         </div>

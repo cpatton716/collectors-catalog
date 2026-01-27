@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { auth } from "@clerk/nextjs/server";
-import { getProfileByClerkId } from "@/lib/db";
-import { executeBuyItNow } from "@/lib/auctionDb";
+
 import { isUserSuspended } from "@/lib/adminAuth";
+import { executeBuyItNow } from "@/lib/auctionDb";
+import { getProfileByClerkId } from "@/lib/db";
 
 // POST - Execute Buy It Now
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { userId } = await auth();
     if (!userId) {
@@ -44,9 +43,6 @@ export async function POST(
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error executing Buy It Now:", error);
-    return NextResponse.json(
-      { error: "Failed to complete purchase" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to complete purchase" }, { status: 500 });
   }
 }

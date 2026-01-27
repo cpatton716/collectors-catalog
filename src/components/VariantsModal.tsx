@@ -1,8 +1,11 @@
 "use client";
 
-import { CollectionItem } from "@/types/comic";
+import { useMemo, useState } from "react";
+
 import { ArrowLeft, Search } from "lucide-react";
-import { useState, useMemo } from "react";
+
+import { CollectionItem } from "@/types/comic";
+
 import { ComicImage } from "./ComicImage";
 
 interface VariantsModalProps {

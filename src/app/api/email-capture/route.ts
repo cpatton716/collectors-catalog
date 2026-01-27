@@ -1,119 +1,171 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { Resend } from "resend";
+
+import { generateVerificationToken, validateEmail } from "@/lib/emailValidation";
+import { checkRateLimit, getRateLimitIdentifier, rateLimiters } from "@/lib/rateLimit";
+import { supabaseAdmin } from "@/lib/supabase";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Resend Audience ID for bonus scan recipients
-// Create a separate audience in Resend dashboard for this
-const BONUS_SCANS_AUDIENCE_ID = process.env.RESEND_BONUS_SCANS_AUDIENCE_ID;
+// Token expiration: 24 hours
+const TOKEN_EXPIRY_HOURS = 24;
 
 /**
- * POST - Capture email in exchange for bonus scans
+ * POST - Request bonus scans (step 1: send verification email)
  *
- * Adds email to Resend audience and returns success if new.
- * Returns 409 if email already used (prevents abuse).
+ * Validates email, checks for abuse, sends verification email.
+ * Bonus scans are NOT granted until email is verified.
  */
 export async function POST(request: NextRequest) {
   try {
-    const { email, source, scansUsed } = await request.json();
+    // Rate limit - 5 requests per minute per IP
+    const ip =
+      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      request.headers.get("x-real-ip") ||
+      "unknown";
+    const identifier = getRateLimitIdentifier(null, ip);
+    const { success: rateLimitSuccess, response: rateLimitResponse } = await checkRateLimit(
+      rateLimiters.analyze, // Using analyze limiter (5/min) for stricter protection
+      identifier
+    );
+    if (!rateLimitSuccess) return rateLimitResponse;
 
-    if (!email || typeof email !== "string") {
-      return NextResponse.json(
-        { error: "Email is required" },
-        { status: 400 }
-      );
-    }
+    const body = await request.json();
+    const { email, honeypot } = body;
 
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { error: "Invalid email format" },
-        { status: 400 }
-      );
-    }
-
-    // Normalize email
-    const normalizedEmail = email.toLowerCase().trim();
-
-    // If no API key or audience ID, return success silently (for testing)
-    if (!process.env.RESEND_API_KEY || !BONUS_SCANS_AUDIENCE_ID) {
+    // Honeypot check - bots will fill this hidden field
+    if (honeypot) {
+      // Silently reject but return success to confuse bots
       return NextResponse.json({
         success: true,
-        message: "Bonus scans unlocked",
-        bonusScans: 5,
+        message: "Verification email sent! Check your inbox.",
       });
     }
 
+    if (!email || typeof email !== "string") {
+      return NextResponse.json({ error: "Email is required" }, { status: 400 });
+    }
 
-    // Try to add contact to Resend audience
-    // If contact already exists, they've already redeemed bonus scans
-    const { data, error } = await resend.contacts.create({
-      email: normalizedEmail,
-      audienceId: BONUS_SCANS_AUDIENCE_ID,
-      unsubscribed: false,
-      firstName: "", // Will be empty for now
-      lastName: "",
-    });
+    // Comprehensive email validation (format, disposable, MX)
+    const validation = await validateEmail(email);
+    if (!validation.valid) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
 
-    if (error) {
-      // If contact already exists, they've already used bonus scans
-      if (error.message?.includes("already exists")) {
+    const normalizedEmail = validation.normalized!;
+    const userAgent = request.headers.get("user-agent") || null;
+
+    // Check if this email has already claimed bonus scans
+    const { data: existingClaim } = await supabaseAdmin
+      .from("bonus_scan_claims")
+      .select("id, verified_at")
+      .eq("email_normalized", normalizedEmail)
+      .single();
+
+    if (existingClaim) {
+      if (existingClaim.verified_at) {
+        // Already verified - can't claim again
         return NextResponse.json(
           { error: "This email has already been used for bonus scans" },
           { status: 409 }
         );
+      } else {
+        // Pending verification - resend email
+        // First, delete the old claim and create a new one with fresh token
+        await supabaseAdmin.from("bonus_scan_claims").delete().eq("id", existingClaim.id);
       }
+    }
 
-      console.error(`[EmailCapture] Failed to add ${normalizedEmail}:`, {
-        errorName: error.name,
-        errorMessage: error.message,
-      });
+    // Check if this IP has already claimed bonus scans (abuse prevention)
+    const { data: ipClaim } = await supabaseAdmin
+      .from("bonus_scan_claims")
+      .select("id, verified_at")
+      .eq("ip_address", ip)
+      .not("verified_at", "is", null)
+      .single();
 
+    if (ipClaim) {
+      return NextResponse.json(
+        { error: "Bonus scans have already been claimed from this device" },
+        { status: 409 }
+      );
+    }
+
+    // Generate verification token
+    const verificationToken = generateVerificationToken();
+    const expiresAt = new Date(Date.now() + TOKEN_EXPIRY_HOURS * 60 * 60 * 1000);
+
+    // Store claim (unverified)
+    const { error: insertError } = await supabaseAdmin.from("bonus_scan_claims").insert({
+      email: email.trim(),
+      email_normalized: normalizedEmail,
+      ip_address: ip,
+      user_agent: userAgent,
+      verification_token: verificationToken,
+      expires_at: expiresAt.toISOString(),
+    });
+
+    if (insertError) {
+      console.error("[EmailCapture] Failed to create claim:", insertError);
       return NextResponse.json(
         { error: "Failed to process request. Please try again." },
         { status: 500 }
       );
     }
 
+    // Send verification email
+    const verifyUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://collectors-chest.com"}/api/email-capture/verify?token=${verificationToken}`;
 
-    // Optionally send a welcome email
-    try {
-      await resend.emails.send({
-        from: "Collectors Chest <noreply@collectors-chest.com>",
-        to: normalizedEmail,
-        subject: "You unlocked 5 bonus scans!",
-        html: `
-          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #d97706;">You got 5 bonus scans!</h1>
-            <p>Thanks for trying Collectors Chest! You now have 5 more scans to explore your comic collection.</p>
-            <p>Here's what you can do:</p>
-            <ul>
-              <li>Scan comic covers for instant AI recognition</li>
-              <li>Get real-time eBay price estimates</li>
-              <li>See key issue information and first appearances</li>
-            </ul>
-            <p>Want unlimited scans? <a href="https://collectors-chest.com/sign-up" style="color: #4f46e5;">Create a free account</a> to get 10 scans per month, plus cloud sync and more!</p>
-            <p style="color: #6b7280; font-size: 14px; margin-top: 32px;">Happy collecting!<br>The Collectors Chest Team</p>
-          </div>
-        `,
-      });
-    } catch (emailError) {
-      // Don't fail the request if email sending fails
-      console.error("[EmailCapture] Failed to send welcome email:", emailError);
+    if (process.env.RESEND_API_KEY) {
+      try {
+        await resend.emails.send({
+          from: "Collectors Chest <noreply@collectors-chest.com>",
+          to: normalizedEmail,
+          subject: "Verify your email for 5 bonus scans",
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+              <h1 style="color: #d97706;">Almost there!</h1>
+              <p>Click the button below to verify your email and unlock 5 bonus scans:</p>
+              <p style="margin: 32px 0;">
+                <a href="${verifyUrl}"
+                   style="background-color: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+                  Verify Email & Get Bonus Scans
+                </a>
+              </p>
+              <p style="color: #6b7280; font-size: 14px;">
+                This link expires in 24 hours. If you didn't request this, you can ignore this email.
+              </p>
+              <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 32px 0;">
+              <p style="color: #6b7280; font-size: 12px;">
+                Collectors Chest - Track your comic collection
+              </p>
+            </div>
+          `,
+        });
+      } catch (emailError) {
+        console.error("[EmailCapture] Failed to send verification email:", emailError);
+        // Clean up the claim since we couldn't send the email
+        await supabaseAdmin
+          .from("bonus_scan_claims")
+          .delete()
+          .eq("verification_token", verificationToken);
+
+        return NextResponse.json(
+          { error: "Failed to send verification email. Please try again." },
+          { status: 500 }
+        );
+      }
     }
 
     return NextResponse.json({
       success: true,
-      message: "Bonus scans unlocked",
-      bonusScans: 5,
+      message:
+        "Verification email sent! Check your inbox and click the link to unlock your bonus scans.",
+      requiresVerification: true,
     });
-
   } catch (err) {
     console.error("[EmailCapture] Error:", err);
-    return NextResponse.json(
-      { error: "Something went wrong. Please try again." },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

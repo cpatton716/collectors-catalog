@@ -106,33 +106,28 @@ open -a TextEdit "/Users/chrispatton/Coding for Dummies/Comic Tracker/.env.local
 
 ## Close Up Shop Command
 
-When the user says **"Close up shop"**, perform the following steps:
+When the user says **"Close up shop"**, use the `/collectors-chest-close-up-shop` skill which runs an optimized workflow with parallel code checks.
 
-1. **Review and optimize code** - Review the session's changes for:
-   - Run `npm run lint` and fix any **errors** (warnings can be deferred)
-   - Remove debugging code (console.logs, commented-out code)
-   - Remove unused imports and variables
-   - Consolidate any duplicate logic
-   - Address any TODO comments created during the session
-   - Ensure code follows project patterns and conventions
-   - remove deadcode or redundent code
-2. **Update TEST_CASES.md** - Add test cases for any new features added during the session
-3. **Review ARCHITECTURE.md** - If the session added/modified pages, API routes, or service integrations:
-   - Update relevant sections to reflect changes
-   - Add new routes, features, or service dependencies
-   - Keep the document accurate as a living reference
-4. **Run tests** - Execute `npm test`, `npm run lint`, and `npm run build` to ensure nothing is broken before committing
-5. **Commit all changes** - Stage and commit with a descriptive message summarizing the session's work
-6. **Update DEV_LOG.md** - Add an entry with:
-   - Date
-   - Session summary (what was accomplished)
-   - Files added/modified (key ones only)
-   - Any issues encountered and resolved
-7. **Update "Changes Since Last Deploy"** - Add session's changes to the tracking section in DEV_LOG.md
-8. **Highlight last item worked on** - Brief high-level summary of the main feature/fix
-9. **Evaluation status review** - Read EVALUATION.md and provide:
-   - Current status of priority items
-   - Recommended next steps for the next session
+**Quick Reference - Available Scripts:**
+
+| Script | Purpose | When to Use |
+|--------|---------|-------------|
+| `npm run check` | typecheck + lint + test | Quick validation |
+| `npm run check:full` | check + build | Before committing |
+| `npm run check:all` | All checks including format, circular, deadcode, audit | Full quality gate |
+| `npm run format` | Auto-fix formatting | Fix prettier issues |
+| `npm run circular` | Find circular imports | Debug import issues |
+| `npm run deadcode` | Find unused exports/files | Cleanup codebase |
+| `npm run audit` | Security vulnerability check | Before deploy |
+| `npm run build:analyze` | Bundle size analysis | Optimize bundle |
+
+**The skill handles:**
+1. **Parallel checks** - typecheck, lint, test, audit run simultaneously
+2. **Sequential checks** - circular deps, dead code, build
+3. **Code cleanup** - console.logs, unused imports, TODOs
+4. **Documentation** - TEST_CASES.md, ARCHITECTURE.md, CLAUDE.md, DEV_LOG.md
+5. **Commit** - Descriptive message (no push unless requested)
+6. **Summary** - Results table and next session recommendations
 
 The Dev Log is stored at: `DEV_LOG.md` in the project root.
 
@@ -166,6 +161,8 @@ The Dev Log is stored at: `DEV_LOG.md` in the project root.
 ### External APIs
 | Service | Purpose | Notes |
 |---------|---------|-------|
+| **GoCollect** | FMV pricing, Hot 50, trends | Pro tier ($9/mo), 100 calls/day, `GOCOLLECT_API_KEY` |
+| **Marvel API** | Comic metadata, covers, creators | Free, 3K calls/day, awaiting portal access |
 | **eBay Browse API** | Real-time pricing | Free tier, rate limited |
 | **CGC/CBCS** | Cert verification | Web scraping for grade details |
 
@@ -175,6 +172,7 @@ The Dev Log is stored at: `DEV_LOG.md` in the project root.
 | Item | Cost | Billing Cycle |
 |------|------|---------------|
 | Netlify Personal Plan | $9/mo | 13th of each month |
+| GoCollect Pro | $9/mo (or $89/yr) | Awaiting API key approval |
 | Domain (collectors-chest.com) | $13.99/yr | Renews Jan 13, 2027 ($16.99) |
 
 **Variable Costs:**

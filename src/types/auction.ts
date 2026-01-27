@@ -24,9 +24,16 @@ export type NotificationType =
   | "offer_expired"
   // Listing expiration types
   | "listing_expiring"
-  | "listing_expired";
+  | "listing_expired"
+  | "listing_cancelled";
 
-export type OfferStatus = "pending" | "accepted" | "rejected" | "countered" | "expired" | "auto_rejected";
+export type OfferStatus =
+  | "pending"
+  | "accepted"
+  | "rejected"
+  | "countered"
+  | "expired"
+  | "auto_rejected";
 export type CancelReason = "changed_mind" | "sold_elsewhere" | "price_too_low" | "other";
 
 export interface Auction {
@@ -297,10 +304,7 @@ export type AuctionSortBy =
   | "most_bids"
   | "newest";
 
-export type ListingSortBy =
-  | "price_low"
-  | "price_high"
-  | "newest";
+export type ListingSortBy = "price_low" | "price_high" | "newest";
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -312,10 +316,7 @@ export type ListingSortBy =
  * - $100-$999: $5 increment
  * - $1000+: $25 increment
  */
-export function calculateMinimumBid(
-  currentBid: number | null,
-  startingPrice: number
-): number {
+export function calculateMinimumBid(currentBid: number | null, startingPrice: number): number {
   const basePrice = currentBid ?? startingPrice;
 
   // If no current bid, minimum is starting price
@@ -431,8 +432,7 @@ export function calculateTimeRemaining(endTime: string): {
  * Format time remaining as a human-readable string
  */
 export function formatTimeRemaining(endTime: string): string {
-  const { days, hours, minutes, seconds, isEnded } =
-    calculateTimeRemaining(endTime);
+  const { days, hours, minutes, seconds, isEnded } = calculateTimeRemaining(endTime);
 
   if (isEnded) {
     return "Ended";

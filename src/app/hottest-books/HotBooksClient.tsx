@@ -1,12 +1,24 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRef, useState } from "react";
+
 import Image from "next/image";
-import { ArrowLeft, Flame, TrendingUp, DollarSign, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
-import { formatCurrency } from "@/lib/statsCalculator";
-import { AddToKeyHuntButton } from "@/components/AddToKeyHuntButton";
+import { useRouter } from "next/navigation";
+
+import {
+  ArrowLeft,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  DollarSign,
+  Flame,
+  TrendingUp,
+} from "lucide-react";
+
 import type { HotBook } from "@/lib/hotBooksData";
+import { formatCurrency } from "@/lib/statsCalculator";
+
+import { AddToKeyHuntButton } from "@/components/AddToKeyHuntButton";
 
 interface HotBooksClientProps {
   initialBooks: HotBook[];
@@ -25,7 +37,7 @@ export default function HotBooksClient({ initialBooks }: HotBooksClientProps) {
   const bookListRef = useRef<HTMLDivElement>(null);
 
   const toggleSection = (section: keyof typeof expandedSections) => {
-    setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
+    setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }));
   };
 
   const handleSelectBook = (book: HotBook) => {
@@ -40,7 +52,7 @@ export default function HotBooksClient({ initialBooks }: HotBooksClientProps) {
 
   const navigateBook = (direction: "prev" | "next") => {
     if (!selectedBook || books.length === 0) return;
-    const currentIndex = books.findIndex(b => b.rank === selectedBook.rank);
+    const currentIndex = books.findIndex((b) => b.rank === selectedBook.rank);
     let newIndex: number;
     if (direction === "prev") {
       newIndex = currentIndex > 0 ? currentIndex - 1 : books.length - 1;
@@ -243,7 +255,9 @@ export default function HotBooksClient({ initialBooks }: HotBooksClientProps) {
                         className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 transition-colors"
                       >
                         <h4 className="text-sm font-semibold text-gray-700">Key Facts</h4>
-                        <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${expandedSections.keyFacts ? "rotate-180" : ""}`} />
+                        <ChevronDown
+                          className={`w-4 h-4 text-gray-500 transition-transform ${expandedSections.keyFacts ? "rotate-180" : ""}`}
+                        />
                       </button>
                       {expandedSections.keyFacts && (
                         <ul className="p-3 space-y-2">
@@ -264,7 +278,9 @@ export default function HotBooksClient({ initialBooks }: HotBooksClientProps) {
                         className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 transition-colors"
                       >
                         <h4 className="text-sm font-semibold text-gray-700">Why It&apos;s Hot</h4>
-                        <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${expandedSections.whyHot ? "rotate-180" : ""}`} />
+                        <ChevronDown
+                          className={`w-4 h-4 text-gray-500 transition-transform ${expandedSections.whyHot ? "rotate-180" : ""}`}
+                        />
                       </button>
                       {expandedSections.whyHot && (
                         <p className="p-3 text-sm text-gray-600">{selectedBook.whyHot}</p>
@@ -277,8 +293,12 @@ export default function HotBooksClient({ initialBooks }: HotBooksClientProps) {
                         onClick={() => toggleSection("priceRange")}
                         className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 transition-colors"
                       >
-                        <h4 className="text-sm font-semibold text-gray-700">Price Range (VF-NM Raw)</h4>
-                        <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${expandedSections.priceRange ? "rotate-180" : ""}`} />
+                        <h4 className="text-sm font-semibold text-gray-700">
+                          Price Range (VF-NM Raw)
+                        </h4>
+                        <ChevronDown
+                          className={`w-4 h-4 text-gray-500 transition-transform ${expandedSections.priceRange ? "rotate-180" : ""}`}
+                        />
                       </button>
                       {expandedSections.priceRange && (
                         <div className="p-3">

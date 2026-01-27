@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { supabase } from "@/lib/supabase";
 
 // GET - Check if a comic has an active listing (auction or fixed_price)

@@ -1,33 +1,39 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+
 import { useUser } from "@clerk/nextjs";
-import { storage } from "@/lib/storage";
-import { calculateCollectionValue, getComicValue } from "@/lib/gradePrice";
-import { formatCurrency } from "@/lib/statsCalculator";
-import { useGuestScans } from "@/hooks/useGuestScans";
-import { CollectionItem } from "@/types/comic";
+
 import {
-  Camera,
-  BookOpen,
-  TrendingUp,
-  TrendingDown,
+  ArrowDownRight,
   ArrowRight,
   ArrowUpRight,
-  ArrowDownRight,
-  Receipt,
-  DollarSign,
-  Tag,
-  Clock,
+  BookOpen,
+  Camera,
   ChevronRight,
+  Clock,
+  DollarSign,
   Flame,
-  X,
-  Trophy,
   Loader2,
+  Receipt,
   RefreshCw,
+  Tag,
+  TrendingDown,
+  TrendingUp,
+  Trophy,
+  X,
 } from "lucide-react";
+
+import { calculateCollectionValue, getComicValue } from "@/lib/gradePrice";
+import { formatCurrency } from "@/lib/statsCalculator";
+import { storage } from "@/lib/storage";
+
+import { useGuestScans } from "@/hooks/useGuestScans";
+
+import { CollectionItem } from "@/types/comic";
 
 // Duration filter options
 type DurationDays = 30 | 60 | 90;
@@ -184,13 +190,10 @@ export default function Home() {
     totalComics: collection.length,
     totalValue: collectionValue.totalValue,
     unpricedCount: collectionValue.unpricedCount,
-    totalCost: collection.reduce(
-      (sum, item) => sum + (item.purchasePrice || 0),
-      0
-    ),
+    totalCost: collection.reduce((sum, item) => sum + (item.purchasePrice || 0), 0),
   };
   const profitLoss = stats.totalValue - stats.totalCost;
-  const profitLossPercent = stats.totalCost > 0 ? ((profitLoss / stats.totalCost) * 100) : 0;
+  const profitLossPercent = stats.totalCost > 0 ? (profitLoss / stats.totalCost) * 100 : 0;
 
   // Calculate biggest increase (simulated based on current value vs "historical")
   // In production, this would use actual price history data
@@ -212,7 +215,7 @@ export default function Home() {
       // Simulate previous value (in production, fetch from price history)
       const previousValue = currentValue * multiplier;
       const change = currentValue - previousValue;
-      const changePercent = previousValue > 0 ? ((change / previousValue) * 100) : 0;
+      const changePercent = previousValue > 0 ? (change / previousValue) * 100 : 0;
 
       if (!biggest || change > biggest.change) {
         biggest = { item, change, changePercent, currentValue, previousValue };
@@ -241,7 +244,7 @@ export default function Home() {
       // Simulate previous value being higher (decline)
       const previousValue = currentValue * declineMultiplier;
       const change = currentValue - previousValue; // This will be negative
-      const changePercent = previousValue > 0 ? ((change / previousValue) * 100) : 0;
+      const changePercent = previousValue > 0 ? (change / previousValue) * 100 : 0;
 
       if (!biggest || change < biggest.change) {
         biggest = { item, change, changePercent, currentValue, previousValue };
@@ -265,7 +268,7 @@ export default function Home() {
       const currentValue = getComicValue(item);
       const purchasePrice = item.purchasePrice!;
       const profit = currentValue - purchasePrice;
-      const roi = ((profit / purchasePrice) * 100);
+      const roi = (profit / purchasePrice) * 100;
 
       if (!best || roi > best.roi) {
         best = { item, roi, purchasePrice, currentValue, profit };
@@ -287,9 +290,9 @@ export default function Home() {
           <h1
             className="font-comic text-5xl md:text-7xl text-pop-yellow tracking-wide"
             style={{
-              WebkitTextStroke: '3px black',
-              paintOrder: 'stroke fill',
-              textShadow: '4px 4px 0px #000'
+              WebkitTextStroke: "3px black",
+              paintOrder: "stroke fill",
+              textShadow: "4px 4px 0px #000",
             }}
           >
             {isLoaded && isSignedIn ? "YOUR CHEST!" : "COLLECTORS CHEST!"}
@@ -305,10 +308,7 @@ export default function Home() {
 
         {/* Scan CTA */}
         <div className="flex items-center justify-center gap-4 mb-12">
-          <Link
-            href="/scan"
-            className="btn-pop btn-pop-blue text-xl px-8 py-4"
-          >
+          <Link href="/scan" className="btn-pop btn-pop-blue text-xl px-8 py-4">
             <Camera className="w-6 h-6" />
             {isLoaded && isSignedIn
               ? "SCAN A BOOK!"
@@ -442,12 +442,10 @@ export default function Home() {
               <div className="w-16 h-16 bg-pop-red border-3 border-pop-black shadow-comic-sm flex items-center justify-center mx-auto mb-4">
                 <Camera className="w-8 h-8 text-pop-white" />
               </div>
-              <h3 className="font-comic text-lg text-pop-black mb-2">
-                TECHNOPATHIC RECOGNITION
-              </h3>
+              <h3 className="font-comic text-lg text-pop-black mb-2">TECHNOPATHIC RECOGNITION</h3>
               <p className="font-body text-pop-black/80">
-                Upload a photo and we&apos;ll instantly identify the title, issue #,
-                publisher, creators, key info, and more.
+                Upload a photo and we&apos;ll instantly identify the title, issue #, publisher,
+                creators, key info, and more.
               </p>
             </div>
 
@@ -455,12 +453,10 @@ export default function Home() {
               <div className="w-16 h-16 bg-pop-red border-3 border-pop-black shadow-comic-sm flex items-center justify-center mx-auto mb-4">
                 <TrendingUp className="w-8 h-8 text-pop-white" />
               </div>
-              <h3 className="font-comic text-lg text-pop-black mb-2">
-                TRACK VALUES
-              </h3>
+              <h3 className="font-comic text-lg text-pop-black mb-2">TRACK VALUES</h3>
               <p className="font-body text-pop-black/80">
-                Monitor the market value of your comics with price history charts
-                and alerts for significant changes.
+                Monitor the market value of your comics with price history charts and alerts for
+                significant changes.
               </p>
             </div>
 
@@ -468,12 +464,10 @@ export default function Home() {
               <div className="w-16 h-16 bg-pop-red border-3 border-pop-black shadow-comic-sm flex items-center justify-center mx-auto mb-4">
                 <Tag className="w-8 h-8 text-pop-white" />
               </div>
-              <h3 className="font-comic text-lg text-pop-black mb-2">
-                BUY & SELL
-              </h3>
+              <h3 className="font-comic text-lg text-pop-black mb-2">BUY & SELL</h3>
               <p className="font-body text-pop-black/80">
-                List your comics for sale and connect with other collectors. Secure
-                transactions powered by Stripe.
+                List your comics for sale and connect with other collectors. Secure transactions
+                powered by Stripe.
               </p>
             </div>
           </div>
@@ -482,9 +476,7 @@ export default function Home() {
         {/* How It Works - Only shown to non-logged-in users */}
         {isLoaded && !isSignedIn && (
           <div className="bg-pop-white border-4 border-pop-black shadow-[6px_6px_0px_#000] p-8 mb-8 max-w-4xl mx-auto">
-            <h2 className="font-comic text-3xl text-pop-black text-center mb-8">
-              HOW IT WORKS!
-            </h2>
+            <h2 className="font-comic text-3xl text-pop-black text-center mb-8">HOW IT WORKS!</h2>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div className="text-center">
                 <div className="w-12 h-12 bg-pop-red text-pop-white border-3 border-pop-black shadow-comic-sm flex items-center justify-center mx-auto mb-3 font-comic text-xl">
@@ -536,7 +528,11 @@ export default function Home() {
                 <h2 className="font-comic text-lg text-pop-yellow mb-1">COLLECTION VALUE</h2>
                 <div className="flex items-baseline gap-2">
                   <span className="font-comic text-4xl md:text-5xl text-pop-white">
-                    ${stats.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    $
+                    {stats.totalValue.toLocaleString("en-US", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
                   </span>
                   {stats.unpricedCount > 0 && (
                     <span className="text-sm text-pop-white/75 font-body">
@@ -551,10 +547,7 @@ export default function Home() {
                   <p className="text-sm font-body text-pop-white/75">Comics</p>
                 </div>
                 <div className="h-12 w-px bg-pop-white/20" />
-                <Link
-                  href="/collection"
-                  className="btn-pop btn-pop-yellow"
-                >
+                <Link href="/collection" className="btn-pop btn-pop-yellow">
                   <BookOpen className="w-5 h-5" />
                   VIEW COLLECTION
                 </Link>
@@ -574,9 +567,7 @@ export default function Home() {
               </div>
               <div>
                 <p className="text-xs font-comic text-pop-black/70">COMICS</p>
-                <p className="text-xl font-comic text-pop-black">
-                  {stats.totalComics}
-                </p>
+                <p className="text-xl font-comic text-pop-black">{stats.totalComics}</p>
               </div>
             </div>
           </div>
@@ -589,7 +580,11 @@ export default function Home() {
               <div>
                 <p className="text-xs font-comic text-pop-black/70">TOTAL COST</p>
                 <p className="text-xl font-comic text-pop-black">
-                  ${stats.totalCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  $
+                  {stats.totalCost.toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
                 </p>
               </div>
             </div>
@@ -603,7 +598,11 @@ export default function Home() {
               <div>
                 <p className="text-xs font-comic text-pop-black/70">EST. VALUE</p>
                 <p className="text-xl font-comic text-pop-black">
-                  ${stats.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  $
+                  {stats.totalValue.toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
                 </p>
               </div>
             </div>
@@ -615,13 +614,18 @@ export default function Home() {
                 <Receipt className="w-5 h-5 text-pop-white" />
               </div>
               <div>
-                <p className="text-xs font-comic text-pop-black/70">SALES ({salesStats.totalSales})</p>
+                <p className="text-xs font-comic text-pop-black/70">
+                  SALES ({salesStats.totalSales})
+                </p>
                 <p className="text-xl font-comic text-pop-black">
                   ${salesStats.totalRevenue.toFixed(2)}
                 </p>
                 {salesStats.totalProfit !== 0 && (
-                  <p className={`text-xs font-body ${salesStats.totalProfit >= 0 ? 'text-pop-green' : 'text-pop-red'}`}>
-                    {salesStats.totalProfit >= 0 ? '+' : ''}${salesStats.totalProfit.toFixed(2)} profit
+                  <p
+                    className={`text-xs font-body ${salesStats.totalProfit >= 0 ? "text-pop-green" : "text-pop-red"}`}
+                  >
+                    {salesStats.totalProfit >= 0 ? "+" : ""}${salesStats.totalProfit.toFixed(2)}{" "}
+                    profit
                   </p>
                 )}
               </div>
@@ -630,7 +634,9 @@ export default function Home() {
 
           <div className="comic-panel bg-pop-white p-4">
             <div className="flex items-center gap-3">
-              <div className={`p-2 border-2 border-pop-black ${profitLoss >= 0 ? 'bg-pop-green' : 'bg-pop-red'}`}>
+              <div
+                className={`p-2 border-2 border-pop-black ${profitLoss >= 0 ? "bg-pop-green" : "bg-pop-red"}`}
+              >
                 {profitLoss >= 0 ? (
                   <ArrowUpRight className="w-5 h-5 text-pop-white" />
                 ) : (
@@ -639,12 +645,18 @@ export default function Home() {
               </div>
               <div>
                 <p className="text-xs font-comic text-pop-black/70">PROFIT/LOSS</p>
-                <p className={`text-xl font-comic ${profitLoss >= 0 ? 'text-pop-green' : 'text-pop-red'}`}>
-                  {profitLoss >= 0 ? '+' : ''}{profitLoss.toFixed(2)}
+                <p
+                  className={`text-xl font-comic ${profitLoss >= 0 ? "text-pop-green" : "text-pop-red"}`}
+                >
+                  {profitLoss >= 0 ? "+" : ""}
+                  {profitLoss.toFixed(2)}
                 </p>
                 {stats.totalCost > 0 && (
-                  <p className={`text-xs font-body ${profitLoss >= 0 ? 'text-pop-green' : 'text-pop-red'}`}>
-                    {profitLoss >= 0 ? '+' : ''}{profitLossPercent.toFixed(1)}%
+                  <p
+                    className={`text-xs font-body ${profitLoss >= 0 ? "text-pop-green" : "text-pop-red"}`}
+                  >
+                    {profitLoss >= 0 ? "+" : ""}
+                    {profitLossPercent.toFixed(1)}%
                   </p>
                 )}
               </div>
@@ -669,10 +681,7 @@ export default function Home() {
               </p>
             </div>
           </div>
-          <Link
-            href="/hottest-books"
-            className="btn-pop btn-pop-blue text-sm"
-          >
+          <Link href="/hottest-books" className="btn-pop btn-pop-blue text-sm">
             VIEW ALL
             <ChevronRight className="w-4 h-4" />
           </Link>
@@ -716,9 +725,7 @@ export default function Home() {
                 <h3 className="font-comic text-pop-black text-sm leading-tight mb-1">
                   {book.title?.toUpperCase()} #{book.issueNumber}
                 </h3>
-                <p className="text-xs font-body text-pop-black/70 mb-2">
-                  {book.publisher}
-                </p>
+                <p className="text-xs font-body text-pop-black/70 mb-2">{book.publisher}</p>
                 <div className="price-tag text-sm">
                   <DollarSign className="w-3 h-3" />
                   <span>${formatCurrency(book.priceRange.mid)}</span>
@@ -738,10 +745,7 @@ export default function Home() {
               <Clock className="w-5 h-5 text-pop-blue" />
               RECENTLY VIEWED
             </h2>
-            <Link
-              href="/collection"
-              className="btn-pop btn-pop-blue text-sm"
-            >
+            <Link href="/collection" className="btn-pop btn-pop-blue text-sm">
               VIEW ALL
               <ChevronRight className="w-4 h-4" />
             </Link>
@@ -762,7 +766,9 @@ export default function Home() {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center dots-red">
-                      <span className="font-comic text-4xl text-pop-blue text-comic-outline">?</span>
+                      <span className="font-comic text-4xl text-pop-blue text-comic-outline">
+                        ?
+                      </span>
                     </div>
                   )}
                   {item.comic.priceData?.estimatedValue && (
@@ -777,9 +783,7 @@ export default function Home() {
                   <p className="font-comic text-pop-black text-sm truncate">
                     {item.comic.title?.toUpperCase()}
                   </p>
-                  <p className="text-xs font-body text-pop-black/70">
-                    #{item.comic.issueNumber}
-                  </p>
+                  <p className="text-xs font-body text-pop-black/70">#{item.comic.issueNumber}</p>
                 </div>
               </div>
             ))}
@@ -862,10 +866,7 @@ export default function Home() {
       {/* Best Buy Modal */}
       {showBestBuy && bestBuy && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-pop-black/70"
-            onClick={() => setShowBestBuy(false)}
-          />
+          <div className="absolute inset-0 bg-pop-black/70" onClick={() => setShowBestBuy(false)} />
           <div className="relative comic-panel bg-pop-white max-w-sm w-full p-6">
             <button
               onClick={() => setShowBestBuy(false)}

@@ -1,15 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import {
-  X,
-  DollarSign,
-  AlertCircle,
-  Check,
-  XCircle,
-  ArrowLeftRight,
-} from "lucide-react";
-import { Offer, formatPrice, MIN_FIXED_PRICE } from "@/types/auction";
+
+import { AlertCircle, ArrowLeftRight, Check, DollarSign, X, XCircle } from "lucide-react";
+
+import { MIN_FIXED_PRICE, Offer, formatPrice } from "@/types/auction";
 
 interface OfferResponseModalProps {
   offer: Offer;
@@ -26,9 +21,7 @@ export function OfferResponseModal({
   onClose,
   onResponse,
 }: OfferResponseModalProps) {
-  const [action, setAction] = useState<"accept" | "reject" | "counter" | null>(
-    null
-  );
+  const [action, setAction] = useState<"accept" | "reject" | "counter" | null>(null);
   const [counterAmount, setCounterAmount] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -100,8 +93,7 @@ export function OfferResponseModal({
   const successMessages = {
     accept: "Offer accepted! The buyer will be notified to complete payment.",
     reject: "Offer declined. The buyer has been notified.",
-    counter:
-      "Counter-offer sent! You'll be notified when the buyer responds.",
+    counter: "Counter-offer sent! You'll be notified when the buyer responds.",
   };
 
   return (
@@ -110,10 +102,7 @@ export function OfferResponseModal({
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
           <h2 className="text-lg font-semibold text-gray-900">Respond to Offer</h2>
-          <button
-            onClick={handleClose}
-            className="p-1 hover:bg-gray-100 rounded-full"
-          >
+          <button onClick={handleClose} className="p-1 hover:bg-gray-100 rounded-full">
             <X className="w-5 h-5 text-gray-600" />
           </button>
         </div>
@@ -127,36 +116,28 @@ export function OfferResponseModal({
                   action === "accept"
                     ? "bg-green-100"
                     : action === "reject"
-                    ? "bg-red-100"
-                    : "bg-blue-100"
+                      ? "bg-red-100"
+                      : "bg-blue-100"
                 }`}
               >
-                {action === "accept" && (
-                  <Check className="w-8 h-8 text-green-600" />
-                )}
-                {action === "reject" && (
-                  <XCircle className="w-8 h-8 text-red-600" />
-                )}
-                {action === "counter" && (
-                  <ArrowLeftRight className="w-8 h-8 text-blue-600" />
-                )}
+                {action === "accept" && <Check className="w-8 h-8 text-green-600" />}
+                {action === "reject" && <XCircle className="w-8 h-8 text-red-600" />}
+                {action === "counter" && <ArrowLeftRight className="w-8 h-8 text-blue-600" />}
               </div>
               <h3
                 className={`text-lg font-semibold ${
                   action === "accept"
                     ? "text-green-700"
                     : action === "reject"
-                    ? "text-red-700"
-                    : "text-blue-700"
+                      ? "text-red-700"
+                      : "text-blue-700"
                 }`}
               >
                 {action === "accept" && "Offer Accepted!"}
                 {action === "reject" && "Offer Declined"}
                 {action === "counter" && "Counter-Offer Sent!"}
               </h3>
-              <p className="text-sm text-gray-600 mt-2">
-                {successMessages[action]}
-              </p>
+              <p className="text-sm text-gray-600 mt-2">{successMessages[action]}</p>
             </div>
           ) : (
             <>
@@ -205,8 +186,7 @@ export function OfferResponseModal({
                         <div className="text-left">
                           <span className="font-medium text-gray-900 block">Counter-Offer</span>
                           <span className="text-xs text-gray-500">
-                            {roundsRemaining} round{roundsRemaining !== 1 ? "s" : ""}{" "}
-                            remaining
+                            {roundsRemaining} round{roundsRemaining !== 1 ? "s" : ""} remaining
                           </span>
                         </div>
                       </div>
@@ -244,8 +224,7 @@ export function OfferResponseModal({
                     />
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
-                    Must be between {formatPrice(offer.amount + 1)} and{" "}
-                    {formatPrice(askingPrice)}
+                    Must be between {formatPrice(offer.amount + 1)} and {formatPrice(askingPrice)}
                   </p>
                 </div>
               )}
@@ -253,9 +232,7 @@ export function OfferResponseModal({
               {/* Confirmation for accept/reject */}
               {(action === "accept" || action === "reject") && (
                 <div
-                  className={`p-3 rounded-lg ${
-                    action === "accept" ? "bg-green-50" : "bg-red-50"
-                  }`}
+                  className={`p-3 rounded-lg ${action === "accept" ? "bg-green-50" : "bg-red-50"}`}
                 >
                   <p className="text-sm">
                     {action === "accept"
@@ -296,8 +273,8 @@ export function OfferResponseModal({
                 action === "accept"
                   ? "bg-green-600 hover:bg-green-700"
                   : action === "reject"
-                  ? "bg-red-600 hover:bg-red-700"
-                  : "bg-blue-600 hover:bg-blue-700"
+                    ? "bg-red-600 hover:bg-red-700"
+                    : "bg-blue-600 hover:bg-blue-700"
               }`}
             >
               {isLoading ? (

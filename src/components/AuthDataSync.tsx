@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+
 import { useUser } from "@clerk/nextjs";
-import { DataMigrationModal } from "./DataMigrationModal";
+
 import { storage } from "@/lib/storage";
+
+import { DataMigrationModal } from "./DataMigrationModal";
 
 const MIGRATION_PROMPTED_KEY = "comic_migration_prompted";
 

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { KeyRound, MessageCircleQuestion, X, Plus } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+
+import { KeyRound, MessageCircleQuestion, Plus, X } from "lucide-react";
 
 interface FloatingUtilitiesTrayProps {
   onKeyHuntClick: () => void;
@@ -43,10 +44,7 @@ export function FloatingUtilitiesTray({
   };
 
   return (
-    <div
-      ref={trayRef}
-      className="fixed bottom-24 right-4 z-40 flex flex-col items-end gap-3"
-    >
+    <div ref={trayRef} className="fixed bottom-24 right-4 z-40 flex flex-col items-end gap-3">
       {/* Expanded options */}
       {isExpanded && (
         <>
@@ -78,9 +76,7 @@ export function FloatingUtilitiesTray({
       <button
         onClick={() => setIsExpanded(!isExpanded)}
         className={`w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-200 ${
-          isExpanded
-            ? "bg-gray-800 rotate-45"
-            : "bg-primary-600 hover:bg-primary-700"
+          isExpanded ? "bg-gray-800 rotate-45" : "bg-primary-600 hover:bg-primary-700"
         }`}
       >
         {isExpanded ? (

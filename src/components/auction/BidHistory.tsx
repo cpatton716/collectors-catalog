@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+
 import { ChevronDown, ChevronUp, User } from "lucide-react";
+
 import { BidHistoryItem, formatPrice } from "@/types/auction";
 
 interface BidHistoryProps {
@@ -10,11 +12,7 @@ interface BidHistoryProps {
   maxVisible?: number;
 }
 
-export function BidHistory({
-  auctionId,
-  initialBids = [],
-  maxVisible = 5,
-}: BidHistoryProps) {
+export function BidHistory({ auctionId, initialBids = [], maxVisible = 5 }: BidHistoryProps) {
   const [bids, setBids] = useState<BidHistoryItem[]>(initialBids);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLoading, setIsLoading] = useState(!initialBids.length);
@@ -60,11 +58,7 @@ export function BidHistory({
   }
 
   if (bids.length === 0) {
-    return (
-      <div className="text-center py-4 text-gray-500">
-        No bids yet. Be the first to bid!
-      </div>
-    );
+    return <div className="text-center py-4 text-gray-500">No bids yet. Be the first to bid!</div>;
   }
 
   const visibleBids = isExpanded ? bids : bids.slice(0, maxVisible);
@@ -89,13 +83,9 @@ export function BidHistory({
                 <User className="w-4 h-4 text-gray-500" />
               </div>
               <div>
-                <span className="text-sm font-medium text-gray-900">
-                  Bidder {bid.bidderNumber}
-                </span>
+                <span className="text-sm font-medium text-gray-900">Bidder {bid.bidderNumber}</span>
                 {index === 0 && bid.isWinning && (
-                  <span className="ml-2 text-xs text-green-600 font-medium">
-                    High Bidder
-                  </span>
+                  <span className="ml-2 text-xs text-green-600 font-medium">High Bidder</span>
                 )}
               </div>
             </div>
@@ -103,9 +93,7 @@ export function BidHistory({
               <div className="text-sm font-semibold text-gray-900">
                 {formatPrice(bid.bidAmount)}
               </div>
-              <div className="text-xs text-gray-500">
-                {formatDate(bid.createdAt)}
-              </div>
+              <div className="text-xs text-gray-500">{formatDate(bid.createdAt)}</div>
             </div>
           </div>
         ))}

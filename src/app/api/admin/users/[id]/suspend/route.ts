@@ -1,16 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import {
   getAdminProfile,
+  getProfileById,
   logAdminAction,
   setUserSuspension,
-  getProfileById,
 } from "@/lib/adminAuth";
 import { invalidateProfileCache } from "@/lib/db";
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Check admin access
     const adminProfile = await getAdminProfile();
@@ -43,10 +41,7 @@ export async function POST(
 
     // Prevent self-suspension
     if (id === adminProfile.id) {
-      return NextResponse.json(
-        { error: "Cannot suspend your own account" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Cannot suspend your own account" }, { status: 400 });
     }
 
     // Update suspension status
@@ -70,9 +65,6 @@ export async function POST(
     });
   } catch (error) {
     console.error("Error updating suspension:", error);
-    return NextResponse.json(
-      { error: "Failed to update suspension status" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to update suspension status" }, { status: 500 });
   }
 }

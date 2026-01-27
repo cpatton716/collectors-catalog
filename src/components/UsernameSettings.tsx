@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { AtSign, Check, X, Loader2, AlertCircle } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+
+import { AlertCircle, AtSign, Check, Loader2, X } from "lucide-react";
+
 import { useDebounce } from "@/hooks/useDebounce";
 
 interface UsernameData {
@@ -172,9 +174,7 @@ export function UsernameSettings() {
 
           {/* Validation Messages */}
           {username.length > 0 && username.length < 3 && (
-            <p className="mt-2 text-sm text-amber-600">
-              Username must be at least 3 characters
-            </p>
+            <p className="mt-2 text-sm text-amber-600">Username must be at least 3 characters</p>
           )}
           {availability && !availability.available && availability.error && (
             <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
@@ -183,9 +183,7 @@ export function UsernameSettings() {
             </p>
           )}
           {availability?.available && username.length >= 3 && hasChanges && (
-            <p className="mt-2 text-sm text-green-600">
-              {availability.display} is available!
-            </p>
+            <p className="mt-2 text-sm text-green-600">{availability.display} is available!</p>
           )}
         </div>
 

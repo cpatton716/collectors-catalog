@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import {
   getAdminProfile,
-  logAdminAction,
-  grantPremiumAccess,
   getProfileById,
+  grantPremiumAccess,
+  logAdminAction,
 } from "@/lib/adminAuth";
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Check admin access
     const adminProfile = await getAdminProfile();
@@ -52,9 +50,6 @@ export async function POST(
     });
   } catch (error) {
     console.error("Error granting premium:", error);
-    return NextResponse.json(
-      { error: "Failed to grant premium access" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to grant premium access" }, { status: 500 });
   }
 }

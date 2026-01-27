@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+
 import Anthropic from "@anthropic-ai/sdk";
+
 import { getComicMetadata, saveComicMetadata } from "@/lib/db";
 
 const anthropic = new Anthropic({
@@ -24,17 +26,20 @@ export async function POST(request: Request) {
     try {
       const dbResult = await getComicMetadata(normalizedTitle, normalizedIssue);
       if (dbResult) {
-
         // Return in the format expected by CSV import
         return NextResponse.json({
-          priceData: dbResult.priceData ? {
-            estimatedValue: dbResult.priceData.estimatedValue,
-            recentSales: dbResult.priceData.recentSales || [],
-            mostRecentSaleDate: dbResult.priceData.mostRecentSaleDate,
-            isAveraged: false,
-            disclaimer: dbResult.priceData.disclaimer || "Values are estimates based on market knowledge.",
-            gradeEstimates: dbResult.priceData.gradeEstimates,
-          } : null,
+          priceData: dbResult.priceData
+            ? {
+                estimatedValue: dbResult.priceData.estimatedValue,
+                recentSales: dbResult.priceData.recentSales || [],
+                mostRecentSaleDate: dbResult.priceData.mostRecentSaleDate,
+                isAveraged: false,
+                disclaimer:
+                  dbResult.priceData.disclaimer ||
+                  "Values are estimates based on market knowledge.",
+                gradeEstimates: dbResult.priceData.gradeEstimates,
+              }
+            : null,
           keyInfo: dbResult.keyInfo || [],
           // Also return metadata for enriching imports
           writer: dbResult.writer,
@@ -102,7 +107,8 @@ Be realistic with prices based on typical eBay sold listings.`,
     let interiorArtist = null;
     let detectedPublisher = publisher || null;
     let detectedYear = releaseYear || null;
-    let gradeEstimates: { grade: number; label: string; rawValue: number; slabbedValue: number }[] = [];
+    let gradeEstimates: { grade: number; label: string; rawValue: number; slabbedValue: number }[] =
+      [];
 
     // Parse Claude's response
     const responseText = message.content[0].type === "text" ? message.content[0].text : "";
@@ -151,19 +157,20 @@ Be realistic with prices based on typical eBay sold listings.`,
           coverArtist,
           interiorArtist,
           keyInfo,
-          priceData: priceData ? {
-            estimatedValue: priceData.estimatedValue,
-            mostRecentSaleDate: null,
-            recentSales: [],
-            gradeEstimates,
-            disclaimer: priceData.disclaimer,
-          } : undefined,
+          priceData: priceData
+            ? {
+                estimatedValue: priceData.estimatedValue,
+                mostRecentSaleDate: null,
+                recentSales: [],
+                gradeEstimates,
+                disclaimer: priceData.disclaimer,
+              }
+            : undefined,
         }).catch((err) => {
           console.error("[import-lookup] Failed to save to database:", err);
         });
       }
-    } catch {
-    }
+    } catch {}
 
     return NextResponse.json({
       priceData,
@@ -176,7 +183,10 @@ Be realistic with prices based on typical eBay sold listings.`,
   } catch (error) {
     console.error("Import lookup error:", error);
     return NextResponse.json(
-      { error: "We couldn't look up details for this comic. The import will continue with the data you provided." },
+      {
+        error:
+          "We couldn't look up details for this comic. The import will continue with the data you provided.",
+      },
       { status: 500 }
     );
   }

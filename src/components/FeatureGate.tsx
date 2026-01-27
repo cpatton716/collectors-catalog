@@ -1,10 +1,19 @@
 "use client";
 
 import { ReactNode } from "react";
-import { useSubscription, SubscriptionTier } from "@/hooks/useSubscription";
-import { Lock, Zap, TrendingUp, Target, Download, BarChart3 } from "lucide-react";
 
-type FeatureKey = "keyHunt" | "csvExport" | "fullStats" | "unlimitedListings" | "unlimitedScans" | "shopBuying" | "cloudSync";
+import { BarChart3, Download, Lock, Target, TrendingUp, Zap } from "lucide-react";
+
+import { SubscriptionTier, useSubscription } from "@/hooks/useSubscription";
+
+type FeatureKey =
+  | "keyHunt"
+  | "csvExport"
+  | "fullStats"
+  | "unlimitedListings"
+  | "unlimitedScans"
+  | "shopBuying"
+  | "cloudSync";
 
 interface FeatureGateProps {
   feature: FeatureKey;
@@ -71,13 +80,12 @@ export function FeatureGate({
   fallback,
   showUpgradePrompt = true,
 }: FeatureGateProps) {
-  const { features, isLoading, tier, isTrialing, startFreeTrial, startCheckout } = useSubscription();
+  const { features, isLoading, tier, isTrialing, startFreeTrial, startCheckout } =
+    useSubscription();
 
   // Show loading state
   if (isLoading) {
-    return (
-      <div className="animate-pulse bg-gray-100 rounded-lg h-20" />
-    );
+    return <div className="animate-pulse bg-gray-100 rounded-lg h-20" />;
   }
 
   // Check access
@@ -116,7 +124,10 @@ export function FeatureGate({
   };
 
   return (
-    <div className="bg-pop-white border-3 border-pop-black p-8 text-center" style={{ boxShadow: "4px 4px 0px #000" }}>
+    <div
+      className="bg-pop-white border-3 border-pop-black p-8 text-center"
+      style={{ boxShadow: "4px 4px 0px #000" }}
+    >
       <div className="w-16 h-16 bg-pop-yellow border-3 border-pop-black flex items-center justify-center mx-auto mb-4">
         <Lock className="w-8 h-8 text-pop-black" />
       </div>
@@ -125,9 +136,7 @@ export function FeatureGate({
         {info.name} is a Premium Feature
       </h3>
 
-      <p className="text-gray-600 mb-6 max-w-sm mx-auto">
-        {info.description}
-      </p>
+      <p className="text-gray-600 mb-6 max-w-sm mx-auto">{info.description}</p>
 
       <div className="flex flex-col sm:flex-row gap-3 justify-center">
         {tier === "free" && !isTrialing && (
@@ -157,7 +166,9 @@ export function FeatureGate({
  */
 export function PremiumBadge({ className = "" }: { className?: string }) {
   return (
-    <span className={`inline-flex items-center gap-1 text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full ${className}`}>
+    <span
+      className={`inline-flex items-center gap-1 text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full ${className}`}
+    >
       <Lock className="w-3 h-3" />
       Premium
     </span>
@@ -191,7 +202,8 @@ export function FeatureButton({
   className = "",
   disabled = false,
 }: FeatureButtonProps) {
-  const { features, isLoading, tier, isTrialing, startFreeTrial, startCheckout } = useSubscription();
+  const { features, isLoading, tier, isTrialing, startFreeTrial, startCheckout } =
+    useSubscription();
   const hasAccess = features[feature];
 
   const handleClick = async () => {

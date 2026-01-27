@@ -1,19 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import {
-  X,
-  RotateCcw,
-  Gauge,
-  Clock,
-  TrendingUp,
-  TrendingDown,
-  Minus,
-  Plus,
-} from "lucide-react";
+
+import { Clock, Gauge, Minus, Plus, RotateCcw, TrendingDown, TrendingUp, X } from "lucide-react";
+
 import { KeyHuntHistoryEntry } from "@/lib/offlineCache";
-import { GradeSelector } from "./GradeSelector";
+
 import { ComicImage } from "./ComicImage";
+import { GradeSelector } from "./GradeSelector";
 
 interface KeyHuntHistoryDetailProps {
   entry: KeyHuntHistoryEntry;
@@ -141,13 +135,9 @@ export function KeyHuntHistoryDetail({
               <h2 className="text-xl font-bold text-white truncate">{entry.title}</h2>
               <p className="text-white/80">
                 Issue #{entry.issueNumber}
-                {entry.variant && (
-                  <span className="text-white/60"> - {entry.variant}</span>
-                )}
+                {entry.variant && <span className="text-white/60"> - {entry.variant}</span>}
               </p>
-              {entry.publisher && (
-                <p className="text-white/60 text-sm">{entry.publisher}</p>
-              )}
+              {entry.publisher && <p className="text-white/60 text-sm">{entry.publisher}</p>}
             </div>
           </div>
 
@@ -184,8 +174,8 @@ export function KeyHuntHistoryDetail({
                   recentSaleStatus === "high"
                     ? "bg-red-50 border border-red-200"
                     : recentSaleStatus === "low"
-                    ? "bg-green-50 border border-green-200"
-                    : "bg-gray-50 border border-gray-200"
+                      ? "bg-green-50 border border-green-200"
+                      : "bg-gray-50 border border-gray-200"
                 }`}
               >
                 <div className="flex items-center justify-between">
@@ -195,8 +185,8 @@ export function KeyHuntHistoryDetail({
                         recentSaleStatus === "high"
                           ? "text-red-600"
                           : recentSaleStatus === "low"
-                          ? "text-green-600"
-                          : "text-gray-500"
+                            ? "text-green-600"
+                            : "text-gray-500"
                       }`}
                     >
                       Most Recent Sale
@@ -206,8 +196,8 @@ export function KeyHuntHistoryDetail({
                         recentSaleStatus === "high"
                           ? "text-red-700"
                           : recentSaleStatus === "low"
-                          ? "text-green-700"
-                          : "text-gray-900"
+                            ? "text-green-700"
+                            : "text-gray-900"
                       }`}
                     >
                       {formatPrice(entry.priceResult.recentSale.price)}
@@ -221,8 +211,8 @@ export function KeyHuntHistoryDetail({
                       recentSaleStatus === "high"
                         ? "bg-red-100"
                         : recentSaleStatus === "low"
-                        ? "bg-green-100"
-                        : "bg-gray-100"
+                          ? "bg-green-100"
+                          : "bg-gray-100"
                     }`}
                   >
                     {recentSaleStatus === "high" ? (

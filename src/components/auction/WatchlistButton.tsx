@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+
 import { Heart } from "lucide-react";
 
 interface WatchlistButtonProps {
@@ -71,9 +72,7 @@ export function WatchlistButton({
       } ${isLoading ? "opacity-50 cursor-wait" : ""} ${className}`}
       title={isWatching ? "Remove from watchlist" : "Add to watchlist"}
     >
-      <Heart
-        className={`${iconSizes[size]} ${isWatching ? "fill-current" : ""}`}
-      />
+      <Heart className={`${iconSizes[size]} ${isWatching ? "fill-current" : ""}`} />
     </button>
   );
 }

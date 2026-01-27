@@ -1,22 +1,14 @@
 "use client";
 
 import { useState } from "react";
+
 import Image from "next/image";
-import {
-  X,
-  DollarSign,
-  Calendar,
-  Package,
-  Camera,
-  AlertCircle,
-  Check,
-} from "lucide-react";
+
+import { AlertCircle, Calendar, Camera, Check, DollarSign, Package, X } from "lucide-react";
+
+import { AUCTION_DURATION_OPTIONS, MAX_DETAIL_IMAGES, MIN_STARTING_PRICE } from "@/types/auction";
 import { CollectionItem } from "@/types/comic";
-import {
-  AUCTION_DURATION_OPTIONS,
-  MIN_STARTING_PRICE,
-  MAX_DETAIL_IMAGES,
-} from "@/types/auction";
+
 import { ComicImage } from "../ComicImage";
 
 interface CreateAuctionModalProps {
@@ -26,12 +18,7 @@ interface CreateAuctionModalProps {
   onCreated?: (auctionId: string) => void;
 }
 
-export function CreateAuctionModal({
-  comic,
-  isOpen,
-  onClose,
-  onCreated,
-}: CreateAuctionModalProps) {
+export function CreateAuctionModal({ comic, isOpen, onClose, onCreated }: CreateAuctionModalProps) {
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -146,10 +133,7 @@ export function CreateAuctionModal({
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal */}
       <div className="relative min-h-full flex items-center justify-center p-4">
@@ -170,9 +154,7 @@ export function CreateAuctionModal({
             {[1, 2, 3].map((s) => (
               <div
                 key={s}
-                className={`flex-1 h-1 rounded-full ${
-                  s <= step ? "bg-blue-500" : "bg-gray-200"
-                }`}
+                className={`flex-1 h-1 rounded-full ${s <= step ? "bg-blue-500" : "bg-gray-200"}`}
               />
             ))}
           </div>
@@ -189,8 +171,7 @@ export function CreateAuctionModal({
             </div>
             <div>
               <h3 className="font-semibold text-gray-900">
-                {comic.comic.title || "Unknown Title"} #
-                {comic.comic.issueNumber || "?"}
+                {comic.comic.title || "Unknown Title"} #{comic.comic.issueNumber || "?"}
               </h3>
               <p className="text-sm text-gray-600">
                 {comic.comic.publisher || "Unknown Publisher"}
@@ -221,9 +202,7 @@ export function CreateAuctionModal({
                       placeholder="1"
                     />
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Minimum: ${MIN_STARTING_PRICE}
-                  </p>
+                  <p className="text-xs text-gray-500 mt-1">Minimum: ${MIN_STARTING_PRICE}</p>
                 </div>
 
                 <div>
@@ -290,9 +269,7 @@ export function CreateAuctionModal({
                       placeholder="7.00"
                     />
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Set to 0 for free shipping
-                  </p>
+                  <p className="text-xs text-gray-500 mt-1">Set to 0 for free shipping</p>
                 </div>
 
                 <div>
@@ -313,12 +290,10 @@ export function CreateAuctionModal({
             {/* Step 3: Photos & Review */}
             {step === 3 && (
               <div className="space-y-4">
-                <h3 className="font-medium text-gray-900">
-                  Additional Photos (Optional)
-                </h3>
+                <h3 className="font-medium text-gray-900">Additional Photos (Optional)</h3>
                 <p className="text-sm text-gray-600">
-                  Add up to {MAX_DETAIL_IMAGES} detail photos showing condition,
-                  spine, back cover, etc.
+                  Add up to {MAX_DETAIL_IMAGES} detail photos showing condition, spine, back cover,
+                  etc.
                 </p>
 
                 {/* Image Grid */}
@@ -377,9 +352,7 @@ export function CreateAuctionModal({
                     <div className="flex justify-between">
                       <span className="text-gray-600">Shipping:</span>
                       <span className="font-medium text-gray-900">
-                        {parseFloat(shippingCost) === 0
-                          ? "Free"
-                          : `$${shippingCost}`}
+                        {parseFloat(shippingCost) === 0 ? "Free" : `$${shippingCost}`}
                       </span>
                     </div>
                   </div>

@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { X, Check } from "lucide-react";
+
+import { Check, X } from "lucide-react";
+
 import { GRADE_SCALE } from "@/types/comic";
 
 interface GradeSelectorProps {
@@ -31,9 +33,7 @@ export function GradeSelector({
   issueNumber,
   preselectedGrade,
 }: GradeSelectorProps) {
-  const [selectedGrade, setSelectedGrade] = useState<number | null>(
-    preselectedGrade ?? null
-  );
+  const [selectedGrade, setSelectedGrade] = useState<number | null>(preselectedGrade ?? null);
   const [showAllGrades, setShowAllGrades] = useState(false);
 
   if (!isOpen) return null;

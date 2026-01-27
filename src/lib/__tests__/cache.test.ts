@@ -1,3 +1,10 @@
+import {
+  generateAiAnalyzeCacheKey,
+  generateComicMetadataCacheKey,
+  generateEbayPriceCacheKey,
+  hashImageData,
+} from "../cache";
+
 /**
  * Cache utility function tests
  *
@@ -13,13 +20,6 @@ jest.mock("@upstash/redis", () => ({
     del: jest.fn(),
   })),
 }));
-
-import {
-  generateEbayPriceCacheKey,
-  generateComicMetadataCacheKey,
-  generateAiAnalyzeCacheKey,
-  hashImageData,
-} from "../cache";
 
 describe("Cache Key Generation", () => {
   describe("generateEbayPriceCacheKey", () => {

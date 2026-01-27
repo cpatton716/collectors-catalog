@@ -7,14 +7,72 @@
 
 // Built-in profanity list (curated for usernames)
 const PROFANITY_LIST = [
-  "ass", "arse", "bastard", "bitch", "cock", "cunt", "damn", "dick", "fuck",
-  "hell", "piss", "pussy", "shit", "slut", "whore", "penis", "vagina", "tit",
-  "boob", "anal", "anus", "balls", "blowjob", "boner", "butthole", "cameltoe",
-  "chode", "clit", "dildo", "douche", "erection", "fag", "fellatio", "gay",
-  "homo", "jackoff", "jerkoff", "jizz", "lesbian", "masturbat", "milf", "negro",
-  "nigger", "nipple", "nude", "orgasm", "orgy", "panties", "porn", "porno",
-  "queef", "queer", "rape", "rectum", "retard", "scrotum", "semen", "sex",
-  "smegma", "sperm", "testicle", "thot", "tranny", "twat", "wank", "xxx",
+  "ass",
+  "arse",
+  "bastard",
+  "bitch",
+  "cock",
+  "cunt",
+  "damn",
+  "dick",
+  "fuck",
+  "hell",
+  "piss",
+  "pussy",
+  "shit",
+  "slut",
+  "whore",
+  "penis",
+  "vagina",
+  "tit",
+  "boob",
+  "anal",
+  "anus",
+  "balls",
+  "blowjob",
+  "boner",
+  "butthole",
+  "cameltoe",
+  "chode",
+  "clit",
+  "dildo",
+  "douche",
+  "erection",
+  "fag",
+  "fellatio",
+  "gay",
+  "homo",
+  "jackoff",
+  "jerkoff",
+  "jizz",
+  "lesbian",
+  "masturbat",
+  "milf",
+  "negro",
+  "nigger",
+  "nipple",
+  "nude",
+  "orgasm",
+  "orgy",
+  "panties",
+  "porn",
+  "porno",
+  "queef",
+  "queer",
+  "rape",
+  "rectum",
+  "retard",
+  "scrotum",
+  "semen",
+  "sex",
+  "smegma",
+  "sperm",
+  "testicle",
+  "thot",
+  "tranny",
+  "twat",
+  "wank",
+  "xxx",
 ];
 
 // ============================================
@@ -80,14 +138,14 @@ export function validateUsernameFormat(username: string): UsernameValidationResu
   if (normalized.length < USERNAME_MIN_LENGTH) {
     return {
       isValid: false,
-      error: `Username must be at least ${USERNAME_MIN_LENGTH} characters`
+      error: `Username must be at least ${USERNAME_MIN_LENGTH} characters`,
     };
   }
 
   if (normalized.length > USERNAME_MAX_LENGTH) {
     return {
       isValid: false,
-      error: `Username must be ${USERNAME_MAX_LENGTH} characters or less`
+      error: `Username must be ${USERNAME_MAX_LENGTH} characters or less`,
     };
   }
 
@@ -95,7 +153,7 @@ export function validateUsernameFormat(username: string): UsernameValidationResu
   if (!USERNAME_REGEX.test(normalized)) {
     return {
       isValid: false,
-      error: "Username can only contain letters, numbers, and underscores"
+      error: "Username can only contain letters, numbers, and underscores",
     };
   }
 
@@ -103,7 +161,7 @@ export function validateUsernameFormat(username: string): UsernameValidationResu
   if (normalized.startsWith("_") || normalized.endsWith("_")) {
     return {
       isValid: false,
-      error: "Username cannot start or end with an underscore"
+      error: "Username cannot start or end with an underscore",
     };
   }
 
@@ -111,7 +169,7 @@ export function validateUsernameFormat(username: string): UsernameValidationResu
   if (normalized.includes("__")) {
     return {
       isValid: false,
-      error: "Username cannot have consecutive underscores"
+      error: "Username cannot have consecutive underscores",
     };
   }
 
@@ -123,7 +181,7 @@ export function validateUsernameFormat(username: string): UsernameValidationResu
  */
 function isProfane(text: string): boolean {
   const lowerText = text.toLowerCase();
-  return PROFANITY_LIST.some(word => lowerText.includes(word));
+  return PROFANITY_LIST.some((word) => lowerText.includes(word));
 }
 
 /**
@@ -166,7 +224,7 @@ export function validateUsername(username: string): UsernameValidationResult {
   if (containsProfanity(username)) {
     return {
       isValid: false,
-      error: "Username contains inappropriate content"
+      error: "Username contains inappropriate content",
     };
   }
 
@@ -236,7 +294,7 @@ export function validateUsernameComplete(username: string): UsernameValidationRe
   if (isReservedUsername(username)) {
     return {
       isValid: false,
-      error: "This username is reserved"
+      error: "This username is reserved",
     };
   }
 

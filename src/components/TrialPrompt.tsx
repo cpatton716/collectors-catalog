@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { X, Zap, Crown, Clock, Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
+
+import { Clock, Crown, Sparkles, X, Zap } from "lucide-react";
+
 import { useSubscription } from "@/hooks/useSubscription";
 
 interface TrialPromptProps {
@@ -18,7 +20,8 @@ interface TrialPromptProps {
  * Only shows once per milestone (tracked in localStorage)
  */
 export function TrialPrompt({ onDismiss }: TrialPromptProps) {
-  const { isTrialing, trialDaysRemaining, trialEndsAt, startCheckout, isLoading } = useSubscription();
+  const { isTrialing, trialDaysRemaining, trialEndsAt, startCheckout, isLoading } =
+    useSubscription();
   const [dismissed, setDismissed] = useState(false);
   const [promptType, setPromptType] = useState<"day3" | "day6" | null>(null);
 
@@ -81,7 +84,8 @@ export function TrialPrompt({ onDismiss }: TrialPromptProps) {
             <div className="flex-1">
               <h3 className="font-bold text-lg">Trial Ends Tomorrow!</h3>
               <p className="text-white/90 text-sm mt-1">
-                Your Premium trial ends {formatDate(trialEndsAt)}. Subscribe now to keep unlimited scans and all Premium features.
+                Your Premium trial ends {formatDate(trialEndsAt)}. Subscribe now to keep unlimited
+                scans and all Premium features.
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <button
@@ -125,7 +129,8 @@ export function TrialPrompt({ onDismiss }: TrialPromptProps) {
             <div className="flex-1">
               <h3 className="font-bold text-lg">Enjoying Premium?</h3>
               <p className="text-white/90 text-sm mt-1">
-                You have {trialDaysRemaining} days left in your trial. Subscribe now to lock in unlimited scans and never worry about limits again.
+                You have {trialDaysRemaining} days left in your trial. Subscribe now to lock in
+                unlimited scans and never worry about limits again.
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <button
@@ -169,7 +174,9 @@ export function TrialStatusBadge() {
   };
 
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full border ${getBadgeColor()}`}>
+    <span
+      className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full border ${getBadgeColor()}`}
+    >
       <Zap className="w-3 h-3" />
       Trial: {trialDaysRemaining} day{trialDaysRemaining !== 1 ? "s" : ""} left
     </span>

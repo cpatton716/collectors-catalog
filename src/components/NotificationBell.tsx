@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { Bell, X, Check, Gavel, Trophy, Clock, Star, DollarSign } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+
+import { Bell, Check, Clock, DollarSign, Gavel, Star, Trophy, X } from "lucide-react";
+
 import { Notification, NotificationType } from "@/types/auction";
 
 interface NotificationBellProps {
@@ -79,9 +81,7 @@ export function NotificationBell({ className = "" }: NotificationBellProps) {
       });
 
       setNotifications((prev) =>
-        prev.map((n) =>
-          n.id === notificationId ? { ...n, isRead: true } : n
-        )
+        prev.map((n) => (n.id === notificationId ? { ...n, isRead: true } : n))
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch (error) {
@@ -162,10 +162,7 @@ export function NotificationBell({ className = "" }: NotificationBellProps) {
           <div className="flex items-center justify-between px-4 py-3 border-b">
             <h3 className="font-semibold text-gray-900">Notifications</h3>
             {unreadCount > 0 && (
-              <button
-                onClick={markAllAsRead}
-                className="text-xs text-blue-600 hover:text-blue-800"
-              >
+              <button onClick={markAllAsRead} className="text-xs text-blue-600 hover:text-blue-800">
                 Mark all as read
               </button>
             )}
@@ -185,9 +182,7 @@ export function NotificationBell({ className = "" }: NotificationBellProps) {
                 {notifications.map((notification) => (
                   <div
                     key={notification.id}
-                    onClick={() =>
-                      !notification.isRead && markAsRead(notification.id)
-                    }
+                    onClick={() => !notification.isRead && markAsRead(notification.id)}
                     className={`flex items-start gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer ${
                       !notification.isRead ? "bg-blue-50" : ""
                     }`}
@@ -196,12 +191,8 @@ export function NotificationBell({ className = "" }: NotificationBellProps) {
                       {getIcon(notification.type)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900">
-                        {notification.title}
-                      </p>
-                      <p className="text-sm text-gray-600 line-clamp-2">
-                        {notification.message}
-                      </p>
+                      <p className="text-sm font-medium text-gray-900">{notification.title}</p>
+                      <p className="text-sm text-gray-600 line-clamp-2">{notification.message}</p>
                       <p className="text-xs text-gray-400 mt-1">
                         {formatTime(notification.createdAt)}
                       </p>

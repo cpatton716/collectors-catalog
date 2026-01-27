@@ -1,4 +1,4 @@
-import { CollectionItem, UserList, SaleRecord } from "@/types/comic";
+import { CollectionItem, SaleRecord, UserList } from "@/types/comic";
 
 const COLLECTION_KEY = "comic_collection";
 const LISTS_KEY = "comic_lists";
@@ -129,10 +129,7 @@ export const storage = {
     return collection;
   },
 
-  updateCollectionItem(
-    id: string,
-    updates: Partial<CollectionItem>
-  ): CollectionItem[] {
+  updateCollectionItem(id: string, updates: Partial<CollectionItem>): CollectionItem[] {
     const collection = this.getCollection();
     const index = collection.findIndex((item) => item.id === id);
     if (index !== -1) {
@@ -165,7 +162,7 @@ export const storage = {
     const lists: UserList[] = JSON.parse(data);
     let needsSave = false;
     for (const defaultList of DEFAULT_LISTS) {
-      if (!lists.find(l => l.id === defaultList.id)) {
+      if (!lists.find((l) => l.id === defaultList.id)) {
         lists.push(defaultList);
         needsSave = true;
       }
@@ -202,9 +199,7 @@ export const storage = {
   },
 
   removeList(id: string): UserList[] {
-    const lists = this.getLists().filter(
-      (list) => list.id !== id || list.isDefault
-    );
+    const lists = this.getLists().filter((list) => list.id !== id || list.isDefault);
     this.saveLists(lists);
     return lists;
   },
@@ -234,9 +229,7 @@ export const storage = {
     const collection = this.getCollection();
     const index = collection.findIndex((item) => item.id === itemId);
     if (index !== -1) {
-      collection[index].listIds = collection[index].listIds.filter(
-        (id) => id !== listId
-      );
+      collection[index].listIds = collection[index].listIds.filter((id) => id !== listId);
       this.saveCollection(collection);
     }
     return collection;

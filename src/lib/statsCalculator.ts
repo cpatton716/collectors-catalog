@@ -1,4 +1,5 @@
 import { CollectionItem } from "@/types/comic";
+
 import { getComicValue } from "./gradePrice";
 
 export interface CollectionOverview {
@@ -124,7 +125,10 @@ export function calculatePublisherStats(collection: CollectionItem[]): Publisher
 /**
  * Get top N publishers by value
  */
-export function getTopPublishers(collection: CollectionItem[], limit: number = 5): PublisherStats[] {
+export function getTopPublishers(
+  collection: CollectionItem[],
+  limit: number = 5
+): PublisherStats[] {
   return calculatePublisherStats(collection).slice(0, limit);
 }
 
@@ -205,7 +209,8 @@ export function calculateGradingStats(collection: CollectionItem[]): GradingStat
       }
 
       // Track grade distribution
-      const grade = item.comic.grade || (item.conditionGrade ? item.conditionGrade.toString() : null);
+      const grade =
+        item.comic.grade || (item.conditionGrade ? item.conditionGrade.toString() : null);
       if (grade) {
         const gradeKey = grade.toString();
         gradeMap.set(gradeKey, (gradeMap.get(gradeKey) || 0) + 1);
@@ -268,7 +273,10 @@ export function calculateFinancialStats(collection: CollectionItem[]): Financial
 /**
  * Calculate key comics statistics
  */
-export function calculateKeyComicStats(collection: CollectionItem[], limit: number = 5): KeyComicStats {
+export function calculateKeyComicStats(
+  collection: CollectionItem[],
+  limit: number = 5
+): KeyComicStats {
   const keyComics = collection.filter(
     (item) => item.comic.keyInfo && item.comic.keyInfo.length > 0
   );

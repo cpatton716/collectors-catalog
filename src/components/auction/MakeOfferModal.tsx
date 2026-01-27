@@ -1,8 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { X, DollarSign, AlertCircle, Send } from "lucide-react";
-import { Auction, formatPrice, MIN_FIXED_PRICE } from "@/types/auction";
+
+import { AlertCircle, DollarSign, Send, X } from "lucide-react";
+
+import { Auction, MIN_FIXED_PRICE, formatPrice } from "@/types/auction";
+
 import { ComicImage } from "../ComicImage";
 
 interface MakeOfferModalProps {
@@ -12,12 +15,7 @@ interface MakeOfferModalProps {
   onOfferMade?: () => void;
 }
 
-export function MakeOfferModal({
-  listing,
-  isOpen,
-  onClose,
-  onOfferMade,
-}: MakeOfferModalProps) {
+export function MakeOfferModal({ listing, isOpen, onClose, onOfferMade }: MakeOfferModalProps) {
   const [offerAmount, setOfferAmount] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,9 +30,7 @@ export function MakeOfferModal({
     }
 
     if (amount >= listing.startingPrice) {
-      setError(
-        `For offers at or above the asking price, use the Buy Now button instead`
-      );
+      setError(`For offers at or above the asking price, use the Buy Now button instead`);
       return;
     }
 
@@ -84,10 +80,7 @@ export function MakeOfferModal({
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
           <h2 className="text-lg font-semibold text-gray-900">Make an Offer</h2>
-          <button
-            onClick={handleClose}
-            className="p-1 hover:bg-gray-100 rounded-full"
-          >
+          <button onClick={handleClose} className="p-1 hover:bg-gray-100 rounded-full">
             <X className="w-5 h-5 text-gray-600" />
           </button>
         </div>
@@ -99,12 +92,9 @@ export function MakeOfferModal({
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Send className="w-8 h-8 text-green-600" />
               </div>
-              <h3 className="text-lg font-semibold text-green-700">
-                Offer Sent!
-              </h3>
+              <h3 className="text-lg font-semibold text-green-700">Offer Sent!</h3>
               <p className="text-sm text-gray-600 mt-2">
-                The seller will be notified. You'll receive a notification when
-                they respond.
+                The seller will be notified. You'll receive a notification when they respond.
               </p>
             </div>
           ) : (
@@ -122,28 +112,20 @@ export function MakeOfferModal({
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">
-                    {listing.comic?.comic.title}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    #{listing.comic?.comic.issueNumber}
-                  </p>
+                  <p className="font-medium truncate">{listing.comic?.comic.title}</p>
+                  <p className="text-sm text-gray-600">#{listing.comic?.comic.issueNumber}</p>
                 </div>
               </div>
 
               {/* Asking Price */}
               <div className="flex justify-between items-center py-2 border-b">
                 <span className="text-gray-600">Asking Price</span>
-                <span className="font-semibold text-lg">
-                  {formatPrice(listing.startingPrice)}
-                </span>
+                <span className="font-semibold text-lg">{formatPrice(listing.startingPrice)}</span>
               </div>
 
               {/* Offer Input */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Your Offer
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Your Offer</label>
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input

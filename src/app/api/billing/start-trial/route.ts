@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
+
 import { auth } from "@clerk/nextjs/server";
-import { getProfileByClerkId } from "@/lib/db";
-import { startTrial, hasUsedTrial, getSubscriptionStatus } from "@/lib/subscription";
+
 import { isUserSuspended } from "@/lib/adminAuth";
+import { getProfileByClerkId } from "@/lib/db";
+import { getSubscriptionStatus, hasUsedTrial, startTrial } from "@/lib/subscription";
 
 /**
  * POST - Start a free 7-day trial directly (without Stripe)
@@ -50,7 +52,7 @@ export async function POST() {
         {
           error: "You already have an active trial",
           trialEndsAt: status.trialEndsAt,
-          trialDaysRemaining: status.trialDaysRemaining
+          trialDaysRemaining: status.trialDaysRemaining,
         },
         { status: 400 }
       );
@@ -59,20 +61,14 @@ export async function POST() {
     // Check if trial already used
     const trialUsed = await hasUsedTrial(profile.id);
     if (trialUsed) {
-      return NextResponse.json(
-        { error: "You have already used your free trial" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "You have already used your free trial" }, { status: 400 });
     }
 
     // Start the trial
     const result = await startTrial(profile.id);
 
     if (!result.success) {
-      return NextResponse.json(
-        { error: result.error || "Failed to start trial" },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: result.error || "Failed to start trial" }, { status: 500 });
     }
 
     return NextResponse.json({
@@ -82,9 +78,6 @@ export async function POST() {
     });
   } catch (error) {
     console.error("Error starting trial:", error);
-    return NextResponse.json(
-      { error: "Failed to start trial" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to start trial" }, { status: 500 });
   }
 }

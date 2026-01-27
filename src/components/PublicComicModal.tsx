@@ -1,22 +1,26 @@
 "use client";
 
 import { useState } from "react";
+
 import Image from "next/image";
-import { CollectionItem, GRADE_SCALE } from "@/types/comic";
+
 import {
-  X,
-  DollarSign,
-  TrendingUp,
-  Info,
-  Calendar,
-  User,
+  Award,
   Building,
+  Calendar,
+  DollarSign,
+  Info,
+  KeyRound,
   Palette,
   PenTool,
-  Award,
-  KeyRound,
+  TrendingUp,
+  User,
+  X,
   ZoomIn,
 } from "lucide-react";
+
+import { CollectionItem, GRADE_SCALE } from "@/types/comic";
+
 import { ComicImage } from "./ComicImage";
 
 interface PublicComicModalProps {
@@ -38,10 +42,7 @@ export function PublicComicModal({ item, onClose }: PublicComicModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/50"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
       {/* Modal */}
       <div className="relative bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden">
@@ -81,14 +82,10 @@ export function PublicComicModal({ item, onClose }: PublicComicModalProps) {
           <div className="md:w-2/3 p-6 overflow-y-auto">
             {/* Header */}
             <div className="mb-6 pr-10">
-              <h2 className="text-2xl font-bold text-gray-900">
-                {comic.title || "Unknown Title"}
-              </h2>
+              <h2 className="text-2xl font-bold text-gray-900">{comic.title || "Unknown Title"}</h2>
               <p className="text-lg text-gray-600">
                 Issue #{comic.issueNumber || "?"}
-                {comic.variant && (
-                  <span className="text-gray-400 ml-2">({comic.variant})</span>
-                )}
+                {comic.variant && <span className="text-gray-400 ml-2">({comic.variant})</span>}
               </p>
             </div>
 
@@ -113,30 +110,22 @@ export function PublicComicModal({ item, onClose }: PublicComicModalProps) {
               <div className="flex items-center gap-2 text-sm">
                 <Building className="w-4 h-4 text-gray-400" />
                 <span className="text-gray-600">Publisher:</span>
-                <span className="font-medium text-gray-900">
-                  {comic.publisher || "Unknown"}
-                </span>
+                <span className="font-medium text-gray-900">{comic.publisher || "Unknown"}</span>
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <Calendar className="w-4 h-4 text-gray-400" />
                 <span className="text-gray-600">Year:</span>
-                <span className="font-medium text-gray-900">
-                  {comic.releaseYear || "Unknown"}
-                </span>
+                <span className="font-medium text-gray-900">{comic.releaseYear || "Unknown"}</span>
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <PenTool className="w-4 h-4 text-gray-400" />
                 <span className="text-gray-600">Writer:</span>
-                <span className="font-medium text-gray-900">
-                  {comic.writer || "Unknown"}
-                </span>
+                <span className="font-medium text-gray-900">{comic.writer || "Unknown"}</span>
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <Palette className="w-4 h-4 text-gray-400" />
                 <span className="text-gray-600">Cover Artist:</span>
-                <span className="font-medium text-gray-900">
-                  {comic.coverArtist || "Unknown"}
-                </span>
+                <span className="font-medium text-gray-900">{comic.coverArtist || "Unknown"}</span>
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <User className="w-4 h-4 text-gray-400" />
@@ -195,10 +184,11 @@ export function PublicComicModal({ item, onClose }: PublicComicModalProps) {
                     {comic.priceData.mostRecentSaleDate && (
                       <p className="text-xs text-gray-500 mt-1">
                         Most recent sale:{" "}
-                        {new Date(comic.priceData.mostRecentSaleDate).toLocaleDateString(
-                          "en-US",
-                          { month: "short", day: "numeric", year: "numeric" }
-                        )}
+                        {new Date(comic.priceData.mostRecentSaleDate).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
                       </p>
                     )}
                   </div>

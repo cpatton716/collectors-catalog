@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+
 import { Resend } from "resend";
 
 // GET - Test email sending (development only)

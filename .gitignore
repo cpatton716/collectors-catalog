@@ -38,3 +38,6 @@ netlify-env-vars-to-add.txt
 
 # Git worktrees
 .worktrees/
+# Test images and mockups
+Test Books/
+design-mockup-red-black.html

@@ -1,15 +1,18 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from "react";
+
+import { v4 as uuidv4 } from "uuid";
+
 import {
+  OfflineAction,
+  clearOfflineQueue,
   getOfflineQueue,
   removeFromOfflineQueue,
-  clearOfflineQueue,
-  OfflineAction,
-} from '@/lib/offlineCache';
-import { storage } from '@/lib/storage';
-import { CollectionItem } from '@/types/comic';
-import { v4 as uuidv4 } from 'uuid';
+} from "@/lib/offlineCache";
+import { storage } from "@/lib/storage";
+
+import { CollectionItem } from "@/types/comic";
 
 export interface UseOfflineReturn {
   isOnline: boolean;
@@ -22,11 +25,13 @@ export interface UseOfflineReturn {
 export function useOffline(): UseOfflineReturn {
   const [isOnline, setIsOnline] = useState(true);
   const [pendingActionsCount, setPendingActionsCount] = useState(0);
-  const [lastSyncResult, setLastSyncResult] = useState<{ synced: number; failed: number } | null>(null);
+  const [lastSyncResult, setLastSyncResult] = useState<{ synced: number; failed: number } | null>(
+    null
+  );
 
   // Initialize online status
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
 
     setIsOnline(navigator.onLine);
     setPendingActionsCount(getOfflineQueue().length);
@@ -43,23 +48,23 @@ export function useOffline(): UseOfflineReturn {
 
     // Listen for service worker messages
     const handleMessage = (event: MessageEvent) => {
-      if (event.data && event.data.type === 'SYNC_OFFLINE_ACTIONS') {
+      if (event.data && event.data.type === "SYNC_OFFLINE_ACTIONS") {
         syncPendingActions();
       }
     };
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
 
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.addEventListener('message', handleMessage);
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.addEventListener("message", handleMessage);
     }
 
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.removeEventListener('message', handleMessage);
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.removeEventListener("message", handleMessage);
       }
     };
   }, []);
@@ -72,14 +77,14 @@ export function useOffline(): UseOfflineReturn {
 
     for (const action of queue) {
       try {
-        if (action.type === 'add_to_collection') {
+        if (action.type === "add_to_collection") {
           const item = createCollectionItemFromAction(action);
           storage.addToCollection(item);
           removeFromOfflineQueue(action.id);
           synced++;
         }
       } catch (error) {
-        console.error('Failed to sync action:', action, error);
+        console.error("Failed to sync action:", action, error);
         failed++;
       }
     }
@@ -131,7 +136,7 @@ function createCollectionItemFromAction(action: OfflineAction): CollectionItem {
       writer: null,
       coverArtist: null,
       interiorArtist: null,
-      confidence: 'high',
+      confidence: "high",
       isSlabbed: false,
       gradingCompany: null,
       grade: null,
@@ -147,22 +152,22 @@ function createCollectionItemFromAction(action: OfflineAction): CollectionItem {
         ? {
             estimatedValue: data.averagePrice,
             recentSales: data.recentSale
-              ? [{ ...data.recentSale, source: 'Technopathic Estimate', isOlderThan6Months: false }]
+              ? [{ ...data.recentSale, source: "Technopathic Estimate", isOlderThan6Months: false }]
               : [],
             mostRecentSaleDate: data.recentSale?.date || null,
             isAveraged: true,
-            disclaimer: 'Technopathic estimate',
+            disclaimer: "Technopathic estimate",
           }
         : null,
     },
-    coverImageUrl: data.coverImageUrl || '',
+    coverImageUrl: data.coverImageUrl || "",
     conditionGrade: data.grade,
     conditionLabel: null,
     isGraded: false,
     gradingCompany: null,
     purchasePrice: null,
     purchaseDate: null,
-    notes: 'Added from Key Hunt (synced from offline)',
+    notes: "Added from Key Hunt (synced from offline)",
     forSale: false,
     askingPrice: null,
     averagePrice: data.averagePrice,
@@ -179,23 +184,23 @@ export function useServiceWorker() {
   const [updateAvailable, setUpdateAvailable] = useState(false);
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
+    if (typeof window === "undefined" || !("serviceWorker" in navigator)) {
       return;
     }
 
     // Register service worker
     navigator.serviceWorker
-      .register('/sw.js')
+      .register("/sw.js")
       .then((reg) => {
         setRegistration(reg);
         setIsRegistered(true);
 
         // Check for updates
-        reg.addEventListener('updatefound', () => {
+        reg.addEventListener("updatefound", () => {
           const newWorker = reg.installing;
           if (newWorker) {
-            newWorker.addEventListener('statechange', () => {
-              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            newWorker.addEventListener("statechange", () => {
+              if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
                 setUpdateAvailable(true);
               }
             });
@@ -203,11 +208,11 @@ export function useServiceWorker() {
         });
       })
       .catch((error) => {
-        console.error('[SW] Service worker registration failed:', error);
+        console.error("[SW] Service worker registration failed:", error);
       });
 
     // Handle controller change (new SW activated)
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
       // New service worker has taken control
       setUpdateAvailable(false);
     });
@@ -215,7 +220,7 @@ export function useServiceWorker() {
 
   const updateServiceWorker = useCallback(() => {
     if (registration && registration.waiting) {
-      registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+      registration.waiting.postMessage({ type: "SKIP_WAITING" });
     }
   }, [registration]);
 

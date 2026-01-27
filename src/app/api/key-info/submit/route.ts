@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { auth } from "@clerk/nextjs/server";
-import { submitKeyInfo, getUserSubmissions } from "@/lib/keyComicsDb";
+
+import { getUserSubmissions, submitKeyInfo } from "@/lib/keyComicsDb";
 
 // POST - Submit a new key info suggestion
 export async function POST(request: NextRequest) {
@@ -67,10 +69,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error submitting key info:", error);
-    return NextResponse.json(
-      { error: "Failed to submit key info suggestion" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to submit key info suggestion" }, { status: 500 });
   }
 }
 
@@ -92,9 +91,6 @@ export async function GET() {
     return NextResponse.json({ submissions: result.submissions });
   } catch (error) {
     console.error("Error fetching user submissions:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch submissions" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch submissions" }, { status: 500 });
   }
 }

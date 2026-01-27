@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { auth } from "@clerk/nextjs/server";
-import { supabaseAdmin } from "@/lib/supabase";
+
 import { getProfileByClerkId } from "@/lib/db";
+import { supabaseAdmin } from "@/lib/supabase";
 import {
-  validateUsernameComplete,
-  normalizeUsername,
   formatUsernameForDisplay,
+  normalizeUsername,
+  validateUsernameComplete,
 } from "@/lib/usernameValidation";
 
 /**
@@ -18,10 +20,7 @@ export async function GET(request: NextRequest) {
     const username = searchParams.get("username");
 
     if (!username) {
-      return NextResponse.json(
-        { error: "Username is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Username is required" }, { status: 400 });
     }
 
     const normalized = normalizeUsername(username);
@@ -44,10 +43,7 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error("Error checking username:", error);
-      return NextResponse.json(
-        { error: "Failed to check username availability" },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "Failed to check username availability" }, { status: 500 });
     }
 
     return NextResponse.json({
@@ -57,10 +53,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Username check error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
@@ -73,20 +66,14 @@ export async function POST(request: NextRequest) {
     const { userId } = await auth();
 
     if (!userId) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json();
     const { username, displayPreference } = body;
 
     if (!username) {
-      return NextResponse.json(
-        { error: "Username is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Username is required" }, { status: 400 });
     }
 
     const normalized = normalizeUsername(username);
@@ -94,19 +81,13 @@ export async function POST(request: NextRequest) {
     // Validate format and check profanity
     const validation = validateUsernameComplete(normalized);
     if (!validation.isValid) {
-      return NextResponse.json(
-        { error: validation.error },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
     // Get user's profile
     const profile = await getProfileByClerkId(userId);
     if (!profile) {
-      return NextResponse.json(
-        { error: "Profile not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
     }
 
     // Check if username is already taken by another user
@@ -119,17 +100,11 @@ export async function POST(request: NextRequest) {
 
     if (checkError) {
       console.error("Error checking username:", checkError);
-      return NextResponse.json(
-        { error: "Failed to check username availability" },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "Failed to check username availability" }, { status: 500 });
     }
 
     if (existing) {
-      return NextResponse.json(
-        { error: "Username is already taken" },
-        { status: 409 }
-      );
+      return NextResponse.json({ error: "Username is already taken" }, { status: 409 });
     }
 
     // Prepare update data
@@ -141,10 +116,7 @@ export async function POST(request: NextRequest) {
     if (displayPreference) {
       const validPreferences = ["username_only", "display_name_only", "both"];
       if (!validPreferences.includes(displayPreference)) {
-        return NextResponse.json(
-          { error: "Invalid display preference" },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: "Invalid display preference" }, { status: 400 });
       }
       updateData.display_preference = displayPreference;
     }
@@ -160,16 +132,10 @@ export async function POST(request: NextRequest) {
 
       // Check for unique constraint violation
       if (updateError.code === "23505") {
-        return NextResponse.json(
-          { error: "Username is already taken" },
-          { status: 409 }
-        );
+        return NextResponse.json({ error: "Username is already taken" }, { status: 409 });
       }
 
-      return NextResponse.json(
-        { error: "Failed to update username" },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "Failed to update username" }, { status: 500 });
     }
 
     return NextResponse.json({
@@ -180,10 +146,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Username update error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
@@ -195,18 +158,12 @@ export async function DELETE() {
     const { userId } = await auth();
 
     if (!userId) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const profile = await getProfileByClerkId(userId);
     if (!profile) {
-      return NextResponse.json(
-        { error: "Profile not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
     }
 
     const { error } = await supabaseAdmin
@@ -219,18 +176,12 @@ export async function DELETE() {
 
     if (error) {
       console.error("Error removing username:", error);
-      return NextResponse.json(
-        { error: "Failed to remove username" },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "Failed to remove username" }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Username delete error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

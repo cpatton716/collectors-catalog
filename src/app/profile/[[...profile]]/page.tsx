@@ -1,8 +1,10 @@
 "use client";
 
 import { useUser } from "@clerk/nextjs";
-import { CustomProfilePage } from "@/components/CustomProfilePage";
+
 import { Loader2 } from "lucide-react";
+
+import { CustomProfilePage } from "@/components/CustomProfilePage";
 
 export default function ProfilePage() {
   const { isLoaded, isSignedIn } = useUser();

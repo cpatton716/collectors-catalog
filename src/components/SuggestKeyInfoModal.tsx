@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { X, Plus, Trash2, Link, MessageSquare, Loader2, CheckCircle, Key } from "lucide-react";
+
+import { CheckCircle, Key, Link, Loader2, MessageSquare, Plus, Trash2, X } from "lucide-react";
 
 interface SuggestKeyInfoModalProps {
   isOpen: boolean;
@@ -128,11 +129,10 @@ export function SuggestKeyInfoModal({
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <CheckCircle className="w-8 h-8 text-green-600" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">
-                Thank You!
-              </h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Thank You!</h3>
               <p className="text-gray-600 mb-6">
-                Your suggestion has been submitted for review. We appreciate your contribution to the community!
+                Your suggestion has been submitted for review. We appreciate your contribution to
+                the community!
               </p>
               <button
                 onClick={handleClose}
@@ -148,17 +148,13 @@ export function SuggestKeyInfoModal({
                 <p className="font-medium text-gray-900">
                   {comicTitle} #{issueNumber}
                 </p>
-                {publisher && (
-                  <p className="text-sm text-gray-600">{publisher}</p>
-                )}
+                {publisher && <p className="text-sm text-gray-600">{publisher}</p>}
               </div>
 
               {/* Existing Key Info */}
               {existingKeyInfo.length > 0 && (
                 <div className="mb-4">
-                  <p className="text-sm font-medium text-gray-700 mb-2">
-                    Current Key Info:
-                  </p>
+                  <p className="text-sm font-medium text-gray-700 mb-2">Current Key Info:</p>
                   <div className="flex flex-wrap gap-2">
                     {existingKeyInfo.map((info, idx) => (
                       <span
@@ -179,7 +175,8 @@ export function SuggestKeyInfoModal({
                   Your Suggestions *
                 </label>
                 <p className="text-xs text-gray-500 mb-2">
-                  Add key info like &quot;First appearance of [character]&quot;, &quot;Death of [character]&quot;, &quot;Classic cover&quot;, etc.
+                  Add key info like &quot;First appearance of [character]&quot;, &quot;Death of
+                  [character]&quot;, &quot;Classic cover&quot;, etc.
                 </p>
                 <div className="space-y-2">
                   {keyInfoEntries.map((entry, index) => (

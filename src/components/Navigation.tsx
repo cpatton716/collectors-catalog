@@ -1,13 +1,31 @@
 "use client";
 
 import { useState } from "react";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+
 import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
-import { Camera, BookOpen, Home, LogIn, BarChart3, Brain, X, ChevronDown, ChevronUp, ShoppingBag, Gavel, Shield } from "lucide-react";
+
+import {
+  BarChart3,
+  BookOpen,
+  Brain,
+  Camera,
+  ChevronDown,
+  ChevronUp,
+  Gavel,
+  Home,
+  LogIn,
+  Shield,
+  ShoppingBag,
+  X,
+} from "lucide-react";
+
+import { useSubscription } from "@/hooks/useSubscription";
+
 import { NotificationBell } from "./NotificationBell";
 import { ChestIcon } from "./icons/ChestIcon";
-import { useSubscription } from "@/hooks/useSubscription";
 
 // FAQ content for Ask the Professor
 const faqs = [
@@ -91,7 +109,9 @@ export function Navigation() {
                     }`}
                   >
                     <Icon className="w-5 h-5" />
-                    <span className="font-comic text-sm tracking-wide">{link.label.toUpperCase()}</span>
+                    <span className="font-comic text-sm tracking-wide">
+                      {link.label.toUpperCase()}
+                    </span>
                   </Link>
                 );
               })}
@@ -186,8 +206,12 @@ export function Navigation() {
                     <Brain className="w-6 h-6 text-pop-black" />
                   </div>
                   <div>
-                    <h2 className="font-comic text-2xl text-pop-yellow tracking-wide">ASK THE PROFESSOR!</h2>
-                    <p className="text-pop-white text-sm font-body">Your guide to Collectors Chest</p>
+                    <h2 className="font-comic text-2xl text-pop-yellow tracking-wide">
+                      ASK THE PROFESSOR!
+                    </h2>
+                    <p className="text-pop-white text-sm font-body">
+                      Your guide to Collectors Chest
+                    </p>
                   </div>
                 </div>
                 <button

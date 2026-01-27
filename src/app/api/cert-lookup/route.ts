@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { lookupCertification } from "@/lib/certLookup";
 
 export async function POST(request: NextRequest) {
@@ -7,19 +8,12 @@ export async function POST(request: NextRequest) {
     const { certNumber, gradingCompany } = body;
 
     if (!certNumber) {
-      return NextResponse.json(
-        { error: "Certification number is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Certification number is required" }, { status: 400 });
     }
 
     if (!gradingCompany) {
-      return NextResponse.json(
-        { error: "Grading company is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Grading company is required" }, { status: 400 });
     }
-
 
     const result = await lookupCertification(gradingCompany, certNumber);
 
@@ -27,7 +21,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: result.error || "Certification lookup failed"
+          error: result.error || "Certification lookup failed",
         },
         { status: 404 }
       );

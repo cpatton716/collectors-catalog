@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
+
+import Link from "next/link";
+
 import {
-  Target,
-  Trash2,
   Bell,
   BellOff,
   ChevronDown,
@@ -11,10 +12,14 @@ import {
   ExternalLink,
   Loader2,
   Package,
+  Target,
+  Trash2,
 } from "lucide-react";
-import { useKeyHunt, KeyHuntItem } from "@/hooks/useKeyHunt";
+
 import { formatCurrency } from "@/lib/statsCalculator";
-import Link from "next/link";
+
+import { KeyHuntItem, useKeyHunt } from "@/hooks/useKeyHunt";
+
 import { ComicImage } from "./ComicImage";
 
 interface KeyHuntWishlistProps {
@@ -22,14 +27,8 @@ interface KeyHuntWishlistProps {
 }
 
 export function KeyHuntWishlist({ onClose }: KeyHuntWishlistProps) {
-  const {
-    items,
-    isLoading,
-    error,
-    isSignedIn,
-    removeFromKeyHunt,
-    updateKeyHuntItem,
-  } = useKeyHunt();
+  const { items, isLoading, error, isSignedIn, removeFromKeyHunt, updateKeyHuntItem } =
+    useKeyHunt();
 
   const [expandedItem, setExpandedItem] = useState<string | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
@@ -50,9 +49,7 @@ export function KeyHuntWishlist({ onClose }: KeyHuntWishlistProps) {
     return (
       <div className="text-center py-12">
         <Target className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">
-          Sign in to use Key Hunt
-        </h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">Sign in to use Key Hunt</h3>
         <p className="text-gray-600 mb-6">
           Track comics you&apos;re hunting for and get notified when prices drop.
         </p>
@@ -86,9 +83,7 @@ export function KeyHuntWishlist({ onClose }: KeyHuntWishlistProps) {
     return (
       <div className="text-center py-12">
         <Target className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">
-          Your Key Hunt list is empty
-        </h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">Your Key Hunt list is empty</h3>
         <p className="text-gray-600 mb-6">
           Add comics from Hot Books or scan results to track the books you&apos;re hunting for.
         </p>
@@ -103,10 +98,7 @@ export function KeyHuntWishlist({ onClose }: KeyHuntWishlistProps) {
   }
 
   // Calculate total estimated value
-  const totalValue = items.reduce(
-    (sum, item) => sum + (item.currentPriceMid || 0),
-    0
-  );
+  const totalValue = items.reduce((sum, item) => sum + (item.currentPriceMid || 0), 0);
 
   return (
     <div className="space-y-4">
@@ -124,16 +116,11 @@ export function KeyHuntWishlist({ onClose }: KeyHuntWishlistProps) {
       {/* Item List */}
       <div className="space-y-3">
         {items.map((item) => (
-          <div
-            key={item.id}
-            className="bg-white border border-gray-200 rounded-lg overflow-hidden"
-          >
+          <div key={item.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden">
             {/* Main Row */}
             <div
               className="flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-50"
-              onClick={() =>
-                setExpandedItem(expandedItem === item.id ? null : item.id)
-              }
+              onClick={() => setExpandedItem(expandedItem === item.id ? null : item.id)}
             >
               {/* Cover Image */}
               {item.coverImageUrl ? (
@@ -157,8 +144,7 @@ export function KeyHuntWishlist({ onClose }: KeyHuntWishlistProps) {
                   {item.title} #{item.issueNumber}
                 </h4>
                 <p className="text-sm text-gray-500">
-                  {item.publisher || "Unknown"} &middot;{" "}
-                  {item.releaseYear || "Unknown"}
+                  {item.publisher || "Unknown"} &middot; {item.releaseYear || "Unknown"}
                 </p>
                 {item.currentPriceMid && (
                   <p className="text-sm text-green-600 font-medium">
@@ -188,9 +174,7 @@ export function KeyHuntWishlist({ onClose }: KeyHuntWishlistProps) {
                 {/* Key Info */}
                 {item.keyInfo && item.keyInfo.length > 0 && (
                   <div className="mb-3">
-                    <p className="text-xs font-medium text-gray-500 mb-1">
-                      Key Info
-                    </p>
+                    <p className="text-xs font-medium text-gray-500 mb-1">Key Info</p>
                     <div className="flex flex-wrap gap-1">
                       {item.keyInfo.map((info, idx) => (
                         <span
@@ -207,9 +191,7 @@ export function KeyHuntWishlist({ onClose }: KeyHuntWishlistProps) {
                 {/* Price Range */}
                 {(item.currentPriceLow || item.currentPriceHigh) && (
                   <div className="mb-3">
-                    <p className="text-xs font-medium text-gray-500 mb-1">
-                      Price Range
-                    </p>
+                    <p className="text-xs font-medium text-gray-500 mb-1">Price Range</p>
                     <div className="flex items-center gap-3 text-sm">
                       {item.currentPriceLow && (
                         <span className="text-gray-600">
@@ -233,17 +215,14 @@ export function KeyHuntWishlist({ onClose }: KeyHuntWishlistProps) {
                 {/* Notes */}
                 {item.notes && (
                   <div className="mb-3">
-                    <p className="text-xs font-medium text-gray-500 mb-1">
-                      Notes
-                    </p>
+                    <p className="text-xs font-medium text-gray-500 mb-1">Notes</p>
                     <p className="text-sm text-gray-600">{item.notes}</p>
                   </div>
                 )}
 
                 {/* Added Info */}
                 <div className="mb-3 text-xs text-gray-400">
-                  Added from {item.addedFrom} on{" "}
-                  {new Date(item.createdAt).toLocaleDateString()}
+                  Added from {item.addedFrom} on {new Date(item.createdAt).toLocaleDateString()}
                 </div>
 
                 {/* Actions */}

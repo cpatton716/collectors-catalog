@@ -1,17 +1,36 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
+import { useEffect, useState } from "react";
+
 import Image from "next/image";
+import Link from "next/link";
+
 import { useAuth } from "@clerk/nextjs";
-import { X, Package, ChevronLeft, ChevronRight, ShoppingCart, AlertCircle, Check, Tag, Loader2, CheckCircle, PackageMinus, AlertTriangle, Key } from "lucide-react";
+
+import {
+  AlertCircle,
+  AlertTriangle,
+  Check,
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  Key,
+  Loader2,
+  Package,
+  PackageMinus,
+  ShoppingCart,
+  Tag,
+  X,
+} from "lucide-react";
+
 import { Auction, formatPrice } from "@/types/auction";
 
-type SellerAction = "mark_as_sold" | "pull_off_shelf";
+import { ComicImage } from "../ComicImage";
 import { SellerBadge } from "./SellerBadge";
 import { WatchlistButton } from "./WatchlistButton";
-import { ComicImage } from "../ComicImage";
 import { MessageButton } from "@/components/messaging/MessageButton";
+
+type SellerAction = "mark_as_sold" | "pull_off_shelf";
 
 interface ListingDetailModalProps {
   listingId: string;
@@ -131,24 +150,17 @@ export function ListingDetailModal({
 
   // Get all images (cover + detail images)
   const allImages = listing
-    ? [
-        listing.comic?.coverImageUrl,
-        ...(listing.detailImages || []),
-      ].filter(Boolean) as string[]
+    ? ([listing.comic?.coverImageUrl, ...(listing.detailImages || [])].filter(Boolean) as string[])
     : [];
 
   const hasMultipleImages = allImages.length > 1;
 
   const prevImage = () => {
-    setSelectedImageIndex((prev) =>
-      prev === 0 ? allImages.length - 1 : prev - 1
-    );
+    setSelectedImageIndex((prev) => (prev === 0 ? allImages.length - 1 : prev - 1));
   };
 
   const nextImage = () => {
-    setSelectedImageIndex((prev) =>
-      prev === allImages.length - 1 ? 0 : prev + 1
-    );
+    setSelectedImageIndex((prev) => (prev === allImages.length - 1 ? 0 : prev + 1));
   };
 
   const comic = listing?.comic?.comic;
@@ -157,10 +169,7 @@ export function ListingDetailModal({
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal */}
       <div className="relative min-h-full flex items-center justify-center p-4">
@@ -257,9 +266,7 @@ export function ListingDetailModal({
                   <h2 className="text-2xl font-bold text-gray-900">
                     {comic?.title || "Unknown Title"} #{comic?.issueNumber || "?"}
                   </h2>
-                  {comic?.variant && (
-                    <p className="text-gray-500 mt-1">{comic.variant}</p>
-                  )}
+                  {comic?.variant && <p className="text-gray-500 mt-1">{comic.variant}</p>}
                   <p className="text-gray-600 mt-1">
                     {comic?.publisher || "Unknown Publisher"}
                     {comic?.releaseYear && ` (${comic.releaseYear})`}
@@ -314,9 +321,7 @@ export function ListingDetailModal({
                         Shipping
                       </span>
                       <span className="text-gray-700">
-                        {listing.shippingCost > 0
-                          ? formatPrice(listing.shippingCost)
-                          : "Free"}
+                        {listing.shippingCost > 0 ? formatPrice(listing.shippingCost) : "Free"}
                       </span>
                     </div>
                     <div className="flex justify-between items-center pt-2 border-t border-green-200">
@@ -379,9 +384,7 @@ export function ListingDetailModal({
                 {/* Seller Controls */}
                 {listing.isSeller && listing.status === "active" && (
                   <div className="pt-4 border-t">
-                    <h4 className="text-sm font-medium text-gray-700 mb-3">
-                      Manage Listing
-                    </h4>
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">Manage Listing</h4>
                     <div className="flex gap-2">
                       <button
                         onClick={() => setShowActionConfirm("mark_as_sold")}
@@ -431,8 +434,8 @@ export function ListingDetailModal({
                                 {isProcessing
                                   ? "Processing..."
                                   : showActionConfirm === "mark_as_sold"
-                                  ? "Yes, Mark as Sold"
-                                  : "Yes, Pull it"}
+                                    ? "Yes, Mark as Sold"
+                                    : "Yes, Pull it"}
                               </button>
                               <button
                                 onClick={() => {
@@ -455,12 +458,8 @@ export function ListingDetailModal({
                 {/* Description */}
                 {listing.description && (
                   <div className="pt-4 border-t">
-                    <h3 className="font-semibold text-gray-900 mb-2">
-                      Description
-                    </h3>
-                    <p className="text-gray-600 whitespace-pre-wrap">
-                      {listing.description}
-                    </p>
+                    <h3 className="font-semibold text-gray-900 mb-2">Description</h3>
+                    <p className="text-gray-600 whitespace-pre-wrap">{listing.description}</p>
                   </div>
                 )}
 

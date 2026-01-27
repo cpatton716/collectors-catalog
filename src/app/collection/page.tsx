@@ -1,44 +1,51 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+
 import { useRouter } from "next/navigation";
+
 import { useUser } from "@clerk/nextjs";
-import { storage } from "@/lib/storage";
-import { calculateCollectionValue, getComicValue } from "@/lib/gradePrice";
-import { CollectionItem } from "@/types/comic";
-import { useCollection } from "@/hooks/useCollection";
-import { ComicCard } from "@/components/ComicCard";
-import { ComicListItem } from "@/components/ComicListItem";
-import { ComicDetailModal } from "@/components/ComicDetailModal";
-import { ComicDetailsForm } from "@/components/ComicDetailsForm";
-import { ComicImage } from "@/components/ComicImage";
-import { CollectionPageSkeleton } from "@/components/Skeleton";
-import { useToast } from "@/components/Toast";
+
 import {
+  ArrowDownRight,
+  ArrowUpRight,
+  BarChart3,
+  Book,
+  BookOpen,
+  Building,
+  DollarSign,
+  Download,
   Grid3X3,
   List,
   ListFilter,
   Plus,
-  Search,
-  SortAsc,
-  BookOpen,
-  Book,
-  Building,
-  DollarSign,
-  TrendingUp,
-  Star,
-  ArrowUpRight,
-  ArrowDownRight,
   Receipt,
-  Tag,
-  Download,
+  Search,
   Share2,
-  BarChart3,
+  SortAsc,
+  Star,
+  Tag,
+  TrendingUp,
 } from "lucide-react";
+
 import { exportCollectionToCSV } from "@/lib/csvExport";
-import { ShareCollectionModal } from "@/components/ShareCollectionModal";
-import { FeatureButton } from "@/components/FeatureGate";
+import { calculateCollectionValue, getComicValue } from "@/lib/gradePrice";
+import { storage } from "@/lib/storage";
+
+import { useCollection } from "@/hooks/useCollection";
 import { useSubscription } from "@/hooks/useSubscription";
+
+import { ComicCard } from "@/components/ComicCard";
+import { ComicDetailModal } from "@/components/ComicDetailModal";
+import { ComicDetailsForm } from "@/components/ComicDetailsForm";
+import { ComicImage } from "@/components/ComicImage";
+import { ComicListItem } from "@/components/ComicListItem";
+import { FeatureButton } from "@/components/FeatureGate";
+import { ShareCollectionModal } from "@/components/ShareCollectionModal";
+import { CollectionPageSkeleton } from "@/components/Skeleton";
+import { useToast } from "@/components/Toast";
+
+import { CollectionItem } from "@/types/comic";
 
 type ViewMode = "grid" | "list";
 type SortOption = "date" | "title" | "value" | "issue";
@@ -83,8 +90,12 @@ export default function CollectionPage() {
   const isLoaded = authLoaded && !collectionLoading;
 
   // Get unique publishers and titles for filters
-  const uniquePublishers = Array.from(new Set(collection.map(item => item.comic.publisher).filter((p): p is string => Boolean(p)))).sort();
-  const uniqueTitles = Array.from(new Set(collection.map(item => item.comic.title).filter((t): t is string => Boolean(t)))).sort();
+  const uniquePublishers = Array.from(
+    new Set(collection.map((item) => item.comic.publisher).filter((p): p is string => Boolean(p)))
+  ).sort();
+  const uniqueTitles = Array.from(
+    new Set(collection.map((item) => item.comic.title).filter((t): t is string => Boolean(t)))
+  ).sort();
 
   // Filter and sort collection
   const filteredCollection = collection
@@ -128,19 +139,13 @@ export default function CollectionPage() {
           return (a.comic.title || "").localeCompare(b.comic.title || "");
         case "value":
           return (
-            (b.averagePrice || b.purchasePrice || 0) -
-            (a.averagePrice || a.purchasePrice || 0)
+            (b.averagePrice || b.purchasePrice || 0) - (a.averagePrice || a.purchasePrice || 0)
           );
         case "issue":
-          return (
-            parseInt(a.comic.issueNumber || "0") -
-            parseInt(b.comic.issueNumber || "0")
-          );
+          return parseInt(a.comic.issueNumber || "0") - parseInt(b.comic.issueNumber || "0");
         case "date":
         default:
-          return (
-            new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime()
-          );
+          return new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime();
       }
     });
 
@@ -155,14 +160,11 @@ export default function CollectionPage() {
     totalValue: filteredValue.totalValue,
     fullCollectionValue: totalCollectionValue.totalValue,
     unpricedCount: filteredValue.unpricedCount,
-    totalCost: filteredCollection.reduce(
-      (sum, item) => sum + (item.purchasePrice || 0),
-      0
-    ),
+    totalCost: filteredCollection.reduce((sum, item) => sum + (item.purchasePrice || 0), 0),
     forSale: filteredCollection.filter((item) => item.forSale).length,
   };
   const profitLoss = stats.totalValue - stats.totalCost;
-  const profitLossPercent = stats.totalCost > 0 ? ((profitLoss / stats.totalCost) * 100) : 0;
+  const profitLossPercent = stats.totalCost > 0 ? (profitLoss / stats.totalCost) * 100 : 0;
 
   const handleComicClick = (item: CollectionItem) => {
     setSelectedItem(item);
@@ -206,7 +208,7 @@ export default function CollectionPage() {
       // Update selected item view
       const item = collection.find((i) => i.id === itemId);
       if (item) {
-        setSelectedItem({ ...item, listIds: item.listIds.filter(id => id !== listId) });
+        setSelectedItem({ ...item, listIds: item.listIds.filter((id) => id !== listId) });
       }
     } catch {
       showToast("Failed to remove from list", "error");
@@ -246,10 +248,7 @@ export default function CollectionPage() {
     if (item) {
       try {
         await updateItem(itemId, { isStarred: !item.isStarred });
-        showToast(
-          item.isStarred ? "Removed from favorites" : "Added to favorites",
-          "success"
-        );
+        showToast(item.isStarred ? "Removed from favorites" : "Added to favorites", "success");
         // Update selected item if it's the one being toggled
         if (selectedItem?.id === itemId) {
           setSelectedItem({ ...item, isStarred: !item.isStarred });
@@ -306,11 +305,26 @@ export default function CollectionPage() {
           <p className="text-gray-600 mt-1">
             {isFiltered ? (
               <>
-                {stats.count} of {stats.totalCount} comics • ${stats.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} of ${stats.fullCollectionValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} total
+                {stats.count} of {stats.totalCount} comics • $
+                {stats.totalValue.toLocaleString("en-US", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}{" "}
+                of $
+                {stats.fullCollectionValue.toLocaleString("en-US", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}{" "}
+                total
               </>
             ) : (
               <>
-                {stats.count} comics • ${stats.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} total value
+                {stats.count} comics • $
+                {stats.totalValue.toLocaleString("en-US", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}{" "}
+                total value
                 {stats.unpricedCount > 0 && (
                   <span className="text-gray-400"> ({stats.unpricedCount} unpriced)</span>
                 )}
@@ -325,6 +339,13 @@ export default function CollectionPage() {
           >
             <BarChart3 className="w-5 h-5" />
             <span className="hidden sm:inline">Stats</span>
+          </button>
+          <button
+            onClick={() => router.push("/sales")}
+            className="inline-flex items-center gap-2 px-3 py-2 bg-pop-white border-2 border-pop-black text-pop-black font-bold hover:shadow-[2px_2px_0px_#000] transition-all"
+          >
+            <DollarSign className="w-5 h-5" />
+            <span className="hidden sm:inline">Sales</span>
           </button>
           <button
             onClick={() => setShowShareModal(true)}
@@ -350,7 +371,9 @@ export default function CollectionPage() {
             <BookOpen className="w-5 h-5 text-white" />
           </div>
           <div className="min-w-0">
-            <p className="text-xs text-gray-600 uppercase font-bold truncate">Comics{isFiltered && "*"}</p>
+            <p className="text-xs text-gray-600 uppercase font-bold truncate">
+              Comics{isFiltered && "*"}
+            </p>
             <p className="text-xl font-black text-pop-black">{stats.count}</p>
           </div>
         </div>
@@ -361,7 +384,11 @@ export default function CollectionPage() {
           <div className="min-w-0">
             <p className="text-xs text-gray-600 uppercase font-bold truncate">Cost</p>
             <p className="text-xl font-black text-pop-black">
-              ${stats.totalCost.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+              $
+              {stats.totalCost.toLocaleString("en-US", {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0,
+              })}
             </p>
           </div>
         </div>
@@ -372,7 +399,11 @@ export default function CollectionPage() {
           <div className="min-w-0">
             <p className="text-xs text-gray-600 uppercase font-bold truncate">Value</p>
             <p className="text-xl font-black text-pop-black">
-              ${stats.totalValue.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+              $
+              {stats.totalValue.toLocaleString("en-US", {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0,
+              })}
             </p>
           </div>
         </div>
@@ -381,16 +412,26 @@ export default function CollectionPage() {
             <Receipt className="w-5 h-5 text-white" />
           </div>
           <div className="min-w-0">
-            <p className="text-xs text-gray-600 uppercase font-bold truncate">Sales ({salesStats.totalSales})</p>
+            <p className="text-xs text-gray-600 uppercase font-bold truncate">
+              Sales ({salesStats.totalSales})
+            </p>
             <p className="text-xl font-black text-pop-black">
-              ${salesStats.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+              $
+              {salesStats.totalRevenue.toLocaleString("en-US", {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0,
+              })}
             </p>
           </div>
         </div>
-        <div className={`bg-pop-white border-3 border-pop-black p-3 shadow-[3px_3px_0px_#000] flex items-center gap-3 col-span-2 md:col-span-1`}>
-          <div className={`w-10 h-10 border-2 border-pop-black flex items-center justify-center flex-shrink-0 ${
-            profitLoss >= 0 ? "bg-pop-green" : "bg-pop-red"
-          }`}>
+        <div
+          className={`bg-pop-white border-3 border-pop-black p-3 shadow-[3px_3px_0px_#000] flex items-center gap-3 col-span-2 md:col-span-1`}
+        >
+          <div
+            className={`w-10 h-10 border-2 border-pop-black flex items-center justify-center flex-shrink-0 ${
+              profitLoss >= 0 ? "bg-pop-green" : "bg-pop-red"
+            }`}
+          >
             {profitLoss >= 0 ? (
               <ArrowUpRight className="w-5 h-5 text-white" />
             ) : (
@@ -399,10 +440,16 @@ export default function CollectionPage() {
           </div>
           <div className="min-w-0">
             <p className="text-xs text-gray-600 uppercase font-bold truncate">Profit/Loss</p>
-            <p className={`text-xl font-black ${
-              profitLoss >= 0 ? "text-pop-green" : "text-pop-red"
-            }`}>
-              {profitLoss >= 0 ? "+" : ""}${profitLoss.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+            <p
+              className={`text-xl font-black ${
+                profitLoss >= 0 ? "text-pop-green" : "text-pop-red"
+              }`}
+            >
+              {profitLoss >= 0 ? "+" : ""}$
+              {profitLoss.toLocaleString("en-US", {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0,
+              })}
             </p>
           </div>
         </div>
@@ -412,9 +459,10 @@ export default function CollectionPage() {
       <div className="mb-4">
         <div className="flex flex-wrap gap-2">
           {lists.map((list) => {
-            const count = list.id === "collection"
-              ? collection.length
-              : collection.filter(item => item.listIds.includes(list.id)).length;
+            const count =
+              list.id === "collection"
+                ? collection.length
+                : collection.filter((item) => item.listIds.includes(list.id)).length;
 
             // Hide empty lists (except the main collection)
             if (count === 0 && list.id !== "collection") {
@@ -432,11 +480,13 @@ export default function CollectionPage() {
                 }`}
               >
                 {list.name}
-                <span className={`px-1.5 py-0.5 text-xs font-black border border-pop-black ${
-                  selectedList === list.id
-                    ? "bg-white text-pop-black"
-                    : "bg-gray-100 text-pop-black"
-                }`}>
+                <span
+                  className={`px-1.5 py-0.5 text-xs font-black border border-pop-black ${
+                    selectedList === list.id
+                      ? "bg-white text-pop-black"
+                      : "bg-gray-100 text-pop-black"
+                  }`}
+                >
                   {count}
                 </span>
               </button>
@@ -500,7 +550,9 @@ export default function CollectionPage() {
                   : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
               }`}
             >
-              <Star className={`w-4 h-4 ${showStarredOnly ? "fill-yellow-500 text-yellow-500" : ""}`} />
+              <Star
+                className={`w-4 h-4 ${showStarredOnly ? "fill-yellow-500 text-yellow-500" : ""}`}
+              />
               <span className="hidden sm:inline">Starred</span>
             </button>
 
@@ -592,7 +644,11 @@ export default function CollectionPage() {
             </FeatureButton>
 
             {/* Clear Filters */}
-            {(publisherFilter !== "all" || titleFilter !== "all" || showStarredOnly || searchQuery || selectedList !== "collection") && (
+            {(publisherFilter !== "all" ||
+              titleFilter !== "all" ||
+              showStarredOnly ||
+              searchQuery ||
+              selectedList !== "collection") && (
               <button
                 onClick={() => {
                   setPublisherFilter("all");
@@ -631,7 +687,10 @@ export default function CollectionPage() {
                 : "Start by scanning your first comic book cover"}
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            {(searchQuery || publisherFilter !== "all" || titleFilter !== "all" || showStarredOnly) ? (
+            {searchQuery ||
+            publisherFilter !== "all" ||
+            titleFilter !== "all" ||
+            showStarredOnly ? (
               <button
                 onClick={() => {
                   setSearchQuery("");
@@ -691,9 +750,8 @@ export default function CollectionPage() {
             {filteredCollection.map((item) => {
               const { comic } = item;
               const estimatedValue = getComicValue(item);
-              const itemProfitLoss = estimatedValue && item.purchasePrice
-                ? estimatedValue - item.purchasePrice
-                : null;
+              const itemProfitLoss =
+                estimatedValue && item.purchasePrice ? estimatedValue - item.purchasePrice : null;
 
               return (
                 <div
@@ -722,18 +780,14 @@ export default function CollectionPage() {
                       </div>
                       <p className="text-sm text-gray-500">
                         Issue #{comic.issueNumber || "?"}
-                        {comic.variant && (
-                          <span className="text-gray-400"> • {comic.variant}</span>
-                        )}
+                        {comic.variant && <span className="text-gray-400"> • {comic.variant}</span>}
                       </p>
                     </div>
                   </div>
 
                   {/* Publisher */}
                   <div className="col-span-2">
-                    <p className="text-sm text-gray-600 truncate">
-                      {comic.publisher || "Unknown"}
-                    </p>
+                    <p className="text-sm text-gray-600 truncate">{comic.publisher || "Unknown"}</p>
                   </div>
 
                   {/* Est. Value */}
@@ -741,11 +795,21 @@ export default function CollectionPage() {
                     {estimatedValue > 0 ? (
                       <div>
                         <p className="font-medium text-gray-900">
-                          ${estimatedValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          $
+                          {estimatedValue.toLocaleString("en-US", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
                         </p>
                         {itemProfitLoss !== null && (
-                          <p className={`text-xs ${itemProfitLoss >= 0 ? "text-green-600" : "text-red-600"}`}>
-                            {itemProfitLoss >= 0 ? "+" : ""}${itemProfitLoss.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          <p
+                            className={`text-xs ${itemProfitLoss >= 0 ? "text-green-600" : "text-red-600"}`}
+                          >
+                            {itemProfitLoss >= 0 ? "+" : ""}$
+                            {itemProfitLoss.toLocaleString("en-US", {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
                           </p>
                         )}
                       </div>
@@ -757,9 +821,7 @@ export default function CollectionPage() {
                   {/* Purchase Price */}
                   <div className="col-span-2 text-right">
                     {item.purchasePrice ? (
-                      <p className="font-medium text-gray-900">
-                        ${item.purchasePrice.toFixed(2)}
-                      </p>
+                      <p className="font-medium text-gray-900">${item.purchasePrice.toFixed(2)}</p>
                     ) : (
                       <span className="text-sm text-gray-400">—</span>
                     )}
@@ -850,9 +912,7 @@ export default function CollectionPage() {
       )}
 
       {/* Share Collection Modal */}
-      {showShareModal && (
-        <ShareCollectionModal onClose={() => setShowShareModal(false)} />
-      )}
+      {showShareModal && <ShareCollectionModal onClose={() => setShowShareModal(false)} />}
     </div>
   );
 }

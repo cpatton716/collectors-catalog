@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { auth } from "@clerk/nextjs/server";
+
+import { isUserSuspended } from "@/lib/adminAuth";
+import { addToWatchlist, getUserWatchlist, removeFromWatchlist } from "@/lib/auctionDb";
 import { getProfileByClerkId } from "@/lib/db";
-import {
-  getUserWatchlist,
-  addToWatchlist,
-  removeFromWatchlist,
-} from "@/lib/auctionDb";
 
 // GET - Get user's watchlist
 export async function GET() {
@@ -25,10 +24,7 @@ export async function GET() {
     return NextResponse.json({ watchlist });
   } catch (error) {
     console.error("Error fetching watchlist:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch watchlist" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch watchlist" }, { status: 500 });
   }
 }
 
@@ -38,6 +34,12 @@ export async function POST(request: NextRequest) {
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Check if user is suspended
+    const suspensionStatus = await isUserSuspended(userId);
+    if (suspensionStatus.suspended) {
+      return NextResponse.json({ error: "Your account has been suspended." }, { status: 403 });
     }
 
     const profile = await getProfileByClerkId(userId);
@@ -57,10 +59,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error adding to watchlist:", error);
-    return NextResponse.json(
-      { error: "Failed to add to watchlist" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to add to watchlist" }, { status: 500 });
   }
 }
 
@@ -70,6 +69,12 @@ export async function DELETE(request: NextRequest) {
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Check if user is suspended
+    const suspensionStatus = await isUserSuspended(userId);
+    if (suspensionStatus.suspended) {
+      return NextResponse.json({ error: "Your account has been suspended." }, { status: 403 });
     }
 
     const profile = await getProfileByClerkId(userId);
@@ -89,9 +94,6 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error removing from watchlist:", error);
-    return NextResponse.json(
-      { error: "Failed to remove from watchlist" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to remove from watchlist" }, { status: 500 });
   }
 }

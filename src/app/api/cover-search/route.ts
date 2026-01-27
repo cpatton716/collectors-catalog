@@ -16,7 +16,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Build search query
-    const searchQuery = `${title} ${issueNumber ? `#${issueNumber}` : ""} ${publisher || ""} comic book cover`.trim();
+    const searchQuery =
+      `${title} ${issueNumber ? `#${issueNumber}` : ""} ${publisher || ""} comic book cover`.trim();
 
     // For now, return a Google Images search URL that the user can use
     // In production, you'd integrate with Comic Vine API or similar
@@ -35,19 +36,19 @@ export async function POST(request: NextRequest) {
         coverUrls = olData.docs
           .filter((doc: { cover_i?: number }) => doc.cover_i)
           .slice(0, 5)
-          .map((doc: { cover_i: number }) =>
-            `https://covers.openlibrary.org/b/id/${doc.cover_i}-L.jpg`
+          .map(
+            (doc: { cover_i: number }) => `https://covers.openlibrary.org/b/id/${doc.cover_i}-L.jpg`
           );
       }
-    } catch {
-    }
+    } catch {}
 
     return NextResponse.json({
       coverUrls,
       searchUrl: googleSearchUrl,
-      message: coverUrls.length > 0
-        ? "Found potential covers"
-        : "No covers found. Use the search link to find covers manually.",
+      message:
+        coverUrls.length > 0
+          ? "Found potential covers"
+          : "No covers found. Use the search link to find covers manually.",
     });
   } catch (error) {
     console.error("Error searching for covers:", error);

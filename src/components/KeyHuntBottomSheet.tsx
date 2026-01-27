@@ -1,8 +1,21 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Camera, ScanBarcode, PenLine, X, KeyRound, Database, WifiOff, History, Target } from "lucide-react";
+
+import {
+  Camera,
+  Database,
+  History,
+  KeyRound,
+  PenLine,
+  ScanBarcode,
+  Target,
+  WifiOff,
+  X,
+} from "lucide-react";
+
 import { getKeyHuntHistoryCount } from "@/lib/offlineCache";
+
 import { useKeyHunt } from "@/hooks/useKeyHunt";
 
 type KeyHuntOption = "cover" | "barcode" | "manual" | "offline-search" | "history" | "my-list";
@@ -57,7 +70,12 @@ export function KeyHuntBottomSheet({
       id: "my-list" as KeyHuntOption,
       icon: Target,
       title: "My Hunt List",
-      description: wishlistCount > 0 ? `${wishlistCount} comics you're hunting` : isSignedIn ? "Start tracking comics you want" : "Sign in to track comics",
+      description:
+        wishlistCount > 0
+          ? `${wishlistCount} comics you're hunting`
+          : isSignedIn
+            ? "Start tracking comics you want"
+            : "Sign in to track comics",
       color: "bg-amber-500",
       disabled: false,
       badge: wishlistCount > 0 ? wishlistCount : null,
@@ -84,7 +102,9 @@ export function KeyHuntBottomSheet({
       id: "manual" as KeyHuntOption,
       icon: PenLine,
       title: "Manual Entry",
-      description: isOffline ? "Check cache for previously looked up comics" : "Enter title and issue number",
+      description: isOffline
+        ? "Check cache for previously looked up comics"
+        : "Enter title and issue number",
       color: "bg-purple-500",
       disabled: false,
       badge: null,
@@ -93,7 +113,8 @@ export function KeyHuntBottomSheet({
       id: "history" as KeyHuntOption,
       icon: History,
       title: "Recent Lookups",
-      description: historyCount > 0 ? `View your last ${historyCount} lookups` : "No recent lookups yet",
+      description:
+        historyCount > 0 ? `View your last ${historyCount} lookups` : "No recent lookups yet",
       color: historyCount > 0 ? "bg-indigo-500" : "bg-gray-400",
       disabled: historyCount === 0,
       badge: historyCount > 0 ? historyCount : null,
@@ -191,7 +212,9 @@ export function KeyHuntBottomSheet({
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <p className={`font-semibold ${option.disabled ? "text-gray-500" : "text-gray-900"}`}>
+                <p
+                  className={`font-semibold ${option.disabled ? "text-gray-500" : "text-gray-900"}`}
+                >
                   {option.title}
                 </p>
                 <p className={`text-sm ${option.disabled ? "text-gray-400" : "text-gray-500"}`}>

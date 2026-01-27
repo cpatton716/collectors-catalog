@@ -1,17 +1,31 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+
 import Image from "next/image";
-import { X, Package, Calendar, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle, PackageMinus, Key } from "lucide-react";
+
+import {
+  AlertTriangle,
+  Calendar,
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  Key,
+  Package,
+  PackageMinus,
+  X,
+} from "lucide-react";
+
 import { Auction, formatPrice } from "@/types/auction";
 
-type SellerAction = "mark_as_sold" | "pull_off_shelf";
+import { ComicImage } from "../ComicImage";
 import { AuctionCountdown } from "./AuctionCountdown";
 import { BidForm } from "./BidForm";
 import { BidHistory } from "./BidHistory";
 import { SellerBadge } from "./SellerBadge";
 import { WatchlistButton } from "./WatchlistButton";
-import { ComicImage } from "../ComicImage";
+
+type SellerAction = "mark_as_sold" | "pull_off_shelf";
 
 interface AuctionDetailModalProps {
   auctionId: string;
@@ -106,33 +120,23 @@ export function AuctionDetailModal({
 
   // Get all images (cover + detail images)
   const allImages = auction
-    ? [
-        auction.comic?.coverImageUrl,
-        ...(auction.detailImages || []),
-      ].filter(Boolean) as string[]
+    ? ([auction.comic?.coverImageUrl, ...(auction.detailImages || [])].filter(Boolean) as string[])
     : [];
 
   const hasMultipleImages = allImages.length > 1;
 
   const prevImage = () => {
-    setSelectedImageIndex((prev) =>
-      prev === 0 ? allImages.length - 1 : prev - 1
-    );
+    setSelectedImageIndex((prev) => (prev === 0 ? allImages.length - 1 : prev - 1));
   };
 
   const nextImage = () => {
-    setSelectedImageIndex((prev) =>
-      prev === allImages.length - 1 ? 0 : prev + 1
-    );
+    setSelectedImageIndex((prev) => (prev === allImages.length - 1 ? 0 : prev + 1));
   };
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal */}
       <div className="relative min-h-full flex items-center justify-center p-4">
@@ -165,11 +169,7 @@ export function AuctionDetailModal({
                       sizes="(max-width: 768px) 100vw, 50vw"
                     />
                   ) : (
-                    <ComicImage
-                      src={null}
-                      alt="No image"
-                      aspectRatio="fill"
-                    />
+                    <ComicImage src={null} alt="No image" aspectRatio="fill" />
                   )}
 
                   {/* Navigation Arrows */}
@@ -207,9 +207,7 @@ export function AuctionDetailModal({
                         key={idx}
                         onClick={() => setSelectedImageIndex(idx)}
                         className={`w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-colors relative ${
-                          idx === selectedImageIndex
-                            ? "border-blue-500"
-                            : "border-transparent"
+                          idx === selectedImageIndex ? "border-blue-500" : "border-transparent"
                         }`}
                       >
                         <Image
@@ -234,16 +232,13 @@ export function AuctionDetailModal({
                 </h2>
 
                 {auction.comic?.comic?.variant && (
-                  <p className="text-gray-600 mt-1">
-                    {auction.comic.comic.variant}
-                  </p>
+                  <p className="text-gray-600 mt-1">{auction.comic.comic.variant}</p>
                 )}
 
                 {/* Publisher & Year */}
                 <p className="text-sm text-gray-500 mt-2">
                   {auction.comic?.comic?.publisher || "Unknown Publisher"}
-                  {auction.comic?.comic?.releaseYear &&
-                    ` • ${auction.comic.comic.releaseYear}`}
+                  {auction.comic?.comic?.releaseYear && ` • ${auction.comic.comic.releaseYear}`}
                 </p>
 
                 {/* Key Info */}
@@ -307,9 +302,7 @@ export function AuctionDetailModal({
                 {/* Description */}
                 {auction.description && (
                   <div className="mt-4 pt-4 border-t">
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">
-                      Description
-                    </h4>
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">Description</h4>
                     <p className="text-sm text-gray-600 whitespace-pre-wrap">
                       {auction.description}
                     </p>
@@ -319,9 +312,7 @@ export function AuctionDetailModal({
                 {/* Seller Controls */}
                 {auction.isSeller && auction.status === "active" && (
                   <div className="mt-6 pt-4 border-t">
-                    <h4 className="text-sm font-medium text-gray-700 mb-3">
-                      Manage Listing
-                    </h4>
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">Manage Listing</h4>
                     <div className="flex gap-2">
                       {/* Mark as Sold - Only for fixed_price listings */}
                       {auction.listingType === "fixed_price" && (
@@ -391,8 +382,8 @@ export function AuctionDetailModal({
                                 {isProcessing
                                   ? "Processing..."
                                   : showActionConfirm === "mark_as_sold"
-                                  ? "Yes, Mark as Sold"
-                                  : "Yes, Pull it"}
+                                    ? "Yes, Mark as Sold"
+                                    : "Yes, Pull it"}
                               </button>
                               <button
                                 onClick={() => {

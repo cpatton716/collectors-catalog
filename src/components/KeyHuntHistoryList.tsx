@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Clock, DollarSign, Trash2, ChevronRight, X, AlertCircle } from "lucide-react";
-import {
-  KeyHuntHistoryEntry,
-  getKeyHuntHistory,
-  clearKeyHuntHistory,
-} from "@/lib/offlineCache";
+import { useEffect, useState } from "react";
+
+import { AlertCircle, ChevronRight, Clock, DollarSign, Trash2, X } from "lucide-react";
+
+import { KeyHuntHistoryEntry, clearKeyHuntHistory, getKeyHuntHistory } from "@/lib/offlineCache";
+
 import { ComicImage } from "./ComicImage";
 
 interface KeyHuntHistoryListProps {
@@ -14,10 +13,7 @@ interface KeyHuntHistoryListProps {
   onClose: () => void;
 }
 
-export function KeyHuntHistoryList({
-  onSelectEntry,
-  onClose,
-}: KeyHuntHistoryListProps) {
+export function KeyHuntHistoryList({ onSelectEntry, onClose }: KeyHuntHistoryListProps) {
   const [entries, setEntries] = useState<KeyHuntHistoryEntry[]>([]);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
@@ -81,9 +77,7 @@ export function KeyHuntHistoryList({
           <div className="text-center">
             <Clock className="w-12 h-12 text-gray-600 mx-auto mb-3" />
             <p className="text-white font-medium mb-1">No History Yet</p>
-            <p className="text-gray-400 text-sm">
-              Your recent price lookups will appear here
-            </p>
+            <p className="text-gray-400 text-sm">Your recent price lookups will appear here</p>
           </div>
         </div>
       </div>
@@ -175,14 +169,10 @@ export function KeyHuntHistoryList({
 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
-                  <p className="text-white font-medium truncate">
-                    {entry.title}
-                  </p>
+                  <p className="text-white font-medium truncate">{entry.title}</p>
                   <p className="text-sm text-gray-400">
                     #{entry.issueNumber}
-                    {entry.variant && (
-                      <span className="text-gray-500"> - {entry.variant}</span>
-                    )}
+                    {entry.variant && <span className="text-gray-500"> - {entry.variant}</span>}
                   </p>
                   <div className="flex items-center gap-3 mt-1.5">
                     <span className="px-2 py-0.5 bg-gray-700 rounded text-xs text-gray-300">

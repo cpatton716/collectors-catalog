@@ -1,7 +1,9 @@
 "use client";
 
+import { ChevronRight, DollarSign, Star, Tag } from "lucide-react";
+
 import { CollectionItem } from "@/types/comic";
-import { Tag, DollarSign, ChevronRight, Star } from "lucide-react";
+
 import { ComicImage } from "./ComicImage";
 
 interface ComicListItemProps {
@@ -10,7 +12,16 @@ interface ComicListItemProps {
 }
 
 export function ComicListItem({ item, onClick }: ComicListItemProps) {
-  const { comic, coverImageUrl, conditionLabel, conditionGrade, forSale, askingPrice, averagePrice, dateAdded } = item;
+  const {
+    comic,
+    coverImageUrl,
+    conditionLabel,
+    conditionGrade,
+    forSale,
+    askingPrice,
+    averagePrice,
+    dateAdded,
+  } = item;
 
   return (
     <div
@@ -34,15 +45,11 @@ export function ComicListItem({ item, onClick }: ComicListItemProps) {
             <div>
               <h3 className="font-semibold text-gray-900 flex items-center gap-2">
                 {comic.title || "Unknown Title"}
-                {item.isStarred && (
-                  <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                )}
+                {item.isStarred && <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />}
               </h3>
               <p className="text-sm text-gray-600">
                 Issue #{comic.issueNumber || "?"}
-                {comic.variant && (
-                  <span className="text-gray-400"> • {comic.variant}</span>
-                )}
+                {comic.variant && <span className="text-gray-400"> • {comic.variant}</span>}
               </p>
             </div>
 

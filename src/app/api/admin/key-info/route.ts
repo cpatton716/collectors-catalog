@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
-import { getPendingSubmissions, getSubmissionCounts, getKeyComicsCountFromDb } from "@/lib/keyComicsDb";
+
 import { getAdminProfile } from "@/lib/adminAuth";
+import {
+  getKeyComicsCountFromDb,
+  getPendingSubmissions,
+  getSubmissionCounts,
+} from "@/lib/keyComicsDb";
 
 // GET - Get pending submissions and stats
 export async function GET() {
@@ -29,9 +34,6 @@ export async function GET() {
     });
   } catch (error) {
     console.error("Error fetching admin key info:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch submissions" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch submissions" }, { status: 500 });
   }
 }

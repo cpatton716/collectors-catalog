@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { auth } from "@clerk/nextjs/server";
-import { getProfileByClerkId } from "@/lib/db";
-import {
-  setStripeCustomerId,
-  hasUsedTrial,
-  getSubscriptionStatus,
-} from "@/lib/subscription";
+
 import Stripe from "stripe";
+
 import { isUserSuspended } from "@/lib/adminAuth";
+import { getProfileByClerkId } from "@/lib/db";
+import { getSubscriptionStatus, hasUsedTrial, setStripeCustomerId } from "@/lib/subscription";
 
 // Initialize Stripe
 const stripe = process.env.STRIPE_SECRET_KEY
@@ -31,10 +30,7 @@ export type PriceType = "monthly" | "annual" | "scan_pack";
 export async function POST(request: NextRequest) {
   try {
     if (!stripe) {
-      return NextResponse.json(
-        { error: "Payment system not configured" },
-        { status: 503 }
-      );
+      return NextResponse.json({ error: "Payment system not configured" }, { status: 503 });
     }
 
     const { userId } = await auth();
@@ -155,9 +151,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error creating billing checkout session:", error);
-    return NextResponse.json(
-      { error: "Failed to create checkout session" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to create checkout session" }, { status: 500 });
   }
 }

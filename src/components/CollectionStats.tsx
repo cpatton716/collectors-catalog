@@ -1,34 +1,39 @@
 "use client";
 
 import { useMemo } from "react";
+
 import { useRouter } from "next/navigation";
-import { CollectionItem } from "@/types/comic";
+
+import {
+  ArrowDownRight,
+  ArrowUpRight,
+  Award,
+  BarChart3,
+  BookOpen,
+  Building,
+  Calendar,
+  DollarSign,
+  ExternalLink,
+  Key,
+  Shield,
+  TrendingDown,
+  TrendingUp,
+} from "lucide-react";
+
 import { getComicValue } from "@/lib/gradePrice";
 import {
+  calculateDecadeStats,
+  calculateFinancialStats,
+  calculateGradingStats,
+  calculateKeyComicStats,
   calculateOverviewStats,
   calculatePublisherStats,
-  calculateDecadeStats,
-  calculateGradingStats,
-  calculateFinancialStats,
-  calculateKeyComicStats,
   formatCurrency,
   formatPercentage,
 } from "@/lib/statsCalculator";
-import {
-  BookOpen,
-  DollarSign,
-  TrendingUp,
-  TrendingDown,
-  Award,
-  Calendar,
-  Building,
-  Key,
-  BarChart3,
-  ArrowUpRight,
-  ArrowDownRight,
-  ExternalLink,
-  Shield,
-} from "lucide-react";
+
+import { CollectionItem } from "@/types/comic";
+
 import { ComicImage } from "./ComicImage";
 
 interface CollectionStatsProps {
@@ -51,12 +56,19 @@ export function CollectionStats({ collection, onComicClick }: CollectionStatsPro
 
   if (collection.length === 0) {
     return (
-      <div className="bg-pop-white border-3 border-pop-black p-12 text-center" style={{ boxShadow: "4px 4px 0px #000" }}>
+      <div
+        className="bg-pop-white border-3 border-pop-black p-12 text-center"
+        style={{ boxShadow: "4px 4px 0px #000" }}
+      >
         <div className="w-16 h-16 bg-pop-yellow border-3 border-pop-black flex items-center justify-center mx-auto mb-4">
           <BarChart3 className="w-8 h-8 text-pop-black" />
         </div>
-        <h3 className="text-xl font-black text-pop-black font-comic uppercase mb-2">No Statistics Available</h3>
-        <p className="text-gray-600 mb-6">Add comics to your collection to see detailed statistics.</p>
+        <h3 className="text-xl font-black text-pop-black font-comic uppercase mb-2">
+          No Statistics Available
+        </h3>
+        <p className="text-gray-600 mb-6">
+          Add comics to your collection to see detailed statistics.
+        </p>
         <button
           onClick={() => router.push("/scan")}
           className="inline-flex items-center gap-2 px-5 py-3 bg-pop-blue border-2 border-pop-black text-white font-bold"
@@ -72,7 +84,10 @@ export function CollectionStats({ collection, onComicClick }: CollectionStatsPro
   return (
     <div className="space-y-6">
       {/* Collection Overview */}
-      <div className="bg-pop-white border-3 border-pop-black p-6" style={{ boxShadow: "4px 4px 0px #000" }}>
+      <div
+        className="bg-pop-white border-3 border-pop-black p-6"
+        style={{ boxShadow: "4px 4px 0px #000" }}
+      >
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 bg-pop-blue border-2 border-pop-black flex items-center justify-center">
             <BookOpen className="w-5 h-5 text-white" />
@@ -119,7 +134,8 @@ export function CollectionStats({ collection, onComicClick }: CollectionStatsPro
                 ${formatCurrency(getComicValue(overview.highestValueComic))}
               </p>
               <p className="text-sm text-gray-600 truncate">
-                {overview.highestValueComic.comic.title} #{overview.highestValueComic.comic.issueNumber}
+                {overview.highestValueComic.comic.title} #
+                {overview.highestValueComic.comic.issueNumber}
               </p>
               <div className="flex items-center gap-1 mt-1 text-primary-600 text-xs">
                 <ExternalLink className="w-3 h-3" />
@@ -142,7 +158,8 @@ export function CollectionStats({ collection, onComicClick }: CollectionStatsPro
                 ${formatCurrency(getComicValue(overview.lowestValueComic))}
               </p>
               <p className="text-sm text-gray-600 truncate">
-                {overview.lowestValueComic.comic.title} #{overview.lowestValueComic.comic.issueNumber}
+                {overview.lowestValueComic.comic.title} #
+                {overview.lowestValueComic.comic.issueNumber}
               </p>
               <div className="flex items-center gap-1 mt-1 text-primary-600 text-xs">
                 <ExternalLink className="w-3 h-3" />
@@ -154,7 +171,10 @@ export function CollectionStats({ collection, onComicClick }: CollectionStatsPro
       </div>
 
       {/* Financial Summary */}
-      <div className="bg-pop-white border-3 border-pop-black p-6" style={{ boxShadow: "4px 4px 0px #000" }}>
+      <div
+        className="bg-pop-white border-3 border-pop-black p-6"
+        style={{ boxShadow: "4px 4px 0px #000" }}
+      >
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 bg-pop-green border-2 border-pop-black flex items-center justify-center">
             <DollarSign className="w-5 h-5 text-white" />
@@ -190,7 +210,9 @@ export function CollectionStats({ collection, onComicClick }: CollectionStatsPro
               )
             }
             bgColor={financialStats.unrealizedGainLoss >= 0 ? "bg-green-100" : "bg-red-100"}
-            borderColor={financialStats.unrealizedGainLoss >= 0 ? "border-green-200" : "border-red-200"}
+            borderColor={
+              financialStats.unrealizedGainLoss >= 0 ? "border-green-200" : "border-red-200"
+            }
             valueColor={financialStats.unrealizedGainLoss >= 0 ? "text-green-600" : "text-red-600"}
           />
           <StatCard
@@ -213,7 +235,10 @@ export function CollectionStats({ collection, onComicClick }: CollectionStatsPro
       {/* Two Column Layout for Publisher and Decade Stats */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* By Publisher */}
-        <div className="bg-pop-white border-3 border-pop-black p-6" style={{ boxShadow: "4px 4px 0px #000" }}>
+        <div
+          className="bg-pop-white border-3 border-pop-black p-6"
+          style={{ boxShadow: "4px 4px 0px #000" }}
+        >
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 bg-pop-red border-2 border-pop-black flex items-center justify-center">
               <Building className="w-5 h-5 text-white" />
@@ -231,7 +256,9 @@ export function CollectionStats({ collection, onComicClick }: CollectionStatsPro
                       <span className="font-medium text-gray-900">{pub.publisher}</span>
                     </div>
                     <div className="text-right">
-                      <span className="font-semibold text-gray-900">${formatCurrency(pub.value)}</span>
+                      <span className="font-semibold text-gray-900">
+                        ${formatCurrency(pub.value)}
+                      </span>
                       <span className="text-sm text-gray-500 ml-2">({pub.count} comics)</span>
                     </div>
                   </div>
@@ -241,7 +268,9 @@ export function CollectionStats({ collection, onComicClick }: CollectionStatsPro
                       style={{ width: `${Math.min(pub.percentage, 100)}%` }}
                     />
                   </div>
-                  <p className="text-xs text-gray-400 text-right">{formatPercentage(pub.percentage)}% of value</p>
+                  <p className="text-xs text-gray-400 text-right">
+                    {formatPercentage(pub.percentage)}% of value
+                  </p>
                 </div>
               ))}
             </div>
@@ -251,7 +280,10 @@ export function CollectionStats({ collection, onComicClick }: CollectionStatsPro
         </div>
 
         {/* By Decade */}
-        <div className="bg-pop-white border-3 border-pop-black p-6" style={{ boxShadow: "4px 4px 0px #000" }}>
+        <div
+          className="bg-pop-white border-3 border-pop-black p-6"
+          style={{ boxShadow: "4px 4px 0px #000" }}
+        >
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 bg-pop-orange border-2 border-pop-black flex items-center justify-center">
               <Calendar className="w-5 h-5 text-white" />
@@ -266,7 +298,9 @@ export function CollectionStats({ collection, onComicClick }: CollectionStatsPro
                   <div className="flex items-center justify-between">
                     <span className="font-medium text-gray-900">{decade.decade}</span>
                     <div className="text-right">
-                      <span className="font-semibold text-gray-900">${formatCurrency(decade.value)}</span>
+                      <span className="font-semibold text-gray-900">
+                        ${formatCurrency(decade.value)}
+                      </span>
                       <span className="text-sm text-gray-500 ml-2">({decade.count} comics)</span>
                     </div>
                   </div>
@@ -276,7 +310,9 @@ export function CollectionStats({ collection, onComicClick }: CollectionStatsPro
                       style={{ width: `${Math.min(decade.percentage, 100)}%` }}
                     />
                   </div>
-                  <p className="text-xs text-gray-400 text-right">{formatPercentage(decade.percentage)}% of value</p>
+                  <p className="text-xs text-gray-400 text-right">
+                    {formatPercentage(decade.percentage)}% of value
+                  </p>
                 </div>
               ))}
             </div>
@@ -287,7 +323,10 @@ export function CollectionStats({ collection, onComicClick }: CollectionStatsPro
       </div>
 
       {/* Grading Breakdown */}
-      <div className="bg-pop-white border-3 border-pop-black p-6" style={{ boxShadow: "4px 4px 0px #000" }}>
+      <div
+        className="bg-pop-white border-3 border-pop-black p-6"
+        style={{ boxShadow: "4px 4px 0px #000" }}
+      >
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 bg-pop-blue border-2 border-pop-black flex items-center justify-center">
             <Shield className="w-5 h-5 text-white" />
@@ -375,7 +414,10 @@ export function CollectionStats({ collection, onComicClick }: CollectionStatsPro
       </div>
 
       {/* Key Comics */}
-      <div className="bg-pop-white border-3 border-pop-black p-6" style={{ boxShadow: "4px 4px 0px #000" }}>
+      <div
+        className="bg-pop-white border-3 border-pop-black p-6"
+        style={{ boxShadow: "4px 4px 0px #000" }}
+      >
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 bg-pop-yellow border-2 border-pop-black flex items-center justify-center">
             <Key className="w-5 h-5 text-pop-black" />
@@ -407,9 +449,7 @@ export function CollectionStats({ collection, onComicClick }: CollectionStatsPro
                   <p className="font-medium text-gray-900 truncate">
                     {item.comic.title} #{item.comic.issueNumber}
                   </p>
-                  <p className="text-sm text-gray-500 truncate">
-                    {item.comic.keyInfo?.join(", ")}
-                  </p>
+                  <p className="text-sm text-gray-500 truncate">{item.comic.keyInfo?.join(", ")}</p>
                 </div>
                 <div className="text-right flex-shrink-0">
                   <p className="font-bold text-gray-900">${formatCurrency(getComicValue(item))}</p>
@@ -423,7 +463,8 @@ export function CollectionStats({ collection, onComicClick }: CollectionStatsPro
           </div>
         ) : (
           <p className="text-gray-500 text-center py-4">
-            No key comics in your collection yet. Key comics include first appearances, major deaths, and other significant issues.
+            No key comics in your collection yet. Key comics include first appearances, major
+            deaths, and other significant issues.
           </p>
         )}
       </div>
@@ -441,7 +482,15 @@ interface StatCardProps {
   valueColor?: string;
 }
 
-function StatCard({ label, value, icon, bgColor, borderColor, subtext, valueColor }: StatCardProps) {
+function StatCard({
+  label,
+  value,
+  icon,
+  bgColor,
+  borderColor,
+  subtext,
+  valueColor,
+}: StatCardProps) {
   return (
     <div className={`bg-white rounded-lg p-4 border ${borderColor}`}>
       <div className="flex items-center gap-2 mb-2">

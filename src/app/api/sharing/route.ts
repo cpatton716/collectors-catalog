@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { auth } from "@clerk/nextjs/server";
+
+import { isUserSuspended } from "@/lib/adminAuth";
 import {
   getProfileByClerkId,
+  getSharingSettings,
   togglePublicSharing,
   updatePublicProfileSettings,
-  getSharingSettings,
 } from "@/lib/db";
 
 // GET - Get current sharing settings
@@ -30,16 +33,14 @@ export async function GET() {
       publicSlug: settings.publicSlug,
       publicDisplayName: settings.publicDisplayName,
       publicBio: settings.publicBio,
-      shareUrl: settings.isPublic && settings.publicSlug
-        ? `${process.env.NEXT_PUBLIC_APP_URL || ""}/u/${settings.publicSlug}`
-        : null,
+      shareUrl:
+        settings.isPublic && settings.publicSlug
+          ? `${process.env.NEXT_PUBLIC_APP_URL || ""}/u/${settings.publicSlug}`
+          : null,
     });
   } catch (error) {
     console.error("Error getting sharing settings:", error);
-    return NextResponse.json(
-      { error: "Failed to get sharing settings" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to get sharing settings" }, { status: 500 });
   }
 }
 
@@ -51,6 +52,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Check if user is suspended
+    const suspensionStatus = await isUserSuspended(userId);
+    if (suspensionStatus.suspended) {
+      return NextResponse.json({ error: "Your account has been suspended." }, { status: 403 });
+    }
+
     const profile = await getProfileByClerkId(userId);
     if (!profile) {
       return NextResponse.json({ error: "Profile not found" }, { status: 404 });
@@ -60,10 +67,7 @@ export async function POST(request: NextRequest) {
     const { enable, customSlug } = body;
 
     if (typeof enable !== "boolean") {
-      return NextResponse.json(
-        { error: "enable must be a boolean" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "enable must be a boolean" }, { status: 400 });
     }
 
     // Validate custom slug if provided
@@ -93,16 +97,12 @@ export async function POST(request: NextRequest) {
       success: true,
       isPublic: enable,
       publicSlug: result.slug,
-      shareUrl: enable && result.slug
-        ? `${process.env.NEXT_PUBLIC_APP_URL || ""}/u/${result.slug}`
-        : null,
+      shareUrl:
+        enable && result.slug ? `${process.env.NEXT_PUBLIC_APP_URL || ""}/u/${result.slug}` : null,
     });
   } catch (error) {
     console.error("Error toggling public sharing:", error);
-    return NextResponse.json(
-      { error: "Failed to update sharing settings" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to update sharing settings" }, { status: 500 });
   }
 }
 
@@ -112,6 +112,12 @@ export async function PATCH(request: NextRequest) {
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Check if user is suspended
+    const suspensionStatus = await isUserSuspended(userId);
+    if (suspensionStatus.suspended) {
+      return NextResponse.json({ error: "Your account has been suspended." }, { status: 403 });
     }
 
     const profile = await getProfileByClerkId(userId);
@@ -151,10 +157,7 @@ export async function PATCH(request: NextRequest) {
 
     // Validate bio length
     if (publicBio && publicBio.length > 200) {
-      return NextResponse.json(
-        { error: "Bio must be 200 characters or less" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Bio must be 200 characters or less" }, { status: 400 });
     }
 
     const result = await updatePublicProfileSettings(profile.id, {
@@ -170,9 +173,6 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error updating public profile settings:", error);
-    return NextResponse.json(
-      { error: "Failed to update settings" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to update settings" }, { status: 500 });
   }
 }

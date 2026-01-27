@@ -1,13 +1,16 @@
 import type { Metadata, Viewport } from "next";
 import { Bangers, Comic_Neue, Space_Mono } from "next/font/google";
+
 import { ClerkProvider } from "@clerk/nextjs";
-import "./globals.css";
-import { Navigation } from "@/components/Navigation";
-import { Providers } from "@/components/Providers";
+
 import { MobileUtilitiesFAB } from "@/components/MobileUtilitiesFAB";
-import { ServiceWorkerProvider } from "@/components/ServiceWorkerProvider";
+import { Navigation } from "@/components/Navigation";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { PostHogProvider } from "@/components/PostHogProvider";
+import { Providers } from "@/components/Providers";
+import { ServiceWorkerProvider } from "@/components/ServiceWorkerProvider";
+
+import "./globals.css";
 
 // Pop Art / Lichtenstein Typography
 const bangers = Bangers({
@@ -42,9 +45,7 @@ export const metadata: Metadata = {
       { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
       { url: "/icons/icon-512x512.png", sizes: "512x512", type: "image/png" },
     ],
-    apple: [
-      { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
-    ],
+    apple: [{ url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" }],
   },
   appleWebApp: {
     capable: true,
@@ -72,7 +73,9 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en">
-        <body className={`${bangers.variable} ${comicNeue.variable} ${spaceMono.variable} font-body`}>
+        <body
+          className={`${bangers.variable} ${comicNeue.variable} ${spaceMono.variable} font-body`}
+        >
           <PostHogProvider>
             <ServiceWorkerProvider>
               <Providers>

@@ -9,24 +9,23 @@
  * - Fallback to static database
  * - Community contribution support
  */
-
 import { createClient } from "@supabase/supabase-js";
+
 import { lookupKeyInfo as lookupKeyInfoStatic } from "./keyComicsDatabase";
 
 // Supabase client for key info lookups
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-const supabase = supabaseUrl && supabaseServiceKey
-  ? createClient(supabaseUrl, supabaseServiceKey)
-  : null;
+const supabase =
+  supabaseUrl && supabaseServiceKey ? createClient(supabaseUrl, supabaseServiceKey) : null;
 
 // Normalize title for database matching
 function normalizeTitle(title: string): string {
   return title
     .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, "")  // Remove special chars except spaces
-    .replace(/\s+/g, " ")          // Normalize whitespace
+    .replace(/[^a-z0-9\s]/g, "") // Remove special chars except spaces
+    .replace(/\s+/g, " ") // Normalize whitespace
     .trim();
 }
 
@@ -80,10 +79,7 @@ export async function lookupKeyInfoFromDb(
 /**
  * Check if a comic is a key comic (DB or static)
  */
-export async function isKeyComicFromDb(
-  title: string,
-  issueNumber: string
-): Promise<boolean> {
+export async function isKeyComicFromDb(title: string, issueNumber: string): Promise<boolean> {
   const keyInfo = await lookupKeyInfoFromDb(title, issueNumber);
   return keyInfo !== null && keyInfo.length > 0;
 }
@@ -138,10 +134,7 @@ export async function submitKeyInfo(
 
   try {
     // Check if this comic already has key info
-    const existingKeyInfo = await lookupKeyInfoFromDb(
-      submission.title,
-      submission.issueNumber
-    );
+    const existingKeyInfo = await lookupKeyInfoFromDb(submission.title, submission.issueNumber);
 
     // Check if there's already a pending submission for this comic
     const normalizedTitle = normalizeTitle(submission.title);
@@ -156,7 +149,7 @@ export async function submitKeyInfo(
     if (pendingSubmission) {
       return {
         success: false,
-        error: "A submission for this comic is already pending review"
+        error: "A submission for this comic is already pending review",
       };
     }
 
@@ -190,7 +183,7 @@ export async function submitKeyInfo(
     console.error("Error submitting key info:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error"
+      error: error instanceof Error ? error.message : "Unknown error",
     };
   }
 }
@@ -244,7 +237,7 @@ export async function getPendingSubmissions(limit = 50): Promise<{
   } catch (error) {
     return {
       submissions: [],
-      error: error instanceof Error ? error.message : "Unknown error"
+      error: error instanceof Error ? error.message : "Unknown error",
     };
   }
 }
@@ -296,7 +289,7 @@ export async function getUserSubmissions(userId: string): Promise<{
   } catch (error) {
     return {
       submissions: [],
-      error: error instanceof Error ? error.message : "Unknown error"
+      error: error instanceof Error ? error.message : "Unknown error",
     };
   }
 }
@@ -340,9 +333,7 @@ export async function approveSubmission(
 
     if (existing) {
       // Merge the new key info with existing
-      const mergedKeyInfo = [
-        ...new Set([...existing.key_info, ...submission.suggested_key_info]),
-      ];
+      const mergedKeyInfo = [...new Set([...existing.key_info, ...submission.suggested_key_info])];
 
       const { error: updateError } = await supabase
         .from("key_comics")
@@ -399,7 +390,7 @@ export async function approveSubmission(
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error"
+      error: error instanceof Error ? error.message : "Unknown error",
     };
   }
 }
@@ -436,7 +427,7 @@ export async function rejectSubmission(
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error"
+      error: error instanceof Error ? error.message : "Unknown error",
     };
   }
 }

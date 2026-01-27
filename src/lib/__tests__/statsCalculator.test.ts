@@ -4,19 +4,19 @@
  * Tests collection statistics calculations including overview stats,
  * publisher breakdowns, decade analysis, grading stats, and financials.
  */
+import { CollectionItem } from "@/types/comic";
 
 import {
+  calculateDecadeStats,
+  calculateFinancialStats,
+  calculateGradingStats,
+  calculateKeyComicStats,
   calculateOverviewStats,
   calculatePublisherStats,
-  calculateDecadeStats,
-  calculateGradingStats,
-  calculateFinancialStats,
-  calculateKeyComicStats,
   formatCurrency,
   formatPercentage,
   getTopPublishers,
 } from "../statsCalculator";
-import { CollectionItem } from "@/types/comic";
 
 // Test fixture factory
 const createItem = (overrides: Partial<CollectionItem> = {}): CollectionItem => ({
@@ -102,8 +102,8 @@ describe("calculatePublisherStats", () => {
     ];
 
     const stats = calculatePublisherStats(collection);
-    const marvel = stats.find(s => s.publisher === "Marvel");
-    const dc = stats.find(s => s.publisher === "DC");
+    const marvel = stats.find((s) => s.publisher === "Marvel");
+    const dc = stats.find((s) => s.publisher === "DC");
 
     expect(marvel?.count).toBe(2);
     expect(marvel?.value).toBe(300);
@@ -118,8 +118,8 @@ describe("calculatePublisherStats", () => {
     ];
 
     const stats = calculatePublisherStats(collection);
-    const marvel = stats.find(s => s.publisher === "Marvel");
-    const dc = stats.find(s => s.publisher === "DC");
+    const marvel = stats.find((s) => s.publisher === "Marvel");
+    const dc = stats.find((s) => s.publisher === "DC");
 
     expect(marvel?.percentage).toBe(75);
     expect(dc?.percentage).toBe(25);
@@ -176,8 +176,8 @@ describe("calculateDecadeStats", () => {
     ];
 
     const stats = calculateDecadeStats(collection);
-    const sixties = stats.find(s => s.decade === "1960s");
-    const seventies = stats.find(s => s.decade === "1970s");
+    const sixties = stats.find((s) => s.decade === "1960s");
+    const seventies = stats.find((s) => s.decade === "1970s");
 
     expect(sixties?.count).toBe(2);
     expect(seventies?.count).toBe(1);
@@ -190,7 +190,7 @@ describe("calculateDecadeStats", () => {
     ];
 
     const stats = calculateDecadeStats(collection);
-    const unknown = stats.find(s => s.decade === "Unknown");
+    const unknown = stats.find((s) => s.decade === "Unknown");
     expect(unknown?.count).toBe(2);
   });
 
@@ -313,7 +313,7 @@ describe("formatCurrency", () => {
   });
 
   it("formats with cents when needed", () => {
-    expect(formatCurrency(100.50)).toBe("100.50");
+    expect(formatCurrency(100.5)).toBe("100.50");
     expect(formatCurrency(1000.99)).toBe("1,000.99");
   });
 

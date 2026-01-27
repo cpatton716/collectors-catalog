@@ -1,9 +1,12 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+
 import Image from "next/image";
-import { Camera, X, RotateCcw, Check, SwitchCamera, AlertCircle } from "lucide-react";
-import { quickCompress, formatBytes } from "@/lib/imageOptimization";
+
+import { AlertCircle, Camera, Check, RotateCcw, SwitchCamera, X } from "lucide-react";
+
+import { formatBytes, quickCompress } from "@/lib/imageOptimization";
 
 interface LiveCameraCaptureProps {
   onCapture: (file: File, preview: string) => void;
@@ -27,7 +30,9 @@ export function LiveCameraCapture({ onCapture, onClose }: LiveCameraCaptureProps
   const checkCameraSupport = useCallback(() => {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       setCameraState("unsupported");
-      setErrorMessage("Your browser doesn't support camera access. Please use the file upload option instead.");
+      setErrorMessage(
+        "Your browser doesn't support camera access. Please use the file upload option instead."
+      );
       return false;
     }
     return true;
@@ -37,7 +42,7 @@ export function LiveCameraCapture({ onCapture, onClose }: LiveCameraCaptureProps
   const checkMultipleCameras = useCallback(async () => {
     try {
       const devices = await navigator.mediaDevices.enumerateDevices();
-      const videoDevices = devices.filter(device => device.kind === "videoinput");
+      const videoDevices = devices.filter((device) => device.kind === "videoinput");
       setHasMultipleCameras(videoDevices.length > 1);
     } catch {
       setHasMultipleCameras(false);
@@ -50,7 +55,7 @@ export function LiveCameraCapture({ onCapture, onClose }: LiveCameraCaptureProps
 
     // Stop any existing stream
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current.getTracks().forEach((track) => track.stop());
     }
 
     setCameraState("requesting");
@@ -83,7 +88,9 @@ export function LiveCameraCapture({ onCapture, onClose }: LiveCameraCaptureProps
 
       if (err instanceof Error) {
         if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
-          setErrorMessage("Camera access was denied. Please allow camera permissions in your browser settings.");
+          setErrorMessage(
+            "Camera access was denied. Please allow camera permissions in your browser settings."
+          );
         } else if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") {
           setErrorMessage("No camera found on this device.");
         } else if (err.name === "NotReadableError" || err.name === "TrackStartError") {
@@ -102,7 +109,7 @@ export function LiveCameraCapture({ onCapture, onClose }: LiveCameraCaptureProps
   // Stop camera stream
   const stopCamera = useCallback(() => {
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
     }
     if (videoRef.current) {
@@ -118,7 +125,7 @@ export function LiveCameraCapture({ onCapture, onClose }: LiveCameraCaptureProps
 
   // Handle camera switch
   const switchCamera = useCallback(() => {
-    setFacingMode(prev => prev === "environment" ? "user" : "environment");
+    setFacingMode((prev) => (prev === "environment" ? "user" : "environment"));
     setCapturedImage(null);
     setCameraState("requesting");
   }, []);
@@ -223,11 +230,13 @@ export function LiveCameraCapture({ onCapture, onClose }: LiveCameraCaptureProps
 
       {/* Camera View / Captured Image */}
       <div className="flex-1 flex items-center justify-center overflow-hidden">
-        {(cameraState === "requesting") && (
+        {cameraState === "requesting" && (
           <div className="text-center text-white p-4">
             <div className="w-16 h-16 border-4 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-4" />
             <p className="text-lg">Requesting camera access...</p>
-            <p className="text-sm text-white/70 mt-2">Please allow camera permissions when prompted</p>
+            <p className="text-sm text-white/70 mt-2">
+              Please allow camera permissions when prompted
+            </p>
           </div>
         )}
 

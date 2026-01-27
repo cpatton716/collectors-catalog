@@ -5,9 +5,9 @@
  * with automatic revalidation. Used by both the API route and
  * the hot books page for SSR/ISR support.
  */
+import { unstable_cache } from "next/cache";
 
 import { createClient } from "@supabase/supabase-js";
-import { unstable_cache } from "next/cache";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -105,14 +105,10 @@ async function fetchHotBooksFromDb(): Promise<HotBook[]> {
  * Get hot books with ISR caching
  * Revalidates every hour to balance freshness with performance
  */
-export const getHotBooks = unstable_cache(
-  fetchHotBooksFromDb,
-  ["hot-books"],
-  {
-    revalidate: 3600, // Revalidate every hour
-    tags: ["hot-books"],
-  }
-);
+export const getHotBooks = unstable_cache(fetchHotBooksFromDb, ["hot-books"], {
+  revalidate: 3600, // Revalidate every hour
+  tags: ["hot-books"],
+});
 
 /**
  * Get hot books without caching (for API routes that need fresh data)

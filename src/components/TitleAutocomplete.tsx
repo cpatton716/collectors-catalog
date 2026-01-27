@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { Loader2, Clock } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+
+import { Clock, Loader2 } from "lucide-react";
 
 const RECENT_TITLES_KEY = "comic-tracker-recent-titles-v2";
 const MAX_RECENT_TITLES = 5;
@@ -49,7 +50,8 @@ const saveRecentTitle = (suggestion: TitleSuggestion) => {
     const recent = getRecentTitles();
     // Remove if already exists (matching both title and years), then add to front
     const filtered = recent.filter(
-      t => !(t.title.toLowerCase() === suggestion.title.toLowerCase() && t.years === suggestion.years)
+      (t) =>
+        !(t.title.toLowerCase() === suggestion.title.toLowerCase() && t.years === suggestion.years)
     );
     const updated = [suggestion, ...filtered].slice(0, MAX_RECENT_TITLES);
     localStorage.setItem(RECENT_TITLES_KEY, JSON.stringify(updated));
@@ -150,15 +152,18 @@ export function TitleAutocomplete({
   const getFilteredRecent = (): TitleSuggestion[] => {
     if (!value || value.length < 2) return recentTitles;
     const query = value.toLowerCase();
-    return recentTitles.filter(t => t.title.toLowerCase().includes(query));
+    return recentTitles.filter((t) => t.title.toLowerCase().includes(query));
   };
 
   // Combine recent titles with API suggestions, removing duplicates
   const filteredRecent = getFilteredRecent();
   const apiSuggestionsFiltered = suggestions
-    .filter(s => !filteredRecent.some(
-      r => r.title.toLowerCase() === s.title.toLowerCase() && r.years === s.years
-    ))
+    .filter(
+      (s) =>
+        !filteredRecent.some(
+          (r) => r.title.toLowerCase() === s.title.toLowerCase() && r.years === s.years
+        )
+    )
     .sort((a, b) => a.title.localeCompare(b.title)); // Sort alphabetically by title
   const allSuggestions: TitleSuggestion[] = [...filteredRecent, ...apiSuggestionsFiltered];
   const hasAnySuggestions = allSuggestions.length > 0;
@@ -169,9 +174,7 @@ export function TitleAutocomplete({
     switch (e.key) {
       case "ArrowDown":
         e.preventDefault();
-        setHighlightedIndex((prev) =>
-          prev < allSuggestions.length - 1 ? prev + 1 : prev
-        );
+        setHighlightedIndex((prev) => (prev < allSuggestions.length - 1 ? prev + 1 : prev));
         break;
       case "ArrowUp":
         e.preventDefault();

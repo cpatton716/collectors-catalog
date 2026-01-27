@@ -1,10 +1,13 @@
 "use client";
 
 import { useState } from "react";
+
 import { useUser } from "@clerk/nextjs";
-import { CloudUpload, Trash2, Loader2, CheckCircle, XCircle } from "lucide-react";
+
+import { CheckCircle, CloudUpload, Loader2, Trash2, XCircle } from "lucide-react";
+
+import { getOrCreateProfile, migrateLocalDataToCloud } from "@/lib/db";
 import { storage } from "@/lib/storage";
-import { migrateLocalDataToCloud, getOrCreateProfile } from "@/lib/db";
 
 interface DataMigrationModalProps {
   isOpen: boolean;
@@ -35,12 +38,7 @@ export function DataMigrationModal({ isOpen, onClose, onComplete }: DataMigratio
       const profile = await getOrCreateProfile(user.id, user.primaryEmailAddress?.emailAddress);
 
       // Migrate all local data
-      await migrateLocalDataToCloud(
-        profile.id,
-        localComics,
-        storage.getLists(),
-        localSales
-      );
+      await migrateLocalDataToCloud(profile.id, localComics, storage.getLists(), localSales);
 
       // Clear local storage after successful migration
       localStorage.removeItem("comic_collection");
@@ -54,7 +52,11 @@ export function DataMigrationModal({ isOpen, onClose, onComplete }: DataMigratio
       }, 2000);
     } catch (err) {
       console.error("Migration error:", err);
-      setErrorMessage(err instanceof Error ? err.message : "We couldn't import your data right now. Your local data is still safe - please try again.");
+      setErrorMessage(
+        err instanceof Error
+          ? err.message
+          : "We couldn't import your data right now. Your local data is still safe - please try again."
+      );
       setStatus("error");
     }
   };
@@ -88,13 +90,19 @@ export function DataMigrationModal({ isOpen, onClose, onComplete }: DataMigratio
                   <h3 className="font-medium text-gray-900 mb-2">Found on this device:</h3>
                   <ul className="space-y-1 text-sm text-gray-600">
                     {localComics.length > 0 && (
-                      <li>• {localComics.length} comic{localComics.length !== 1 ? "s" : ""}</li>
+                      <li>
+                        • {localComics.length} comic{localComics.length !== 1 ? "s" : ""}
+                      </li>
                     )}
                     {localLists.length > 0 && (
-                      <li>• {localLists.length} custom list{localLists.length !== 1 ? "s" : ""}</li>
+                      <li>
+                        • {localLists.length} custom list{localLists.length !== 1 ? "s" : ""}
+                      </li>
                     )}
                     {localSales.length > 0 && (
-                      <li>• {localSales.length} sale record{localSales.length !== 1 ? "s" : ""}</li>
+                      <li>
+                        • {localSales.length} sale record{localSales.length !== 1 ? "s" : ""}
+                      </li>
                     )}
                   </ul>
                 </div>
@@ -135,7 +143,9 @@ export function DataMigrationModal({ isOpen, onClose, onComplete }: DataMigratio
         {status === "migrating" && (
           <div className="text-center py-8">
             <Loader2 className="w-12 h-12 text-primary-600 animate-spin mx-auto" />
-            <h3 className="text-lg font-semibold text-gray-900 mt-4">Importing Your Collection...</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mt-4">
+              Importing Your Collection...
+            </h3>
             <p className="text-gray-600 mt-2">This may take a moment.</p>
           </div>
         )}

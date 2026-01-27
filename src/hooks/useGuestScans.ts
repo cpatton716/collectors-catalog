@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
+
 import { useAuth } from "@clerk/nextjs";
 
 const GUEST_SCAN_KEY = "comic_guest_scans";
@@ -10,9 +11,9 @@ const MAX_GUEST_SCANS = 5; // Guest limit: 5 scans (Free tier gets 10/month)
 const BONUS_SCAN_AMOUNT = 5; // Bonus scans granted for email capture
 
 // Milestone thresholds (adjusted for 5 scan limit)
-const FIRST_MILESTONE = 2;   // After 2nd scan (3 remaining)
-const SECOND_MILESTONE = 3;  // After 3rd scan (2 remaining)
-const FINAL_MILESTONE = 4;   // After 4th scan (1 remaining - next is their last)
+const FIRST_MILESTONE = 2; // After 2nd scan (3 remaining)
+const SECOND_MILESTONE = 3; // After 3rd scan (2 remaining)
+const FINAL_MILESTONE = 4; // After 4th scan (1 remaining - next is their last)
 
 export type MilestoneType = "fiveRemaining" | "threeRemaining" | "finalScan" | null;
 
@@ -44,7 +45,9 @@ const getMilestonesShown = (): MilestonesShown => {
   }
   try {
     const stored = localStorage.getItem(MILESTONES_SHOWN_KEY);
-    return stored ? JSON.parse(stored) : { fiveRemaining: false, threeRemaining: false, finalScan: false };
+    return stored
+      ? JSON.parse(stored)
+      : { fiveRemaining: false, threeRemaining: false, finalScan: false };
   } catch {
     return { fiveRemaining: false, threeRemaining: false, finalScan: false };
   }
@@ -98,13 +101,16 @@ export function useGuestScans(): GuestScanState {
   }, [scanCount, milestonesShown, isSignedIn]);
 
   // Mark a milestone as shown
-  const markMilestoneShown = useCallback((milestone: MilestoneType) => {
-    if (!milestone) return;
+  const markMilestoneShown = useCallback(
+    (milestone: MilestoneType) => {
+      if (!milestone) return;
 
-    const updated = { ...milestonesShown, [milestone]: true };
-    setMilestonesShown(updated);
-    saveMilestonesShown(updated);
-  }, [milestonesShown]);
+      const updated = { ...milestonesShown, [milestone]: true };
+      setMilestonesShown(updated);
+      saveMilestonesShown(updated);
+    },
+    [milestonesShown]
+  );
 
   // Increment scan and return any milestone that should be shown
   const incrementScan = useCallback((): MilestoneType => {

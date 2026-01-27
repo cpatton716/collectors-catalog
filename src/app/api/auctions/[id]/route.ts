@@ -1,17 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { auth } from "@clerk/nextjs/server";
+
+import { cancelAuction, getAuction, updateAuction } from "@/lib/auctionDb";
 import { getProfileByClerkId } from "@/lib/db";
-import {
-  getAuction,
-  updateAuction,
-  cancelAuction,
-} from "@/lib/auctionDb";
 
 // GET - Get single auction
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
 
@@ -36,18 +31,12 @@ export async function GET(
     return NextResponse.json({ auction });
   } catch (error) {
     console.error("Error fetching auction:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch auction" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch auction" }, { status: 500 });
   }
 }
 
 // PATCH - Update auction (seller only)
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { userId } = await auth();
     if (!userId) {
@@ -66,10 +55,7 @@ export async function PATCH(
     // Validate detail images if provided
     if (detailImages !== undefined) {
       if (!Array.isArray(detailImages) || detailImages.length > 4) {
-        return NextResponse.json(
-          { error: "Maximum 4 detail images allowed" },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: "Maximum 4 detail images allowed" }, { status: 400 });
       }
     }
 
@@ -82,10 +68,7 @@ export async function PATCH(
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error updating auction:", error);
-    return NextResponse.json(
-      { error: "Failed to update auction" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to update auction" }, { status: 500 });
   }
 }
 
@@ -109,7 +92,12 @@ export async function DELETE(
 
     // Get reason from query params (optional)
     const { searchParams } = new URL(request.url);
-    const reason = searchParams.get("reason") as "changed_mind" | "sold_elsewhere" | "price_too_low" | "other" | null;
+    const reason = searchParams.get("reason") as
+      | "changed_mind"
+      | "sold_elsewhere"
+      | "price_too_low"
+      | "other"
+      | null;
 
     const result = await cancelAuction(id, profile.id, reason || undefined);
 
@@ -120,9 +108,6 @@ export async function DELETE(
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error cancelling auction:", error);
-    return NextResponse.json(
-      { error: "Failed to cancel auction" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to cancel auction" }, { status: 500 });
   }
 }

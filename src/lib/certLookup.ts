@@ -6,7 +6,6 @@
  *
  * Phase 2: Now includes Redis caching (1 year TTL) since certificates are permanent.
  */
-
 import { cacheGet, cacheSet } from "./cache";
 
 export interface CertLookupResult {
@@ -53,7 +52,6 @@ export async function lookupCGCCert(certNumber: string): Promise<CertLookupResul
   }
 
   try {
-
     const response = await fetch(`https://www.cgccomics.com/certlookup/${cleanCert}/`, {
       headers: {
         "User-Agent": "Mozilla/5.0 (compatible; CollectorsChest/1.0)",
@@ -119,52 +117,69 @@ function parseCGCResponse(html: string, certNumber: string): CertLookupResult {
     };
 
     // Extract title - usually in h1 or prominent element
-    const titleMatch = html.match(/<h1[^>]*>([^<]+)<\/h1>/i) ||
+    const titleMatch =
+      html.match(/<h1[^>]*>([^<]+)<\/h1>/i) ||
       html.match(/class="[^"]*title[^"]*"[^>]*>([^<]+)/i) ||
       html.match(/>Title<[^>]*>[\s\S]*?<[^>]*>([^<]+)</i);
 
     // Extract specific fields
     const grade = extractField("Grade") || html.match(/(?:^|>)(\d+\.?\d*)\s*(?:<|$)/m)?.[1] || null;
     const publisher = extractField("Publisher");
-    const yearMatch = html.match(/Issue Year[\s\S]*?(\d{4})/i) || html.match(/\b(19\d{2}|20\d{2})\b/);
+    const yearMatch =
+      html.match(/Issue Year[\s\S]*?(\d{4})/i) || html.match(/\b(19\d{2}|20\d{2})\b/);
     const releaseYear = yearMatch ? yearMatch[1] : null;
 
     // Page Quality - look for patterns like "Page Quality" followed by value
-    const pageQualityMatch = html.match(/Page\s*Quality[\s\S]*?<[^>]*>([^<]+)</i) ||
+    const pageQualityMatch =
+      html.match(/Page\s*Quality[\s\S]*?<[^>]*>([^<]+)</i) ||
       html.match(/Page\s*Quality[:\s]+([A-Za-z\-\s]+)/i);
     const pageQuality = pageQualityMatch ? pageQualityMatch[1].trim() : null;
 
     // Grade Date - format like "2017-06-27"
-    const gradeDateMatch = html.match(/Grade\s*Date[\s\S]*?(\d{4}-\d{2}-\d{2})/i) ||
+    const gradeDateMatch =
+      html.match(/Grade\s*Date[\s\S]*?(\d{4}-\d{2}-\d{2})/i) ||
       html.match(/Grade\s*Date[\s\S]*?<[^>]*>([^<]+)</i);
     const gradeDate = gradeDateMatch ? gradeDateMatch[1].trim() : null;
 
     // Label Category (Universal, Signature Series, etc.)
-    const labelMatch = html.match(/Label\s*Category[\s\S]*?<[^>]*>([^<]+)</i) ||
+    const labelMatch =
+      html.match(/Label\s*Category[\s\S]*?<[^>]*>([^<]+)</i) ||
       html.match(/Label\s*Category[:\s]+([^<\n]+)/i);
     const labelType = labelMatch ? labelMatch[1].trim() : null;
 
     // Art Comments - creator info
-    const artCommentsMatch = html.match(/Art\s*Comments[\s\S]*?<[^>]*>([^<]+(?:<br[^>]*>[^<]+)*)</i) ||
+    const artCommentsMatch =
+      html.match(/Art\s*Comments[\s\S]*?<[^>]*>([^<]+(?:<br[^>]*>[^<]+)*)</i) ||
       html.match(/Art\s*Comments[:\s]+([^\n]+)/i);
-    const artComments = artCommentsMatch ? artCommentsMatch[1].replace(/<br[^>]*>/gi, "\n").trim() : null;
+    const artComments = artCommentsMatch
+      ? artCommentsMatch[1].replace(/<br[^>]*>/gi, "\n").trim()
+      : null;
 
     // Key Comments - first appearances, significance
-    const keyCommentsMatch = html.match(/Key\s*Comments[\s\S]*?<[^>]*>([^<]+(?:<br[^>]*>[^<]+)*)</i) ||
+    const keyCommentsMatch =
+      html.match(/Key\s*Comments[\s\S]*?<[^>]*>([^<]+(?:<br[^>]*>[^<]+)*)</i) ||
       html.match(/Key\s*Comments[:\s]+([^\n]+)/i);
-    const keyComments = keyCommentsMatch ? keyCommentsMatch[1].replace(/<br[^>]*>/gi, "\n").trim() : null;
+    const keyComments = keyCommentsMatch
+      ? keyCommentsMatch[1].replace(/<br[^>]*>/gi, "\n").trim()
+      : null;
 
     // Grader Notes - defects noted by grader
-    const graderNotesMatch = html.match(/Grader\s*Notes[\s\S]*?<[^>]*>([^<]+(?:<br[^>]*>[^<]+)*)</i) ||
+    const graderNotesMatch =
+      html.match(/Grader\s*Notes[\s\S]*?<[^>]*>([^<]+(?:<br[^>]*>[^<]+)*)</i) ||
       html.match(/Grader\s*Notes[:\s]+([^\n]+(?:\n[^\n]+)*)/i);
-    const graderNotes = graderNotesMatch ? graderNotesMatch[1].replace(/<br[^>]*>/gi, "\n").trim() : null;
+    const graderNotes = graderNotesMatch
+      ? graderNotesMatch[1].replace(/<br[^>]*>/gi, "\n").trim()
+      : null;
 
     // Signatures - who signed the comic
-    const signaturesMatch = html.match(/Signatures[\s\S]*?<[^>]*>([^<]+(?:<br[^>]*>[^<]+)*)</i) ||
+    const signaturesMatch =
+      html.match(/Signatures[\s\S]*?<[^>]*>([^<]+(?:<br[^>]*>[^<]+)*)</i) ||
       html.match(/Signatures[:\s]+([^\n]+)/i) ||
       html.match(/SIGNED BY[^<\n]+/i);
     const signatures = signaturesMatch
-      ? (typeof signaturesMatch[1] === 'string' ? signaturesMatch[1] : signaturesMatch[0]).replace(/<br[^>]*>/gi, "\n").trim()
+      ? (typeof signaturesMatch[1] === "string" ? signaturesMatch[1] : signaturesMatch[0])
+          .replace(/<br[^>]*>/gi, "\n")
+          .trim()
       : null;
 
     // Parse title to extract series name and issue number
@@ -256,13 +271,15 @@ export async function lookupCBCSCert(certNumber: string): Promise<CertLookupResu
   }
 
   try {
-
-    const response = await fetch(`https://cbcscomics.com/grading-notes/${encodeURIComponent(cleanCert)}`, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; CollectorsChest/1.0)",
-        Accept: "text/html,application/xhtml+xml",
-      },
-    });
+    const response = await fetch(
+      `https://cbcscomics.com/grading-notes/${encodeURIComponent(cleanCert)}`,
+      {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (compatible; CollectorsChest/1.0)",
+          Accept: "text/html,application/xhtml+xml",
+        },
+      }
+    );
 
     if (!response.ok) {
       return {
@@ -294,7 +311,12 @@ export async function lookupCBCSCert(certNumber: string): Promise<CertLookupResu
 function parseCBCSResponse(html: string, certNumber: string): CertLookupResult {
   try {
     // Check if cert was found
-    if (html.includes("not found") || html.includes("No results") || html.includes("invalid") || html.includes("no record")) {
+    if (
+      html.includes("not found") ||
+      html.includes("No results") ||
+      html.includes("invalid") ||
+      html.includes("no record")
+    ) {
       return {
         success: false,
         source: "cbcs",
@@ -304,7 +326,8 @@ function parseCBCSResponse(html: string, certNumber: string): CertLookupResult {
     }
 
     // Title is typically in a header element like "Spider-Man #1"
-    const titleMatch = html.match(/<h[1-3][^>]*>([^<]+#\d+[A-Za-z]?)<\/h[1-3]>/i) ||
+    const titleMatch =
+      html.match(/<h[1-3][^>]*>([^<]+#\d+[A-Za-z]?)<\/h[1-3]>/i) ||
       html.match(/>([^<]+#\d+[A-Za-z]?)</i);
 
     // Publisher and date often appear together like "Marvel 8 1990"
@@ -313,34 +336,44 @@ function parseCBCSResponse(html: string, certNumber: string): CertLookupResult {
     const releaseYear = publisherDateMatch ? publisherDateMatch[3] : null;
 
     // Grade - typically a standalone number like "9.4"
-    const gradeMatch = html.match(/>(\d+\.?\d*)<[^>]*>[\s\S]*?Verified/i) ||
+    const gradeMatch =
+      html.match(/>(\d+\.?\d*)<[^>]*>[\s\S]*?Verified/i) ||
       html.match(/>\s*(\d+\.?\d*)\s*<[\s\S]*?Verified/i) ||
       html.match(/>(\d+\.\d)<\/[^>]+>/i);
 
     // Variant - look for "Variant:" prefix
-    const variantMatch = html.match(/Variant[:\s]*([^<\n]+)/i) ||
-      html.match(/>Variant:\s*([^<]+)</i);
+    const variantMatch =
+      html.match(/Variant[:\s]*([^<\n]+)/i) || html.match(/>Variant:\s*([^<]+)</i);
     const variant = variantMatch ? variantMatch[1].trim() : null;
 
     // Page Quality - appears under "Verified" section
-    const pageQualityMatch = html.match(/Verified[\s\S]*?<[^>]*>([A-Za-z][A-Za-z\s\-]*)</i) ||
+    const pageQualityMatch =
+      html.match(/Verified[\s\S]*?<[^>]*>([A-Za-z][A-Za-z\s\-]*)</i) ||
       html.match(/>(\s*White\s*|\s*Off-White\s*|\s*Cream\s*)<\/[^>]+>/i);
     const pageQuality = pageQualityMatch ? pageQualityMatch[1].trim() : null;
 
     // Signees - who signed the comic
-    const signeesMatch = html.match(/Signees:[\s\S]*?<[^>]*>([^<]+(?:<[^>]*>[^<]+)*)/i) ||
+    const signeesMatch =
+      html.match(/Signees:[\s\S]*?<[^>]*>([^<]+(?:<[^>]*>[^<]+)*)/i) ||
       html.match(/Verified Signature[:\s]*([^<\n]+)/i);
     let signatures: string | null = null;
     if (signeesMatch) {
-      signatures = signeesMatch[1].replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+      signatures = signeesMatch[1]
+        .replace(/<[^>]*>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
     }
 
     // Notes (Grader Notes) - defects/comments
-    const notesMatch = html.match(/Notes:[\s\S]*?<[^>]*>([^<]+(?:<[^>]*>[^<]+)*)/i) ||
+    const notesMatch =
+      html.match(/Notes:[\s\S]*?<[^>]*>([^<]+(?:<[^>]*>[^<]+)*)/i) ||
       html.match(/>Notes:<[\s\S]*?<[^>]*>([^<]+)/i);
     let graderNotes: string | null = null;
     if (notesMatch) {
-      graderNotes = notesMatch[1].replace(/<[^>]*>/g, "\n").replace(/\n+/g, "\n").trim();
+      graderNotes = notesMatch[1]
+        .replace(/<[^>]*>/g, "\n")
+        .replace(/\n+/g, "\n")
+        .trim();
     }
 
     // Parse title to extract series name and issue number
@@ -423,7 +456,6 @@ export async function lookupPGXCert(certNumber: string): Promise<CertLookupResul
   }
 
   try {
-
     const response = await fetch(`https://www.pgxcomics.com/cert/verify/${cleanCert}`, {
       headers: {
         "User-Agent": "Mozilla/5.0 (compatible; CollectorsChest/1.0)",

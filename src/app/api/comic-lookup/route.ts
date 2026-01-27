@@ -1,7 +1,9 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
-import { getComicMetadata, saveComicMetadata, incrementComicLookupCount } from "@/lib/db";
+
+import Anthropic from "@anthropic-ai/sdk";
+
 import { cacheGet, cacheSet, generateComicMetadataCacheKey } from "@/lib/cache";
+import { getComicMetadata, incrementComicLookupCount, saveComicMetadata } from "@/lib/db";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -38,7 +40,10 @@ export async function POST(request: NextRequest) {
     const { title, issueNumber, lookupType } = await request.json();
 
     if (!title) {
-      return NextResponse.json({ error: "Please enter a comic title to look up." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Please enter a comic title to look up." },
+        { status: 400 }
+      );
     }
 
     const normalizedTitle = title.trim();
@@ -51,7 +56,10 @@ export async function POST(request: NextRequest) {
 
     // Full lookup - use hybrid approach
     if (!normalizedIssue) {
-      return NextResponse.json({ error: "Issue number is required for full lookup." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Issue number is required for full lookup." },
+        { status: 400 }
+      );
     }
 
     const cacheKey = generateComicMetadataCacheKey(normalizedTitle, normalizedIssue);
@@ -70,7 +78,6 @@ export async function POST(request: NextRequest) {
     try {
       const dbResult = await getComicMetadata(normalizedTitle, normalizedIssue);
       if (dbResult) {
-
         const result: ComicLookupResult = {
           publisher: dbResult.publisher,
           releaseYear: dbResult.releaseYear,
@@ -84,7 +91,8 @@ export async function POST(request: NextRequest) {
 
         // Add disclaimer if price data exists
         if (result.priceData) {
-          result.priceData.disclaimer = "Values are estimates based on market knowledge. Actual prices may vary.";
+          result.priceData.disclaimer =
+            "Values are estimates based on market knowledge. Actual prices may vary.";
         }
 
         // Backfill Redis cache and increment lookup count (non-blocking)
@@ -134,7 +142,7 @@ export async function POST(request: NextRequest) {
       writer: null,
       coverArtist: null,
       interiorArtist: null,
-      keyInfo: []
+      keyInfo: [],
     });
   }
 }
@@ -241,7 +249,14 @@ Use null for any field you're not confident about. Most issues should have empty
 
   const textContent = response.content.find((block) => block.type === "text");
   if (!textContent || textContent.type !== "text") {
-    return { publisher: null, releaseYear: null, writer: null, coverArtist: null, interiorArtist: null, keyInfo: [] };
+    return {
+      publisher: null,
+      releaseYear: null,
+      writer: null,
+      coverArtist: null,
+      interiorArtist: null,
+      keyInfo: [],
+    };
   }
 
   let jsonText = textContent.text.trim();
@@ -259,7 +274,8 @@ Use null for any field you're not confident about. Most issues should have empty
 
     // Add disclaimer and ensure arrays in priceData
     if (result.priceData) {
-      result.priceData.disclaimer = "Values are estimates based on market knowledge. Actual prices may vary.";
+      result.priceData.disclaimer =
+        "Values are estimates based on market knowledge. Actual prices may vary.";
       if (!result.priceData.recentSales || !Array.isArray(result.priceData.recentSales)) {
         result.priceData.recentSales = [];
       }
@@ -271,6 +287,13 @@ Use null for any field you're not confident about. Most issues should have empty
     return result;
   } catch {
     console.error("Failed to parse Claude API response");
-    return { publisher: null, releaseYear: null, writer: null, coverArtist: null, interiorArtist: null, keyInfo: [] };
+    return {
+      publisher: null,
+      releaseYear: null,
+      writer: null,
+      coverArtist: null,
+      interiorArtist: null,
+      keyInfo: [],
+    };
   }
 }

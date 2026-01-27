@@ -1,7 +1,9 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
-import { getComicMetadata, saveComicMetadata, incrementComicLookupCount } from "@/lib/db";
-import { lookupEbaySoldPrices, isFindingApiConfigured } from "@/lib/ebayFinding";
+
+import Anthropic from "@anthropic-ai/sdk";
+
+import { getComicMetadata, incrementComicLookupCount, saveComicMetadata } from "@/lib/db";
+import { isFindingApiConfigured, lookupEbaySoldPrices } from "@/lib/ebayFinding";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -36,10 +38,7 @@ export async function POST(request: NextRequest) {
     const { title, issueNumber, grade, years } = await request.json();
 
     if (!title || !issueNumber) {
-      return NextResponse.json(
-        { error: "Title and issue number are required." },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Title and issue number are required." }, { status: 400 });
     }
 
     const normalizedTitle = title.trim();
@@ -51,7 +50,6 @@ export async function POST(request: NextRequest) {
     try {
       const dbResult = await getComicMetadata(normalizedTitle, normalizedIssue);
       if (dbResult && dbResult.priceData) {
-
         // Get price for the selected grade from cached grade estimates
         const gradeEstimate = dbResult.priceData.gradeEstimates?.find(
           (g) => g.grade === selectedGrade
@@ -93,7 +91,6 @@ export async function POST(request: NextRequest) {
         );
 
         if (ebayPriceData && ebayPriceData.estimatedValue) {
-
           // Get the price for the selected grade
           const gradeEstimate = ebayPriceData.gradeEstimates?.find(
             (g) => g.grade === selectedGrade
@@ -233,8 +230,7 @@ Rules:
       let coverImageUrl: string | null = null;
       try {
         coverImageUrl = await fetchCoverImage(normalizedTitle, normalizedIssue, parsed.publisher);
-      } catch (_coverError) {
-      }
+      } catch (_coverError) {}
 
       const result: ConModeLookupResult = {
         title: normalizedTitle,
@@ -280,10 +276,7 @@ Rules:
     }
   } catch (error) {
     console.error("Error in con mode lookup:", error);
-    return NextResponse.json(
-      { error: "Something went wrong. Please try again." },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }
 
@@ -311,8 +304,7 @@ async function fetchCoverImage(
           return cvData.results[0].image.medium_url;
         }
       }
-    } catch (e) {
-    }
+    } catch (e) {}
   }
 
   // Fallback: Try Open Library (works better for graphic novels)
@@ -330,8 +322,7 @@ async function fetchCoverImage(
         return `https://covers.openlibrary.org/b/id/${docWithCover.cover_i}-L.jpg`;
       }
     }
-  } catch (e) {
-  }
+  } catch (e) {}
 
   return null;
 }
@@ -340,10 +331,7 @@ async function fetchCoverImage(
  * Fetch key collector information from AI
  * Used when eBay provides pricing but we still need key facts
  */
-async function fetchKeyInfoFromAI(
-  title: string,
-  issueNumber: string
-): Promise<string[]> {
+async function fetchKeyInfoFromAI(title: string, issueNumber: string): Promise<string[]> {
   if (!process.env.ANTHROPIC_API_KEY) {
     return [];
   }

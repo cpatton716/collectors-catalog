@@ -4,17 +4,16 @@
  * Tests username format validation, profanity filtering, and reserved username checks.
  * Critical for user registration and profile management.
  */
-
 import {
-  validateUsernameFormat,
+  USERNAME_MAX_LENGTH,
+  USERNAME_MIN_LENGTH,
   containsProfanity,
-  validateUsername,
+  formatUsernameForDisplay,
   isReservedUsername,
   normalizeUsername,
-  formatUsernameForDisplay,
+  validateUsername,
   validateUsernameComplete,
-  USERNAME_MIN_LENGTH,
-  USERNAME_MAX_LENGTH,
+  validateUsernameFormat,
 } from "../usernameValidation";
 
 describe("validateUsernameFormat", () => {
@@ -151,7 +150,7 @@ describe("containsProfanity", () => {
       // Current implementation uses includes() which triggers on substrings
       // This documents the current behavior - could be improved with word boundaries
       expect(containsProfanity("class")).toBe(true); // Contains "ass"
-      expect(containsProfanity("pass")).toBe(true);  // Contains "ass"
+      expect(containsProfanity("pass")).toBe(true); // Contains "ass"
       // For usernames, this is acceptable - users can use alternatives
     });
 

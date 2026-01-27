@@ -1,0 +1,34 @@
+{
+  "$schema": "https://unpkg.com/knip@latest/schema.json",
+  "entry": [
+    "src/app/**/page.tsx",
+    "src/app/**/layout.tsx",
+    "src/app/**/route.ts",
+    "src/app/api/**/route.ts",
+    "src/middleware.ts",
+    "sentry.*.config.ts"
+  ],
+  "project": ["src/**/*.{ts,tsx}"],
+  "ignore": [
+    "src/types/**/*.ts",
+    "**/*.d.ts"
+  ],
+  "ignoreDependencies": [
+    "autoprefixer",
+    "postcss",
+    "tailwindcss",
+    "@types/*",
+    "eslint-config-next",
+    "jest-environment-jsdom",
+    "ts-jest",
+    "@testing-library/*"
+  ],
+  "next": {
+    "entry": [
+      "next.config.{js,ts,mjs}",
+      "src/app/**/page.tsx",
+      "src/app/**/layout.tsx",
+      "src/app/api/**/route.ts"
+    ]
+  }
+}

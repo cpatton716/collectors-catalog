@@ -2,9 +2,9 @@
  * Centralized admin authentication and audit logging helpers
  * Used by all admin API routes for consistent authorization and accountability
  */
+import { auth } from "@clerk/nextjs/server";
 
 import { supabaseAdmin } from "./supabase";
-import { auth } from "@clerk/nextjs/server";
 
 // Admin action types for audit logging
 export type AdminAction =
@@ -127,7 +127,8 @@ export async function requireAdmin(): Promise<AdminProfile> {
 export async function getProfileById(profileId: string) {
   const { data, error } = await supabaseAdmin
     .from("profiles")
-    .select(`
+    .select(
+      `
       id,
       clerk_user_id,
       email,
@@ -148,7 +149,8 @@ export async function getProfileById(profileId: string) {
       suspended_reason,
       created_at,
       updated_at
-    `)
+    `
+    )
     .eq("id", profileId)
     .single();
 
@@ -165,7 +167,8 @@ export async function getProfileById(profileId: string) {
 export async function searchUsersByEmail(email: string, limit: number = 20) {
   const { data, error } = await supabaseAdmin
     .from("profiles")
-    .select(`
+    .select(
+      `
       id,
       clerk_user_id,
       email,
@@ -175,7 +178,8 @@ export async function searchUsersByEmail(email: string, limit: number = 20) {
       subscription_status,
       is_suspended,
       created_at
-    `)
+    `
+    )
     .ilike("email", `%${email}%`)
     .order("created_at", { ascending: false })
     .limit(limit);
@@ -270,10 +274,7 @@ export async function setUserSuspension(
         suspended_reason: null,
       };
 
-  const { error } = await supabaseAdmin
-    .from("profiles")
-    .update(updates)
-    .eq("id", profileId);
+  const { error } = await supabaseAdmin.from("profiles").update(updates).eq("id", profileId);
 
   if (error) {
     throw error;

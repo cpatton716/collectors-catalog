@@ -44,12 +44,11 @@ export const SCAN_PACK_AMOUNT = 10;
 /**
  * Get full subscription status for a user
  */
-export async function getSubscriptionStatus(
-  profileId: string
-): Promise<SubscriptionInfo | null> {
+export async function getSubscriptionStatus(profileId: string): Promise<SubscriptionInfo | null> {
   const { data: profile, error } = await supabaseAdmin
     .from("profiles")
-    .select(`
+    .select(
+      `
       subscription_tier,
       subscription_status,
       stripe_customer_id,
@@ -60,7 +59,8 @@ export async function getSubscriptionStatus(
       scans_used_this_month,
       scan_month_start,
       purchased_scans
-    `)
+    `
+    )
     .eq("id", profileId)
     .single();
 
@@ -207,12 +207,10 @@ async function logScanUsage(
   profileId: string,
   source: "scan" | "import" | "key_hunt"
 ): Promise<void> {
-  const { error } = await supabaseAdmin
-    .from("scan_usage")
-    .insert({
-      user_id: profileId,
-      source,
-    });
+  const { error } = await supabaseAdmin.from("scan_usage").insert({
+    user_id: profileId,
+    source,
+  });
 
   if (error) {
     console.error("Error logging scan usage:", error);

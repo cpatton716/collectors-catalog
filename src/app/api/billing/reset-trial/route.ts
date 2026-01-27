@@ -1,27 +1,35 @@
-import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
-import { getProfileByClerkId } from "@/lib/db";
+import { NextRequest, NextResponse } from "next/server";
+
+import { getAdminProfile, getProfileById, logAdminAction } from "@/lib/adminAuth";
 import { supabaseAdmin } from "@/lib/supabase";
 
 /**
- * POST - Reset trial status for testing purposes
+ * POST - Reset trial status (ADMIN ONLY)
  *
- * This allows the same user to test the trial flow multiple times.
+ * This allows admins to reset a user's trial for testing or support purposes.
  * Clears trial_started_at and trial_ends_at, resetting trial availability.
  *
- * NOTE: This is for development/testing only. Consider removing or
- * protecting this endpoint before public launch.
+ * Required body: { targetUserId: string } - the profile ID of the user to reset
  */
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // Require admin authentication
+    const adminProfile = await getAdminProfile();
+    if (!adminProfile) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    const profile = await getProfileByClerkId(userId);
-    if (!profile) {
-      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+    const body = await request.json();
+    const { targetUserId } = body;
+
+    if (!targetUserId) {
+      return NextResponse.json({ error: "targetUserId is required" }, { status: 400 });
+    }
+
+    // Verify target user exists
+    const targetProfile = await getProfileById(targetUserId);
+    if (!targetProfile) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     // Reset trial fields
@@ -33,25 +41,24 @@ export async function POST() {
         subscription_status: "active",
         // Keep subscription_tier as-is (stays "free" unless they paid)
       })
-      .eq("id", profile.id);
+      .eq("id", targetUserId);
 
     if (error) {
       console.error("Error resetting trial:", error);
-      return NextResponse.json(
-        { error: "Failed to reset trial" },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "Failed to reset trial" }, { status: 500 });
     }
+
+    // Log admin action
+    await logAdminAction(adminProfile.id, "reset_trial", targetUserId, {
+      email: targetProfile.email,
+    });
 
     return NextResponse.json({
       success: true,
-      message: "Trial has been reset. You can now start a new trial.",
+      message: `Trial has been reset for user ${targetProfile.email || targetUserId}.`,
     });
   } catch (error) {
     console.error("Error resetting trial:", error);
-    return NextResponse.json(
-      { error: "Failed to reset trial" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to reset trial" }, { status: 500 });
   }
 }

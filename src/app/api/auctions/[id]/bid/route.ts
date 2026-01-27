@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { auth } from "@clerk/nextjs/server";
-import { getProfileByClerkId } from "@/lib/db";
-import { placeBid } from "@/lib/auctionDb";
-import { rateLimiters, checkRateLimit } from "@/lib/rateLimit";
+
 import { isUserSuspended } from "@/lib/adminAuth";
+import { placeBid } from "@/lib/auctionDb";
+import { getProfileByClerkId } from "@/lib/db";
+import { checkRateLimit, rateLimiters } from "@/lib/rateLimit";
 
 // POST - Place a bid
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { userId } = await auth();
     if (!userId) {
@@ -47,17 +46,11 @@ export async function POST(
 
     // Validation
     if (typeof maxBid !== "number" || maxBid < 0.99) {
-      return NextResponse.json(
-        { error: "Invalid bid amount" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid bid amount" }, { status: 400 });
     }
 
     if (!Number.isInteger(maxBid) && maxBid !== 0.99) {
-      return NextResponse.json(
-        { error: "Bids must be whole dollar amounts" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Bids must be whole dollar amounts" }, { status: 400 });
     }
 
     const result = await placeBid(auctionId, profile.id, maxBid);
@@ -69,9 +62,6 @@ export async function POST(
     return NextResponse.json(result);
   } catch (error) {
     console.error("Error placing bid:", error);
-    return NextResponse.json(
-      { error: "Failed to place bid" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to place bid" }, { status: 500 });
   }
 }

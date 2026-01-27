@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { CreditCard, Loader2, AlertCircle } from "lucide-react";
+
+import { AlertCircle, CreditCard, Loader2 } from "lucide-react";
+
 import { formatPrice } from "@/types/auction";
 
 interface PaymentButtonProps {
@@ -96,9 +98,7 @@ export function PaymentButton({
       </button>
 
       {/* Security Note */}
-      <p className="text-xs text-center text-gray-500">
-        Secure payment powered by Stripe
-      </p>
+      <p className="text-xs text-center text-gray-500">Secure payment powered by Stripe</p>
     </div>
   );
 }

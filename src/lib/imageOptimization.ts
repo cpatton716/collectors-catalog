@@ -137,15 +137,10 @@ export async function optimizeImage(
   // Load the image
   const img = await loadImage(source);
   const originalSize = { width: img.width, height: img.height };
-  const originalBytes =
-    typeof source === "string" ? source.length : source.size;
+  const originalBytes = typeof source === "string" ? source.length : source.size;
 
   // Calculate dimensions for full image
-  const fullDims = calculateDimensions(
-    img.width,
-    img.height,
-    opts.maxFullDimension
-  );
+  const fullDims = calculateDimensions(img.width, img.height, opts.maxFullDimension);
 
   // Create canvas for full image
   const fullCanvas = document.createElement("canvas");
@@ -168,11 +163,7 @@ export async function optimizeImage(
   );
 
   // Calculate dimensions for thumbnail
-  const thumbDims = calculateDimensions(
-    img.width,
-    img.height,
-    opts.maxThumbnailDimension
-  );
+  const thumbDims = calculateDimensions(img.width, img.height, opts.maxThumbnailDimension);
 
   // Create canvas for thumbnail
   const thumbCanvas = document.createElement("canvas");
@@ -186,12 +177,7 @@ export async function optimizeImage(
   thumbCtx.drawImage(img, 0, 0, thumbDims.width, thumbDims.height);
 
   // Compress thumbnail more aggressively
-  const thumbnail = compressToTarget(
-    thumbCanvas,
-    opts.targetThumbnailSize,
-    0.7,
-    0.3
-  );
+  const thumbnail = compressToTarget(thumbCanvas, opts.targetThumbnailSize, 0.7, 0.3);
 
   return {
     full,

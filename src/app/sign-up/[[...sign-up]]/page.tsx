@@ -1,8 +1,11 @@
 "use client";
 
 import { useState } from "react";
+
 import Link from "next/link";
-import { Mail, ChevronRight, Sparkles, Check } from "lucide-react";
+
+import { Check, ChevronRight, Mail, Sparkles } from "lucide-react";
+
 import { ChestIcon } from "@/components/icons/ChestIcon";
 
 export default function SignUpPage() {
@@ -51,7 +54,8 @@ export default function SignUpPage() {
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-3">You&apos;re on the list!</h1>
           <p className="text-gray-600 mb-6">
-            We&apos;ll notify you at <strong>{email}</strong> when Collectors Chest opens for registration.
+            We&apos;ll notify you at <strong>{email}</strong> when Collectors Chest opens for
+            registration.
           </p>
           <Link
             href="/"
@@ -75,14 +79,17 @@ export default function SignUpPage() {
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-3">Coming Soon</h1>
           <p className="text-gray-600">
-            Collectors Chest is currently in private beta. Join the waitlist to be notified when we open registration.
+            Collectors Chest is currently in private beta. Join the waitlist to be notified when we
+            open registration.
           </p>
         </div>
 
         {/* Email capture form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="email" className="sr-only">Email address</label>
+            <label htmlFor="email" className="sr-only">
+              Email address
+            </label>
             <div className="relative">
               <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
@@ -95,9 +102,7 @@ export default function SignUpPage() {
                 className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors"
               />
             </div>
-            {error && (
-              <p className="mt-2 text-sm text-red-600">{error}</p>
-            )}
+            {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
           </div>
 
           <button

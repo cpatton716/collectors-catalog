@@ -1,9 +1,22 @@
 "use client";
 
 import { useEffect } from "react";
+
 import Link from "next/link";
-import { X, Cloud, Sparkles, AlertTriangle, Infinity, Shield, Smartphone, Mail } from "lucide-react";
+
+import {
+  Infinity,
+  AlertTriangle,
+  Cloud,
+  Mail,
+  Shield,
+  Smartphone,
+  Sparkles,
+  X,
+} from "lucide-react";
+
 import type { MilestoneType } from "@/hooks/useGuestScans";
+
 import { analytics } from "@/components/PostHogProvider";
 
 // Non-null milestone type for the modal (modal should only be shown with a valid milestone)
@@ -43,14 +56,17 @@ const getTitle = (milestone: ValidMilestone, scanCount: number): string => {
   }
 };
 
-const milestoneContent: Record<ValidMilestone, {
-  icon: React.ElementType;
-  iconBg: string;
-  iconColor: string;
-  benefits: { icon: React.ElementType; text: string }[];
-  ctaText: string;
-  dismissText: string;
-}> = {
+const milestoneContent: Record<
+  ValidMilestone,
+  {
+    icon: React.ElementType;
+    iconBg: string;
+    iconColor: string;
+    benefits: { icon: React.ElementType; text: string }[];
+    ctaText: string;
+    dismissText: string;
+  }
+> = {
   fiveRemaining: {
     icon: Sparkles,
     iconBg: "bg-primary-100",
@@ -120,10 +136,7 @@ export function SignUpPromptModal({ milestone, scanCount, onClose }: SignUpPromp
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal */}
       <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200">
@@ -138,7 +151,9 @@ export function SignUpPromptModal({ milestone, scanCount, onClose }: SignUpPromp
 
         {/* Header */}
         <div className="pt-8 pb-6 px-6 text-center">
-          <div className={`w-16 h-16 ${content.iconBg} rounded-full flex items-center justify-center mx-auto mb-4`}>
+          <div
+            className={`w-16 h-16 ${content.iconBg} rounded-full flex items-center justify-center mx-auto mb-4`}
+          >
             <Icon className={`w-8 h-8 ${content.iconColor}`} />
           </div>
           <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
@@ -146,9 +161,7 @@ export function SignUpPromptModal({ milestone, scanCount, onClose }: SignUpPromp
 
           {/* Beta badge */}
           <div className="inline-flex items-center gap-2 mt-4 px-3 py-1.5 bg-primary-100 text-primary-700 rounded-full">
-            <span className="text-sm font-medium">
-              Private Beta
-            </span>
+            <span className="text-sm font-medium">Private Beta</span>
           </div>
         </div>
 

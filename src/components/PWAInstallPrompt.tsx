@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { X, Download, Smartphone, Share } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+
+import { Download, Share, Smartphone, X } from "lucide-react";
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
@@ -163,12 +164,18 @@ export function PWAInstallPrompt() {
           <div className="p-4">
             <h3 className="font-semibold text-gray-900 mb-2">Open in Safari to Install</h3>
             <p className="text-sm text-gray-600 mb-3">
-              To install Collectors Chest on your home screen, you&apos;ll need to open this page in Safari:
+              To install Collectors Chest on your home screen, you&apos;ll need to open this page in
+              Safari:
             </p>
             <ol className="text-sm text-gray-600 space-y-2 mb-4">
               <li className="flex items-start gap-2">
                 <span className="font-semibold text-primary-600">1.</span>
-                <span>Copy this link: <span className="font-mono text-xs bg-gray-100 px-1 rounded">collectors-chest.com</span></span>
+                <span>
+                  Copy this link:{" "}
+                  <span className="font-mono text-xs bg-gray-100 px-1 rounded">
+                    collectors-chest.com
+                  </span>
+                </span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="font-semibold text-primary-600">2.</span>
@@ -176,7 +183,10 @@ export function PWAInstallPrompt() {
               </li>
               <li className="flex items-start gap-2">
                 <span className="font-semibold text-primary-600">3.</span>
-                <span>Tap <Share className="w-4 h-4 inline text-primary-600" /> then &quot;Add to Home Screen&quot;</span>
+                <span>
+                  Tap <Share className="w-4 h-4 inline text-primary-600" /> then &quot;Add to Home
+                  Screen&quot;
+                </span>
               </li>
             </ol>
 
@@ -221,7 +231,9 @@ export function PWAInstallPrompt() {
             <ol className="text-sm text-gray-600 space-y-2 mb-4">
               <li className="flex items-start gap-2">
                 <span className="font-semibold text-primary-600">1.</span>
-                <span>Tap the <Share className="w-4 h-4 inline text-primary-600" /> Share button below</span>
+                <span>
+                  Tap the <Share className="w-4 h-4 inline text-primary-600" /> Share button below
+                </span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="font-semibold text-primary-600">2.</span>

@@ -1,16 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  getAdminProfile,
-  logAdminAction,
-  getProfileById,
-  getUserScanCount,
-} from "@/lib/adminAuth";
+
+import { getAdminProfile, getProfileById, getUserScanCount, logAdminAction } from "@/lib/adminAuth";
 import { supabaseAdmin } from "@/lib/supabase";
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Check admin access
     const adminProfile = await getAdminProfile();
@@ -58,9 +51,6 @@ export async function GET(
     });
   } catch (error) {
     console.error("Error fetching user:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch user" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch user" }, { status: 500 });
   }
 }

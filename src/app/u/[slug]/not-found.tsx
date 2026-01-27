@@ -1,4 +1,5 @@
 import Link from "next/link";
+
 import { BookX, Home, Search } from "lucide-react";
 
 export default function NotFound() {
@@ -8,9 +9,7 @@ export default function NotFound() {
         <BookX className="w-10 h-10 text-gray-400" />
       </div>
 
-      <h1 className="text-2xl font-bold text-gray-900 mb-3">
-        Collection Not Found
-      </h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-3">Collection Not Found</h1>
 
       <p className="text-gray-600 mb-8">
         This collection doesn&apos;t exist or isn&apos;t public. The owner may have made it private,

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -11,26 +12,19 @@ export async function POST(request: NextRequest) {
     const { email } = await request.json();
 
     if (!email || typeof email !== "string") {
-      return NextResponse.json(
-        { error: "Email is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Email is required" }, { status: 400 });
     }
 
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { error: "Invalid email format" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid email format" }, { status: 400 });
     }
 
     // If no API key or audience ID, return success silently (for testing)
     if (!process.env.RESEND_API_KEY || !WAITLIST_AUDIENCE_ID) {
       return NextResponse.json({ success: true, message: "Added to waitlist" });
     }
-
 
     // Add contact to Resend audience
     const { data, error } = await resend.contacts.create({
@@ -76,12 +70,8 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true, message: "Added to waitlist" });
-
   } catch (err) {
     console.error("[Waitlist] Error:", err);
-    return NextResponse.json(
-      { error: "Something went wrong. Please try again." },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

@@ -1,15 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { useSubscription } from "@/hooks/useSubscription";
-import { Check, X, Zap, Crown, Sparkles } from "lucide-react";
+
 import Link from "next/link";
+
+import { Check, Crown, Sparkles, X, Zap } from "lucide-react";
+
+import { useSubscription } from "@/hooks/useSubscription";
 
 type BillingInterval = "monthly" | "annual";
 
 export default function PricingPage() {
   const [billingInterval, setBillingInterval] = useState<BillingInterval>("monthly");
-  const { tier, isTrialing, trialAvailable, startFreeTrial, startCheckout, isLoading, isGuest } = useSubscription();
+  const { tier, isTrialing, trialAvailable, startFreeTrial, startCheckout, isLoading, isGuest } =
+    useSubscription();
 
   const monthlyPrice = 4.99;
   const annualPrice = 49.99;
@@ -40,9 +44,7 @@ export default function PricingPage() {
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Simple, Transparent Pricing
-          </h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Simple, Transparent Pricing</h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             Start free, upgrade when you need more. No hidden fees.
           </p>
@@ -196,10 +198,18 @@ export default function PricingPage() {
                   Unlimited scans
                 </span>
               </FeatureItem>
-              <FeatureItem included premium>Cloud collection sync</FeatureItem>
-              <FeatureItem included premium>Real eBay prices</FeatureItem>
-              <FeatureItem included premium>Public profile sharing</FeatureItem>
-              <FeatureItem included premium>Buy & bid in Shop</FeatureItem>
+              <FeatureItem included premium>
+                Cloud collection sync
+              </FeatureItem>
+              <FeatureItem included premium>
+                Real eBay prices
+              </FeatureItem>
+              <FeatureItem included premium>
+                Public profile sharing
+              </FeatureItem>
+              <FeatureItem included premium>
+                Buy & bid in Shop
+              </FeatureItem>
               <FeatureItem included premium>
                 <span className="flex items-center gap-2">
                   <Zap className="w-4 h-4 text-yellow-400" />
@@ -210,7 +220,9 @@ export default function PricingPage() {
                 <span className="font-semibold">5% seller fee</span>
                 <span className="text-indigo-200 text-sm ml-1">(save 3%)</span>
               </FeatureItem>
-              <FeatureItem included premium>CSV import & export</FeatureItem>
+              <FeatureItem included premium>
+                CSV import & export
+              </FeatureItem>
               <FeatureItem included premium>
                 <span className="flex items-center gap-2">
                   <Zap className="w-4 h-4 text-yellow-400" />
@@ -296,7 +308,9 @@ function FeatureItem({
   return (
     <li className="flex items-start gap-3">
       {included ? (
-        <Check className={`w-5 h-5 flex-shrink-0 ${premium ? "text-green-400" : "text-green-600"}`} />
+        <Check
+          className={`w-5 h-5 flex-shrink-0 ${premium ? "text-green-400" : "text-green-600"}`}
+        />
       ) : (
         <X className="w-5 h-5 text-gray-300 flex-shrink-0" />
       )}

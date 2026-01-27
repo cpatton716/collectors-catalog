@@ -1,12 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { DollarSign, Gavel, AlertCircle, CheckCircle } from "lucide-react";
-import {
-  calculateMinimumBid,
-  getBidIncrement,
-  formatPrice,
-} from "@/types/auction";
+
+import { AlertCircle, CheckCircle, DollarSign, Gavel } from "lucide-react";
+
+import { calculateMinimumBid, formatPrice, getBidIncrement } from "@/types/auction";
 
 interface BidFormProps {
   auctionId: string;
@@ -143,9 +141,7 @@ export function BidForm({
       {userMaxBid && (
         <div
           className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
-            isHighBidder
-              ? "bg-green-50 text-green-700"
-              : "bg-orange-50 text-orange-700"
+            isHighBidder ? "bg-green-50 text-green-700" : "bg-orange-50 text-orange-700"
           }`}
         >
           {isHighBidder ? (
@@ -169,9 +165,7 @@ export function BidForm({
       {/* Bid Form */}
       <form onSubmit={handleSubmit} className="space-y-3">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Your max bid
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Your max bid</label>
           <div className="relative">
             <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input

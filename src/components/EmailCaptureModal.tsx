@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+
 import Link from "next/link";
-import { X, Gift, Mail, Loader2, Check, Sparkles } from "lucide-react";
+
+import { Gift, Loader2, Mail, Sparkles, X } from "lucide-react";
 
 interface EmailCaptureModalProps {
   isOpen: boolean;
@@ -12,10 +14,10 @@ interface EmailCaptureModalProps {
 }
 
 /**
- * EmailCaptureModal - Offers bonus scans in exchange for email
+ * EmailCaptureModal - Offers bonus scans in exchange for verified email
  *
- * Shown when guests hit their 5 scan limit. Offers 5 bonus scans
- * in exchange for their email address (no full signup required).
+ * Shown when guests hit their 5 scan limit. Sends a verification email
+ * and grants 5 bonus scans when the user clicks the link.
  */
 export function EmailCaptureModal({
   isOpen,
@@ -24,9 +26,10 @@ export function EmailCaptureModal({
   scansUsed,
 }: EmailCaptureModalProps) {
   const [email, setEmail] = useState("");
+  const [honeypot, setHoneypot] = useState(""); // Hidden field to catch bots
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isSuccess, setIsSuccess] = useState(false);
+  const [isEmailSent, setIsEmailSent] = useState(false);
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -50,8 +53,7 @@ export function EmailCaptureModal({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email,
-          source: "bonus_scans",
-          scansUsed,
+          honeypot, // Will be empty for real users, filled by bots
         }),
       });
 
@@ -59,25 +61,34 @@ export function EmailCaptureModal({
 
       if (!response.ok) {
         if (response.status === 409) {
-          setError("This email has already been used for bonus scans. Sign up for a free account to get 10 scans/month!");
+          setError(
+            data.error ||
+              "This email has already been used for bonus scans. Sign up for a free account to get 10 scans/month!"
+          );
         } else {
           setError(data.error || "Something went wrong. Please try again.");
         }
         return;
       }
 
-      // Success!
-      setIsSuccess(true);
+      // Show "check your email" message
+      setIsEmailSent(true);
 
-      // Wait a moment to show success state, then trigger callback
-      setTimeout(() => {
-        onSuccess();
-      }, 1500);
-
-    } catch (err) {
+      // Note: We don't call onSuccess() here anymore - bonus scans are granted
+      // when the user clicks the verification link and returns to the scan page
+    } catch {
       setError("Network error. Please try again.");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleClose = () => {
+    // If email was sent, call onSuccess to close the modal properly
+    if (isEmailSent) {
+      onSuccess();
+    } else {
+      onClose();
     }
   };
 
@@ -86,25 +97,30 @@ export function EmailCaptureModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/50 transition-opacity"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/50 transition-opacity" onClick={handleClose} />
 
       {/* Modal */}
       <div className="relative w-full max-w-md bg-white rounded-2xl shadow-xl transform transition-all overflow-hidden">
-        {/* Success State */}
-        {isSuccess ? (
+        {/* Email Sent State */}
+        {isEmailSent ? (
           <div className="p-8 text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Check className="w-8 h-8 text-green-600" />
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Mail className="w-8 h-8 text-blue-600" />
             </div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">
-              You got 5 bonus scans!
-            </h2>
-            <p className="text-gray-600">
-              Happy scanning! Check your email for tips on getting the most out of Collectors Chest.
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Check your email!</h2>
+            <p className="text-gray-600 mb-4">
+              We sent a verification link to <strong>{email}</strong>. Click the link to unlock your
+              5 bonus scans.
             </p>
+            <p className="text-sm text-gray-500 mb-6">
+              The link expires in 24 hours. Check your spam folder if you don&apos;t see it.
+            </p>
+            <button
+              onClick={handleClose}
+              className="w-full py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+            >
+              Got it
+            </button>
           </div>
         ) : (
           <>
@@ -121,11 +137,10 @@ export function EmailCaptureModal({
                 <div className="mb-4 p-3 bg-white/20 rounded-full">
                   <Gift className="w-8 h-8" />
                 </div>
-                <h2 className="text-xl font-bold mb-2">
-                  Want 5 More Scans?
-                </h2>
+                <h2 className="text-xl font-bold mb-2">Want 5 More Scans?</h2>
                 <p className="text-amber-100">
-                  You&apos;ve used all {scansUsed} guest scans. Enter your email to unlock 5 bonus scans instantly!
+                  You&apos;ve used all {scansUsed} guest scans. Enter your email to unlock 5 bonus
+                  scans!
                 </p>
               </div>
             </div>
@@ -147,9 +162,28 @@ export function EmailCaptureModal({
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white text-gray-900"
                     disabled={isLoading}
                     autoFocus
+                    autoComplete="email"
                   />
                 </div>
               </div>
+
+              {/* Honeypot field - hidden from real users, filled by bots */}
+              <input
+                type="text"
+                name="website"
+                value={honeypot}
+                onChange={(e) => setHoneypot(e.target.value)}
+                tabIndex={-1}
+                autoComplete="off"
+                style={{
+                  position: "absolute",
+                  left: "-9999px",
+                  opacity: 0,
+                  height: 0,
+                  width: 0,
+                }}
+                aria-hidden="true"
+              />
 
               {error && (
                 <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
@@ -165,18 +199,18 @@ export function EmailCaptureModal({
                 {isLoading ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    Unlocking...
+                    Sending...
                   </>
                 ) : (
                   <>
                     <Sparkles className="w-5 h-5" />
-                    Unlock 5 Bonus Scans
+                    Send Verification Email
                   </>
                 )}
               </button>
 
               <p className="text-xs text-gray-500 text-center mt-4">
-                No spam, ever. We&apos;ll only send you tips and updates about Collectors Chest.
+                We&apos;ll send you a link to verify your email and unlock bonus scans.
               </p>
             </form>
 

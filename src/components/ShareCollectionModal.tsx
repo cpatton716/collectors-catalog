@@ -1,16 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+
 import {
-  X,
-  Share2,
-  Copy,
-  Check,
-  Globe,
-  Lock,
-  ExternalLink,
-  Loader2,
   AlertCircle,
+  Check,
+  Copy,
+  ExternalLink,
+  Globe,
+  Loader2,
+  Lock,
+  Share2,
+  X,
 } from "lucide-react";
 
 interface ShareCollectionModalProps {
@@ -121,9 +122,10 @@ export function ShareCollectionModal({ onClose }: ShareCollectionModalProps) {
         publicDisplayName: displayName || null,
         publicBio: bio || null,
         publicSlug: customSlug || null,
-        shareUrl: settings.isPublic && customSlug
-          ? `${window.location.origin}/u/${customSlug}`
-          : settings.shareUrl,
+        shareUrl:
+          settings.isPublic && customSlug
+            ? `${window.location.origin}/u/${customSlug}`
+            : settings.shareUrl,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save settings");
@@ -165,9 +167,7 @@ export function ShareCollectionModal({ onClose }: ShareCollectionModalProps) {
             <div className="p-2 bg-primary-100 rounded-lg">
               <Share2 className="w-5 h-5 text-primary-600" />
             </div>
-            <h2 className="text-xl font-semibold text-gray-900">
-              Share Your Collection
-            </h2>
+            <h2 className="text-xl font-semibold text-gray-900">Share Your Collection</h2>
           </div>
           <button
             onClick={onClose}
@@ -242,9 +242,7 @@ export function ShareCollectionModal({ onClose }: ShareCollectionModalProps) {
                   </label>
                   <div className="flex gap-2">
                     <div className="flex-1 flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-lg border border-gray-200">
-                      <span className="text-sm text-gray-600 truncate">
-                        {settings.shareUrl}
-                      </span>
+                      <span className="text-sm text-gray-600 truncate">{settings.shareUrl}</span>
                     </div>
                     <button
                       onClick={handleCopyLink}
@@ -311,9 +309,7 @@ export function ShareCollectionModal({ onClose }: ShareCollectionModalProps) {
 
                       {/* Bio */}
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Bio
-                        </label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
                         <textarea
                           value={bio}
                           onChange={(e) => setBio(e.target.value)}
@@ -322,9 +318,7 @@ export function ShareCollectionModal({ onClose }: ShareCollectionModalProps) {
                           rows={2}
                           className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-900 resize-none"
                         />
-                        <p className="text-xs text-gray-500 mt-1">
-                          {bio.length}/200 characters
-                        </p>
+                        <p className="text-xs text-gray-500 mt-1">{bio.length}/200 characters</p>
                       </div>
 
                       {/* Custom URL */}
@@ -340,11 +334,7 @@ export function ShareCollectionModal({ onClose }: ShareCollectionModalProps) {
                             type="text"
                             value={customSlug}
                             onChange={(e) =>
-                              setCustomSlug(
-                                e.target.value
-                                  .toLowerCase()
-                                  .replace(/[^a-z0-9-]/g, "")
-                              )
+                              setCustomSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))
                             }
                             placeholder="your-name"
                             maxLength={30}
@@ -386,9 +376,7 @@ export function ShareCollectionModal({ onClose }: ShareCollectionModalProps) {
 
               {/* Info */}
               <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <h4 className="text-sm font-medium text-blue-900 mb-2">
-                  What others will see
-                </h4>
+                <h4 className="text-sm font-medium text-blue-900 mb-2">What others will see</h4>
                 <ul className="text-sm text-blue-700 space-y-1">
                   <li>- Your collection stats (total comics, value, top publishers)</li>
                   <li>- Grid view of your comics with cover images</li>

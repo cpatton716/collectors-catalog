@@ -1,30 +1,30 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+
 import {
-  X,
+  AlertCircle,
+  Calendar,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Crown,
   DollarSign,
   Gavel,
-  Tag,
-  Calendar,
-  Clock,
-  AlertCircle,
-  ChevronRight,
-  ChevronLeft,
-  Check,
   Package,
+  ShoppingBag,
+  Tag,
   ToggleLeft,
   ToggleRight,
-  Crown,
-  ShoppingBag,
+  X,
 } from "lucide-react";
-import { CollectionItem } from "@/types/comic";
-import {
-  MIN_FIXED_PRICE,
-  MIN_STARTING_PRICE,
-  AUCTION_DURATION_OPTIONS,
-} from "@/types/auction";
+
 import { useSubscription } from "@/hooks/useSubscription";
+
+import { AUCTION_DURATION_OPTIONS, MIN_FIXED_PRICE, MIN_STARTING_PRICE } from "@/types/auction";
+import { CollectionItem } from "@/types/comic";
+
 import { ComicImage } from "../ComicImage";
 
 type ListingMode = "sell" | "auction";
@@ -36,12 +36,7 @@ interface ListInShopModalProps {
   onCreated?: (listingId: string) => void;
 }
 
-export function ListInShopModal({
-  comic,
-  isOpen,
-  onClose,
-  onCreated,
-}: ListInShopModalProps) {
+export function ListInShopModal({ comic, isOpen, onClose, onCreated }: ListInShopModalProps) {
   const { features, startCheckout, isLoading: subscriptionLoading } = useSubscription();
   const [step, setStep] = useState(1);
   const [mode, setMode] = useState<ListingMode | null>(null);
@@ -201,18 +196,14 @@ export function ListInShopModal({
               shippingCost: parseFloat(shippingCost),
               description,
               acceptsOffers,
-              minOfferAmount: acceptsOffers
-                ? parseFloat(minOfferAmount)
-                : undefined,
+              minOfferAmount: acceptsOffers ? parseFloat(minOfferAmount) : undefined,
             }
           : {
               comicId: comic.id,
               comicData: comic, // Send full comic data for Supabase sync
               listingType: "auction",
               startingPrice: parseFloat(startingBid),
-              buyItNowPrice: buyItNowPrice
-                ? parseFloat(buyItNowPrice)
-                : undefined,
+              buyItNowPrice: buyItNowPrice ? parseFloat(buyItNowPrice) : undefined,
               durationDays,
               shippingCost: parseFloat(shippingCost),
               description,
@@ -270,17 +261,10 @@ export function ListInShopModal({
               </button>
             )}
             <h2 className="text-lg font-semibold text-gray-900">
-              {step === 1
-                ? "List in Shop"
-                : mode === "sell"
-                ? "Sell Your Comic"
-                : "Create Auction"}
+              {step === 1 ? "List in Shop" : mode === "sell" ? "Sell Your Comic" : "Create Auction"}
             </h2>
           </div>
-          <button
-            onClick={handleClose}
-            className="p-1 hover:bg-gray-100 rounded-full"
-          >
+          <button onClick={handleClose} className="p-1 hover:bg-gray-100 rounded-full">
             <X className="w-5 h-5 text-gray-600" />
           </button>
         </div>
@@ -293,9 +277,7 @@ export function ListInShopModal({
               <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <ShoppingBag className="w-8 h-8 text-amber-600" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Listing Limit Reached
-              </h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Listing Limit Reached</h3>
               <p className="text-gray-600 mb-4">
                 Free accounts can have up to {listingLimitInfo.limit} active listings.
                 <br />
@@ -347,15 +329,11 @@ export function ListInShopModal({
                 </div>
                 <div>
                   <p className="font-medium text-gray-900">{comic.comic.title}</p>
-                  <p className="text-sm text-gray-600">
-                    #{comic.comic.issueNumber}
-                  </p>
+                  <p className="text-sm text-gray-600">#{comic.comic.issueNumber}</p>
                 </div>
               </div>
 
-              <p className="text-sm text-gray-600">
-                How would you like to sell this comic?
-              </p>
+              <p className="text-sm text-gray-600">How would you like to sell this comic?</p>
 
               <button
                 onClick={() => selectMode("sell")}
@@ -367,9 +345,7 @@ export function ListInShopModal({
                   </div>
                   <div className="text-left">
                     <p className="font-medium text-gray-900">Sell (Fixed Price)</p>
-                    <p className="text-sm text-gray-500">
-                      Set a price, sell instantly
-                    </p>
+                    <p className="text-sm text-gray-500">Set a price, sell instantly</p>
                   </div>
                 </div>
                 <ChevronRight className="w-5 h-5 text-gray-400" />
@@ -385,9 +361,7 @@ export function ListInShopModal({
                   </div>
                   <div className="text-left">
                     <p className="font-medium text-gray-900">Auction</p>
-                    <p className="text-sm text-gray-500">
-                      Let buyers bid, max 14 days
-                    </p>
+                    <p className="text-sm text-gray-500">Let buyers bid, max 14 days</p>
                   </div>
                 </div>
                 <ChevronRight className="w-5 h-5 text-gray-400" />
@@ -415,27 +389,27 @@ export function ListInShopModal({
                     className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white text-gray-900"
                   />
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Listing valid for 30 days
-                </p>
+                <p className="text-xs text-gray-500 mt-1">Listing valid for 30 days</p>
               </div>
 
               {/* Accept Offers Toggle */}
-              <div className={`flex items-center justify-between p-3 rounded-lg border-2 transition-colors ${
-                acceptsOffers
-                  ? "bg-green-50 border-green-500"
-                  : "bg-gray-50 border-transparent"
-              }`}>
+              <div
+                className={`flex items-center justify-between p-3 rounded-lg border-2 transition-colors ${
+                  acceptsOffers ? "bg-green-50 border-green-500" : "bg-gray-50 border-transparent"
+                }`}
+              >
                 <div>
-                  <p className={`font-medium text-sm ${acceptsOffers ? "text-green-800" : "text-gray-900"}`} style={{ color: acceptsOffers ? '#166534' : '#111827' }}>Accept Offers</p>
+                  <p
+                    className={`font-medium text-sm ${acceptsOffers ? "text-green-800" : "text-gray-900"}`}
+                    style={{ color: acceptsOffers ? "#166534" : "#111827" }}
+                  >
+                    Accept Offers
+                  </p>
                   <p className={`text-xs ${acceptsOffers ? "text-green-700" : "text-gray-500"}`}>
                     Allow buyers to make offers
                   </p>
                 </div>
-                <button
-                  onClick={() => setAcceptsOffers(!acceptsOffers)}
-                  className="text-green-600"
-                >
+                <button onClick={() => setAcceptsOffers(!acceptsOffers)} className="text-green-600">
                   {acceptsOffers ? (
                     <ToggleRight className="w-8 h-8" />
                   ) : (
@@ -551,9 +525,7 @@ export function ListInShopModal({
               <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div>
                   <p className="font-medium text-sm text-gray-900">Schedule Start</p>
-                  <p className="text-xs text-gray-500">
-                    Start auction at a future time
-                  </p>
+                  <p className="text-xs text-gray-500">Start auction at a future time</p>
                 </div>
                 <button
                   onClick={() => setScheduledStart(!scheduledStart)}
@@ -602,13 +574,11 @@ export function ListInShopModal({
                     onChange={(e) => setDurationDays(parseInt(e.target.value))}
                     className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white text-gray-900"
                   >
-                    {AUCTION_DURATION_OPTIONS.filter((opt) => opt.value <= 14).map(
-                      (option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      )
-                    )}
+                    {AUCTION_DURATION_OPTIONS.filter((opt) => opt.value <= 14).map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">Maximum 14 days</p>

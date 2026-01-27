@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { processEndedAuctions, expireOffers, expireListings } from "@/lib/auctionDb";
+
+import { expireListings, expireOffers, processEndedAuctions } from "@/lib/auctionDb";
 
 // POST - Process ended auctions and expirations (called by cron)
 export async function POST(request: NextRequest) {
@@ -8,7 +9,8 @@ export async function POST(request: NextRequest) {
     const authHeader = request.headers.get("authorization");
     const cronSecret = process.env.CRON_SECRET;
 
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    // Fail closed: require CRON_SECRET to be set and match
+    if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -39,10 +41,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error processing cron job:", error);
-    return NextResponse.json(
-      { error: "Failed to process cron job" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to process cron job" }, { status: 500 });
   }
 }
 
@@ -81,9 +80,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error processing cron job:", error);
-    return NextResponse.json(
-      { error: "Failed to process cron job" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to process cron job" }, { status: 500 });
   }
 }

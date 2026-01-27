@@ -1,6 +1,18 @@
 "use client";
 
-import { X, Plus, RotateCcw, TrendingUp, TrendingDown, Minus, Database, CloudOff, ExternalLink, AlertTriangle } from "lucide-react";
+import {
+  AlertTriangle,
+  CloudOff,
+  Database,
+  ExternalLink,
+  Minus,
+  Plus,
+  RotateCcw,
+  TrendingDown,
+  TrendingUp,
+  X,
+} from "lucide-react";
+
 import { ComicImage } from "./ComicImage";
 
 interface RecentSale {
@@ -131,12 +143,7 @@ export function KeyHuntPriceResult({
           {/* Background cover image (blurred) */}
           {coverImageUrl && (
             <div className="absolute inset-0 scale-110 blur-sm">
-              <ComicImage
-                src={coverImageUrl}
-                alt=""
-                aspectRatio="fill"
-                sizes="400px"
-              />
+              <ComicImage src={coverImageUrl} alt="" aspectRatio="fill" sizes="400px" />
             </div>
           )}
           {/* Gradient overlay */}
@@ -174,14 +181,8 @@ export function KeyHuntPriceResult({
           {/* Average Price */}
           <div className="text-center mb-4">
             <p className="text-sm text-gray-500 mb-1">Average Price (Last 5 Sales)</p>
-            <p className="text-4xl font-bold text-gray-900">
-              {formatPrice(averagePrice)}
-            </p>
-            {fromCache && (
-              <p className="text-xs text-amber-600 mt-1">
-                Price from cached lookup
-              </p>
-            )}
+            <p className="text-4xl font-bold text-gray-900">{formatPrice(averagePrice)}</p>
+            {fromCache && <p className="text-xs text-amber-600 mt-1">Price from cached lookup</p>}
           </div>
 
           {/* AI Price Warning */}
@@ -189,7 +190,8 @@ export function KeyHuntPriceResult({
             <div className="mb-4 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
               <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
               <p className="text-xs text-amber-700">
-                <span className="font-medium">Technopathic Estimate:</span> No eBay sales data found. This price is a technopathic estimate and may not be accurate.
+                <span className="font-medium">Technopathic Estimate:</span> No eBay sales data
+                found. This price is a technopathic estimate and may not be accurate.
               </p>
             </div>
           )}
@@ -201,8 +203,8 @@ export function KeyHuntPriceResult({
                 recentSaleStatus === "high"
                   ? "bg-red-50 border border-red-200"
                   : recentSaleStatus === "low"
-                  ? "bg-green-50 border border-green-200"
-                  : "bg-gray-50 border border-gray-200"
+                    ? "bg-green-50 border border-green-200"
+                    : "bg-gray-50 border border-gray-200"
               }`}
             >
               <div className="flex items-center justify-between">
@@ -212,8 +214,8 @@ export function KeyHuntPriceResult({
                       recentSaleStatus === "high"
                         ? "text-red-600"
                         : recentSaleStatus === "low"
-                        ? "text-green-600"
-                        : "text-gray-500"
+                          ? "text-green-600"
+                          : "text-gray-500"
                     }`}
                   >
                     Most Recent Sale
@@ -223,23 +225,21 @@ export function KeyHuntPriceResult({
                       recentSaleStatus === "high"
                         ? "text-red-700"
                         : recentSaleStatus === "low"
-                        ? "text-green-700"
-                        : "text-gray-900"
+                          ? "text-green-700"
+                          : "text-gray-900"
                     }`}
                   >
                     {formatPrice(recentSale.price)}
                   </p>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    {formatDate(recentSale.date)}
-                  </p>
+                  <p className="text-xs text-gray-500 mt-0.5">{formatDate(recentSale.date)}</p>
                 </div>
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center ${
                     recentSaleStatus === "high"
                       ? "bg-red-100"
                       : recentSaleStatus === "low"
-                      ? "bg-green-100"
-                      : "bg-gray-100"
+                        ? "bg-green-100"
+                        : "bg-gray-100"
                   }`}
                 >
                   {recentSaleStatus === "high" ? (
@@ -276,9 +276,7 @@ export function KeyHuntPriceResult({
           {isOffline && (
             <div className="mb-4 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-2">
               <CloudOff className="w-4 h-4 text-amber-600 flex-shrink-0" />
-              <p className="text-xs text-amber-700">
-                Adding will queue for sync when back online
-              </p>
+              <p className="text-xs text-amber-700">Adding will queue for sync when back online</p>
             </div>
           )}
 

@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { Upload, FileText, X, AlertCircle, Check, Loader2, Download } from "lucide-react";
-import { ComicDetails, CollectionItem } from "@/types/comic";
+import { useRef, useState } from "react";
+
+import { AlertCircle, Check, Download, FileText, Loader2, Upload, X } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
+
+import { CollectionItem, ComicDetails } from "@/types/comic";
 
 interface CSVImportProps {
   onImportComplete: (items: CollectionItem[]) => void;
@@ -74,14 +76,18 @@ export function CSVImport({ onImportComplete, onCancel }: CSVImportProps) {
   const parseCSV = (text: string): ParsedRow[] => {
     const lines = text.split(/\r?\n/).filter((line) => line.trim());
     if (lines.length < 2) {
-      throw new Error("Your CSV file appears to be empty. Please make sure it has a header row and at least one comic entry.");
+      throw new Error(
+        "Your CSV file appears to be empty. Please make sure it has a header row and at least one comic entry."
+      );
     }
 
     const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
 
     // Validate required headers
     if (!headers.includes("title") || !headers.includes("issuenumber")) {
-      throw new Error("Your CSV needs 'title' and 'issueNumber' columns. Download the sample template to see the correct format.");
+      throw new Error(
+        "Your CSV needs 'title' and 'issueNumber' columns. Download the sample template to see the correct format."
+      );
     }
 
     const rows: ParsedRow[] = [];
@@ -190,7 +196,9 @@ export function CSVImport({ onImportComplete, onCancel }: CSVImportProps) {
     if (!selectedFile) return;
 
     if (!selectedFile.name.endsWith(".csv")) {
-      setParseError("Please select a CSV file. Other formats like Excel (.xlsx) aren't supported yet.");
+      setParseError(
+        "Please select a CSV file. Other formats like Excel (.xlsx) aren't supported yet."
+      );
       return;
     }
 
@@ -203,7 +211,11 @@ export function CSVImport({ onImportComplete, onCancel }: CSVImportProps) {
       setParsedRows(rows);
       setStep("preview");
     } catch (err) {
-      setParseError(err instanceof Error ? err.message : "We couldn't read this CSV file. Please check the format and try again.");
+      setParseError(
+        err instanceof Error
+          ? err.message
+          : "We couldn't read this CSV file. Please check the format and try again."
+      );
     }
   };
 
@@ -324,7 +336,8 @@ export function CSVImport({ onImportComplete, onCancel }: CSVImportProps) {
         <div>
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Import from CSV</h3>
           <p className="text-sm text-gray-600 mb-4">
-            Upload a CSV file to bulk import your collection. Download the template below for the correct format.
+            Upload a CSV file to bulk import your collection. Download the template below for the
+            correct format.
           </p>
           <a
             href="/sample-import.csv"
@@ -381,7 +394,8 @@ export function CSVImport({ onImportComplete, onCancel }: CSVImportProps) {
           </div>
 
           <p className="text-sm text-gray-600 mb-4">
-            Found <strong>{parsedRows.length}</strong> comics to import. We&apos;ll look up price data and key info for each.
+            Found <strong>{parsedRows.length}</strong> comics to import. We&apos;ll look up price
+            data and key info for each.
           </p>
 
           <div className="max-h-64 overflow-y-auto border border-gray-200 rounded-lg mb-6 overflow-x-auto">
@@ -390,8 +404,12 @@ export function CSVImport({ onImportComplete, onCancel }: CSVImportProps) {
                 <tr>
                   <th className="text-left p-3 font-medium text-gray-700">Title</th>
                   <th className="text-left p-3 font-medium text-gray-700">Issue</th>
-                  <th className="text-left p-3 font-medium text-gray-700 hidden sm:table-cell">Publisher</th>
-                  <th className="text-left p-3 font-medium text-gray-700 hidden sm:table-cell">Year</th>
+                  <th className="text-left p-3 font-medium text-gray-700 hidden sm:table-cell">
+                    Publisher
+                  </th>
+                  <th className="text-left p-3 font-medium text-gray-700 hidden sm:table-cell">
+                    Year
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -399,8 +417,12 @@ export function CSVImport({ onImportComplete, onCancel }: CSVImportProps) {
                   <tr key={idx} className="border-t border-gray-100">
                     <td className="p-3 text-gray-900">{row.title}</td>
                     <td className="p-3 text-gray-600">#{row.issueNumber}</td>
-                    <td className="p-3 text-gray-600 hidden sm:table-cell">{row.publisher || "-"}</td>
-                    <td className="p-3 text-gray-600 hidden sm:table-cell">{row.releaseYear || "-"}</td>
+                    <td className="p-3 text-gray-600 hidden sm:table-cell">
+                      {row.publisher || "-"}
+                    </td>
+                    <td className="p-3 text-gray-600 hidden sm:table-cell">
+                      {row.releaseYear || "-"}
+                    </td>
                   </tr>
                 ))}
               </tbody>

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
+
 import { useAuth } from "@clerk/nextjs";
 
 export type SubscriptionTier = "guest" | "free" | "premium";
@@ -54,7 +55,10 @@ export interface SubscriptionState {
   refresh: () => Promise<void>;
   startFreeTrial: () => Promise<{ success: boolean; error?: string; trialEndsAt?: Date }>;
   resetTrial: () => Promise<{ success: boolean; error?: string }>; // For testing only
-  startCheckout: (priceType: "monthly" | "annual" | "scan_pack", withTrial?: boolean) => Promise<string | null>;
+  startCheckout: (
+    priceType: "monthly" | "annual" | "scan_pack",
+    withTrial?: boolean
+  ) => Promise<string | null>;
   openBillingPortal: () => Promise<string | null>;
 }
 
@@ -72,7 +76,16 @@ export function useSubscription(): SubscriptionState {
   const { isSignedIn, isLoaded } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [data, setData] = useState<Omit<SubscriptionState, "isLoading" | "error" | "refresh" | "startFreeTrial" | "resetTrial" | "startCheckout" | "openBillingPortal"> | null>(null);
+  const [data, setData] = useState<Omit<
+    SubscriptionState,
+    | "isLoading"
+    | "error"
+    | "refresh"
+    | "startFreeTrial"
+    | "resetTrial"
+    | "startCheckout"
+    | "openBillingPortal"
+  > | null>(null);
 
   const fetchStatus = useCallback(async () => {
     if (!isLoaded) return;
@@ -149,66 +162,67 @@ export function useSubscription(): SubscriptionState {
     fetchStatus();
   }, [fetchStatus]);
 
-  const startFreeTrial = useCallback(
-    async (): Promise<{ success: boolean; error?: string; trialEndsAt?: Date }> => {
-      try {
-        const response = await fetch("/api/billing/start-trial", {
-          method: "POST",
-        });
+  const startFreeTrial = useCallback(async (): Promise<{
+    success: boolean;
+    error?: string;
+    trialEndsAt?: Date;
+  }> => {
+    try {
+      const response = await fetch("/api/billing/start-trial", {
+        method: "POST",
+      });
 
-        const result = await response.json();
+      const result = await response.json();
 
-        if (!response.ok) {
-          return { success: false, error: result.error || "Failed to start trial" };
-        }
-
-        // Refresh subscription state to reflect the new trial
-        await fetchStatus();
-
-        return {
-          success: true,
-          trialEndsAt: result.trialEndsAt ? new Date(result.trialEndsAt) : undefined,
-        };
-      } catch (err) {
-        console.error("Start trial error:", err);
-        const errorMessage = err instanceof Error ? err.message : "Failed to start trial";
-        setError(errorMessage);
-        return { success: false, error: errorMessage };
+      if (!response.ok) {
+        return { success: false, error: result.error || "Failed to start trial" };
       }
-    },
-    [fetchStatus]
-  );
+
+      // Refresh subscription state to reflect the new trial
+      await fetchStatus();
+
+      return {
+        success: true,
+        trialEndsAt: result.trialEndsAt ? new Date(result.trialEndsAt) : undefined,
+      };
+    } catch (err) {
+      console.error("Start trial error:", err);
+      const errorMessage = err instanceof Error ? err.message : "Failed to start trial";
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
+    }
+  }, [fetchStatus]);
 
   // Reset trial for testing purposes
-  const resetTrial = useCallback(
-    async (): Promise<{ success: boolean; error?: string }> => {
-      try {
-        const response = await fetch("/api/billing/reset-trial", {
-          method: "POST",
-        });
+  const resetTrial = useCallback(async (): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const response = await fetch("/api/billing/reset-trial", {
+        method: "POST",
+      });
 
-        const result = await response.json();
+      const result = await response.json();
 
-        if (!response.ok) {
-          return { success: false, error: result.error || "Failed to reset trial" };
-        }
-
-        // Refresh subscription state
-        await fetchStatus();
-
-        return { success: true };
-      } catch (err) {
-        console.error("Reset trial error:", err);
-        const errorMessage = err instanceof Error ? err.message : "Failed to reset trial";
-        setError(errorMessage);
-        return { success: false, error: errorMessage };
+      if (!response.ok) {
+        return { success: false, error: result.error || "Failed to reset trial" };
       }
-    },
-    [fetchStatus]
-  );
+
+      // Refresh subscription state
+      await fetchStatus();
+
+      return { success: true };
+    } catch (err) {
+      console.error("Reset trial error:", err);
+      const errorMessage = err instanceof Error ? err.message : "Failed to reset trial";
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
+    }
+  }, [fetchStatus]);
 
   const startCheckout = useCallback(
-    async (priceType: "monthly" | "annual" | "scan_pack", withTrial = false): Promise<string | null> => {
+    async (
+      priceType: "monthly" | "annual" | "scan_pack",
+      withTrial = false
+    ): Promise<string | null> => {
       try {
         const response = await fetch("/api/billing/checkout", {
           method: "POST",
@@ -325,7 +339,8 @@ export function useScanLimits(): {
   canScan: boolean;
   isLoading: boolean;
 } {
-  const { scansUsed, scansRemaining, monthlyLimit, monthResetDate, canScan, isLoading } = useSubscription();
+  const { scansUsed, scansRemaining, monthlyLimit, monthResetDate, canScan, isLoading } =
+    useSubscription();
 
   return {
     used: scansUsed,

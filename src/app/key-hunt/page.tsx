@@ -1,35 +1,42 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
-import { useUser } from "@clerk/nextjs";
+import { useCallback, useEffect, useState } from "react";
+
 import { useRouter } from "next/navigation";
-import { Loader2, Database, History, KeyRound } from "lucide-react";
-import { KeyHuntBottomSheet } from "@/components/KeyHuntBottomSheet";
-import { KeyHuntManualEntry } from "@/components/KeyHuntManualEntry";
-import { GradeSelector } from "@/components/GradeSelector";
-import { KeyHuntPriceResult } from "@/components/KeyHuntPriceResult";
-import { BarcodeScanner } from "@/components/BarcodeScanner";
-import { ImageUpload } from "@/components/ImageUpload";
-import { OfflineIndicator, SyncNotification } from "@/components/OfflineIndicator";
-import { KeyHuntOfflineSearch } from "@/components/KeyHuntOfflineSearch";
-import { KeyHuntHistoryList } from "@/components/KeyHuntHistoryList";
-import { KeyHuntHistoryDetail } from "@/components/KeyHuntHistoryDetail";
-import { KeyHuntWishlist } from "@/components/KeyHuntWishlist";
-import { FeatureGate } from "@/components/FeatureGate";
-import { ComicDetails, CollectionItem } from "@/types/comic";
-import { storage } from "@/lib/storage";
+
+import { useUser } from "@clerk/nextjs";
+
+import { Database, History, KeyRound, Loader2 } from "lucide-react";
+import { v4 as uuidv4 } from "uuid";
+
 import {
-  generateCacheKey,
-  getCachedLookup,
-  cacheLookup,
-  addToOfflineQueue,
   CachedLookup,
   KeyHuntHistoryEntry,
   addToKeyHuntHistory,
+  addToOfflineQueue,
+  cacheLookup,
+  generateCacheKey,
+  getCachedLookup,
   getKeyHuntHistoryCount,
 } from "@/lib/offlineCache";
+import { storage } from "@/lib/storage";
+
 import { useOffline } from "@/hooks/useOffline";
-import { v4 as uuidv4 } from "uuid";
+
+import { BarcodeScanner } from "@/components/BarcodeScanner";
+import { FeatureGate } from "@/components/FeatureGate";
+import { GradeSelector } from "@/components/GradeSelector";
+import { ImageUpload } from "@/components/ImageUpload";
+import { KeyHuntBottomSheet } from "@/components/KeyHuntBottomSheet";
+import { KeyHuntHistoryDetail } from "@/components/KeyHuntHistoryDetail";
+import { KeyHuntHistoryList } from "@/components/KeyHuntHistoryList";
+import { KeyHuntManualEntry } from "@/components/KeyHuntManualEntry";
+import { KeyHuntOfflineSearch } from "@/components/KeyHuntOfflineSearch";
+import { KeyHuntPriceResult } from "@/components/KeyHuntPriceResult";
+import { KeyHuntWishlist } from "@/components/KeyHuntWishlist";
+import { OfflineIndicator, SyncNotification } from "@/components/OfflineIndicator";
+
+import { CollectionItem, ComicDetails } from "@/types/comic";
 
 type KeyHuntFlow =
   | "idle"
@@ -67,7 +74,8 @@ export default function KeyHuntPage() {
   const router = useRouter();
   const [flow, setFlow] = useState<KeyHuntFlow>("options");
   const [error, setError] = useState<string | null>(null);
-  const { isOnline, isOfflineMode, pendingActionsCount, lastSyncResult, syncPendingActions } = useOffline();
+  const { isOnline, isOfflineMode, pendingActionsCount, lastSyncResult, syncPendingActions } =
+    useOffline();
   const [showSyncNotification, setShowSyncNotification] = useState(false);
 
   // Lookup state
@@ -83,7 +91,9 @@ export default function KeyHuntPage() {
   } | null>(null);
 
   const [result, setResult] = useState<LookupResult | null>(null);
-  const [selectedHistoryEntry, setSelectedHistoryEntry] = useState<KeyHuntHistoryEntry | null>(null);
+  const [selectedHistoryEntry, setSelectedHistoryEntry] = useState<KeyHuntHistoryEntry | null>(
+    null
+  );
 
   // Show sync notification when lastSyncResult changes
   useEffect(() => {
@@ -93,7 +103,9 @@ export default function KeyHuntPage() {
   }, [lastSyncResult]);
 
   // Handle option selection from bottom sheet
-  const handleSelectOption = (option: "cover" | "barcode" | "manual" | "offline-search" | "history" | "my-list") => {
+  const handleSelectOption = (
+    option: "cover" | "barcode" | "manual" | "offline-search" | "history" | "my-list"
+  ) => {
     setError(null);
     switch (option) {
       case "cover":
@@ -224,7 +236,12 @@ export default function KeyHuntPage() {
   };
 
   // Handle manual entry submission
-  const handleManualSubmit = async (title: string, issueNumber: string, grade: number, years?: string) => {
+  const handleManualSubmit = async (
+    title: string,
+    issueNumber: string,
+    grade: number,
+    years?: string
+  ) => {
     setPendingComic({ title, issueNumber, years });
     await performLookup(title, issueNumber, grade, years);
   };
@@ -245,7 +262,12 @@ export default function KeyHuntPage() {
   };
 
   // Perform the actual price lookup
-  const performLookup = async (title: string, issueNumber: string, grade: number, years?: string) => {
+  const performLookup = async (
+    title: string,
+    issueNumber: string,
+    grade: number,
+    years?: string
+  ) => {
     setFlow("loading");
     setError(null);
 
@@ -403,7 +425,13 @@ export default function KeyHuntPage() {
           ? {
               estimatedValue: result.averagePrice,
               recentSales: result.recentSale
-                ? [{ ...result.recentSale, source: "Technopathic Estimate", isOlderThan6Months: false }]
+                ? [
+                    {
+                      ...result.recentSale,
+                      source: "Technopathic Estimate",
+                      isOlderThan6Months: false,
+                    },
+                  ]
                 : [],
               mostRecentSaleDate: result.recentSale?.date || null,
               isAveraged: true,
@@ -458,84 +486,93 @@ export default function KeyHuntPage() {
   };
 
   // Handle adding to collection from history entry
-  const handleAddFromHistory = useCallback((entry: KeyHuntHistoryEntry) => {
-    if (isOfflineMode) {
-      // Queue for offline sync
-      addToOfflineQueue({
-        type: "add_to_collection",
-        data: {
+  const handleAddFromHistory = useCallback(
+    (entry: KeyHuntHistoryEntry) => {
+      if (isOfflineMode) {
+        // Queue for offline sync
+        addToOfflineQueue({
+          type: "add_to_collection",
+          data: {
+            title: entry.title,
+            issueNumber: entry.issueNumber,
+            publisher: entry.publisher,
+            grade: entry.grade,
+            averagePrice: entry.priceResult.rawPrice,
+            recentSale: entry.priceResult.recentSale || null,
+            coverImageUrl: entry.coverImageUrl,
+          },
+        });
+
+        setSelectedHistoryEntry(null);
+        setFlow("options");
+        return;
+      }
+
+      const item: CollectionItem = {
+        id: uuidv4(),
+        comic: {
+          id: uuidv4(),
           title: entry.title,
           issueNumber: entry.issueNumber,
-          publisher: entry.publisher,
-          grade: entry.grade,
-          averagePrice: entry.priceResult.rawPrice,
-          recentSale: entry.priceResult.recentSale || null,
-          coverImageUrl: entry.coverImageUrl,
+          variant: entry.variant || null,
+          publisher: entry.publisher || null,
+          releaseYear: null,
+          writer: null,
+          coverArtist: null,
+          interiorArtist: null,
+          confidence: "high",
+          isSlabbed: entry.isSlabbed,
+          gradingCompany: null,
+          grade: null,
+          isSignatureSeries: false,
+          signedBy: null,
+          keyInfo: [],
+          certificationNumber: null,
+          labelType: null,
+          pageQuality: null,
+          gradeDate: null,
+          graderNotes: null,
+          priceData: entry.priceResult.rawPrice
+            ? {
+                estimatedValue: entry.priceResult.rawPrice,
+                recentSales: entry.priceResult.recentSale
+                  ? [
+                      {
+                        ...entry.priceResult.recentSale,
+                        source: "Technopathic Estimate",
+                        isOlderThan6Months: false,
+                      },
+                    ]
+                  : [],
+                mostRecentSaleDate: entry.priceResult.recentSale?.date || null,
+                isAveraged: true,
+                disclaimer: "Technopathic estimate",
+              }
+            : null,
         },
-      });
+        coverImageUrl: entry.coverImageUrl || "",
+        conditionGrade: entry.grade,
+        conditionLabel: null,
+        isGraded: entry.isSlabbed,
+        gradingCompany: null,
+        purchasePrice: null,
+        purchaseDate: null,
+        notes: "Added from Key Hunt History",
+        forSale: false,
+        askingPrice: null,
+        averagePrice: entry.priceResult.rawPrice,
+        dateAdded: new Date().toISOString(),
+        listIds: [],
+        isStarred: false,
+      };
+
+      storage.addToCollection(item);
 
       setSelectedHistoryEntry(null);
       setFlow("options");
-      return;
-    }
-
-    const item: CollectionItem = {
-      id: uuidv4(),
-      comic: {
-        id: uuidv4(),
-        title: entry.title,
-        issueNumber: entry.issueNumber,
-        variant: entry.variant || null,
-        publisher: entry.publisher || null,
-        releaseYear: null,
-        writer: null,
-        coverArtist: null,
-        interiorArtist: null,
-        confidence: "high",
-        isSlabbed: entry.isSlabbed,
-        gradingCompany: null,
-        grade: null,
-        isSignatureSeries: false,
-        signedBy: null,
-        keyInfo: [],
-        certificationNumber: null,
-        labelType: null,
-        pageQuality: null,
-        gradeDate: null,
-        graderNotes: null,
-        priceData: entry.priceResult.rawPrice
-          ? {
-              estimatedValue: entry.priceResult.rawPrice,
-              recentSales: entry.priceResult.recentSale
-                ? [{ ...entry.priceResult.recentSale, source: "Technopathic Estimate", isOlderThan6Months: false }]
-                : [],
-              mostRecentSaleDate: entry.priceResult.recentSale?.date || null,
-              isAveraged: true,
-              disclaimer: "Technopathic estimate",
-            }
-          : null,
-      },
-      coverImageUrl: entry.coverImageUrl || "",
-      conditionGrade: entry.grade,
-      conditionLabel: null,
-      isGraded: entry.isSlabbed,
-      gradingCompany: null,
-      purchasePrice: null,
-      purchaseDate: null,
-      notes: "Added from Key Hunt History",
-      forSale: false,
-      askingPrice: null,
-      averagePrice: entry.priceResult.rawPrice,
-      dateAdded: new Date().toISOString(),
-      listIds: [],
-      isStarred: false,
-    };
-
-    storage.addToCollection(item);
-
-    setSelectedHistoryEntry(null);
-    setFlow("options");
-  }, [isOfflineMode]);
+    },
+    [isOfflineMode]
+  );
 
   // Handle close/back
   const handleClose = () => {
@@ -544,262 +581,255 @@ export default function KeyHuntPage() {
 
   return (
     <FeatureGate feature="keyHunt">
-    <div className="min-h-screen bg-gray-900">
-      {/* Offline Indicator */}
-      {isOfflineMode && (
-        <OfflineIndicator
-          pendingCount={pendingActionsCount}
-          syncResult={lastSyncResult}
-        />
-      )}
+      <div className="min-h-screen bg-gray-900">
+        {/* Offline Indicator */}
+        {isOfflineMode && (
+          <OfflineIndicator pendingCount={pendingActionsCount} syncResult={lastSyncResult} />
+        )}
 
-      {/* Header */}
-      <div className="bg-gradient-to-b from-amber-500 to-amber-600 px-4 py-6 safe-area-inset-top">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-              <KeyRound className="w-6 h-6 text-white" />
+        {/* Header */}
+        <div className="bg-gradient-to-b from-amber-500 to-amber-600 px-4 py-6 safe-area-inset-top">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                <KeyRound className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-white">Key Hunt</h1>
+                <p className="text-sm text-white/80">Quick Price Lookup</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-xl font-bold text-white">Key Hunt</h1>
-              <p className="text-sm text-white/80">Quick Price Lookup</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {isOfflineMode && (
-              <button
-                onClick={() => setFlow("offline-search")}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-white/20 rounded-full text-white text-sm"
-              >
-                <Database className="w-4 h-4" />
-                Cached
-              </button>
-            )}
-            <button
-              onClick={() => setFlow("history")}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/20 rounded-full text-white text-sm"
-            >
-              <History className="w-4 h-4" />
-              Recent
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Offline Search View */}
-      {flow === "offline-search" && (
-        <div className="flex-1">
-          <div className="p-4 border-b border-gray-700">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-medium text-white">Cached Lookups</h2>
-              <button
-                onClick={() => setFlow("options")}
-                className="text-amber-400 text-sm"
-              >
-                Back
-              </button>
-            </div>
-          </div>
-          <KeyHuntOfflineSearch onSelectResult={handleSelectCachedResult} />
-        </div>
-      )}
-
-      {/* History List View */}
-      {flow === "history" && (
-        <KeyHuntHistoryList
-          onSelectEntry={handleSelectHistoryEntry}
-          onClose={() => setFlow("options")}
-        />
-      )}
-
-      {/* History Detail View */}
-      {flow === "history-detail" && selectedHistoryEntry && (
-        <KeyHuntHistoryDetail
-          entry={selectedHistoryEntry}
-          onClose={() => setFlow("history")}
-          onLookupAgain={handleHistoryLookupAgain}
-          onAddToCollection={handleAddFromHistory}
-          isOffline={isOfflineMode}
-        />
-      )}
-
-      {/* My Hunt List View */}
-      {flow === "my-list" && (
-        <div className="flex-1 bg-gray-50 min-h-[calc(100vh-120px)]">
-          <div className="p-4 bg-white border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">My Hunt List</h2>
-              <button
-                onClick={() => setFlow("options")}
-                className="text-amber-600 text-sm font-medium"
-              >
-                Back
-              </button>
-            </div>
-          </div>
-          <div className="p-4">
-            <KeyHuntWishlist onClose={() => setFlow("options")} />
-          </div>
-        </div>
-      )}
-
-      {/* Main content area for cover scan */}
-      {flow === "cover-scan" && (
-        <div className="p-4">
-          <div className="text-center mb-4">
-            <p className="text-lg font-medium text-gray-900">Take a photo of the cover</p>
-            <p className="text-sm text-gray-600">We&apos;ll identify the comic and check if it&apos;s graded</p>
-          </div>
-          <ImageUpload
-            onImageSelect={handleCoverImageSelect}
-            disabled={false}
-          />
-          <button
-            onClick={() => setFlow("options")}
-            className="mt-4 w-full py-3 text-gray-600 hover:text-gray-900 transition-colors"
-          >
-            Cancel
-          </button>
-        </div>
-      )}
-
-      {/* Analyzing state */}
-      {flow === "cover-analyzing" && (
-        <div className="flex-1 flex items-center justify-center p-8">
-          <div className="text-center text-white">
-            <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-amber-400" />
-            <p className="text-lg font-medium">Analyzing cover...</p>
-            <p className="text-sm text-gray-400 mt-2">Identifying comic and checking for grade</p>
-          </div>
-        </div>
-      )}
-
-      {/* Barcode lookup state */}
-      {flow === "barcode-lookup" && (
-        <div className="flex-1 flex items-center justify-center p-8">
-          <div className="text-center text-white">
-            <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-amber-400" />
-            <p className="text-lg font-medium">Looking up comic...</p>
-            <p className="text-sm text-gray-400 mt-2">Finding details from barcode</p>
-          </div>
-        </div>
-      )}
-
-      {/* Loading state */}
-      {flow === "loading" && (
-        <div className="flex-1 flex items-center justify-center p-8">
-          <div className="text-center text-white">
-            <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-amber-400" />
-            <p className="text-lg font-medium">Getting price...</p>
-            <p className="text-sm text-gray-400 mt-2">
-              {pendingComic?.title} #{pendingComic?.issueNumber}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Error state */}
-      {flow === "error" && (
-        <div className="flex-1 flex items-center justify-center p-8">
-          <div className="text-center">
-            <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <KeyRound className="w-8 h-8 text-red-400" />
-            </div>
-            <p className="text-lg font-medium text-white mb-2">Something went wrong</p>
-            <p className="text-sm text-gray-400 mb-6">{error}</p>
-            <div className="flex flex-col gap-3">
-              <button
-                onClick={handleNewLookup}
-                className="px-6 py-3 bg-amber-500 text-white rounded-xl font-medium hover:bg-amber-600 transition-colors"
-              >
-                Try Again
-              </button>
+            <div className="flex items-center gap-2">
               {isOfflineMode && (
                 <button
                   onClick={() => setFlow("offline-search")}
-                  className="px-6 py-3 bg-gray-700 text-white rounded-xl font-medium hover:bg-gray-600 transition-colors flex items-center justify-center gap-2"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white/20 rounded-full text-white text-sm"
                 >
                   <Database className="w-4 h-4" />
-                  Search Cached Lookups
+                  Cached
                 </button>
               )}
+              <button
+                onClick={() => setFlow("history")}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-white/20 rounded-full text-white text-sm"
+              >
+                <History className="w-4 h-4" />
+                Recent
+              </button>
             </div>
           </div>
         </div>
-      )}
 
-      {/* Not signed in notice */}
-      {!isSignedIn && flow === "options" && (
-        <div className="p-4">
-          <div className="bg-amber-500/20 border border-amber-500/30 rounded-lg px-4 py-3">
-            <p className="text-amber-200 text-sm text-center">
-              Sign in to save comics to your collection
-            </p>
+        {/* Offline Search View */}
+        {flow === "offline-search" && (
+          <div className="flex-1">
+            <div className="p-4 border-b border-gray-700">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-medium text-white">Cached Lookups</h2>
+                <button onClick={() => setFlow("options")} className="text-amber-400 text-sm">
+                  Back
+                </button>
+              </div>
+            </div>
+            <KeyHuntOfflineSearch onSelectResult={handleSelectCachedResult} />
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Bottom Sheet - Options */}
-      <KeyHuntBottomSheet
-        isOpen={flow === "options"}
-        onClose={handleClose}
-        onSelectOption={handleSelectOption}
-        isOffline={isOfflineMode}
-      />
+        {/* History List View */}
+        {flow === "history" && (
+          <KeyHuntHistoryList
+            onSelectEntry={handleSelectHistoryEntry}
+            onClose={() => setFlow("options")}
+          />
+        )}
 
-      {/* Barcode Scanner */}
-      {flow === "barcode-scan" && (
-        <BarcodeScanner
-          onScan={handleBarcodeScan}
-          onClose={() => setFlow("options")}
-          isProcessing={false}
-        />
-      )}
+        {/* History Detail View */}
+        {flow === "history-detail" && selectedHistoryEntry && (
+          <KeyHuntHistoryDetail
+            entry={selectedHistoryEntry}
+            onClose={() => setFlow("history")}
+            onLookupAgain={handleHistoryLookupAgain}
+            onAddToCollection={handleAddFromHistory}
+            isOffline={isOfflineMode}
+          />
+        )}
 
-      {/* Manual Entry Modal */}
-      <KeyHuntManualEntry
-        isOpen={flow === "manual-entry"}
-        onClose={() => setFlow("options")}
-        onSubmit={handleManualSubmit}
-      />
+        {/* My Hunt List View */}
+        {flow === "my-list" && (
+          <div className="flex-1 bg-gray-50 min-h-[calc(100vh-120px)]">
+            <div className="p-4 bg-white border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-900">My Hunt List</h2>
+                <button
+                  onClick={() => setFlow("options")}
+                  className="text-amber-600 text-sm font-medium"
+                >
+                  Back
+                </button>
+              </div>
+            </div>
+            <div className="p-4">
+              <KeyHuntWishlist onClose={() => setFlow("options")} />
+            </div>
+          </div>
+        )}
 
-      {/* Grade Selector Modal */}
-      <GradeSelector
-        isOpen={flow === "grade-select"}
-        onClose={() => setFlow("options")}
-        onSelect={handleGradeSelect}
-        comicTitle={pendingComic?.title}
-        issueNumber={pendingComic?.issueNumber}
-      />
+        {/* Main content area for cover scan */}
+        {flow === "cover-scan" && (
+          <div className="p-4">
+            <div className="text-center mb-4">
+              <p className="text-lg font-medium text-gray-900">Take a photo of the cover</p>
+              <p className="text-sm text-gray-600">
+                We&apos;ll identify the comic and check if it&apos;s graded
+              </p>
+            </div>
+            <ImageUpload onImageSelect={handleCoverImageSelect} disabled={false} />
+            <button
+              onClick={() => setFlow("options")}
+              className="mt-4 w-full py-3 text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        )}
 
-      {/* Price Result */}
-      {result && (
-        <KeyHuntPriceResult
-          isOpen={flow === "result"}
-          onClose={handleNewLookup}
-          onAddToCollection={handleAddToCollection}
-          onNewLookup={handleNewLookup}
-          title={result.title}
-          issueNumber={result.issueNumber}
-          grade={result.grade}
-          averagePrice={result.averagePrice}
-          recentSale={result.recentSale}
-          coverImageUrl={result.coverImageUrl}
-          fromCache={result.fromCache}
+        {/* Analyzing state */}
+        {flow === "cover-analyzing" && (
+          <div className="flex-1 flex items-center justify-center p-8">
+            <div className="text-center text-white">
+              <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-amber-400" />
+              <p className="text-lg font-medium">Analyzing cover...</p>
+              <p className="text-sm text-gray-400 mt-2">Identifying comic and checking for grade</p>
+            </div>
+          </div>
+        )}
+
+        {/* Barcode lookup state */}
+        {flow === "barcode-lookup" && (
+          <div className="flex-1 flex items-center justify-center p-8">
+            <div className="text-center text-white">
+              <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-amber-400" />
+              <p className="text-lg font-medium">Looking up comic...</p>
+              <p className="text-sm text-gray-400 mt-2">Finding details from barcode</p>
+            </div>
+          </div>
+        )}
+
+        {/* Loading state */}
+        {flow === "loading" && (
+          <div className="flex-1 flex items-center justify-center p-8">
+            <div className="text-center text-white">
+              <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-amber-400" />
+              <p className="text-lg font-medium">Getting price...</p>
+              <p className="text-sm text-gray-400 mt-2">
+                {pendingComic?.title} #{pendingComic?.issueNumber}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Error state */}
+        {flow === "error" && (
+          <div className="flex-1 flex items-center justify-center p-8">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <KeyRound className="w-8 h-8 text-red-400" />
+              </div>
+              <p className="text-lg font-medium text-white mb-2">Something went wrong</p>
+              <p className="text-sm text-gray-400 mb-6">{error}</p>
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={handleNewLookup}
+                  className="px-6 py-3 bg-amber-500 text-white rounded-xl font-medium hover:bg-amber-600 transition-colors"
+                >
+                  Try Again
+                </button>
+                {isOfflineMode && (
+                  <button
+                    onClick={() => setFlow("offline-search")}
+                    className="px-6 py-3 bg-gray-700 text-white rounded-xl font-medium hover:bg-gray-600 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Database className="w-4 h-4" />
+                    Search Cached Lookups
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Not signed in notice */}
+        {!isSignedIn && flow === "options" && (
+          <div className="p-4">
+            <div className="bg-amber-500/20 border border-amber-500/30 rounded-lg px-4 py-3">
+              <p className="text-amber-200 text-sm text-center">
+                Sign in to save comics to your collection
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Bottom Sheet - Options */}
+        <KeyHuntBottomSheet
+          isOpen={flow === "options"}
+          onClose={handleClose}
+          onSelectOption={handleSelectOption}
           isOffline={isOfflineMode}
-          source={result.source}
         />
-      )}
 
-      {/* Sync Notification */}
-      {showSyncNotification && lastSyncResult && (
-        <SyncNotification
-          synced={lastSyncResult.synced}
-          failed={lastSyncResult.failed}
-          onDismiss={() => setShowSyncNotification(false)}
+        {/* Barcode Scanner */}
+        {flow === "barcode-scan" && (
+          <BarcodeScanner
+            onScan={handleBarcodeScan}
+            onClose={() => setFlow("options")}
+            isProcessing={false}
+          />
+        )}
+
+        {/* Manual Entry Modal */}
+        <KeyHuntManualEntry
+          isOpen={flow === "manual-entry"}
+          onClose={() => setFlow("options")}
+          onSubmit={handleManualSubmit}
         />
-      )}
-    </div>
+
+        {/* Grade Selector Modal */}
+        <GradeSelector
+          isOpen={flow === "grade-select"}
+          onClose={() => setFlow("options")}
+          onSelect={handleGradeSelect}
+          comicTitle={pendingComic?.title}
+          issueNumber={pendingComic?.issueNumber}
+        />
+
+        {/* Price Result */}
+        {result && (
+          <KeyHuntPriceResult
+            isOpen={flow === "result"}
+            onClose={handleNewLookup}
+            onAddToCollection={handleAddToCollection}
+            onNewLookup={handleNewLookup}
+            title={result.title}
+            issueNumber={result.issueNumber}
+            grade={result.grade}
+            averagePrice={result.averagePrice}
+            recentSale={result.recentSale}
+            coverImageUrl={result.coverImageUrl}
+            fromCache={result.fromCache}
+            isOffline={isOfflineMode}
+            source={result.source}
+          />
+        )}
+
+        {/* Sync Notification */}
+        {showSyncNotification && lastSyncResult && (
+          <SyncNotification
+            synced={lastSyncResult.synced}
+            failed={lastSyncResult.failed}
+            onDismiss={() => setShowSyncNotification(false)}
+          />
+        )}
+      </div>
     </FeatureGate>
   );
 }

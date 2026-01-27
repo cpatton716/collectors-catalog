@@ -1,7 +1,8 @@
 "use client";
 
+import { DollarSign, Pencil, Star, Tag, TrendingDown, TrendingUp } from "lucide-react";
+
 import { CollectionItem } from "@/types/comic";
-import { Tag, DollarSign, Star, TrendingUp, TrendingDown, Pencil } from "lucide-react";
 
 interface ComicCardProps {
   item: CollectionItem;
@@ -30,10 +31,7 @@ export function ComicCard({ item, onClick, onToggleStar, onEdit }: ComicCardProp
   };
 
   return (
-    <div
-      onClick={onClick}
-      className="comic-card cursor-pointer group"
-    >
+    <div onClick={onClick} className="comic-card cursor-pointer group">
       {/* Cover Image */}
       <div className="relative aspect-[2/3] bg-pop-cream border-b-3 border-pop-black">
         {coverImageUrl ? (
@@ -56,11 +54,7 @@ export function ComicCard({ item, onClick, onToggleStar, onEdit }: ComicCardProp
               FOR SALE!
             </span>
           )}
-          {conditionLabel && (
-            <span className="badge-pop badge-pop-blue">
-              {conditionLabel}
-            </span>
-          )}
+          {conditionLabel && <span className="badge-pop badge-pop-blue">{conditionLabel}</span>}
         </div>
 
         {/* Quick Actions - Show on hover */}
@@ -98,11 +92,11 @@ export function ComicCard({ item, onClick, onToggleStar, onEdit }: ComicCardProp
             </span>
           )}
           {hasProfitData && (
-            <span className={`badge-pop flex items-center gap-0.5 ${
-              profitLoss >= 0
-                ? "badge-pop-green"
-                : "badge-pop-red"
-            }`}>
+            <span
+              className={`badge-pop flex items-center gap-0.5 ${
+                profitLoss >= 0 ? "badge-pop-green" : "badge-pop-red"
+              }`}
+            >
               {profitLoss >= 0 ? (
                 <TrendingUp className="w-3 h-3" />
               ) : (
@@ -125,13 +119,9 @@ export function ComicCard({ item, onClick, onToggleStar, onEdit }: ComicCardProp
         <div className="flex items-center justify-between mt-1">
           <p className="text-sm font-body text-pop-black">
             #{comic.issueNumber || "?"}
-            {comic.variant && (
-              <span className="text-pop-blue ml-1">({comic.variant})</span>
-            )}
+            {comic.variant && <span className="text-pop-blue ml-1">({comic.variant})</span>}
           </p>
-          {item.isStarred && (
-            <Star className="w-4 h-4 text-pop-yellow fill-pop-yellow" />
-          )}
+          {item.isStarred && <Star className="w-4 h-4 text-pop-yellow fill-pop-yellow" />}
         </div>
         <p className="text-xs font-body text-pop-black/70 mt-1 truncate">
           {comic.publisher || "Unknown Publisher"}

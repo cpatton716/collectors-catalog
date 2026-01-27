@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  getAdminProfile,
-  logAdminAction,
-  searchUsersByEmail,
-} from "@/lib/adminAuth";
+
+import { getAdminProfile, logAdminAction, searchUsersByEmail } from "@/lib/adminAuth";
 
 export async function GET(request: NextRequest) {
   try {
@@ -36,9 +33,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ users });
   } catch (error) {
     console.error("Error searching users:", error);
-    return NextResponse.json(
-      { error: "Failed to search users" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to search users" }, { status: 500 });
   }
 }

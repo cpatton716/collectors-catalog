@@ -1,10 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+
 import { useUser } from "@clerk/nextjs";
-import { Home, BookOpen, ShoppingBag, KeyRound, Gavel } from "lucide-react";
+
+import { BookOpen, Gavel, Home, KeyRound, ShoppingBag } from "lucide-react";
 
 export function MobileNav() {
   const pathname = usePathname();
@@ -56,16 +59,17 @@ export function MobileNav() {
   ];
 
   // Add My Listings and Key Hunt for signed-in users (only after mount to avoid hydration mismatch)
-  const navItems = hasMounted && isSignedIn
-    ? [
-        ...baseItems,
-        { href: "/my-auctions", icon: Gavel, label: "Listings" },
-        { href: "/key-hunt", icon: KeyRound, label: "Key Hunt" },
-      ]
-    : baseItems;
+  const navItems =
+    hasMounted && isSignedIn
+      ? [
+          ...baseItems,
+          { href: "/my-auctions", icon: Gavel, label: "Listings" },
+          { href: "/key-hunt", icon: KeyRound, label: "Key Hunt" },
+        ]
+      : baseItems;
 
-  const handleNavClick = (e: React.MouseEvent, item: typeof navItems[0]) => {
-    if ('comingSoon' in item && item.comingSoon) {
+  const handleNavClick = (e: React.MouseEvent, item: (typeof navItems)[0]) => {
+    if ("comingSoon" in item && item.comingSoon) {
       e.preventDefault();
       setShowComingSoon(true);
       setTimeout(() => setShowComingSoon(false), 2000);
@@ -85,7 +89,7 @@ export function MobileNav() {
             {navItems.map((item) => {
               const isActive = pathname === item.href;
               const Icon = item.icon;
-              const isComingSoon = 'comingSoon' in item && item.comingSoon;
+              const isComingSoon = "comingSoon" in item && item.comingSoon;
 
               return (
                 <Link
@@ -96,8 +100,8 @@ export function MobileNav() {
                     isActive
                       ? "bg-primary-100 text-primary-600"
                       : isComingSoon
-                      ? "text-gray-400"
-                      : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                        ? "text-gray-400"
+                        : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
                   }`}
                 >
                   <Icon className={`w-5 h-5 ${isActive ? "stroke-[2.5]" : ""}`} />

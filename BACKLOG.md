@@ -1,5 +1,35 @@
 # Collectors Chest Backlog
 
+## Security - Critical Priority
+
+### Add Rate Limiting to Quick Lookup API
+**Priority:** Critical
+**Status:** ✅ Complete (Jan 26, 2026)
+**File:** `src/app/api/quick-lookup/route.ts`
+
+Added rate limiting (20 requests/min) to protect Anthropic API costs.
+
+---
+
+### Add Rate Limiting & Email Verification to Email Capture API
+**Priority:** Critical
+**Status:** ✅ Complete (Jan 26, 2026)
+**Files:**
+- `src/app/api/email-capture/route.ts` - Rate limiting + verification flow
+- `src/app/api/email-capture/verify/route.ts` - Verification endpoint
+- `src/lib/emailValidation.ts` - MX validation + disposable email detection
+- `supabase/migrations/20260126_bonus_scan_claims.sql` - Database schema
+
+**Protections Implemented:**
+- Rate limiting (5 requests/min per IP)
+- Email verification required before granting bonus scans
+- IP tracking to prevent multiple claims per device
+- MX record validation to reject invalid domains
+- Disposable email blocking
+- Honeypot field to catch bots
+
+---
+
 ## Design Review
 
 ### Unique Visual Identity
@@ -36,31 +66,69 @@ Current palette uses Yellow for branding + Red for accents. May revisit with a m
 
 ## Pre-Launch Checklist
 
-### Form LLC Business Entity
+### Set Up the Business
 **Priority:** Critical
 **Status:** Pending
 
-Form an LLC to protect personal assets before opening the marketplace to the public. Required before finalizing Privacy Policy and Terms of Service.
+Complete business formation and financial infrastructure before public launch.
 
 **Why It's Important:**
 - Marketplace handles money between users - higher liability risk
 - Protects personal assets from potential lawsuits
 - Required for professional ToS & Privacy Policy
-- Enables business banking and cleaner Stripe setup
+- Enables proper Stripe setup with business verification
 
-**Steps:**
-1. Choose LLC formation service (ZenBusiness, LegalZoom, or state website)
-2. File LLC in your state (~$50-500 depending on state)
-3. Obtain EIN from IRS (free, online)
-4. Open business bank account (optional but recommended)
-5. Update Stripe account to business entity (optional)
+**Steps (in order):**
 
-**Estimated Cost:** $100-300 filing + potential annual fees (CA has $800/yr franchise tax)
-**Time:** Can be done online in 30 minutes, processing takes 1-2 weeks
+| Step | Task | Time | Notes |
+|------|------|------|-------|
+| 1 | **Form LLC** | 30 min + 1-7 days processing | ZenBusiness, LegalZoom, or state website ($50-500) |
+| 2 | **Get EIN** | 10 min (instant) | IRS.gov - free, requires LLC first |
+| 3 | **Open Business Bank Account** | 1-2 hours | Requires LLC docs + EIN, get business debit card |
+| 4 | **Set Up Stripe** | 30 min | Use business name, EIN, bank account |
+| 5 | **Update Payment Methods** | 30 min | Switch all services to company card |
 
-**Blocked Items:**
-- Privacy Policy (needs official business name)
-- Terms of Service (needs official business name)
+**Step 4 - Stripe Configuration Details:**
+
+Create these products in Stripe Dashboard → Products:
+
+| Product | Price | Type | Notes |
+|---------|-------|------|-------|
+| Premium Monthly | $4.99/month | Recurring | 7-day free trial enabled |
+| Premium Annual | $49.99/year | Recurring | 7-day free trial enabled |
+| Scan Pack (10 scans) | $1.99 | One-time | For free users who hit limit |
+
+Environment variables to add (`.env.local` AND Netlify):
+```
+STRIPE_SECRET_KEY=sk_live_xxx
+STRIPE_WEBHOOK_SECRET=whsec_xxx
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_xxx
+STRIPE_PRICE_PREMIUM_MONTHLY=price_xxx
+STRIPE_PRICE_PREMIUM_ANNUAL=price_xxx
+STRIPE_PRICE_SCAN_PACK=price_xxx
+```
+
+Configure webhook at `https://collectors-chest.com/api/webhooks/stripe` for events:
+- `checkout.session.completed`, `checkout.session.expired`
+- `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`
+- `invoice.payment_succeeded`, `invoice.payment_failed`
+
+**Step 5 - Services to Update:**
+
+| Service | Cost | Dashboard |
+|---------|------|-----------|
+| Netlify | $9/mo | [app.netlify.com](https://app.netlify.com) → Billing |
+| Domain | $13.99/yr | Via Netlify |
+| Anthropic | ~$0.015/scan | [console.anthropic.com](https://console.anthropic.com) → Billing |
+| GoCollect | $9/mo | [gocollect.com](https://gocollect.com) → Billing |
+
+**Estimated Total Cost:** $100-300 filing + ~$30/mo ongoing services
+**Estimated Time:** ~2 weeks (mostly waiting for LLC processing)
+
+**Blocks:**
+- Privacy Policy & Terms of Service (need business name)
+- Live subscription billing
+- Marketplace payments
 
 ---
 
@@ -89,70 +157,44 @@ Fixed free trial functionality to work without Stripe configuration.
 
 ---
 
-### Create Stripe Account & Configure Billing
-**Priority:** Critical
+### Reactivate Sentry Error Tracking
+**Priority:** High
 **Status:** Pending
 
-Set up Stripe account for subscription billing and marketplace payments.
+Trial expired. Need to set up Sentry free tier (or paid) before public launch for error visibility.
 
-**Steps:**
+**What Sentry Provides:**
+- Error tracking and alerts
+- Performance monitoring (10% sample rate)
+- Session replay on errors (helps reproduce bugs)
 
-1. **Create Stripe Account**
-   - Go to [stripe.com](https://stripe.com) and sign up
-   - Complete business verification (can use personal info initially, update to LLC later)
-   - Get API keys from Dashboard → Developers → API keys
+**Current State:**
+- Sentry is integrated and configured in codebase
+- Only enabled in production (`NODE_ENV === "production"`)
+- Trial expired - errors likely not being captured
 
-2. **Create Subscription Products**
-   In Stripe Dashboard → Products, create:
+**Options:**
 
-   | Product | Price | Type | Notes |
-   |---------|-------|------|-------|
-   | Premium Monthly | $4.99/month | Recurring | 7-day free trial enabled |
-   | Premium Annual | $49.99/year | Recurring | 7-day free trial enabled |
-   | Scan Pack (10 scans) | $1.99 | One-time | For free users who hit limit |
+| Tier | Cost | Limits |
+|------|------|--------|
+| Free | $0 | 5K errors/mo |
+| Team | $26/mo | 50K errors/mo |
 
-3. **Add Environment Variables**
-   Add these to `.env.local` AND Netlify Environment Variables:
-   ```
-   STRIPE_SECRET_KEY=sk_live_xxx (or sk_test_xxx for testing)
-   STRIPE_WEBHOOK_SECRET=whsec_xxx
-   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_xxx (or pk_test_xxx)
-   STRIPE_PRICE_PREMIUM_MONTHLY=price_xxx
-   STRIPE_PRICE_PREMIUM_ANNUAL=price_xxx
-   STRIPE_PRICE_SCAN_PACK=price_xxx
-   ```
+**Action Required:**
+1. Log into Sentry dashboard
+2. Select free tier or upgrade
+3. Verify `SENTRY_DSN` env var is still valid in Netlify
+4. Test that errors are being captured
 
-4. **Configure Stripe Webhook**
-   - Go to Developers → Webhooks → Add endpoint
-   - URL: `https://collectors-chest.com/api/webhooks/stripe`
-   - Events to listen for:
-     - `checkout.session.completed`
-     - `checkout.session.expired`
-     - `customer.subscription.created`
-     - `customer.subscription.updated`
-     - `customer.subscription.deleted`
-     - `invoice.payment_succeeded`
-     - `invoice.payment_failed`
-   - Copy the signing secret to `STRIPE_WEBHOOK_SECRET`
-
-5. **Test Mode First**
-   - Use test API keys initially (`sk_test_`, `pk_test_`)
-   - Test with Stripe test cards (4242 4242 4242 4242)
-   - Verify webhook events are received
-   - Switch to live keys when ready for production
-
-**Related Code:**
-- Billing API routes: `src/app/api/billing/`
-- Webhook handler: `src/app/api/webhooks/stripe/route.ts`
-- Subscription logic: `src/lib/subscription.ts`
-
-**Blocked By:** None (can use test mode before LLC formation)
-**Blocks:** Live subscription billing, marketplace payments
+**Files:**
+- `sentry.client.config.ts`
+- `sentry.server.config.ts`
+- `sentry.edge.config.ts`
 
 ---
 
 ### Re-enable Live Hottest Books API
-**Priority:** Critical
+**Priority:** High
 **Status:** Pending
 **File:** `src/app/api/hottest-books/route.ts`
 
@@ -199,90 +241,60 @@ Add direct messaging between users to facilitate communication around purchases 
 
 ### Track Sale Price When Marking Book as Sold
 **Priority:** Medium
-**Status:** Pending
+**Status:** ✅ Complete (Jan 27, 2026)
 
-When a user marks a book as sold (removing it from collection), prompt them to enter the sale price so they can track proceeds and profit/loss even after the book leaves their collection.
+Track sale prices when marking books as sold, with support for both manual sales and platform marketplace sales.
 
-**Current Behavior:**
-- Book is removed from collection when marked as sold
-- No record of sale amount is captured
+**Features Implemented:**
+- "Mark as Sold" button now available for ALL comics (not just those marked "For Sale")
+- Sale price prompt with profit/loss preview
+- Platform sales (auctions, buy-now, accepted offers) auto-record via Stripe webhook
+- New Sales History page at `/sales` with:
+  - Summary cards: total sales, total profit, average profit
+  - Sales table with comic info, cost, sale price, profit, date
+  - Mobile-responsive design with expandable details
+  - Cover image thumbnails
+- "Sales" button added to collection page header
 
-**Proposed Flow:**
-1. User clicks "Mark as Sold" on a book
-2. Modal prompts for sale price (optional but encouraged)
-3. Sale is recorded in `sales` table with: book details, sale price, original purchase price, date
-4. Book is removed from active collection
-5. Sale history remains accessible for profit/loss tracking
+**Files Added:**
+- `src/app/sales/page.tsx` - Sales History page
 
-**Benefits:**
-- Accurate profit/loss calculations over time
-- Sales history for tax purposes
-- Better collection value analytics (realized vs unrealized gains)
-
-**Related:**
-- `src/lib/storage.ts` - Current sale tracking
-- `src/lib/db.ts` - Database operations
-- Home page sales stats display
+**Files Modified:**
+- `src/components/ComicDetailModal.tsx` - Show "Mark as Sold" for all comics
+- `src/app/api/webhooks/stripe/route.ts` - Auto-record platform sales
+- `src/app/collection/page.tsx` - Added Sales navigation button
 
 ---
 
 ### Auction Cancellation Policy (Books with Bids)
 **Priority:** Medium
-**Status:** Pending
+**Status:** ✅ Complete (Jan 27, 2026)
 
-Define and implement policy for handling auction cancellations when a book already has bids.
+Implemented comprehensive auction cancellation policy with code enforcement.
 
-**Questions to Resolve:**
-- Should sellers be allowed to cancel/remove an auction with active bids?
-- What happens to existing bids if cancellation is allowed?
-- Should there be a penalty for cancelling auctions with bids?
-- How do we prevent sellers from listing the same book twice?
+**Policy Implemented:**
+- Auctions with bids CANNOT be cancelled (enforced in code)
+- Auctions without bids CAN be cancelled
+- Fixed-price listings CAN be cancelled (offer-makers notified)
+- Duplicate listings are PREVENTED (same comic can't have multiple active listings)
 
-**Potential Approaches:**
-1. **Disallow cancellation** - Once bids exist, auction must complete
-2. **Allow with restrictions** - Can cancel but bidders are notified, possible reputation impact
-3. **Time-based** - Can cancel within X hours of first bid, locked after that
-4. **TOS enforcement** - Prohibit duplicate listings and bad-faith cancellations in Terms of Service
+**Changes Made:**
 
-**Related Files:**
-- `src/lib/auctionDb.ts` - `cancelAuction` function
-- `src/app/terms/page.tsx` - Terms of Service
+1. **Terms of Service** (`src/app/terms/page.tsx`):
+   - Added Section 4.5 "Listing Cancellation Policy"
+   - Documents all cancellation rules
+   - Warns of reputation impact for bad-faith cancellations
 
-**Note:** May need to check current behavior and update both code and TOS together.
+2. **Offer Notifications** (`src/lib/auctionDb.ts`):
+   - When fixed-price listing is cancelled, all pending offers are auto-rejected
+   - Offer-makers receive "listing_cancelled" notification
+   - Added new notification type to `src/types/auction.ts`
 
----
-
-### Marvel Cover Images & Creator Data
-**Priority:** Medium
-**Status:** Pending
-
-Pull Marvel comic cover images and creator information directly from Marvel.com to improve data quality and reduce reliance on user-uploaded images.
-
-**Example Source:** https://www.marvel.com/comics/issue/12415/uncanny_x-men_1963_100
-
-**Approach Options:**
-1. **Marvel API Integration** - Use official Marvel Developer API (requires API key)
-2. **Web Scraping** - Extract data from Marvel.com pages
-3. **Bulk Data Import** - One-time massive pull to store locally in Supabase
-
-**Data to Extract:**
-- High-resolution cover images
-- Creator credits (writer, artist, cover artist, inker, colorist)
-- Publication dates
-- Series information
-- Issue descriptions/summaries
-
-**Benefits:**
-- Higher quality cover images than user photos
-- Accurate creator credits
-- Consistent data format
-- Reduced storage for user-uploaded images
-
-**Considerations:**
-- Marvel API rate limits and terms of service
-- Storage costs for bulk image hosting
-- Need to handle non-Marvel publishers separately
-- Could start with Marvel-only, expand to DC/others later
+3. **Duplicate Listing Prevention** (`src/lib/auctionDb.ts`):
+   - Added `hasActiveListing()` helper function
+   - Both `createAuction` and `createFixedPriceListing` check for existing listings
+   - Returns user-friendly error if comic already listed
+   - API returns 400 status for duplicate attempts
 
 ---
 
@@ -429,6 +441,78 @@ Create a unified view of all project costs. Currently tracked across multiple se
 
 ---
 
+### GoCollect API Integration
+**Priority:** High
+**Status:** Pending (Awaiting API Key Approval)
+
+Integrate GoCollect API for accurate, market-based pricing data.
+
+**What it replaces:**
+- AI price estimates → Real FMV from 600K+ tracked sales
+- AI/static hot books → GoCollect Hot 50 (market-driven)
+- No price trends → 30/90/365-day trend indicators
+
+**API Details:**
+- Tier: Pro ($9/mo or $89/yr)
+- Rate Limit: 100 calls/day
+- Endpoints: `/v1/collectibles`, `/v1/insights/item/{id}?grade=X`
+- Auth: Bearer token
+
+**Implementation:**
+1. Create `src/lib/gocollect.ts` service
+2. Replace pricing in `/api/analyze`, `/api/key-hunt-lookup`, `/api/quick-lookup`
+3. Add trend indicators to UI (↑↓→)
+4. Replace Hottest Books with GoCollect Hot 50
+5. Cache responses 24hr in Redis
+
+**Blocked By:** API key approval from GoCollect
+
+---
+
+### Marvel API Integration
+**Priority:** High
+**Status:** Pending (Awaiting Developer Portal Access)
+
+Integrate Marvel API for accurate comic metadata and high-quality cover images on Marvel titles.
+
+**What it provides:**
+- High-resolution cover images (better than user photos)
+- Accurate creator credits (writer, artist, cover artist, inker, colorist)
+- Character appearance data for key detection
+- Publication dates and series info
+- Issue descriptions/summaries
+- Consistent data format across Marvel catalog
+
+**Benefits:**
+- Higher quality cover images than user photos
+- Accurate creator credits (currently AI-guessed)
+- Reduced storage for user-uploaded images
+- Better key issue detection via character appearances
+
+**API Details:**
+- Cost: Free
+- Rate Limit: 3,000 calls/day
+- Auth: MD5 hash (ts + privateKey + publicKey)
+- Attribution required: "Data provided by Marvel"
+- Example source: https://www.marvel.com/comics/issue/12415/uncanny_x-men_1963_100
+
+**Implementation:**
+1. Create `src/lib/marvel.ts` service with hash-based auth
+2. Bulk-seed Supabase `marvel_comics` table (~50K comics)
+3. Enrich scan results with Marvel data when matched
+4. Use Marvel covers as fallback when user photo is poor quality
+5. Display attribution on pages using Marvel data
+
+**Considerations:**
+- Marvel API only covers Marvel titles (no DC, Image, indie)
+- Need to handle non-Marvel publishers separately
+- Storage costs for bulk image hosting if we cache covers
+- Could expand to DC/others later via different APIs
+
+**Blocked By:** Developer portal access (reached out to Marvel support)
+
+---
+
 ### Sales Flow - Use Actual Transaction Price
 **Priority:** High
 **Status:** Pending
@@ -442,27 +526,15 @@ Currently, when marking a comic as sold, users manually enter the sale price. On
 
 ### Custom SVG Icons & Branding
 **Priority:** High
-**Status:** Pending
+**Status:** ✅ Complete (Jan 26, 2026)
 
-Replace default Lucide icons with custom SVG icons for brand identity, including a treasure chest logo.
+Custom branding implemented as part of the Lichtenstein pop-art design system.
 
-**Requirements:**
+**Implemented:**
 - Custom treasure chest icon for header logo and favicon
-- Favicon set (16x16, 32x32, 180x180, 192x192, 512x512)
-- Icons should match Lucide style (24x24 viewBox, stroke-based, 2px stroke width)
-- Store in `/src/components/icons/` and `/public/icons/`
-
-**Files Ready:**
-- `/src/components/icons/index.tsx` - Template with specs created
-- `/public/icons/` - Directory created for favicon variants
-
-**Icon Sizes Used in App:**
-- w-3 h-3 (12px) - Tiny indicators
-- w-4 h-4 (16px) - Small UI elements
-- w-5 h-5 (20px) - Standard (most common)
-- w-6 h-6 (24px) - Navigation
-- w-8 h-8 (32px) - Modal titles
-- w-16 h-16 (64px) - Large modal icons
+- Favicon set for all required sizes
+- Pop-art themed visual identity throughout the app
+- Consistent brand personality with comic-inspired design elements
 
 ---
 
@@ -479,47 +551,6 @@ Enhance the comic search and lookup experience with additional optimizations.
 - Pre-populate common titles in database from external sources
 - Batch lookups for CSV imports
 - Search history and favorites
-
----
-
-### GoCollect API Integration
-**Priority:** Medium
-**Status:** Pending
-
-Investigate using GoCollect as a data provider for price data and hot books list.
-
-**Current Data Sources:**
-- Professor's Hottest Books: Claude AI (Anthropic) + Comic Vine for covers
-- Price Estimates: AI-generated + eBay Browse API
-
-**GoCollect Potential Benefits:**
-- Real sales data from eBay/auctions (more accurate than AI estimates)
-- Hot 50 list based on actual market activity
-- Collectible Price Index (CPI) for market trends
-- Historical price tracking
-
-**GoCollect API Access:**
-| Tier | Cost | API Calls/Day |
-|------|------|---------------|
-| Free | $0 | 50 |
-| Pro | $9/mo or $89/yr | 100 |
-| Enterprise | Custom | Custom |
-
-**Integration Options:**
-1. Replace AI price estimates with GoCollect real data
-2. Use GoCollect Hot 50 for Professor's Hottest Books
-3. Add price trend graphs using historical data
-4. Consolidate from multiple providers to single source
-
-**Research Needed:**
-- [ ] Test GoCollect API with free tier
-- [ ] Compare data quality vs current sources
-- [ ] Evaluate if 100 calls/day is sufficient
-- [ ] Determine which features to migrate first
-
-**Links:**
-- [GoCollect Pricing](https://gocollect.com/pricing)
-- [GoCollect API Docs](https://gocollect.com/api-docs)
 
 ---
 
@@ -540,16 +571,17 @@ Integrated eBay Browse API for real market data from completed/sold listings.
 
 ### Shop Page for Books For Sale
 **Priority:** High
-**Status:** Pending
+**Status:** ✅ Complete (Jan 26, 2026)
 
-Create a marketplace page where users can browse and purchase comics listed for sale by other users.
+Marketplace page implemented with auctions and buy-now listings.
 
-**Features:**
+**Features Implemented:**
 - Grid view of all available listings
-- Search and filter by title, publisher, price range
+- Auctions and Buy Now tabs
+- Search and filter functionality
 - Comic detail view with seller info
-- Secure checkout via Stripe Connect
-- Seller ratings/reviews (future)
+- Stripe checkout integration
+- Seller ratings system
 
 ---
 
@@ -665,17 +697,17 @@ Add eBay-style auction functionality to the Shop, allowing users to list comics 
 
 ### Admin Role & Permissions
 **Priority:** Medium
-**Status:** Pending
+**Status:** ✅ Complete (Jan 26, 2026)
 
-Implement admin functionality for site management and moderation.
+Admin functionality implemented for site management and moderation.
 
-**Features:**
-- Admin dashboard for site metrics
+**Features Implemented:**
+- Admin authentication via `getAdminProfile()` helper
 - User management (view, suspend, delete)
-- Content moderation (flagged listings)
-- Manual price adjustments
-- Feature flags management
-- Hottest Books list curation
+- Admin-only route protection in middleware
+- Protected endpoints (trial reset, cron jobs, etc.)
+- Key info moderation dashboard
+- Audit logging for admin actions
 
 ---
 
@@ -706,16 +738,16 @@ Built a curated key comics database with community contribution system.
 
 ### Test Password Reset Flows
 **Priority:** Medium
-**Status:** Pending
+**Status:** ✅ Complete (Jan 26, 2026)
 
-Test and verify the Clerk-powered password reset functionality works correctly end-to-end.
+Clerk-powered password reset functionality verified and documented in TEST_CASES.md.
 
-**Test Cases:**
+**Verified Flows:**
 - Request password reset from login page
-- Verify reset email is received
-- Confirm reset link works and redirects properly
-- Verify new password can be set
-- Confirm user can log in with new password
+- Reset email received successfully
+- Reset link works and redirects properly
+- New password can be set
+- User can log in with new password
 
 ---
 
@@ -815,6 +847,25 @@ Review and improve all user-facing text throughout the application for consisten
 - Toast notifications
 - Form labels and helper text
 - Sign-up prompt modals (milestone prompts for guest users)
+
+---
+
+### Fix TypeScript Errors in Test Files
+**Priority:** Low
+**Status:** Pending
+
+Test files use partial mock objects that don't fully satisfy TypeScript types. Tests pass at runtime but `npm run typecheck` reports errors.
+
+**Files Affected:**
+- `src/lib/__tests__/gradePrice.test.ts` - Missing `label` property on GradeEstimate mocks
+- `src/lib/__tests__/statsCalculator.test.ts` - Partial PriceData and ComicDetails mocks
+
+**Fix Options:**
+1. Add missing properties to mock objects
+2. Use `Partial<T>` or `as unknown as T` type assertions
+3. Create test helper factories that return complete mock objects
+
+**Note:** Tests pass at runtime - this is a type-checking strictness issue only.
 
 ---
 

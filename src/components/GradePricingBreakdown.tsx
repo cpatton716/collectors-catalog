@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { PriceData, GradeEstimate } from "@/types/comic";
+
+import { ChevronDown, ChevronUp, Minus, TrendingDown, TrendingUp } from "lucide-react";
+
 import { calculateValueAtGrade } from "@/lib/gradePrice";
-import { ChevronDown, ChevronUp, TrendingUp, TrendingDown, Minus } from "lucide-react";
+
+import { GradeEstimate, PriceData } from "@/types/comic";
 
 interface GradePricingBreakdownProps {
   priceData: PriceData;
@@ -57,9 +60,7 @@ export function GradePricingBreakdown({
         onClick={() => setIsExpanded(!isExpanded)}
         className="flex items-center justify-between w-full text-left"
       >
-        <span className="text-sm font-medium text-gray-700">
-          Value by Grade
-        </span>
+        <span className="text-sm font-medium text-gray-700">Value by Grade</span>
         {isExpanded ? (
           <ChevronUp className="w-4 h-4 text-gray-500" />
         ) : (
@@ -89,11 +90,11 @@ export function GradePricingBreakdown({
                   isCurrentGrade ? "bg-primary-50 -mx-2 px-2" : ""
                 }`}
               >
-                <span className={`font-medium ${isCurrentGrade ? "text-primary-700" : "text-gray-700"}`}>
+                <span
+                  className={`font-medium ${isCurrentGrade ? "text-primary-700" : "text-gray-700"}`}
+                >
                   {estimate.grade.toFixed(1)}
-                  {isCurrentGrade && (
-                    <span className="ml-1 text-xs text-primary-500">(yours)</span>
-                  )}
+                  {isCurrentGrade && <span className="ml-1 text-xs text-primary-500">(yours)</span>}
                 </span>
                 <span className="text-right text-gray-600">
                   ${estimate.rawValue.toLocaleString()}
@@ -101,7 +102,9 @@ export function GradePricingBreakdown({
                 <span className="text-right text-gray-600">
                   ${estimate.slabbedValue.toLocaleString()}
                 </span>
-                <span className={`text-right flex items-center justify-end gap-1 ${trend?.color || "text-gray-400"}`}>
+                <span
+                  className={`text-right flex items-center justify-end gap-1 ${trend?.color || "text-gray-400"}`}
+                >
                   {trend && (
                     <>
                       <trend.icon className="w-3 h-3" />

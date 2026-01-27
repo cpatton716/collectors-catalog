@@ -1,15 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  getAdminProfile,
-  logAdminAction,
-  resetUserTrial,
-  getProfileById,
-} from "@/lib/adminAuth";
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+import { getAdminProfile, getProfileById, logAdminAction, resetUserTrial } from "@/lib/adminAuth";
+
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Check admin access
     const adminProfile = await getAdminProfile();
@@ -40,9 +33,6 @@ export async function POST(
     });
   } catch (error) {
     console.error("Error resetting trial:", error);
-    return NextResponse.json(
-      { error: "Failed to reset trial" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to reset trial" }, { status: 500 });
   }
 }
