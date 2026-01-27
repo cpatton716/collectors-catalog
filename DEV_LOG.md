@@ -6,10 +6,88 @@ This log tracks session-by-session progress on Collectors Chest.
 
 ## Changes Since Last Deploy
 
-**Sessions since last deploy:** 0
-**Deploy Readiness:** Deployed
+**Sessions since last deploy:** 1
+**Deploy Readiness:** Needs Testing
 
-*(No changes since last deploy)*
+- Peer-to-peer messaging Phase 1 (core messaging, inbox, text-only)
+- Sales History page with profit tracking
+- Mark as Sold for all comics (not just forSale)
+- Auto-record platform sales via Stripe webhook
+- Auction cancellation policy in Terms of Service
+- Notify offer-makers when listings are cancelled
+- Duplicate listing prevention
+- Prettier code formatting setup
+- Color palette mockup for review
+
+---
+
+## January 27, 2026
+
+### Session Summary
+Major feature session. Implemented peer-to-peer messaging Phase 1 using parallel worktree development. Also completed sales tracking feature and auction cancellation policy. Created color palette mockup for partner review.
+
+### Key Accomplishments
+- **Peer-to-Peer Messaging Phase 1:**
+  - Database tables: `conversations`, `messages` with RLS policies
+  - API routes: GET/POST `/api/messages`, GET `/api/messages/[id]`, GET `/api/messages/unread-count`
+  - Components: MessageComposer, MessageBubble, MessageThread, ConversationList, MessageButton
+  - `/messages` inbox page with conversation list and thread view
+  - MessageButton integrated in ListingDetailModal
+  - Full design document created through brainstorming session
+  - Used git worktree for isolated development
+
+- **Sales Tracking:**
+  - Sales History page (`/sales`) with profit tracking
+  - "Mark as Sold" button now available for ALL comics
+  - Platform sales auto-recorded via Stripe webhook
+  - Sales navigation button added to collection page
+
+- **Auction Cancellation Policy:**
+  - Section 4.5 added to Terms of Service
+  - Offer-makers notified when fixed-price listings cancelled
+  - Duplicate listing prevention (same comic can't have multiple active listings)
+
+- **Design:**
+  - Created Red & Black color palette mockup for partner review
+
+### Files Added
+- `supabase/migrations/20260127_messaging.sql` - Messaging database schema
+- `src/types/messaging.ts` - Messaging TypeScript types
+- `src/lib/messagingDb.ts` - Messaging database helpers
+- `src/app/api/messages/route.ts` - List/send messages API
+- `src/app/api/messages/[conversationId]/route.ts` - Get conversation API
+- `src/app/api/messages/unread-count/route.ts` - Unread count API
+- `src/components/messaging/` - 5 messaging components
+- `src/app/messages/page.tsx` - Messages inbox page
+- `src/app/sales/page.tsx` - Sales History page
+- `docs/plans/2026-01-27-peer-to-peer-messaging-design.md` - Design document
+- `docs/plans/2026-01-27-messaging-phase1-implementation.md` - Implementation plan
+- `design-mockup-red-black.html` - Color palette comparison mockup
+
+### Files Modified
+- `src/components/auction/ListingDetailModal.tsx` - Added MessageButton
+- `src/components/ComicDetailModal.tsx` - Show "Mark as Sold" for all comics
+- `src/app/api/webhooks/stripe/route.ts` - Auto-record platform sales
+- `src/app/collection/page.tsx` - Added Sales navigation button
+- `src/app/terms/page.tsx` - Added Section 4.5 cancellation policy
+- `src/types/auction.ts` - Added `listing_cancelled` notification type
+- `src/lib/auctionDb.ts` - Offer notifications on cancel, duplicate prevention
+- `BACKLOG.md` - Updated multiple items
+- `TEST_CASES.md` - Added messaging and cancellation test cases
+
+### Database Changes
+- Created `conversations` table with RLS policies
+- Created `messages` table with RLS policies
+- Added `get_or_create_conversation()` helper function
+- Added trigger to auto-update `last_message_at`
+
+### Issues Encountered
+- API error in parallel session required restart - resolved by relaunching Claude
+- Pre-existing stashed changes needed to be committed after merge - resolved
+
+### Next Session Focus
+1. Complete messaging Phases 2-7 (images, embeds, block/report, real-time, moderation)
+2. Book Trading feature
 
 ---
 

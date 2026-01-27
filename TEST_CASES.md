@@ -428,7 +428,51 @@ A guide for testing the main and secondary features of the application.
 | Bonus scans persist | Verify email → Close browser → Reopen | Bonus scans still available in localStorage |
 | Rate limit on requests | Submit email 6+ times in 1 minute | Error: "Too many requests. Please try again later." |
 
-### 24. Security & Abuse Prevention
+### 24. Peer-to-Peer Messaging (Phase 1)
+
+**Location:** Shop → Listing Detail → "Message Seller" / Navigation → "Messages"
+
+#### Starting a Conversation
+
+| Test Case | Steps | Expected Result |
+|-----------|-------|-----------------|
+| Message seller from listing | View listing detail → Click "Message Seller" | Creates conversation, redirects to /messages |
+| Initial message sent | Click Message Seller on a listing | Automatic "Hi! I'm interested in your listing." message sent |
+| Can't message yourself | View your own listing | "Message Seller" button not shown |
+| Guest user blocked | Click Message Seller while logged out | Redirected to sign-in |
+
+#### Messages Inbox
+
+| Test Case | Steps | Expected Result |
+|-----------|-------|-----------------|
+| View inbox | Navigate to /messages | Conversation list shows on left, empty state or thread on right |
+| Conversation preview | View inbox with existing conversations | Shows other user's name, last message preview, time ago, unread count |
+| Select conversation | Click a conversation in list | Thread loads on right, messages marked as read |
+| Empty inbox | New user with no conversations | Shows "No conversations yet" message |
+| Mobile view - list | On mobile, view /messages | Full-width conversation list |
+| Mobile view - thread | On mobile, select conversation | Thread shows with back button |
+
+#### Sending Messages
+
+| Test Case | Steps | Expected Result |
+|-----------|-------|-----------------|
+| Send text message | Type message → Press Enter or click Send | Message appears in thread, sent to recipient |
+| Shift+Enter for newline | Press Shift+Enter while typing | Creates new line, doesn't send |
+| Empty message blocked | Try to send empty/whitespace message | Send button disabled |
+| Long message | Type 2000+ characters | Truncated at 2000 limit |
+| Message with listing context | Send from listing detail | Message shows "Re: [Listing Title]" context |
+
+#### Unread Count
+
+| Test Case | Steps | Expected Result |
+|-----------|-------|-----------------|
+| Unread badge shows | Receive message, don't open conversation | Unread count badge shows on conversation |
+| Unread clears on read | Open conversation with unread messages | Badge disappears, messages marked as read |
+| Unread count API | Call /api/messages/unread-count | Returns { count: N } for unread messages |
+
+---
+
+### 25. Security & Abuse Prevention
 
 **Location:** Various API endpoints (test via browser dev tools or API client)
 
