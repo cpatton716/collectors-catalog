@@ -213,29 +213,36 @@ Currently using a static list (`USE_STATIC_LIST = true`) to conserve API credits
 
 ### Peer-to-Peer Messaging
 **Priority:** Medium
-**Status:** Pending
+**Status:** 🔶 Phase 1 Complete (Jan 27, 2026) - Phases 2-7 Pending
 
-Add direct messaging between users to facilitate communication around purchases and trades.
+Direct messaging between users to facilitate communication around purchases and trades.
 
-**Use Cases:**
-- Negotiate bulk purchases from a seller's store
-- Ask questions about a listing before buying
-- Coordinate local pickup / in-person trades
-- Discuss combined shipping for multiple items
-- Other use cases TBD
+**Phase 1 Complete - Core Messaging:**
+- Database tables: `conversations`, `messages` with RLS policies
+- API routes: GET/POST `/api/messages`, GET `/api/messages/[id]`, GET `/api/messages/unread-count`
+- Components: MessageComposer, MessageBubble, MessageThread, ConversationList, MessageButton
+- `/messages` inbox page with conversation list and thread view
+- MessageButton integrated in ListingDetailModal
+- Text-only messages with listing context
 
-**Considerations:**
-- Spam/abuse prevention
-- Notification preferences (email, in-app, both)
-- Message history retention
-- Block/report functionality
-- Privacy controls
+**Remaining Phases:**
+- Phase 2: Rich content (images, listing embeds) + entry points everywhere + unread badge
+- Phase 3: Block & report functionality + content filters
+- Phase 4: Notification preferences (push/email toggles)
+- Phase 5: Real-time messaging via Supabase Realtime
+- Phase 6: Admin moderation dashboard + auto-flagging
+- Phase 7: AI-assisted moderation (scam detection)
 
-**Potential Implementation:**
-- New `messages` table in Supabase
-- Real-time updates via Supabase subscriptions or polling
-- Conversation threads tied to listings or general user-to-user
-- Integration with existing notification system
+**Design Document:** `docs/plans/2026-01-27-peer-to-peer-messaging-design.md`
+**Implementation Plan:** `docs/plans/2026-01-27-messaging-phase1-implementation.md`
+
+**Files Added (Phase 1):**
+- `supabase/migrations/20260127_messaging.sql`
+- `src/types/messaging.ts`
+- `src/lib/messagingDb.ts`
+- `src/app/api/messages/` (3 routes)
+- `src/components/messaging/` (5 components)
+- `src/app/messages/page.tsx`
 
 ---
 
