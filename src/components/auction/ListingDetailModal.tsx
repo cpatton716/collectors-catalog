@@ -11,6 +11,7 @@ type SellerAction = "mark_as_sold" | "pull_off_shelf";
 import { SellerBadge } from "./SellerBadge";
 import { WatchlistButton } from "./WatchlistButton";
 import { ComicImage } from "../ComicImage";
+import { MessageButton } from "@/components/messaging/MessageButton";
 
 interface ListingDetailModalProps {
   listingId: string;
@@ -283,7 +284,18 @@ export function ListingDetailModal({
                 {/* Seller */}
                 {listing.seller && (
                   <div className="pt-4 border-t">
-                    <SellerBadge seller={listing.seller} />
+                    <div className="flex items-center justify-between gap-3">
+                      <SellerBadge seller={listing.seller} />
+                      {/* Message Seller button - only show if not the seller */}
+                      {!listing.isSeller && listing.sellerId && (
+                        <MessageButton
+                          sellerId={listing.sellerId}
+                          sellerName={listing.seller.username ? `@${listing.seller.username}` : undefined}
+                          listingId={listing.id}
+                          size="sm"
+                        />
+                      )}
+                    </div>
                   </div>
                 )}
 
