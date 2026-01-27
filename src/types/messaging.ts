@@ -1,0 +1,85 @@
+// ============================================================================
+// MESSAGING TYPES
+// ============================================================================
+
+import { SellerProfile } from "./auction";
+
+/**
+ * A conversation between two users
+ */
+export interface Conversation {
+  id: string;
+  participant1Id: string;
+  participant2Id: string;
+  lastMessageAt: string;
+  createdAt: string;
+  updatedAt: string;
+
+  // Joined data (populated when needed)
+  otherParticipant?: SellerProfile;
+  lastMessage?: Message;
+  unreadCount?: number;
+}
+
+/**
+ * An individual message in a conversation
+ */
+export interface Message {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  content: string;
+  listingId: string | null;
+  isRead: boolean;
+  createdAt: string;
+  updatedAt: string;
+
+  // Joined data (populated when needed)
+  sender?: SellerProfile;
+  listing?: {
+    id: string;
+    title: string;
+    coverImageUrl: string | null;
+  };
+}
+
+/**
+ * Input for sending a message
+ */
+export interface SendMessageInput {
+  recipientId: string;
+  content: string;
+  listingId?: string;
+}
+
+/**
+ * Conversation list item for inbox display
+ */
+export interface ConversationPreview {
+  id: string;
+  otherParticipant: SellerProfile;
+  lastMessage: {
+    content: string;
+    senderId: string;
+    createdAt: string;
+  };
+  unreadCount: number;
+  lastMessageAt: string;
+}
+
+/**
+ * Result from get conversations API
+ */
+export interface ConversationsResponse {
+  conversations: ConversationPreview[];
+  totalUnread: number;
+}
+
+/**
+ * Result from get messages API
+ */
+export interface MessagesResponse {
+  messages: Message[];
+  conversation: Conversation;
+  otherParticipant: SellerProfile;
+}
