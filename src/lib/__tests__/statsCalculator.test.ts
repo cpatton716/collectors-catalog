@@ -4,7 +4,7 @@
  * Tests collection statistics calculations including overview stats,
  * publisher breakdowns, decade analysis, grading stats, and financials.
  */
-import { CollectionItem } from "@/types/comic";
+import { CollectionItem, ComicDetails, PriceData } from "@/types/comic";
 
 import {
   calculateDecadeStats,
@@ -18,28 +18,76 @@ import {
   getTopPublishers,
 } from "../statsCalculator";
 
-// Test fixture factory
-const createItem = (overrides: Partial<CollectionItem> = {}): CollectionItem => ({
-  id: `test-${Math.random()}`,
-  comic: {
-    title: "Test Comic",
-    issueNumber: "1",
-    publisher: "Marvel",
-    releaseYear: "1990",
-    priceData: { estimatedValue: 100, gradeEstimates: [], recentSales: [], priceSource: "ebay" },
-    keyInfo: [],
-    ...overrides.comic,
-  },
-  conditionGrade: null,
-  isGraded: false,
-  purchasePrice: null,
-  purchaseDate: null,
-  notes: null,
-  isStarred: false,
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
+// Test fixture factories
+const createPriceData = (overrides?: Partial<PriceData>): PriceData => ({
+  estimatedValue: 100,
+  gradeEstimates: [],
+  recentSales: [],
+  mostRecentSaleDate: null,
+  isAveraged: false,
+  disclaimer: null,
+  priceSource: "ebay",
   ...overrides,
 });
+
+const createComicDetails = (overrides?: Partial<ComicDetails>): ComicDetails => ({
+  id: "comic-1",
+  title: "Test Comic",
+  issueNumber: "1",
+  variant: null,
+  publisher: "Marvel",
+  coverArtist: null,
+  writer: null,
+  interiorArtist: null,
+  releaseYear: "1990",
+  confidence: "high",
+  isSlabbed: false,
+  gradingCompany: null,
+  grade: null,
+  certificationNumber: null,
+  labelType: null,
+  pageQuality: null,
+  gradeDate: null,
+  graderNotes: null,
+  isSignatureSeries: false,
+  signedBy: null,
+  priceData: createPriceData(),
+  keyInfo: [],
+  ...overrides,
+});
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const createItem = (overrides: Record<string, any> = {}): CollectionItem => {
+  const comicOverrides = overrides.comic || {};
+  const priceDataOverrides = comicOverrides.priceData;
+
+  const comic = createComicDetails({
+    ...comicOverrides,
+    priceData: priceDataOverrides === null ? null : createPriceData(priceDataOverrides || {}),
+  });
+
+  const { comic: _comic, ...restOverrides } = overrides;
+
+  return {
+    id: `test-${Math.random()}`,
+    comic,
+    coverImageUrl: "",
+    conditionGrade: null,
+    conditionLabel: null,
+    isGraded: false,
+    gradingCompany: null,
+    purchasePrice: null,
+    purchaseDate: null,
+    notes: null,
+    forSale: false,
+    askingPrice: null,
+    averagePrice: null,
+    dateAdded: new Date().toISOString(),
+    listIds: [],
+    isStarred: false,
+    ...restOverrides,
+  };
+};
 
 describe("calculateOverviewStats", () => {
   it("calculates basic stats for collection", () => {

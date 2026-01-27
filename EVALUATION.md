@@ -2,7 +2,7 @@
 
 > **This document is the guiding light for development priorities. It takes precedence over BACKLOG.md.**
 
-*Last Updated: January 15, 2026*
+*Last Updated: January 27, 2026*
 
 ---
 
@@ -439,6 +439,29 @@ Collectors Chest is a comic book collection tracking app with AI-powered cover r
    - Test Buy Now flow
    - Test Stripe webhooks
    - Effort: 0.5 session
+
+### 🟡 Next Session Focus
+
+1. **GoCollect API Integration** ⭐ IN PROGRESS
+   - ✅ API token created (Jan 27)
+   - ⏳ Add `GOCOLLECT_API_KEY` to `.env.local` and Netlify
+   - ⏳ Review API documentation for endpoints
+   - ⏳ Implement FMV lookup integration
+   - ⏳ Add GoCollect pricing alongside eBay prices
+
+2. **Messaging Phases 2-7**
+   - Phase 1 (Basic DMs) ✅ Complete
+   - Phase 2: Conversation view and real-time updates
+   - Phase 3: Notification badges
+   - Phase 4: Message search
+   - Phase 5: Block/report functionality
+   - Phase 6: Read receipts
+   - Phase 7: Message templates
+
+3. **Book Trading Feature**
+   - Allow users to propose comic-for-comic trades
+   - Trade request workflow
+   - Trade history tracking
 
 ### Post-Launch
 - Price alerts

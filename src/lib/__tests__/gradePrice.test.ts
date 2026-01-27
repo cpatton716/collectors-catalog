@@ -4,7 +4,7 @@
  * Tests the critical pricing logic used for comic valuations.
  * These functions determine collection values displayed to users.
  */
-import { CollectionItem, GradeEstimate, PriceData } from "@/types/comic";
+import { CollectionItem, GradeEstimate, PriceData, ComicDetails } from "@/types/comic";
 
 import {
   calculateCollectionValue,
@@ -17,40 +17,75 @@ import {
 
 // Test fixtures
 const createGradeEstimates = (): GradeEstimate[] => [
-  { grade: 9.8, rawValue: 500, slabbedValue: 800 },
-  { grade: 9.4, rawValue: 300, slabbedValue: 500 },
-  { grade: 9.0, rawValue: 200, slabbedValue: 350 },
-  { grade: 8.0, rawValue: 100, slabbedValue: 180 },
-  { grade: 6.0, rawValue: 50, slabbedValue: 90 },
-  { grade: 2.0, rawValue: 20, slabbedValue: 40 },
+  { grade: 9.8, label: "Near Mint/Mint", rawValue: 500, slabbedValue: 800 },
+  { grade: 9.4, label: "Near Mint", rawValue: 300, slabbedValue: 500 },
+  { grade: 9.0, label: "Very Fine/Near Mint", rawValue: 200, slabbedValue: 350 },
+  { grade: 8.0, label: "Very Fine", rawValue: 100, slabbedValue: 180 },
+  { grade: 6.0, label: "Fine", rawValue: 50, slabbedValue: 90 },
+  { grade: 2.0, label: "Good", rawValue: 20, slabbedValue: 40 },
 ];
 
 const createPriceData = (overrides?: Partial<PriceData>): PriceData => ({
   estimatedValue: 300,
   gradeEstimates: createGradeEstimates(),
   recentSales: [],
+  mostRecentSaleDate: null,
+  isAveraged: false,
+  disclaimer: null,
   priceSource: "ebay",
   ...overrides,
 });
 
-const createCollectionItem = (overrides?: Partial<CollectionItem>): CollectionItem => ({
-  id: "test-1",
-  comic: {
-    title: "Amazing Spider-Man",
-    issueNumber: "300",
-    publisher: "Marvel",
-    priceData: createPriceData(),
-  },
-  conditionGrade: 9.4,
-  isGraded: false,
-  purchasePrice: null,
-  purchaseDate: null,
-  notes: null,
-  isStarred: false,
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
+const createComicDetails = (overrides?: Partial<ComicDetails>): ComicDetails => ({
+  id: "comic-1",
+  title: "Amazing Spider-Man",
+  issueNumber: "300",
+  variant: null,
+  publisher: "Marvel",
+  coverArtist: null,
+  writer: null,
+  interiorArtist: null,
+  releaseYear: "1988",
+  confidence: "high",
+  isSlabbed: false,
+  gradingCompany: null,
+  grade: null,
+  certificationNumber: null,
+  labelType: null,
+  pageQuality: null,
+  gradeDate: null,
+  graderNotes: null,
+  isSignatureSeries: false,
+  signedBy: null,
+  priceData: createPriceData(),
+  keyInfo: [],
   ...overrides,
 });
+
+const createCollectionItem = (overrides?: Partial<CollectionItem>): CollectionItem => {
+  const comicOverrides = overrides?.comic as Partial<ComicDetails> | undefined;
+  const baseItem: CollectionItem = {
+    id: "test-1",
+    comic: createComicDetails(comicOverrides),
+    coverImageUrl: "",
+    conditionGrade: 9.4,
+    conditionLabel: null,
+    isGraded: false,
+    gradingCompany: null,
+    purchasePrice: null,
+    purchaseDate: null,
+    notes: null,
+    forSale: false,
+    askingPrice: null,
+    averagePrice: null,
+    dateAdded: new Date().toISOString(),
+    listIds: [],
+    isStarred: false,
+  };
+  // Apply overrides except comic (which we handled separately)
+  const { comic: _comic, ...restOverrides } = overrides || {};
+  return { ...baseItem, ...restOverrides };
+};
 
 describe("calculateValueAtGrade", () => {
   describe("exact grade matches", () => {
@@ -183,7 +218,7 @@ describe("getGradeLabel", () => {
 });
 
 describe("formatGradeEstimate", () => {
-  const estimate: GradeEstimate = { grade: 9.8, rawValue: 500, slabbedValue: 800 };
+  const estimate: GradeEstimate = { grade: 9.8, label: "Near Mint/Mint", rawValue: 500, slabbedValue: 800 };
 
   it("formats with default separator", () => {
     const result = formatGradeEstimate(estimate);
@@ -196,7 +231,7 @@ describe("formatGradeEstimate", () => {
   });
 
   it("formats large numbers with commas", () => {
-    const bigEstimate: GradeEstimate = { grade: 9.8, rawValue: 10000, slabbedValue: 15000 };
+    const bigEstimate: GradeEstimate = { grade: 9.8, label: "Near Mint/Mint", rawValue: 10000, slabbedValue: 15000 };
     const result = formatGradeEstimate(bigEstimate);
     expect(result).toBe("$10,000 raw / $15,000 slabbed");
   });

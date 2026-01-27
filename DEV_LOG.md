@@ -6,7 +6,7 @@ This log tracks session-by-session progress on Collectors Chest.
 
 ## Changes Since Last Deploy
 
-**Sessions since last deploy:** 1
+**Sessions since last deploy:** 2
 **Deploy Readiness:** Needs Testing
 
 - Peer-to-peer messaging Phase 1 (core messaging, inbox, text-only)
@@ -18,6 +18,45 @@ This log tracks session-by-session progress on Collectors Chest.
 - Duplicate listing prevention
 - Prettier code formatting setup
 - Color palette mockup for review
+- Updated EVALUATION.md priorities (GoCollect, Messaging 2-7, Trading)
+- Fixed TypeScript errors in test files
+
+---
+
+## January 27, 2026 (Evening)
+
+### Session Summary
+Brief session focused on GoCollect API setup and project priorities update. User generated API token from GoCollect portal.
+
+### Key Accomplishments
+- **GoCollect API Setup:**
+  - Confirmed user has access to GoCollect API token creation
+  - User created "gocollect-api" token (awaiting integration)
+  - Documented next steps: add token to env, review API docs
+
+- **Priority Updates:**
+  - Updated EVALUATION.md Section 12 with new "Next Session Focus"
+  - New priorities: 1) GoCollect API integration, 2) Messaging Phases 2-7, 3) Book Trading
+
+- **Technical Fixes:**
+  - Fixed 54 TypeScript errors in test files (gradePrice.test.ts, statsCalculator.test.ts)
+  - Test fixtures now include all required properties (label, mostRecentSaleDate, etc.)
+  - All 172 tests still passing
+
+### Files Modified
+- `EVALUATION.md` - Updated priorities and date
+- `src/lib/__tests__/gradePrice.test.ts` - Fixed type errors in test fixtures
+- `src/lib/__tests__/statsCalculator.test.ts` - Fixed type errors in test fixtures
+
+### Issues Encountered
+- TypeScript strict checking flagged test fixtures missing required properties
+- Fixed by adding complete property sets to createPriceData, createGradeEstimates, createComicDetails factories
+
+### Next Session Focus
+1. Add GoCollect API key to .env.local and Netlify
+2. Review GoCollect API documentation
+3. Implement GoCollect FMV integration
+4. Continue with Messaging Phases 2-7
 
 ---
 
