@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -12,7 +12,7 @@ import { ConversationPreview, ConversationsResponse } from "@/types/messaging";
 import { ConversationList } from "@/components/messaging/ConversationList";
 import { MessageThread } from "@/components/messaging/MessageThread";
 
-export default function MessagesPage() {
+function MessagesContent() {
   const { user, isLoaded } = useUser();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -45,7 +45,7 @@ export default function MessagesPage() {
     } else if (conversations.length > 0 && !selectedConversationId) {
       setSelectedConversationId(conversations[0].id);
     }
-  }, [urlConversationId, conversations]);
+  }, [urlConversationId, conversations, selectedConversationId]);
 
   const loadCurrentUser = async () => {
     try {
@@ -157,5 +157,19 @@ export default function MessagesPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function MessagesPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-pop-blue" />
+        </div>
+      }
+    >
+      <MessagesContent />
+    </Suspense>
   );
 }
