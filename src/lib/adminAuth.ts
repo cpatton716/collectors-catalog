@@ -13,7 +13,9 @@ export type AdminAction =
   | "reset_trial"
   | "grant_premium"
   | "suspend"
-  | "unsuspend";
+  | "unsuspend"
+  | "view_reports"
+  | "update_report";
 
 export interface AdminProfile {
   id: string;
