@@ -32,14 +32,17 @@ CREATE TABLE IF NOT EXISTS trade_matches (
   updated_at TIMESTAMPTZ DEFAULT NOW(),
 
   -- Constraints
-  CONSTRAINT different_users CHECK (user_a_id != user_b_id),
-  -- Prevent duplicate matches (order-independent)
-  CONSTRAINT unique_match UNIQUE (
-    LEAST(user_a_id, user_b_id),
-    GREATEST(user_a_id, user_b_id),
-    LEAST(user_a_comic_id, user_b_comic_id),
-    GREATEST(user_a_comic_id, user_b_comic_id)
-  )
+  CONSTRAINT different_users CHECK (user_a_id != user_b_id)
+);
+
+-- Unique index to prevent duplicate matches (order-independent)
+-- Using expressions in index since UNIQUE constraint doesn't support functions
+CREATE UNIQUE INDEX IF NOT EXISTS idx_trade_matches_unique_pair
+ON trade_matches (
+  LEAST(user_a_id, user_b_id),
+  GREATEST(user_a_id, user_b_id),
+  LEAST(user_a_comic_id, user_b_comic_id),
+  GREATEST(user_a_comic_id, user_b_comic_id)
 );
 
 -- Indexes for efficient querying
@@ -148,7 +151,7 @@ BEGIN
     AND c_a.for_trade = true
     AND c_a.user_id != c_b.user_id
     AND (p_comic_id IS NULL OR c_a.id = p_comic_id)
-  ON CONFLICT ON CONSTRAINT unique_match DO NOTHING;
+  ON CONFLICT DO NOTHING;
 
   GET DIAGNOSTICS matches_found = ROW_COUNT;
   RETURN matches_found;
