@@ -8,6 +8,7 @@ import {
 
 import { supabase, supabaseAdmin } from "./supabase";
 import { getSellerProfile } from "./auctionDb";
+import { checkMessageContent } from "./contentFilter";
 
 // ============================================================================
 // CONVERSATION HELPERS
@@ -266,10 +267,17 @@ export async function sendMessage(
     throw new Error("Cannot send message to yourself");
   }
 
+  // Check content filters
+  const contentCheck = checkMessageContent(content);
+
+  if (contentCheck.blocked) {
+    throw new Error(contentCheck.reason || "Message not allowed");
+  }
+
   // Get or create conversation
   const conversationId = await getOrCreateConversation(senderId, recipientId);
 
-  // Insert message
+  // Insert message (flagged if content check detected suspicious patterns)
   const { data, error } = await supabaseAdmin
     .from("messages")
     .insert({
@@ -279,6 +287,8 @@ export async function sendMessage(
       listing_id: listingId || null,
       image_urls: imageUrls || [],
       embedded_listing_id: embeddedListingId || null,
+      is_flagged: contentCheck.flagged,
+      flag_reason: contentCheck.flagged ? contentCheck.reason : null,
     })
     .select()
     .single();
