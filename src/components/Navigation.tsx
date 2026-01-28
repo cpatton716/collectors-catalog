@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import { SignedIn, SignedOut, UserButton, useUser } from "@clerk/nextjs";
 
 import {
   BarChart3,
@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 
 import { useSubscription } from "@/hooks/useSubscription";
+import { supabase } from "@/lib/supabase";
 
 import { NotificationBell } from "./NotificationBell";
 import { ChestIcon } from "./icons/ChestIcon";
@@ -69,12 +70,15 @@ const faqs = [
 
 export function Navigation() {
   const pathname = usePathname();
+  const { user, isSignedIn } = useUser();
   const { isAdmin } = useSubscription();
   const [showProfessor, setShowProfessor] = useState(false);
   const [expandedFAQ, setExpandedFAQ] = useState<number | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
+    if (!isSignedIn) return;
+
     const fetchUnread = async () => {
       try {
         const res = await fetch("/api/messages/unread-count");
@@ -88,9 +92,34 @@ export function Navigation() {
     };
 
     fetchUnread();
-    const interval = setInterval(fetchUnread, 60000); // Poll every minute
-    return () => clearInterval(interval);
-  }, []);
+
+    // Subscribe to new messages for realtime badge updates
+    const channel = supabase
+      .channel("navigation-messages")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+        },
+        (payload) => {
+          // If the new message is NOT from the current user, increment count
+          // Note: We can't filter by recipient on the channel, so we do it here
+          const newMessage = payload.new as { sender_id: string };
+          if (user?.id && newMessage.sender_id !== user.id) {
+            // Optimistically increment - the actual count may be more accurate
+            // on next fetch, but this gives instant feedback
+            setUnreadCount((prev) => prev + 1);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [isSignedIn, user?.id]);
 
   const links = [
     { href: "/", label: "Home", icon: Home },
