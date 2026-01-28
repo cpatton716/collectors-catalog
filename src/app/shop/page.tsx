@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 
 import { useAuth } from "@clerk/nextjs";
 
-import { ChevronDown, Clock, Gavel, Search, Tag } from "lucide-react";
+import { ArrowLeftRight, ChevronDown, Clock, Gavel, Search, Tag } from "lucide-react";
 
 import {
   AuctionCard,
@@ -15,9 +15,28 @@ import {
   ListingDetailModal,
 } from "@/components/auction";
 
+import { TradeableComicCard } from "@/components/trading";
+
 import { Auction, AuctionSortBy, ListingSortBy } from "@/types/auction";
 
-type ShopTab = "buy-now" | "auctions";
+type ShopTab = "buy-now" | "auctions" | "for-trade";
+
+interface TradeableComic {
+  id: string;
+  title: string;
+  issueNumber: string;
+  publisher: string;
+  coverImageUrl?: string;
+  grade?: string;
+  estimatedValue?: number;
+  owner: {
+    id: string;
+    displayName: string;
+    username?: string;
+    rating?: number;
+    ratingCount?: number;
+  };
+}
 
 const AUCTION_SORT_OPTIONS: { value: AuctionSortBy; label: string }[] = [
   { value: "ending_soonest", label: "Ending Soonest" },
@@ -82,6 +101,8 @@ function ShopPageContent() {
       if (listingParam) {
         setSelectedAuctionId(listingParam);
       }
+    } else if (tabParam === "for-trade") {
+      setActiveTab("for-trade");
     } else if (tabParam === "buy-now" || !tabParam) {
       setActiveTab("buy-now");
       if (listingParam) {
@@ -106,6 +127,12 @@ function ShopPageContent() {
   const [listingSortBy, setListingSortBy] = useState<ListingSortBy>("newest");
   const [listingSearchQuery, setListingSearchQuery] = useState("");
 
+  // Tradeable comics state
+  const [tradeableComics, setTradeableComics] = useState<TradeableComic[]>([]);
+  const [isLoadingTradeable, setIsLoadingTradeable] = useState(false);
+  const [tradeSearchQuery, setTradeSearchQuery] = useState("");
+  const [selectedTradeComic, setSelectedTradeComic] = useState<TradeableComic | null>(null);
+
   // Load auctions when tab changes or filters change
   useEffect(() => {
     if (activeTab === "auctions") {
@@ -119,6 +146,13 @@ function ShopPageContent() {
       loadListings();
     }
   }, [activeTab, listingSortBy]);
+
+  // Load tradeable comics when tab changes
+  useEffect(() => {
+    if (activeTab === "for-trade") {
+      loadTradeableComics();
+    }
+  }, [activeTab]);
 
   const loadAuctions = async () => {
     setIsLoadingAuctions(true);
@@ -162,6 +196,21 @@ function ShopPageContent() {
     }
   };
 
+  const loadTradeableComics = async () => {
+    setIsLoadingTradeable(true);
+    try {
+      const response = await fetch("/api/trades/available");
+      if (response.ok) {
+        const data = await response.json();
+        setTradeableComics(data.comics || []);
+      }
+    } catch (error) {
+      console.error("Error loading tradeable comics:", error);
+    } finally {
+      setIsLoadingTradeable(false);
+    }
+  };
+
   const handleAuctionWatchlistChange = (auctionId: string, isWatching: boolean) => {
     setAuctions((prev) => prev.map((a) => (a.id === auctionId ? { ...a, isWatching } : a)));
   };
@@ -185,6 +234,15 @@ function ShopPageContent() {
     const query = listingSearchQuery.toLowerCase();
     const title = listing.comic?.comic?.title?.toLowerCase() || "";
     const publisher = listing.comic?.comic?.publisher?.toLowerCase() || "";
+    return title.includes(query) || publisher.includes(query);
+  });
+
+  // Filter tradeable comics by search query
+  const filteredTradeableComics = tradeableComics.filter((comic) => {
+    if (!tradeSearchQuery.trim()) return true;
+    const query = tradeSearchQuery.toLowerCase();
+    const title = comic.title?.toLowerCase() || "";
+    const publisher = comic.publisher?.toLowerCase() || "";
     return title.includes(query) || publisher.includes(query);
   });
 
@@ -234,12 +292,23 @@ function ShopPageContent() {
             <Gavel className="w-4 h-4" />
             Auctions
           </button>
+          <button
+            onClick={() => setActiveTab("for-trade")}
+            className={`flex items-center gap-2 px-4 py-2 font-bold border-2 border-pop-black transition-all ${
+              activeTab === "for-trade"
+                ? "bg-pop-orange text-white shadow-[3px_3px_0px_#000]"
+                : "bg-pop-white text-pop-black hover:shadow-[2px_2px_0px_#000]"
+            }`}
+          >
+            <ArrowLeftRight className="w-4 h-4" />
+            For Trade
+          </button>
         </div>
       </div>
 
       {/* Content */}
       <div className="container mx-auto px-4 py-6">
-        {activeTab === "buy-now" ? (
+        {activeTab === "buy-now" && (
           <>
             {/* Buy Now Search & Filters - Pop Art Style */}
             <div
@@ -307,7 +376,9 @@ function ShopPageContent() {
               </div>
             )}
           </>
-        ) : (
+        )}
+
+        {activeTab === "auctions" && (
           <>
             {/* Auctions Search & Filters - Pop Art Style */}
             <div
@@ -396,6 +467,59 @@ function ShopPageContent() {
                     auction={auction}
                     onClick={() => setSelectedAuctionId(auction.id)}
                     onWatchlistChange={handleAuctionWatchlistChange}
+                  />
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {activeTab === "for-trade" && (
+          <>
+            {/* For Trade Search & Filters */}
+            <div
+              className="bg-pop-white border-3 border-pop-black p-4 mb-6"
+              style={{ boxShadow: "4px 4px 0px #000" }}
+            >
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                <input
+                  type="text"
+                  placeholder="Search tradeable comics..."
+                  value={tradeSearchQuery}
+                  onChange={(e) => setTradeSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border-2 border-pop-black focus:ring-2 focus:ring-pop-orange bg-white text-gray-900 font-medium"
+                />
+              </div>
+            </div>
+
+            {/* Tradeable Comics Grid */}
+            {isLoadingTradeable ? (
+              <LoadingSkeleton />
+            ) : filteredTradeableComics.length === 0 ? (
+              <div
+                className="bg-pop-white border-3 border-pop-black p-12 text-center"
+                style={{ boxShadow: "4px 4px 0px #000" }}
+              >
+                <div className="w-16 h-16 bg-pop-yellow border-3 border-pop-black flex items-center justify-center mx-auto mb-4">
+                  <ArrowLeftRight className="w-8 h-8 text-pop-black" />
+                </div>
+                <p className="text-xl font-black text-pop-black font-comic uppercase">
+                  No comics for trade
+                </p>
+                <p className="mt-2 text-gray-600">
+                  {tradeSearchQuery
+                    ? "Try adjusting your search"
+                    : "Check back soon for tradeable comics"}
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                {filteredTradeableComics.map((comic) => (
+                  <TradeableComicCard
+                    key={comic.id}
+                    comic={comic}
+                    onClick={() => setSelectedTradeComic(comic)}
                   />
                 ))}
               </div>
