@@ -96,3 +96,58 @@ export interface MessagesResponse {
   conversation: Conversation;
   otherParticipant: SellerProfile;
 }
+
+// ============================================================================
+// BLOCKING & REPORTING TYPES
+// ============================================================================
+
+/**
+ * A user block record
+ */
+export interface UserBlock {
+  id: string;
+  blockerId: string;
+  blockedId: string;
+  createdAt: string;
+  blockedUser?: SellerProfile;
+}
+
+/**
+ * Reason for reporting a message
+ */
+export type ReportReason =
+  | "spam"
+  | "scam"
+  | "harassment"
+  | "inappropriate"
+  | "other";
+
+/**
+ * A message report for admin review
+ */
+export interface MessageReport {
+  id: string;
+  messageId: string;
+  reporterId: string;
+  reason: ReportReason;
+  details: string | null;
+  status: "pending" | "reviewed" | "actioned" | "dismissed";
+  priority: number;
+  reviewedBy: string | null;
+  reviewedAt: string | null;
+  actionTaken: string | null;
+  createdAt: string;
+
+  // Joined data
+  message?: Message;
+  reporter?: SellerProfile;
+}
+
+/**
+ * Input for creating a message report
+ */
+export interface CreateReportInput {
+  messageId: string;
+  reason: ReportReason;
+  details?: string;
+}
