@@ -595,6 +595,94 @@ A guide for testing the main and secondary features of the application.
 | Watchlist requires auth | Call /api/watchlist without auth | Returns 401 |
 | Auction bid requires auth | Call /api/auctions/:id/bid without auth | Returns 401 |
 
+### 26. Book Trading
+
+**Location:** Collection → Comic Detail → "For Trade" toggle / Navigation → "Trades" / Shop → "For Trade" tab
+
+#### For Trade Toggle
+
+| Test Case | Steps | Expected Result |
+|-----------|-------|-----------------|
+| Mark comic for trade | Collection → Comic Detail → Click "For Trade" toggle | Toggle turns orange, comic marked as for_trade |
+| Unmark comic for trade | Comic Detail → Click "For Trade" toggle again | Toggle turns off, comic no longer for_trade |
+| For Trade filter | Collection → Filter by "For Trade" | Only comics marked for trade display |
+| Match finding triggered | Mark comic as for trade | System checks for Hunt List matches |
+
+#### Shop - For Trade Tab
+
+| Test Case | Steps | Expected Result |
+|-----------|-------|-----------------|
+| View For Trade tab | Shop → Click "For Trade" tab | Tab displays with comics from other users |
+| Own comics excluded | Mark your comic for trade → View For Trade tab | Your own comics do not appear in the list |
+| Hunt List demand badge | View comic wanted by multiple users | Shows "X users want this" badge |
+| Click to view details | Click a for-trade comic | Opens detail view/modal |
+
+#### Trade Matches
+
+| Test Case | Steps | Expected Result |
+|-----------|-------|-----------------|
+| View matches tab | Navigate to /trades → Matches tab | Shows Hunt List matches with your for-trade comics |
+| Matches grouped by comic | Have multiple matches | Matches organized by your comic being requested |
+| Quality score ranking | View match list | Higher-rated users appear first |
+| Dismiss match | Click dismiss on unwanted match | Match removed from list |
+| Message from match | Click message button on match | Opens conversation with that user |
+
+#### Trade Proposal
+
+| Test Case | Steps | Expected Result |
+|-----------|-------|-----------------|
+| Open trade modal | Click "Propose Trade" from match | TradeProposalModal opens with recipient info |
+| View your comics | In modal, view left side | Shows your for-trade comics |
+| View their comics | In modal, view right side | Shows their for-trade comics |
+| Select multiple comics | Select comics from each side | Multiple selections allowed |
+| Submit without both sides | Try to submit with only one side selected | Submit button disabled or error shown |
+| Create trade proposal | Select comics from both sides → Submit | Trade created with status "proposed" |
+
+#### Trade Workflow - Recipient
+
+| Test Case | Steps | Expected Result |
+|-----------|-------|-----------------|
+| View incoming trade | Receive trade → Active tab | Trade proposal appears in Active tab |
+| Accept trade | Click "Accept" on proposal | Status becomes "accepted" |
+| Decline trade | Click "Decline" on proposal | Status becomes "declined" |
+| Cancel trade | Click "Cancel" before shipping | Trade cancelled |
+
+#### Trade Workflow - Shipping
+
+| Test Case | Steps | Expected Result |
+|-----------|-------|-----------------|
+| Mark as Shipped appears | Accept trade | "Mark as Shipped" button appears for both parties |
+| Enter shipping info | Click "Mark as Shipped" → Enter carrier/tracking | Shipping info saved (tracking optional) |
+| Shipping status displayed | One party ships | Status shows who has shipped |
+| Both shipped status | Both parties mark as shipped | Status becomes "shipped" |
+
+#### Trade Workflow - Completion
+
+| Test Case | Steps | Expected Result |
+|-----------|-------|-----------------|
+| Confirm Received appears | Other party marks shipped | "Confirm Received" button appears |
+| Trade completes | Both parties confirm receipt | Trade status becomes "completed" |
+| Ownership swaps | Trade completes | Comics transfer to new owners' collections |
+| Acquired via trade | Check swapped comic | Shows acquired_via: "trade" |
+| Removed from Hunt List | Trade completes | Comics removed from new owners' Hunt Lists |
+| For Trade unmarked | Trade completes | Comics no longer marked as for_trade |
+
+#### Trade History
+
+| Test Case | Steps | Expected Result |
+|-----------|-------|-----------------|
+| View completed trades | /trades → History tab | Completed trades appear |
+| View cancelled trades | /trades → History tab | Cancelled/Declined trades appear |
+| View trade details | Click on past trade | Full trade details shown |
+
+#### Navigation
+
+| Test Case | Steps | Expected Result |
+|-----------|-------|-----------------|
+| Desktop nav link | View desktop navigation | "Trades" link visible |
+| Mobile nav link | View mobile navigation | "Trades" link visible |
+| Pending matches badge | Have pending matches | Badge shows count (if implemented) |
+
 ---
 
 ## Mobile Responsiveness
