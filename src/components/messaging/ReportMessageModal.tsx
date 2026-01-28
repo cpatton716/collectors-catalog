@@ -46,7 +46,7 @@ export function ReportMessageModal({
     setError(null);
 
     try {
-      const res = await fetch(`/api/messages/${messageId}/report`, {
+      const res = await fetch(`/api/messages/report/${messageId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reason, details: details || undefined }),
