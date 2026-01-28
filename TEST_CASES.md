@@ -428,7 +428,7 @@ A guide for testing the main and secondary features of the application.
 | Bonus scans persist | Verify email → Close browser → Reopen | Bonus scans still available in localStorage |
 | Rate limit on requests | Submit email 6+ times in 1 minute | Error: "Too many requests. Please try again later." |
 
-### 24. Peer-to-Peer Messaging (Phase 1)
+### 24. Peer-to-Peer Messaging (Phases 1-7)
 
 **Location:** Shop → Listing Detail → "Message Seller" / Navigation → "Messages"
 
@@ -437,6 +437,8 @@ A guide for testing the main and secondary features of the application.
 | Test Case | Steps | Expected Result |
 |-----------|-------|-----------------|
 | Message seller from listing | View listing detail → Click "Message Seller" | Creates conversation, redirects to /messages |
+| Message from AuctionCard | Hover AuctionCard → Click message icon | Creates conversation with seller |
+| Message from SellerBadge | Click message icon on SellerBadge | Creates conversation with seller |
 | Initial message sent | Click Message Seller on a listing | Automatic "Hi! I'm interested in your listing." message sent |
 | Can't message yourself | View your own listing | "Message Seller" button not shown |
 | Guest user blocked | Click Message Seller while logged out | Redirected to sign-in |
@@ -462,13 +464,86 @@ A guide for testing the main and secondary features of the application.
 | Long message | Type 2000+ characters | Truncated at 2000 limit |
 | Message with listing context | Send from listing detail | Message shows "Re: [Listing Title]" context |
 
-#### Unread Count
+#### Image Attachments (Phase 2)
+
+| Test Case | Steps | Expected Result |
+|-----------|-------|-----------------|
+| Add image to message | Click image icon → Select image | Preview appears below composer |
+| Remove image before send | Click X on image preview | Image removed from pending message |
+| Send message with images | Add images → Send | Message shows images in bubble |
+| View image full size | Click image in message bubble | Opens image in lightbox |
+| Max 4 images per message | Try to add 5+ images | Only 4 allowed, error shown |
+| Image size limit | Upload image > 5MB | Error: "Image too large" |
+
+#### Embedded Listings (Phase 2)
+
+| Test Case | Steps | Expected Result |
+|-----------|-------|-----------------|
+| Embed listing in message | Click listing icon → Select from your listings | Listing card embedded in message |
+| View embedded listing | See message with embedded listing | Shows cover, title, price, status |
+| Click embedded listing | Click embedded listing card | Opens listing detail modal |
+
+#### Unread Count & Realtime (Phase 2, 5)
 
 | Test Case | Steps | Expected Result |
 |-----------|-------|-----------------|
 | Unread badge shows | Receive message, don't open conversation | Unread count badge shows on conversation |
 | Unread clears on read | Open conversation with unread messages | Badge disappears, messages marked as read |
-| Unread count API | Call /api/messages/unread-count | Returns { count: N } for unread messages |
+| Navigation badge | Have unread messages | Badge shows on Messages link in nav |
+| Realtime message delivery | Partner sends message while viewing thread | Message appears instantly without refresh |
+| Realtime badge update | Receive message while on another page | Badge increments instantly |
+
+#### Block User (Phase 3)
+
+| Test Case | Steps | Expected Result |
+|-----------|-------|-----------------|
+| Block user from thread | In thread → Click ⋮ menu → Block User | Confirmation modal appears |
+| Confirm block | Click "Block" in modal | User blocked, redirected to /messages |
+| Blocked user can't message | Blocked user tries to send message | Error: "You cannot message this user" |
+| View blocked users | Settings → Blocked Users | List of blocked users shown |
+| Unblock user | Click Unblock on blocked user | User unblocked, can message again |
+
+#### Report Message (Phase 3)
+
+| Test Case | Steps | Expected Result |
+|-----------|-------|-----------------|
+| Report from thread | In thread → Click ⋮ menu → Report | Report modal opens |
+| Select report reason | Choose reason from dropdown | Reason selected |
+| Submit report | Fill reason → Click Report | Report submitted, confirmation shown |
+| Report with details | Add optional details to report | Details saved with report |
+
+#### Content Filtering (Phase 3)
+
+| Test Case | Steps | Expected Result |
+|-----------|-------|-----------------|
+| Phone number blocked | Try to send "Call me at 555-1234" | Error: "Phone numbers not allowed in messages" |
+| Email blocked | Try to send "Email me at test@example.com" | Error: "Email addresses not allowed in messages" |
+| Payment mention flagged | Send "Pay via Venmo" | Message sends but flagged for review |
+
+#### Notification Settings (Phase 4)
+
+**Location:** Settings → Notifications or /settings/notifications
+
+| Test Case | Steps | Expected Result |
+|-----------|-------|-----------------|
+| View notification settings | Navigate to /settings/notifications | Toggle switches for push and email |
+| Toggle push notifications | Toggle push switch | Setting saves immediately |
+| Toggle email notifications | Toggle email switch | Setting saves immediately |
+| Email sent when enabled | Receive message with email enabled | Email notification arrives |
+| No email when disabled | Receive message with email disabled | No email sent |
+
+#### Admin Moderation (Phase 6)
+
+**Location:** /admin/moderation (admin only)
+
+| Test Case | Steps | Expected Result |
+|-----------|-------|-----------------|
+| View reports dashboard | Navigate to /admin/moderation | Stats cards and report queue display |
+| Filter by status | Select status filter | List filters to that status |
+| Dismiss report | Click Dismiss on pending report | Report marked as dismissed |
+| Warn user action | Click Warn User → Add notes → Submit | Report marked as actioned |
+| Admin notes saved | Add notes when taking action | Notes visible on report |
+| Non-admin blocked | Non-admin tries to access | Redirected or 403 error |
 
 ---
 
@@ -584,4 +659,4 @@ If you encounter bugs or unexpected behavior:
 
 ---
 
-*Last Updated: January 27, 2026*
+*Last Updated: January 28, 2026*

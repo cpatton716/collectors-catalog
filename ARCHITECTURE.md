@@ -2,7 +2,7 @@
 
 > **Comprehensive map of pages, features, and service dependencies**
 
-*Last Updated: January 24, 2026*
+*Last Updated: January 28, 2026*
 
 ---
 
@@ -118,6 +118,33 @@
 
 ---
 
+### Messages (`/messages`)
+
+| Feature | Services | Notes |
+|---------|----------|-------|
+| Conversation List | 🗄️ 🔐 | Preview with last message, unread count |
+| Message Thread | 🗄️ 🔐 | Real-time via Supabase Realtime |
+| Send Messages | 🗄️ 🔐 | Text content up to 2000 chars |
+| Image Attachments | 🗄️ 🔐 | Up to 4 images per message (Supabase Storage) |
+| Embedded Listings | 🗄️ | Share listing cards in messages |
+| Block User | 🗄️ 🔐 | Prevents messaging from blocked users |
+| Report Message | 🗄️ 🔐 | Flags for admin review |
+| Content Filtering | 🤖 | Blocks phone/email, flags payment mentions |
+| Unread Badge | 🗄️ | Real-time updates in navigation |
+| Email Notifications | 📧 🗄️ | Configurable per-user preference |
+
+---
+
+### Notification Settings (`/settings/notifications`)
+
+| Feature | Services | Notes |
+|---------|----------|-------|
+| Push Notifications Toggle | 🗄️ 🔐 | Enable/disable browser push |
+| Email Notifications Toggle | 🗄️ 🔐 | Enable/disable email alerts |
+| Auto-save | — | Changes saved immediately on toggle |
+
+---
+
 ### Hottest Books (`/hottest-books`)
 
 | Feature | Services | Notes |
@@ -223,6 +250,18 @@ Admin access is controlled via the `is_admin` field in the `profiles` table.
 | Approve/Reject | 🗄️ | Moderation actions |
 | Edit Before Approve | 🗄️ | Modify submitted key info |
 
+#### Message Moderation (`/admin/moderation`)
+
+| Feature | Services | Notes |
+|---------|----------|-------|
+| Stats Dashboard | 🗄️ | Pending, reviewed, actioned counts |
+| Report Queue | 🗄️ | Sortable by status, clickable filters |
+| Dismiss Report | 🗄️ | Mark as non-actionable |
+| Warn User | 🗄️ | Take action, update status |
+| Admin Notes | 🗄️ | Document moderation decisions |
+| AI Auto-Moderation | 🤖 🗄️ | Nightly cron analyzes flagged messages |
+| Priority Scoring | 🤖 | 1-10 scoring, suggested actions |
+
 **Note:** Admin pages are protected by database `is_admin` check.
 
 ---
@@ -276,6 +315,20 @@ Admin access is controlled via the `is_admin` field in the `profiles` table.
 | `/api/watchlist` | GET/POST/DELETE | Manage watchlist | 🗄️ 🔐 |
 | `/api/notifications` | GET/PATCH | User notifications | 🗄️ 🔐 |
 
+### Messaging
+
+| Route | Method | Purpose | Services |
+|-------|--------|---------|----------|
+| `/api/messages` | GET/POST | List conversations / Send message | 🗄️ 🔐 |
+| `/api/messages/[conversationId]` | GET | Get messages in conversation | 🗄️ 🔐 |
+| `/api/messages/[conversationId]/read` | POST | Mark messages as read | 🗄️ 🔐 |
+| `/api/messages/unread-count` | GET | Get unread message count | 🗄️ 🔐 |
+| `/api/messages/upload-image` | POST | Upload message image | 🗄️ 🔐 |
+| `/api/messages/[messageId]/report` | POST | Report a message | 🗄️ 🔐 |
+| `/api/users/[userId]/block` | POST/DELETE | Block/unblock user | 🗄️ 🔐 |
+| `/api/users/blocked` | GET | List blocked users | 🗄️ 🔐 |
+| `/api/settings/notifications` | GET/PATCH | Notification preferences | 🗄️ 🔐 |
+
 ### Sellers & Sharing
 
 | Route | Method | Purpose | Services |
@@ -314,6 +367,8 @@ Admin access is controlled via the `is_admin` field in the `profiles` table.
 | `/api/admin/usage/check-alerts` | POST | Check limits, send alerts | 🗄️ 📧 |
 | `/api/admin/key-info` | GET | List pending submissions | 🗄️ |
 | `/api/admin/key-info/[id]` | PATCH/DELETE | Approve/reject submission | 🗄️ |
+| `/api/admin/message-reports` | GET | List message reports (paginated) | 🗄️ |
+| `/api/admin/message-reports/[reportId]` | PATCH | Update report status | 🗄️ |
 
 ### User & Profile
 
@@ -348,6 +403,7 @@ Admin access is controlled via the `is_admin` field in the `profiles` table.
 |----------------|----------|---------|----------|
 | `/api/cron/process-auctions` | Every 5 min | End auctions, expire offers/listings | 🗄️ |
 | `/api/cron/reset-scans` | Monthly | Reset free tier scan counts | 🗄️ |
+| `/api/cron/moderate-messages` | Nightly | AI moderation of flagged messages | 🗄️ 🤖 |
 | `check-usage-alerts` (Netlify) | Daily | Monitor service limits, send alerts | 🗄️ 📧 |
 
 **Automation Logic:**
@@ -356,6 +412,7 @@ Admin access is controlled via the `is_admin` field in the `profiles` table.
 - Listings: Expire after 30 days
 - Scans: Reset monthly counts on 1st of month
 - Alerts: Email admin when approaching service limits
+- Message Moderation: Claude analyzes flagged messages, auto-creates reports with 1-10 priority
 
 ---
 
@@ -492,6 +549,10 @@ Admin access is controlled via the `is_admin` field in the `profiles` table.
 | `seller_ratings` | Reputation system |
 | `notifications` | In-app notifications |
 | `offers` | Purchase offers on listings |
+| `conversations` | Messaging conversations between users |
+| `messages` | Individual messages with content filtering |
+| `user_blocks` | User-to-user blocking |
+| `message_reports` | Flagged messages for admin review |
 
 ---
 
