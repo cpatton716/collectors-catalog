@@ -2,7 +2,7 @@
 
 > **Comprehensive map of pages, features, and service dependencies**
 
-*Last Updated: January 28, 2026*
+*Last Updated: January 28, 2026 (Trading feature added)*
 
 ---
 
@@ -88,8 +88,35 @@
 |---------|----------|-------|
 | Auction Listings | 🗄️ | eBay-style proxy bidding |
 | Fixed-Price Listings | 🗄️ | Buy Now with offer support |
+| For Trade Tab | 🗄️ | Browse comics marked for trade by other users |
 | Search & Sort | 🗄️ | By price, ending time, bids |
 | Watchlist | 🗄️ 🔐 | Track interesting auctions |
+
+**For Trade Tab:**
+- Shows "X users want this" badge based on Hunt List demand
+- Click to view details and initiate trade conversation
+
+---
+
+### Trades Page (`/trades`)
+
+Manage comic trades with three tabs:
+- **Matches** - Hunt List matches (comics you want that others have for trade, and vice versa)
+- **Active** - Trades in progress (proposed, accepted, shipping)
+- **History** - Completed, cancelled, and declined trades
+
+| Feature | Services | Notes |
+|---------|----------|-------|
+| Trade Matches | 🗄️ 🔐 | Mutual matches from Hunt List + For Trade |
+| Active Trades | 🗄️ 🔐 | Status tracking: proposed → accepted → shipped → completed |
+| Trade History | 🗄️ 🔐 | Completed, cancelled, declined trades |
+| Trade Proposals | 🗄️ 🔐 | Create multi-comic trade proposals |
+| Shipping Tracking | 🗄️ | Carrier and tracking number for both parties |
+
+**Key Components:**
+- `TradeMatchCard` - Grouped matches by your comic
+- `TradeCard` - Trade details with status-based actions
+- `TradeProposalModal` - Create multi-comic trade proposals
 
 ---
 
@@ -354,6 +381,21 @@ Admin access is controlled via the `is_admin` field in the `profiles` table.
 | `/api/key-hunt` | DELETE | Remove from hunt list | 🗄️ 🔐 |
 | `/api/key-hunt` | PATCH | Update hunt list item | 🗄️ 🔐 |
 
+### Trading
+
+| Route | Method | Purpose | Services |
+|-------|--------|---------|----------|
+| `/api/trades` | GET | Get user's trades (filterable by status) | 🗄️ 🔐 |
+| `/api/trades` | POST | Create new trade proposal | 🗄️ 🔐 |
+| `/api/trades/[tradeId]` | GET | Get trade details | 🗄️ 🔐 |
+| `/api/trades/[tradeId]` | PATCH | Update trade (accept, decline, ship, confirm) | 🗄️ 🔐 |
+| `/api/trades/available` | GET | Get all comics marked for trade | 🗄️ |
+| `/api/trades/matches` | GET | Get user's Hunt List matches | 🗄️ 🔐 |
+| `/api/trades/matches` | POST | Trigger match finding | 🗄️ 🔐 |
+| `/api/trades/matches/[matchId]` | PATCH | Update match (view, dismiss) | 🗄️ 🔐 |
+| `/api/comics/for-trade` | GET | Get user's for-trade comics | 🗄️ 🔐 |
+| `/api/comics/[id]/for-trade` | PATCH | Toggle for_trade status | 🗄️ 🔐 |
+
 ### Admin
 
 | Route | Method | Purpose | Services |
@@ -553,6 +595,34 @@ Admin access is controlled via the `is_admin` field in the `profiles` table.
 | `messages` | Individual messages with content filtering |
 | `user_blocks` | User-to-user blocking |
 | `message_reports` | Flagged messages for admin review |
+| `trades` | Trade proposals between users |
+| `trade_items` | Comics included in trades (many-to-many) |
+| `trade_matches` | Mutual matches from Hunt List + For Trade |
+
+### Trading Tables Detail
+
+**trades**
+- `id`, `proposer_id`, `recipient_id`, `status`
+- `proposer_tracking_carrier`, `proposer_tracking_number`
+- `recipient_tracking_carrier`, `recipient_tracking_number`
+- `proposer_shipped_at`, `recipient_shipped_at`
+- `proposer_received_at`, `recipient_received_at`
+- `completed_at`, `cancelled_at`, `cancel_reason`
+- Status flow: proposed → accepted → shipped → completed (or cancelled/declined)
+
+**trade_items**
+- `id`, `trade_id`, `comic_id`, `owner_id`
+- Links comics to trades (many-to-many)
+
+**trade_matches**
+- `id`, `user_a_id`, `user_b_id`
+- `user_a_comic_id`, `user_b_comic_id`
+- `quality_score`, `status` (pending/viewed/dismissed/traded)
+- Mutual matches from Hunt List + For Trade
+
+**comics table additions**
+- `for_trade` (boolean) - Available for trade
+- `acquired_via` (text) - How comic was obtained (scan/import/purchase/trade)
 
 ---
 
