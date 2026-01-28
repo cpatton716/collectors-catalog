@@ -41,6 +41,49 @@ export function MessageBubble({ message, isOwnMessage }: MessageBubbleProps) {
         {/* Message content */}
         <p className="whitespace-pre-wrap break-words text-sm">{message.content}</p>
 
+        {/* Images */}
+        {message.imageUrls && message.imageUrls.length > 0 && (
+          <div
+            className={`mt-2 flex gap-2 ${message.imageUrls.length === 1 ? "" : "flex-wrap"}`}
+          >
+            {message.imageUrls.map((url, i) => (
+              <a key={i} href={url} target="_blank" rel="noopener noreferrer">
+                <img
+                  src={url}
+                  alt=""
+                  className="max-h-[200px] max-w-[200px] rounded border-2 border-pop-black object-cover transition-opacity hover:opacity-90"
+                />
+              </a>
+            ))}
+          </div>
+        )}
+
+        {/* Embedded Listing */}
+        {message.embeddedListing && (
+          <div className="mt-2 rounded border-2 border-pop-black bg-gray-50 p-2">
+            <div className="flex gap-2">
+              {message.embeddedListing.coverImageUrl && (
+                <img
+                  src={message.embeddedListing.coverImageUrl}
+                  alt=""
+                  className="h-16 w-12 rounded object-cover"
+                />
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-bold">
+                  {message.embeddedListing.title}
+                </p>
+                <p className="text-sm font-bold text-pop-blue">
+                  ${message.embeddedListing.currentPrice}
+                </p>
+                <p className="text-xs capitalize text-gray-500">
+                  {message.embeddedListing.status}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Timestamp */}
         <p
           className={`mt-1 text-xs ${
