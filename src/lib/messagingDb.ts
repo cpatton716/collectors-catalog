@@ -192,6 +192,8 @@ export async function getConversationMessages(
     isRead: msg.is_read,
     createdAt: msg.created_at,
     updatedAt: msg.updated_at,
+    imageUrls: msg.image_urls || [],
+    embeddedListingId: msg.embedded_listing_id || null,
     listing: msg.auctions
       ? {
           id: msg.auctions.id,
@@ -272,5 +274,7 @@ export async function sendMessage(
     isRead: data.is_read,
     createdAt: data.created_at,
     updatedAt: data.updated_at,
+    imageUrls: data.image_urls || [],
+    embeddedListingId: data.embedded_listing_id || null,
   };
 }

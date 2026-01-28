@@ -34,6 +34,17 @@ export interface Message {
   createdAt: string;
   updatedAt: string;
 
+  // Rich content
+  imageUrls: string[];
+  embeddedListingId: string | null;
+  embeddedListing?: {
+    id: string;
+    title: string;
+    coverImageUrl: string | null;
+    currentPrice: number;
+    status: string;
+  };
+
   // Joined data (populated when needed)
   sender?: SellerProfile;
   listing?: {
@@ -50,6 +61,8 @@ export interface SendMessageInput {
   recipientId: string;
   content: string;
   listingId?: string;
+  imageUrls?: string[];
+  embeddedListingId?: string;
 }
 
 /**
