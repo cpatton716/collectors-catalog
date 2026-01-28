@@ -4,6 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 
 import { getProfileByClerkId } from "@/lib/db";
 import { supabase } from "@/lib/supabase";
+import { triggerMatchFinding } from "@/lib/tradingDb";
 
 // PATCH - Toggle for_trade status
 export async function PATCH(
@@ -46,6 +47,14 @@ export async function PATCH(
       .eq("id", id);
 
     if (updateError) throw updateError;
+
+    // Trigger match finding if marking as for trade
+    if (forTrade) {
+      // Fire and forget - don't block the response
+      triggerMatchFinding(profile.id, id).catch((err) => {
+        console.error("Error triggering match finding:", err);
+      });
+    }
 
     return NextResponse.json({ success: true, forTrade });
   } catch (error) {
