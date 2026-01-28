@@ -9,6 +9,7 @@ import {
 import { supabase, supabaseAdmin } from "./supabase";
 import { getSellerProfile } from "./auctionDb";
 import { checkMessageContent } from "./contentFilter";
+import { sendNotificationEmail } from "./email";
 
 // ============================================================================
 // CONVERSATION HELPERS
@@ -306,6 +307,43 @@ export async function sendMessage(
     .single();
 
   if (error) throw error;
+
+  // Send email notification (fire and forget)
+  void (async () => {
+    try {
+      // Get recipient's profile for email preferences and email address
+      const { data: recipientProfile } = await supabaseAdmin
+        .from("profiles")
+        .select("email, msg_email_enabled, display_name")
+        .eq("id", recipientId)
+        .single();
+
+      if (recipientProfile?.msg_email_enabled && recipientProfile.email) {
+        // Get sender's name
+        const { data: senderProfile } = await supabaseAdmin
+          .from("profiles")
+          .select("display_name")
+          .eq("id", senderId)
+          .single();
+
+        const senderName = senderProfile?.display_name || "Someone";
+        const messagePreview =
+          content.length > 100 ? content.slice(0, 100) + "..." : content;
+
+        await sendNotificationEmail({
+          to: recipientProfile.email,
+          type: "message_received",
+          data: {
+            senderName,
+            messagePreview,
+            messagesUrl: `${process.env.NEXT_PUBLIC_APP_URL}/messages`,
+          },
+        });
+      }
+    } catch (err) {
+      console.error("[Messaging] Failed to send email notification:", err);
+    }
+  })();
 
   return {
     id: data.id,

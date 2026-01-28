@@ -30,6 +30,12 @@ interface ListingEmailData {
   listingUrl: string;
 }
 
+interface MessageEmailData {
+  senderName: string;
+  messagePreview: string;
+  messagesUrl: string;
+}
+
 function formatPrice(amount: number): string {
   return `$${amount.toFixed(2)}`;
 }
@@ -140,6 +146,21 @@ function listingExpiredTemplate(data: ListingEmailData): EmailTemplate {
   };
 }
 
+function messageReceivedTemplate(data: MessageEmailData): EmailTemplate {
+  return {
+    subject: `New message from ${data.senderName}`,
+    html: `
+      <h2>You have a new message</h2>
+      <p><strong>${data.senderName}</strong> sent you a message:</p>
+      <blockquote style="border-left: 4px solid #e5e7eb; padding-left: 16px; margin: 16px 0; color: #4b5563;">
+        ${data.messagePreview}
+      </blockquote>
+      <p><a href="${data.messagesUrl}" style="display: inline-block; padding: 12px 24px; background-color: #6366f1; color: white; text-decoration: none; border-radius: 8px;">View Message</a></p>
+    `,
+    text: `New message from ${data.senderName}\n\n"${data.messagePreview}"\n\nView message: ${data.messagesUrl}`,
+  };
+}
+
 // ============================================================================
 // SEND EMAIL FUNCTION
 // ============================================================================
@@ -151,12 +172,13 @@ export type NotificationEmailType =
   | "offer_countered"
   | "offer_expired"
   | "listing_expiring"
-  | "listing_expired";
+  | "listing_expired"
+  | "message_received";
 
 interface SendNotificationEmailParams {
   to: string;
   type: NotificationEmailType;
-  data: OfferEmailData | ListingEmailData;
+  data: OfferEmailData | ListingEmailData | MessageEmailData;
 }
 
 export async function sendNotificationEmail({
@@ -192,6 +214,9 @@ export async function sendNotificationEmail({
       break;
     case "listing_expired":
       template = listingExpiredTemplate(data as ListingEmailData);
+      break;
+    case "message_received":
+      template = messageReceivedTemplate(data as MessageEmailData);
       break;
     default:
       return { success: false, error: `Unknown email type: ${type}` };
