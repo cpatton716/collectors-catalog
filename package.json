@@ -22,6 +22,9 @@
     "check": "npm run typecheck && npm run lint && npm test",
     "check:full": "npm run typecheck && npm run lint && npm test && npm run build",
     "check:all": "npm run typecheck && npm run lint && npm run format:check && npm run circular && npm run deadcode && npm test && npm run audit && npm run build",
+    "check:routes": "node scripts/check-routes.js",
+    "smoke-test": "bash scripts/smoke-test.sh",
+    "check:deploy": "npm run check:routes && npm run check:full && npm run smoke-test",
     "depcheck": "depcheck --ignores='@eslint/eslintrc,@jest/globals,@testing-library/react,@types/jest,@types/react-dom,autoprefixer,eslint-config-next,jest-environment-jsdom,postcss,ts-jest,@typescript-eslint/eslint-plugin,@typescript-eslint/parser,@trivago/prettier-plugin-sort-imports,madge,knip,@next/bundle-analyzer,prettier'"
   },
   "dependencies": {

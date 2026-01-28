@@ -196,9 +196,11 @@ The Dev Log is stored at: `DEV_LOG.md` in the project root.
 When the user says **"Deploy"**, perform the following steps:
 
 1. **Run full quality check:**
+   - `npm run check:routes` - Check for dynamic route conflicts
    - `npm run lint` - Check for linting errors
    - `npm test` - Run all tests
    - `npm run build` - Ensure build succeeds
+   - `npm run smoke-test` - Verify production server starts and homepage loads
 
 2. **CHECK FOR NEW ENVIRONMENT VARIABLES** ⚠️ CRITICAL:
    - Compare current `.env.local` against known Netlify variables
