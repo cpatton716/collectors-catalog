@@ -7,6 +7,7 @@ import { Flag, Loader2, MoreVertical, ShieldX } from "lucide-react";
 
 import { Message, MessagesResponse } from "@/types/messaging";
 import { SellerProfile } from "@/types/auction";
+import { supabase } from "@/lib/supabase";
 
 import { BlockUserModal } from "./BlockUserModal";
 import { MessageBubble } from "./MessageBubble";
@@ -63,6 +64,58 @@ export function MessageThread({
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [showMenu]);
+
+  // Subscribe to realtime messages
+  useEffect(() => {
+    if (!conversationId) return;
+
+    const channel = supabase
+      .channel(`messages:${conversationId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        (payload) => {
+          const newMessage = payload.new;
+
+          // Only add if it's from the other user (we already add our own optimistically)
+          if (newMessage.sender_id !== currentUserId) {
+            const message: Message = {
+              id: newMessage.id,
+              conversationId: newMessage.conversation_id,
+              senderId: newMessage.sender_id,
+              content: newMessage.content,
+              listingId: newMessage.listing_id,
+              isRead: newMessage.is_read,
+              createdAt: newMessage.created_at,
+              updatedAt: newMessage.updated_at,
+              imageUrls: newMessage.image_urls || [],
+              embeddedListingId: newMessage.embedded_listing_id || null,
+            };
+
+            setMessages((prev) => {
+              // Avoid duplicates
+              if (prev.some((m) => m.id === message.id)) return prev;
+              return [...prev, message];
+            });
+
+            // Mark as read since we're viewing the conversation
+            fetch(`/api/messages/${conversationId}/read`, {
+              method: "POST",
+            }).catch(() => {});
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [conversationId, currentUserId]);
 
   const loadMessages = async () => {
     setIsLoading(true);
