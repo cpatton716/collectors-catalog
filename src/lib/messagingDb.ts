@@ -274,6 +274,18 @@ export async function sendMessage(
     throw new Error(contentCheck.reason || "Message not allowed");
   }
 
+  // Check if sender is blocked by recipient
+  const { data: blockExists } = await supabaseAdmin
+    .from("user_blocks")
+    .select("id")
+    .eq("blocker_id", recipientId)
+    .eq("blocked_user_id", senderId)
+    .maybeSingle();
+
+  if (blockExists) {
+    throw new Error("You cannot message this user");
+  }
+
   // Get or create conversation
   const conversationId = await getOrCreateConversation(senderId, recipientId);
 
