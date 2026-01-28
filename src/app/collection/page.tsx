@@ -8,6 +8,7 @@ import { useUser } from "@clerk/nextjs";
 
 import {
   ArrowDownRight,
+  ArrowLeftRight,
   ArrowUpRight,
   BarChart3,
   Book,
@@ -81,6 +82,7 @@ export default function CollectionPage() {
   const [sortBy, setSortBy] = useState<SortOption>("issue");
   const [selectedItem, setSelectedItem] = useState<CollectionItem | null>(null);
   const [showStarredOnly, setShowStarredOnly] = useState(false);
+  const [showForTradeOnly, setShowForTradeOnly] = useState(false);
   const [editingItem, setEditingItem] = useState<CollectionItem | null>(null);
   const [publisherFilter, setPublisherFilter] = useState<FilterOption>("all");
   const [titleFilter, setTitleFilter] = useState<FilterOption>("all");
@@ -107,6 +109,11 @@ export default function CollectionPage() {
 
       // Filter by starred
       if (showStarredOnly && !item.isStarred) {
+        return false;
+      }
+
+      // Filter by for trade
+      if (showForTradeOnly && !item.forTrade) {
         return false;
       }
 
@@ -556,6 +563,19 @@ export default function CollectionPage() {
               <span className="hidden sm:inline">Starred</span>
             </button>
 
+            {/* For Trade Filter */}
+            <button
+              onClick={() => setShowForTradeOnly(!showForTradeOnly)}
+              className={`flex items-center gap-2 px-3 py-1.5 border-2 border-pop-black font-bold text-sm transition-all ${
+                showForTradeOnly
+                  ? "bg-pop-orange text-white shadow-[2px_2px_0px_#000]"
+                  : "bg-pop-white text-pop-black hover:shadow-[2px_2px_0px_#000]"
+              }`}
+            >
+              <ArrowLeftRight className="w-4 h-4" />
+              For Trade
+            </button>
+
             {/* List Filter */}
             <div className="flex items-center gap-1.5">
               <label className="text-sm font-medium text-gray-600 hidden md:flex items-center gap-1">
@@ -647,6 +667,7 @@ export default function CollectionPage() {
             {(publisherFilter !== "all" ||
               titleFilter !== "all" ||
               showStarredOnly ||
+              showForTradeOnly ||
               searchQuery ||
               selectedList !== "collection") && (
               <button
@@ -654,6 +675,7 @@ export default function CollectionPage() {
                   setPublisherFilter("all");
                   setTitleFilter("all");
                   setShowStarredOnly(false);
+                  setShowForTradeOnly(false);
                   setSearchQuery("");
                   setSelectedList("collection");
                 }}
@@ -673,14 +695,14 @@ export default function CollectionPage() {
             <BookOpen className="w-10 h-10 text-pop-black" />
           </div>
           <h3 className="text-2xl font-black text-pop-black mb-2 font-comic uppercase">
-            {searchQuery || publisherFilter !== "all" || titleFilter !== "all" || showStarredOnly
+            {searchQuery || publisherFilter !== "all" || titleFilter !== "all" || showStarredOnly || showForTradeOnly
               ? "No comics match your filters"
               : selectedList !== "collection"
                 ? "This list is empty"
                 : "Your collection is empty"}
           </h3>
           <p className="text-gray-600 mb-6">
-            {searchQuery || publisherFilter !== "all" || titleFilter !== "all" || showStarredOnly
+            {searchQuery || publisherFilter !== "all" || titleFilter !== "all" || showStarredOnly || showForTradeOnly
               ? "Try adjusting your filters or search terms"
               : selectedList !== "collection"
                 ? "Add comics to this list from the comic details view"
@@ -690,13 +712,15 @@ export default function CollectionPage() {
             {searchQuery ||
             publisherFilter !== "all" ||
             titleFilter !== "all" ||
-            showStarredOnly ? (
+            showStarredOnly ||
+            showForTradeOnly ? (
               <button
                 onClick={() => {
                   setSearchQuery("");
                   setPublisherFilter("all");
                   setTitleFilter("all");
                   setShowStarredOnly(false);
+                  setShowForTradeOnly(false);
                 }}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-pop-blue border-2 border-pop-black text-white font-bold shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000] transition-all"
               >
