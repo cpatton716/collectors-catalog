@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { recipientId, content, listingId } = body;
+    const { recipientId, content, listingId, imageUrls, embeddedListingId } = body;
 
     if (!recipientId) {
       return NextResponse.json(
@@ -82,6 +82,8 @@ export async function POST(request: NextRequest) {
       recipientId,
       content,
       listingId,
+      imageUrls,
+      embeddedListingId,
     });
 
     return NextResponse.json({ message }, { status: 201 });

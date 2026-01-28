@@ -175,6 +175,15 @@ export async function getConversationMessages(
           title,
           cover_image_url
         )
+      ),
+      embedded_auctions:embedded_listing_id (
+        id,
+        current_price,
+        status,
+        comics (
+          title,
+          cover_image_url
+        )
       )
     `)
     .eq("conversation_id", conversationId)
@@ -199,6 +208,15 @@ export async function getConversationMessages(
           id: msg.auctions.id,
           title: msg.auctions.comics?.title || "Unknown",
           coverImageUrl: msg.auctions.comics?.cover_image_url || null,
+        }
+      : undefined,
+    embeddedListing: msg.embedded_auctions
+      ? {
+          id: msg.embedded_auctions.id,
+          title: msg.embedded_auctions.comics?.title || "Unknown",
+          coverImageUrl: msg.embedded_auctions.comics?.cover_image_url || null,
+          currentPrice: msg.embedded_auctions.current_price,
+          status: msg.embedded_auctions.status,
         }
       : undefined,
   }));
@@ -232,7 +250,7 @@ export async function sendMessage(
   senderId: string,
   input: SendMessageInput
 ): Promise<Message> {
-  const { recipientId, content, listingId } = input;
+  const { recipientId, content, listingId, imageUrls, embeddedListingId } = input;
 
   // Validate content
   if (!content || content.trim().length === 0) {
@@ -259,6 +277,8 @@ export async function sendMessage(
       sender_id: senderId,
       content: content.trim(),
       listing_id: listingId || null,
+      image_urls: imageUrls || [],
+      embedded_listing_id: embeddedListingId || null,
     })
     .select()
     .single();
