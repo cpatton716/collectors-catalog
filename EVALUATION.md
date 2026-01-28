@@ -2,7 +2,7 @@
 
 > **This document is the guiding light for development priorities. It takes precedence over BACKLOG.md.**
 
-*Last Updated: January 27, 2026*
+*Last Updated: January 28, 2026*
 
 ---
 
@@ -450,19 +450,25 @@ Collectors Chest is a comic book collection tracking app with AI-powered cover r
    - ⏳ Implement FMV lookup integration
    - ⏳ Add GoCollect pricing alongside eBay prices
 
-2. **Messaging Phases 2-7**
-   - Phase 1 (Basic DMs) ✅ Complete
-   - Phase 2: Conversation view and real-time updates
-   - Phase 3: Notification badges
-   - Phase 4: Message search
-   - Phase 5: Block/report functionality
-   - Phase 6: Read receipts
-   - Phase 7: Message templates
+2. **Messaging Phases 2-7** ✅ COMPLETE (Jan 28)
+   - Phase 1: Basic DMs ✅
+   - Phase 2: Rich Content (images, embedded listings) ✅
+   - Phase 3: Block & Report ✅
+   - Phase 4: Notification Preferences ✅
+   - Phase 5: Real-time Updates ✅
+   - Phase 6: Admin Moderation Dashboard ✅
+   - Phase 7: AI-Assisted Moderation ✅
 
-3. **Book Trading Feature**
-   - Allow users to propose comic-for-comic trades
-   - Trade request workflow
-   - Trade history tracking
+3. **Book Trading Feature** ✅ COMPLETE (Jan 28)
+   - ✅ Mark comics as "For Trade" from collection
+   - ✅ For Trade tab in Shop showing tradeable comics
+   - ✅ Hunt List matching system with quality scoring
+   - ✅ TradeProposalModal for multi-comic trades
+   - ✅ Full trade workflow (propose → accept → ship → complete)
+   - ✅ Automatic ownership swap on completion
+   - ✅ Auto-remove from Hunt List when received
+   - ✅ /trades page with Matches, Active, History tabs
+   - ✅ Trades link in navigation
 
 ### Post-Launch
 - Price alerts
