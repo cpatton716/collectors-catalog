@@ -4,11 +4,16 @@ import { Shield, Skull, User } from "lucide-react";
 
 import { SellerProfile } from "@/types/auction";
 
+import { MessageButton } from "../messaging/MessageButton";
+
 interface SellerBadgeProps {
   seller: SellerProfile;
   size?: "sm" | "md" | "lg";
   showCount?: boolean;
   onClick?: () => void;
+  showMessageButton?: boolean;
+  listingId?: string;
+  isSeller?: boolean;
 }
 
 /**
@@ -37,7 +42,15 @@ function getSellerDisplayName(seller: SellerProfile): string {
   return publicDisplayName || displayName || "Seller";
 }
 
-export function SellerBadge({ seller, size = "md", showCount = true, onClick }: SellerBadgeProps) {
+export function SellerBadge({
+  seller,
+  size = "md",
+  showCount = true,
+  onClick,
+  showMessageButton = false,
+  listingId,
+  isSeller = false,
+}: SellerBadgeProps) {
   const { reputation, positivePercentage, totalRatings } = seller;
   const name = getSellerDisplayName(seller);
 
@@ -87,18 +100,30 @@ export function SellerBadge({ seller, size = "md", showCount = true, onClick }: 
 
   return (
     <div
-      onClick={onClick}
       className={`inline-flex items-center ${sizeClasses[size]} ${
         onClick ? "cursor-pointer hover:opacity-80" : ""
       }`}
     >
-      <div className={`flex items-center gap-1 px-2 py-1 rounded-full ${styles.bgColor}`}>
+      <div
+        onClick={onClick}
+        className={`flex items-center gap-1 px-2 py-1 rounded-full ${styles.bgColor}`}
+      >
         <Icon className={`${iconSizes[size]} ${styles.iconColor}`} />
         <span className={`font-medium ${styles.textColor}`}>{name}</span>
         {showCount && totalRatings > 0 && (
           <span className={`${styles.textColor} opacity-75`}>({positivePercentage}%)</span>
         )}
       </div>
+      {showMessageButton && !isSeller && seller.id && (
+        <MessageButton
+          sellerId={seller.id}
+          sellerName={seller.username ? `@${seller.username}` : undefined}
+          listingId={listingId}
+          size={size}
+          variant="icon"
+          className="ml-2"
+        />
+      )}
     </div>
   );
 }
