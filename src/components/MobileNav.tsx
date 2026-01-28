@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation";
 
 import { useUser } from "@clerk/nextjs";
 
-import { BookOpen, Gavel, Home, KeyRound, ShoppingBag } from "lucide-react";
+import { BookOpen, Gavel, Home, KeyRound, MessageSquare, ShoppingBag } from "lucide-react";
 
 export function MobileNav() {
   const pathname = usePathname();
@@ -15,12 +15,32 @@ export function MobileNav() {
   const [showComingSoon, setShowComingSoon] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [hasMounted, setHasMounted] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const lastScrollY = useRef(0);
   const scrollThreshold = 10; // Minimum scroll distance to trigger hide/show
 
   // Track when component has mounted to avoid hydration mismatch
   useEffect(() => {
     setHasMounted(true);
+  }, []);
+
+  // Fetch unread message count
+  useEffect(() => {
+    const fetchUnread = async () => {
+      try {
+        const res = await fetch("/api/messages/unread-count");
+        if (res.ok) {
+          const data = await res.json();
+          setUnreadCount(data.count);
+        }
+      } catch {
+        // Ignore errors silently
+      }
+    };
+
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 60000); // Poll every minute
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -58,12 +78,13 @@ export function MobileNav() {
     { href: "/shop", icon: ShoppingBag, label: "Shop" },
   ];
 
-  // Add My Listings and Key Hunt for signed-in users (only after mount to avoid hydration mismatch)
+  // Add My Listings, Messages, and Key Hunt for signed-in users (only after mount to avoid hydration mismatch)
   const navItems =
     hasMounted && isSignedIn
       ? [
           ...baseItems,
           { href: "/my-auctions", icon: Gavel, label: "Listings" },
+          { href: "/messages", icon: MessageSquare, label: "Messages", showBadge: true },
           { href: "/key-hunt", icon: KeyRound, label: "Key Hunt" },
         ]
       : baseItems;
@@ -91,12 +112,14 @@ export function MobileNav() {
               const Icon = item.icon;
               const isComingSoon = "comingSoon" in item && item.comingSoon;
 
+              const showBadge = "showBadge" in item && item.showBadge && unreadCount > 0;
+
               return (
                 <Link
                   key={item.href}
                   href={isComingSoon ? "#" : item.href}
                   onClick={(e) => handleNavClick(e, item)}
-                  className={`flex flex-col items-center gap-0.5 px-4 py-2 rounded-xl transition-all duration-200 ${
+                  className={`relative flex flex-col items-center gap-0.5 px-4 py-2 rounded-xl transition-all duration-200 ${
                     isActive
                       ? "bg-primary-100 text-primary-600"
                       : isComingSoon
@@ -108,6 +131,11 @@ export function MobileNav() {
                   <span className={`text-[10px] ${isActive ? "font-semibold" : "font-medium"}`}>
                     {item.label}
                   </span>
+                  {showBadge && (
+                    <span className="absolute -top-0.5 right-1 bg-pop-red text-white text-[9px] font-bold rounded-full h-4 w-4 flex items-center justify-center border border-white">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
                 </Link>
               );
             })}

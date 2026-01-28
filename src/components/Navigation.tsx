@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -17,6 +17,7 @@ import {
   Gavel,
   Home,
   LogIn,
+  MessageSquare,
   Shield,
   ShoppingBag,
   X,
@@ -71,6 +72,25 @@ export function Navigation() {
   const { isAdmin } = useSubscription();
   const [showProfessor, setShowProfessor] = useState(false);
   const [expandedFAQ, setExpandedFAQ] = useState<number | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    const fetchUnread = async () => {
+      try {
+        const res = await fetch("/api/messages/unread-count");
+        if (res.ok) {
+          const data = await res.json();
+          setUnreadCount(data.count);
+        }
+      } catch {
+        // Ignore errors silently
+      }
+    };
+
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 60000); // Poll every minute
+    return () => clearInterval(interval);
+  }, []);
 
   const links = [
     { href: "/", label: "Home", icon: Home },
@@ -127,6 +147,23 @@ export function Navigation() {
                 >
                   <Gavel className="w-5 h-5" />
                   <span className="font-comic text-sm tracking-wide">MY LISTINGS</span>
+                </Link>
+                {/* Messages */}
+                <Link
+                  href="/messages"
+                  className={`relative nav-link-pop flex items-center space-x-2 px-3 py-1.5 transition-all ${
+                    pathname === "/messages"
+                      ? "bg-pop-white text-pop-black border-2 border-pop-black shadow-comic-sm"
+                      : "text-pop-black hover:bg-pop-white/50"
+                  }`}
+                >
+                  <MessageSquare className="w-5 h-5" />
+                  <span className="font-comic text-sm tracking-wide">MESSAGES</span>
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-pop-red text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center border border-pop-black">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
                 </Link>
                 {/* Admin - admin users only */}
                 {isAdmin && (
