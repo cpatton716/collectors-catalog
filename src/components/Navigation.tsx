@@ -8,6 +8,7 @@ import { usePathname } from "next/navigation";
 import { SignedIn, SignedOut, UserButton, useUser } from "@clerk/nextjs";
 
 import {
+  ArrowLeftRight,
   BarChart3,
   BookOpen,
   Brain,
@@ -193,6 +194,18 @@ export function Navigation() {
                       {unreadCount > 9 ? "9+" : unreadCount}
                     </span>
                   )}
+                </Link>
+                {/* Trades */}
+                <Link
+                  href="/trades"
+                  className={`nav-link-pop flex items-center space-x-2 px-3 py-1.5 transition-all ${
+                    pathname === "/trades"
+                      ? "bg-pop-white text-pop-black border-2 border-pop-black shadow-comic-sm"
+                      : "text-pop-black hover:bg-pop-white/50"
+                  }`}
+                >
+                  <ArrowLeftRight className="w-5 h-5" />
+                  <span className="font-comic text-sm tracking-wide">TRADES</span>
                 </Link>
                 {/* Admin - admin users only */}
                 {isAdmin && (

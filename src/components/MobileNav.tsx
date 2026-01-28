@@ -7,7 +7,15 @@ import { usePathname } from "next/navigation";
 
 import { useUser } from "@clerk/nextjs";
 
-import { BookOpen, Gavel, Home, KeyRound, MessageSquare, ShoppingBag } from "lucide-react";
+import {
+  ArrowLeftRight,
+  BookOpen,
+  Gavel,
+  Home,
+  KeyRound,
+  MessageSquare,
+  ShoppingBag,
+} from "lucide-react";
 
 export function MobileNav() {
   const pathname = usePathname();
@@ -78,13 +86,14 @@ export function MobileNav() {
     { href: "/shop", icon: ShoppingBag, label: "Shop" },
   ];
 
-  // Add My Listings, Messages, and Key Hunt for signed-in users (only after mount to avoid hydration mismatch)
+  // Add My Listings, Messages, Trades, and Key Hunt for signed-in users (only after mount to avoid hydration mismatch)
   const navItems =
     hasMounted && isSignedIn
       ? [
           ...baseItems,
           { href: "/my-auctions", icon: Gavel, label: "Listings" },
           { href: "/messages", icon: MessageSquare, label: "Messages", showBadge: true },
+          { href: "/trades", icon: ArrowLeftRight, label: "Trades" },
           { href: "/key-hunt", icon: KeyRound, label: "Key Hunt" },
         ]
       : baseItems;
