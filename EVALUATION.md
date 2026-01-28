@@ -442,10 +442,11 @@ Collectors Chest is a comic book collection tracking app with AI-powered cover r
 
 ### 🟡 Next Session Focus
 
-1. **GoCollect API Integration** ⭐ IN PROGRESS
+1. **GoCollect API Integration** ⏸️ BLOCKED
    - ✅ API token created (Jan 27)
-   - ⏳ Add `GOCOLLECT_API_KEY` to `.env.local` and Netlify
-   - ⏳ Review API documentation for endpoints
+   - ✅ `GOCOLLECT_API_KEY` added to `.env.local` and Netlify
+   - ⏳ **Waiting on GoCollect to approve API access** (ticket open)
+   - ⏳ Review API documentation for endpoints (blocked)
    - ⏳ Implement FMV lookup integration
    - ⏳ Add GoCollect pricing alongside eBay prices
 
