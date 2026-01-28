@@ -44,12 +44,7 @@ export type TradeStatus =
   | "declined";
 
 // Shipping carriers
-export type ShippingCarrier =
-  | "usps"
-  | "ups"
-  | "fedex"
-  | "dhl"
-  | "other";
+export type ShippingCarrier = "usps" | "ups" | "fedex" | "dhl" | "other";
 
 // Trade item (comic being traded)
 export interface TradeItem {
@@ -135,25 +130,39 @@ export interface TradeResponse {
 // Helper functions
 export function getTradeStatusLabel(status: TradeStatus): string {
   switch (status) {
-    case "proposed": return "Proposed";
-    case "accepted": return "Accepted";
-    case "shipped": return "Shipping";
-    case "completed": return "Completed";
-    case "cancelled": return "Cancelled";
-    case "declined": return "Declined";
-    default: return status;
+    case "proposed":
+      return "Proposed";
+    case "accepted":
+      return "Accepted";
+    case "shipped":
+      return "Shipping";
+    case "completed":
+      return "Completed";
+    case "cancelled":
+      return "Cancelled";
+    case "declined":
+      return "Declined";
+    default:
+      return status;
   }
 }
 
 export function getTradeStatusColor(status: TradeStatus): string {
   switch (status) {
-    case "proposed": return "bg-yellow-100 text-yellow-800";
-    case "accepted": return "bg-blue-100 text-blue-800";
-    case "shipped": return "bg-purple-100 text-purple-800";
-    case "completed": return "bg-green-100 text-green-800";
-    case "cancelled": return "bg-gray-100 text-gray-800";
-    case "declined": return "bg-red-100 text-red-800";
-    default: return "bg-gray-100 text-gray-800";
+    case "proposed":
+      return "bg-yellow-100 text-yellow-800";
+    case "accepted":
+      return "bg-blue-100 text-blue-800";
+    case "shipped":
+      return "bg-purple-100 text-purple-800";
+    case "completed":
+      return "bg-green-100 text-green-800";
+    case "cancelled":
+      return "bg-gray-100 text-gray-800";
+    case "declined":
+      return "bg-red-100 text-red-800";
+    default:
+      return "bg-gray-100 text-gray-800";
   }
 }
 
@@ -180,7 +189,9 @@ export function canShipTrade(trade: Trade, userId: string): boolean {
 
 export function canConfirmReceipt(trade: Trade, userId: string): boolean {
   if (trade.status !== "shipped") return false;
-  if (trade.proposerId === userId && !trade.proposerReceivedAt && trade.recipientShippedAt) return true;
-  if (trade.recipientId === userId && !trade.recipientReceivedAt && trade.proposerShippedAt) return true;
+  if (trade.proposerId === userId && !trade.proposerReceivedAt && trade.recipientShippedAt)
+    return true;
+  if (trade.recipientId === userId && !trade.recipientReceivedAt && trade.proposerShippedAt)
+    return true;
   return false;
 }

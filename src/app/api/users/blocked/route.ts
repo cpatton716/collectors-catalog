@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
+
 import { auth } from "@clerk/nextjs/server";
-import { supabaseAdmin } from "@/lib/supabase";
-import { getProfileByClerkId } from "@/lib/db";
+
 import { getSellerProfile } from "@/lib/auctionDb";
+import { getProfileByClerkId } from "@/lib/db";
+import { supabaseAdmin } from "@/lib/supabase";
+
 import { UserBlock } from "@/types/messaging";
 
 export async function GET() {
@@ -42,9 +45,6 @@ export async function GET() {
     return NextResponse.json({ blocks: blocksWithProfiles });
   } catch (error) {
     console.error("Get blocked users error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

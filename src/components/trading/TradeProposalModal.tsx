@@ -69,9 +69,7 @@ export function TradeProposalModal({
       }
 
       // Fetch their for-trade comics
-      const theirResponse = await fetch(
-        `/api/comics/for-trade?userId=${recipientId}`
-      );
+      const theirResponse = await fetch(`/api/comics/for-trade?userId=${recipientId}`);
       if (theirResponse.ok) {
         const theirData = await theirResponse.json();
         setTheirComics(theirData.comics || []);
@@ -85,17 +83,13 @@ export function TradeProposalModal({
 
   const toggleMyComic = (comicId: string) => {
     setSelectedMyComics((prev) =>
-      prev.includes(comicId)
-        ? prev.filter((id) => id !== comicId)
-        : [...prev, comicId]
+      prev.includes(comicId) ? prev.filter((id) => id !== comicId) : [...prev, comicId]
     );
   };
 
   const toggleTheirComic = (comicId: string) => {
     setSelectedTheirComics((prev) =>
-      prev.includes(comicId)
-        ? prev.filter((id) => id !== comicId)
-        : [...prev, comicId]
+      prev.includes(comicId) ? prev.filter((id) => id !== comicId) : [...prev, comicId]
     );
   };
 
@@ -175,8 +169,8 @@ export function TradeProposalModal({
                 </h3>
                 {myComics.length === 0 ? (
                   <p className="text-gray-500 text-sm">
-                    No comics marked for trade. Go to your collection to mark
-                    comics as available for trade.
+                    No comics marked for trade. Go to your collection to mark comics as available
+                    for trade.
                   </p>
                 ) : (
                   <div className="space-y-2 max-h-[400px] overflow-y-auto">
@@ -235,17 +229,11 @@ export function TradeProposalModal({
           <button
             onClick={handleSubmit}
             disabled={
-              isSubmitting ||
-              selectedMyComics.length === 0 ||
-              selectedTheirComics.length === 0
+              isSubmitting || selectedMyComics.length === 0 || selectedTheirComics.length === 0
             }
             className="px-6 py-2 font-bold border-2 border-pop-black bg-pop-green text-white shadow-[2px_2px_0px_#000] disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isSubmitting ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              "Propose Trade"
-            )}
+            {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : "Propose Trade"}
           </button>
         </div>
       </div>
@@ -267,17 +255,13 @@ function ComicSelectCard({
     <div
       onClick={onToggle}
       className={`flex items-center gap-3 p-2 border-2 cursor-pointer transition-all ${
-        selected
-          ? "border-pop-green bg-green-50"
-          : "border-gray-200 hover:border-gray-300"
+        selected ? "border-pop-green bg-green-50" : "border-gray-200 hover:border-gray-300"
       }`}
     >
       {/* Checkbox */}
       <div
         className={`w-5 h-5 border-2 flex items-center justify-center flex-shrink-0 ${
-          selected
-            ? "border-pop-green bg-pop-green text-white"
-            : "border-gray-300"
+          selected ? "border-pop-green bg-pop-green text-white" : "border-gray-300"
         }`}
       >
         {selected && <Check className="w-3 h-3" />}
@@ -304,9 +288,7 @@ function ComicSelectCard({
 
       {/* Value */}
       {comic.estimatedValue && (
-        <span className="text-sm font-bold text-pop-green">
-          ${comic.estimatedValue.toFixed(0)}
-        </span>
+        <span className="text-sm font-bold text-pop-green">${comic.estimatedValue.toFixed(0)}</span>
       )}
     </div>
   );

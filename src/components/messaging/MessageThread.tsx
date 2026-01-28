@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+
 import { useRouter } from "next/navigation";
 
 import { Flag, Loader2, MoreVertical, ShieldX } from "lucide-react";
 
-import { Message, MessagesResponse } from "@/types/messaging";
-import { SellerProfile } from "@/types/auction";
 import { supabase } from "@/lib/supabase";
+
+import { SellerProfile } from "@/types/auction";
+import { Message, MessagesResponse } from "@/types/messaging";
 
 import { BlockUserModal } from "./BlockUserModal";
 import { MessageBubble } from "./MessageBubble";
@@ -170,10 +172,7 @@ export function MessageThread({
       <div className="flex h-full items-center justify-center p-4 text-center">
         <div>
           <p className="text-red-600">{error}</p>
-          <button
-            onClick={loadMessages}
-            className="mt-2 text-sm text-pop-blue hover:underline"
-          >
+          <button onClick={loadMessages} className="mt-2 text-sm text-pop-blue hover:underline">
             Try again
           </button>
         </div>
@@ -217,13 +216,9 @@ export function MessageThread({
                 <button
                   onClick={() => {
                     // Find the most recent message from the other user to report
-                    const otherMessages = messages.filter(
-                      (m) => m.senderId !== currentUserId
-                    );
+                    const otherMessages = messages.filter((m) => m.senderId !== currentUserId);
                     if (otherMessages.length > 0) {
-                      setSelectedMessageId(
-                        otherMessages[otherMessages.length - 1].id
-                      );
+                      setSelectedMessageId(otherMessages[otherMessages.length - 1].id);
                       setShowReportModal(true);
                     }
                     setShowMenu(false);
@@ -267,11 +262,7 @@ export function MessageThread({
         isOpen={showBlockModal}
         onClose={() => setShowBlockModal(false)}
         userId={otherParticipant?.id || ""}
-        username={
-          otherParticipant?.username ||
-          otherParticipant?.displayName ||
-          "User"
-        }
+        username={otherParticipant?.username || otherParticipant?.displayName || "User"}
         onBlocked={() => {
           router.push("/messages");
         }}

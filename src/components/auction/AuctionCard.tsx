@@ -4,8 +4,8 @@ import { Clock, Gavel, Package, ShoppingCart } from "lucide-react";
 
 import { Auction, formatPrice } from "@/types/auction";
 
-import { MessageButton } from "../messaging/MessageButton";
 import { ComicImage } from "../ComicImage";
+import { MessageButton } from "../messaging/MessageButton";
 import { AuctionCountdown } from "./AuctionCountdown";
 import { SellerBadgeCompact } from "./SellerBadge";
 import { WatchlistButton } from "./WatchlistButton";

@@ -21,6 +21,7 @@ import {
   Loader2,
   LogOut,
   Mail,
+  MapPin,
   Monitor,
   Shield,
   Smartphone,
@@ -32,6 +33,8 @@ import {
 
 import { useDebounce } from "@/hooks/useDebounce";
 import { useSubscription } from "@/hooks/useSubscription";
+
+import { LocationPrivacy, UserLocation } from "@/app/api/location/route";
 
 // Tab types
 type TabId = "profile" | "security" | "billing";
@@ -84,6 +87,17 @@ export function CustomProfilePage() {
   const [usernameError, setUsernameError] = useState<string | null>(null);
   const [usernameSuccess, setUsernameSuccess] = useState(false);
   const debouncedUsername = useDebounce(username, 500);
+
+  // Location state
+  const [locationCity, setLocationCity] = useState("");
+  const [locationState, setLocationState] = useState("");
+  const [locationCountry, setLocationCountry] = useState("");
+  const [locationPrivacy, setLocationPrivacy] = useState<LocationPrivacy>("state_country");
+  const [originalLocation, setOriginalLocation] = useState<UserLocation | null>(null);
+  const [isLoadingLocation, setIsLoadingLocation] = useState(true);
+  const [isSavingLocation, setIsSavingLocation] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [locationSuccess, setLocationSuccess] = useState(false);
 
   // Sessions state
   const [sessions, setSessions] = useState<
@@ -139,6 +153,28 @@ export function CustomProfilePage() {
       }
     }
     fetchUsername();
+  }, []);
+
+  // Fetch location on mount
+  useEffect(() => {
+    async function fetchLocation() {
+      try {
+        const res = await fetch("/api/location");
+        if (res.ok) {
+          const data: UserLocation = await res.json();
+          setLocationCity(data.city || "");
+          setLocationState(data.state || "");
+          setLocationCountry(data.country || "");
+          setLocationPrivacy(data.privacy);
+          setOriginalLocation(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch location:", error);
+      } finally {
+        setIsLoadingLocation(false);
+      }
+    }
+    fetchLocation();
   }, []);
 
   // Check username availability
@@ -291,6 +327,42 @@ export function CustomProfilePage() {
     }
   }, [username, usernameAvailability?.available]);
 
+  // Save location
+  const handleSaveLocation = useCallback(async () => {
+    setIsSavingLocation(true);
+    setLocationError(null);
+    setLocationSuccess(false);
+
+    try {
+      const res = await fetch("/api/location", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          city: locationCity,
+          state: locationState,
+          country: locationCountry,
+          privacy: locationPrivacy,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setLocationError(data.error || "Failed to save location");
+        return;
+      }
+
+      setOriginalLocation(data);
+      setLocationSuccess(true);
+      setTimeout(() => setLocationSuccess(false), 3000);
+    } catch (error) {
+      console.error("Failed to save location:", error);
+      setLocationError("Failed to save location");
+    } finally {
+      setIsSavingLocation(false);
+    }
+  }, [locationCity, locationState, locationCountry, locationPrivacy]);
+
   // Revoke session
   const handleRevokeSession = async (sessionId: string) => {
     if (!user) return;
@@ -333,6 +405,12 @@ export function CustomProfilePage() {
     usernameAvailability?.available &&
     !isCheckingUsername &&
     !isSavingUsername;
+  const hasLocationChanges =
+    locationCity !== (originalLocation?.city || "") ||
+    locationState !== (originalLocation?.state || "") ||
+    locationCountry !== (originalLocation?.country || "") ||
+    locationPrivacy !== (originalLocation?.privacy || "state_country");
+  const canSaveLocation = hasLocationChanges && !isSavingLocation;
 
   if (!isUserLoaded) {
     return (
@@ -601,6 +679,128 @@ export function CustomProfilePage() {
                         <span className="text-sm text-red-600 flex items-center gap-1">
                           <AlertCircle className="w-4 h-4" />
                           {usernameError}
+                        </span>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Location Section */}
+              <div className="border-t border-gray-100 pt-8">
+                <h3 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                  <MapPin className="w-4 h-4" />
+                  Location
+                </h3>
+                <p className="text-xs text-gray-500 mb-4">
+                  Share your general location to help with trades and shipping estimates. This is
+                  optional.
+                </p>
+
+                {isLoadingLocation ? (
+                  <div className="flex items-center gap-2 text-gray-400">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span className="text-sm">Loading...</span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">City</label>
+                        <input
+                          type="text"
+                          value={locationCity}
+                          onChange={(e) => {
+                            setLocationCity(e.target.value);
+                            setLocationError(null);
+                            setLocationSuccess(false);
+                          }}
+                          placeholder="e.g., Austin"
+                          maxLength={100}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">State / Province</label>
+                        <input
+                          type="text"
+                          value={locationState}
+                          onChange={(e) => {
+                            setLocationState(e.target.value);
+                            setLocationError(null);
+                            setLocationSuccess(false);
+                          }}
+                          placeholder="e.g., Texas"
+                          maxLength={100}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Country</label>
+                        <input
+                          type="text"
+                          value={locationCountry}
+                          onChange={(e) => {
+                            setLocationCountry(e.target.value);
+                            setLocationError(null);
+                            setLocationSuccess(false);
+                          }}
+                          placeholder="e.g., United States"
+                          maxLength={100}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Privacy Control */}
+                    <div className="mt-4">
+                      <label className="block text-xs text-gray-500 mb-1">
+                        Location Visibility
+                      </label>
+                      <select
+                        value={locationPrivacy}
+                        onChange={(e) => {
+                          setLocationPrivacy(e.target.value as LocationPrivacy);
+                          setLocationError(null);
+                          setLocationSuccess(false);
+                        }}
+                        className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white"
+                      >
+                        <option value="full">Show city, state, and country</option>
+                        <option value="state_country">Show state and country only</option>
+                        <option value="country_only">Show country only</option>
+                        <option value="hidden">Hide location completely</option>
+                      </select>
+                      <p className="mt-1 text-xs text-gray-400">
+                        Controls what other users see on your listings and profile
+                      </p>
+                    </div>
+
+                    <div className="mt-4 flex items-center gap-3">
+                      <button
+                        onClick={handleSaveLocation}
+                        disabled={!canSaveLocation}
+                        className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      >
+                        {isSavingLocation ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          "Save Location"
+                        )}
+                      </button>
+                      {locationSuccess && (
+                        <span className="text-sm text-green-600 flex items-center gap-1">
+                          <Check className="w-4 h-4" />
+                          Saved!
+                        </span>
+                      )}
+                      {locationError && (
+                        <span className="text-sm text-red-600 flex items-center gap-1">
+                          <AlertCircle className="w-4 h-4" />
+                          {locationError}
                         </span>
                       )}
                     </div>

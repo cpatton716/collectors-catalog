@@ -192,9 +192,7 @@ export default function NotificationSettingsPage() {
       </div>
 
       {/* Info text */}
-      <p className="mt-4 text-xs text-gray-400 text-center">
-        Changes are saved automatically
-      </p>
+      <p className="mt-4 text-xs text-gray-400 text-center">Changes are saved automatically</p>
     </div>
   );
 }

@@ -5,12 +5,13 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { useUser } from "@clerk/nextjs";
-import { Loader2, MessageSquare } from "lucide-react";
 
-import { ConversationPreview, ConversationsResponse } from "@/types/messaging";
+import { Loader2, MessageSquare } from "lucide-react";
 
 import { ConversationList } from "@/components/messaging/ConversationList";
 import { MessageThread } from "@/components/messaging/MessageThread";
+
+import { ConversationPreview, ConversationsResponse } from "@/types/messaging";
 
 function MessagesContent() {
   const { user, isLoaded } = useUser();
@@ -123,11 +124,7 @@ function MessagesContent() {
           </div>
 
           {/* Message thread */}
-          <div
-            className={`flex-1 ${
-              !selectedConversationId ? "hidden md:flex" : "flex"
-            }`}
-          >
+          <div className={`flex-1 ${!selectedConversationId ? "hidden md:flex" : "flex"}`}>
             {selectedConversationId && currentUserId ? (
               <div className="flex w-full flex-col">
                 {/* Back button for mobile */}

@@ -1,14 +1,15 @@
-import { supabase, supabaseAdmin } from "./supabase";
-import { getSellerProfile } from "./auctionDb";
 import {
+  CreateTradeInput,
+  GroupedMatch,
   Trade,
   TradeItem,
   TradePreview,
-  CreateTradeInput,
-  UpdateTradeInput,
   TradeStatus,
-  GroupedMatch,
+  UpdateTradeInput,
 } from "@/types/trade";
+
+import { getSellerProfile } from "./auctionDb";
+import { supabase, supabaseAdmin } from "./supabase";
 
 // ============================================================================
 // TRADE HELPERS
@@ -17,10 +18,7 @@ import {
 /**
  * Create a new trade proposal
  */
-export async function createTrade(
-  proposerId: string,
-  input: CreateTradeInput
-): Promise<Trade> {
+export async function createTrade(proposerId: string, input: CreateTradeInput): Promise<Trade> {
   // 1. Create the trade
   const { data: trade, error: tradeError } = await supabaseAdmin
     .from("trades")
@@ -64,13 +62,11 @@ export async function createTrade(
 /**
  * Get a trade by ID with all details
  */
-export async function getTradeById(
-  tradeId: string,
-  visitorId: string
-): Promise<Trade | null> {
+export async function getTradeById(tradeId: string, visitorId: string): Promise<Trade | null> {
   const { data: trade, error } = await supabaseAdmin
     .from("trades")
-    .select(`
+    .select(
+      `
       *,
       trade_items (
         id,
@@ -88,7 +84,8 @@ export async function getTradeById(
           estimated_value
         )
       )
-    `)
+    `
+    )
     .eq("id", tradeId)
     .single();
 
@@ -117,7 +114,8 @@ export async function getUserTrades(
 ): Promise<TradePreview[]> {
   let query = supabaseAdmin
     .from("trades")
-    .select(`
+    .select(
+      `
       *,
       trade_items (
         id,
@@ -135,7 +133,8 @@ export async function getUserTrades(
           estimated_value
         )
       )
-    `)
+    `
+    )
     .or(`proposer_id.eq.${userId},recipient_id.eq.${userId}`)
     .order("updated_at", { ascending: false });
 
@@ -158,12 +157,8 @@ export async function getUserTrades(
     if (!otherUser) continue;
 
     const items = trade.trade_items || [];
-    const myItems = items
-      .filter((i: any) => i.owner_id === userId)
-      .map(transformDbTradeItem);
-    const theirItems = items
-      .filter((i: any) => i.owner_id !== userId)
-      .map(transformDbTradeItem);
+    const myItems = items.filter((i: any) => i.owner_id === userId).map(transformDbTradeItem);
+    const theirItems = items.filter((i: any) => i.owner_id !== userId).map(transformDbTradeItem);
 
     previews.push({
       id: trade.id,
@@ -248,11 +243,7 @@ export async function markAsShipped(
   trackingCarrier?: string,
   trackingNumber?: string
 ): Promise<Trade> {
-  const { data: trade } = await supabaseAdmin
-    .from("trades")
-    .select("*")
-    .eq("id", tradeId)
-    .single();
+  const { data: trade } = await supabaseAdmin.from("trades").select("*").eq("id", tradeId).single();
 
   if (!trade) throw new Error("Trade not found");
   if (trade.proposer_id !== userId && trade.recipient_id !== userId) {
@@ -276,9 +267,7 @@ export async function markAsShipped(
   }
 
   // Check if both have shipped - update status to shipped
-  const otherShipped = isProposer
-    ? trade.recipient_shipped_at
-    : trade.proposer_shipped_at;
+  const otherShipped = isProposer ? trade.recipient_shipped_at : trade.proposer_shipped_at;
   if (otherShipped) {
     updateData.status = "shipped";
   }
@@ -297,15 +286,8 @@ export async function markAsShipped(
 /**
  * Confirm receipt of comics
  */
-export async function confirmReceipt(
-  tradeId: string,
-  userId: string
-): Promise<Trade> {
-  const { data: trade } = await supabaseAdmin
-    .from("trades")
-    .select("*")
-    .eq("id", tradeId)
-    .single();
+export async function confirmReceipt(tradeId: string, userId: string): Promise<Trade> {
+  const { data: trade } = await supabaseAdmin.from("trades").select("*").eq("id", tradeId).single();
 
   if (!trade) throw new Error("Trade not found");
   if (trade.proposer_id !== userId && trade.recipient_id !== userId) {
@@ -322,9 +304,7 @@ export async function confirmReceipt(
   }
 
   // Check if both have confirmed - complete the trade
-  const otherReceived = isProposer
-    ? trade.recipient_received_at
-    : trade.proposer_received_at;
+  const otherReceived = isProposer ? trade.recipient_received_at : trade.proposer_received_at;
   if (otherReceived) {
     // Both confirmed - complete trade and swap ownership
     await completeTrade(tradeId);
@@ -366,10 +346,7 @@ export async function completeTrade(tradeId: string): Promise<void> {
 
   // Swap ownership for each comic
   for (const item of items || []) {
-    const newOwnerId =
-      item.owner_id === trade.proposer_id
-        ? trade.recipient_id
-        : trade.proposer_id;
+    const newOwnerId = item.owner_id === trade.proposer_id ? trade.recipient_id : trade.proposer_id;
 
     await supabaseAdmin
       .from("comics")
@@ -435,11 +412,7 @@ function transformDbTrade(db: any): Trade {
   };
 }
 
-function transformDbTradeWithDetails(
-  db: any,
-  proposer: any,
-  recipient: any
-): Trade {
+function transformDbTradeWithDetails(db: any, proposer: any, recipient: any): Trade {
   const trade = transformDbTrade(db);
   const items = db.trade_items || [];
 
@@ -484,10 +457,7 @@ function transformDbTradeItem(db: any): TradeItem {
 /**
  * Trigger match finding for a user (call after marking comic for trade or adding to hunt list)
  */
-export async function triggerMatchFinding(
-  userId: string,
-  comicId?: string
-): Promise<number> {
+export async function triggerMatchFinding(userId: string, comicId?: string): Promise<number> {
   const { data, error } = await supabaseAdmin.rpc("find_trade_matches", {
     p_user_id: userId,
     p_comic_id: comicId || null,
@@ -507,7 +477,8 @@ export async function triggerMatchFinding(
 export async function getUserMatches(userId: string): Promise<GroupedMatch[]> {
   const { data: matches, error } = await supabaseAdmin
     .from("trade_matches")
-    .select(`
+    .select(
+      `
       id,
       user_a_id,
       user_b_id,
@@ -516,7 +487,8 @@ export async function getUserMatches(userId: string): Promise<GroupedMatch[]> {
       quality_score,
       status,
       created_at
-    `)
+    `
+    )
     .or(`user_a_id.eq.${userId},user_b_id.eq.${userId}`)
     .in("status", ["pending", "viewed"])
     .order("quality_score", { ascending: false });
@@ -537,16 +509,12 @@ export async function getUserMatches(userId: string): Promise<GroupedMatch[]> {
     const [myComicData, theirComicData] = await Promise.all([
       supabaseAdmin
         .from("comics")
-        .select(
-          "id, title, issue_number, publisher, cover_image_url, grade, estimated_value"
-        )
+        .select("id, title, issue_number, publisher, cover_image_url, grade, estimated_value")
         .eq("id", myComicId)
         .single(),
       supabaseAdmin
         .from("comics")
-        .select(
-          "id, title, issue_number, publisher, cover_image_url, grade, estimated_value"
-        )
+        .select("id, title, issue_number, publisher, cover_image_url, grade, estimated_value")
         .eq("id", theirComicId)
         .single(),
     ]);
@@ -623,8 +591,5 @@ export async function dismissMatch(matchId: string): Promise<void> {
  * Mark match as traded (when a trade is created from a match)
  */
 export async function markMatchTraded(matchId: string): Promise<void> {
-  await supabaseAdmin
-    .from("trade_matches")
-    .update({ status: "traded" })
-    .eq("id", matchId);
+  await supabaseAdmin.from("trade_matches").update({ status: "traded" }).eq("id", matchId);
 }

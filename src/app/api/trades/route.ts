@@ -4,6 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 
 import { getProfileByClerkId } from "@/lib/db";
 import { createTrade, getUserTrades } from "@/lib/tradingDb";
+
 import { CreateTradeInput, TradeStatus } from "@/types/trade";
 
 // GET - Get user's trades
@@ -21,19 +22,14 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const statusParam = searchParams.get("status");
-    const status = statusParam
-      ? (statusParam.split(",") as TradeStatus[])
-      : undefined;
+    const status = statusParam ? (statusParam.split(",") as TradeStatus[]) : undefined;
 
     const trades = await getUserTrades(profile.id, status);
 
     return NextResponse.json({ trades, total: trades.length });
   } catch (error) {
     console.error("Error fetching trades:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch trades" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch trades" }, { status: 500 });
   }
 }
 
@@ -54,22 +50,13 @@ export async function POST(request: NextRequest) {
 
     // Validation
     if (!body.recipientId) {
-      return NextResponse.json(
-        { error: "Recipient required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Recipient required" }, { status: 400 });
     }
     if (!body.myComicIds?.length || !body.theirComicIds?.length) {
-      return NextResponse.json(
-        { error: "Must include comics from both parties" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Must include comics from both parties" }, { status: 400 });
     }
     if (body.recipientId === profile.id) {
-      return NextResponse.json(
-        { error: "Cannot trade with yourself" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Cannot trade with yourself" }, { status: 400 });
     }
 
     const trade = await createTrade(profile.id, body);
@@ -77,9 +64,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ trade }, { status: 201 });
   } catch (error) {
     console.error("Error creating trade:", error);
-    return NextResponse.json(
-      { error: "Failed to create trade" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to create trade" }, { status: 500 });
   }
 }

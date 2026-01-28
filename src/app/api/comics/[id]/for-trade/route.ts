@@ -7,10 +7,7 @@ import { supabase } from "@/lib/supabase";
 import { triggerMatchFinding } from "@/lib/tradingDb";
 
 // PATCH - Toggle for_trade status
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { userId } = await auth();
     if (!userId) {
@@ -59,9 +56,6 @@ export async function PATCH(
     return NextResponse.json({ success: true, forTrade });
   } catch (error) {
     console.error("Error updating for_trade:", error);
-    return NextResponse.json(
-      { error: "Failed to update trade status" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to update trade status" }, { status: 500 });
   }
 }

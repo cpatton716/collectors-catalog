@@ -4,11 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 
 import { isUserSuspended } from "@/lib/adminAuth";
 import { getProfileByClerkId } from "@/lib/db";
-import {
-  getUnreadMessageCount,
-  getUserConversations,
-  sendMessage,
-} from "@/lib/messagingDb";
+import { getUnreadMessageCount, getUserConversations, sendMessage } from "@/lib/messagingDb";
 
 // GET - List user's conversations
 export async function GET() {
@@ -32,10 +28,7 @@ export async function GET() {
     });
   } catch (error) {
     console.error("Error fetching conversations:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch conversations" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch conversations" }, { status: 500 });
   }
 }
 
@@ -50,10 +43,7 @@ export async function POST(request: NextRequest) {
     // Check if user is suspended
     const suspensionStatus = await isUserSuspended(userId);
     if (suspensionStatus.suspended) {
-      return NextResponse.json(
-        { error: "Your account has been suspended." },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: "Your account has been suspended." }, { status: 403 });
     }
 
     const profile = await getProfileByClerkId(userId);
@@ -65,17 +55,11 @@ export async function POST(request: NextRequest) {
     const { recipientId, content, listingId, imageUrls, embeddedListingId } = body;
 
     if (!recipientId) {
-      return NextResponse.json(
-        { error: "Recipient ID is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Recipient ID is required" }, { status: 400 });
     }
 
     if (!content || content.trim().length === 0) {
-      return NextResponse.json(
-        { error: "Message content is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Message content is required" }, { status: 400 });
     }
 
     const message = await sendMessage(profile.id, {
@@ -90,9 +74,6 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Error sending message:", error);
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

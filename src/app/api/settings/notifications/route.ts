@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+
 import { auth } from "@clerk/nextjs/server";
+
 import { supabaseAdmin } from "@/lib/supabase";
 
 export async function GET() {
@@ -17,10 +19,7 @@ export async function GET() {
 
     if (error) {
       console.error("Fetch notification settings error:", error);
-      return NextResponse.json(
-        { error: "Failed to fetch settings" },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "Failed to fetch settings" }, { status: 500 });
     }
 
     return NextResponse.json({
@@ -29,10 +28,7 @@ export async function GET() {
     });
   } catch (error) {
     console.error("Notification settings GET error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
@@ -54,31 +50,19 @@ export async function PATCH(request: Request) {
     }
 
     if (Object.keys(updates).length === 0) {
-      return NextResponse.json(
-        { error: "No valid fields to update" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
     }
 
-    const { error } = await supabaseAdmin
-      .from("profiles")
-      .update(updates)
-      .eq("clerk_id", clerkId);
+    const { error } = await supabaseAdmin.from("profiles").update(updates).eq("clerk_id", clerkId);
 
     if (error) {
       console.error("Update notification settings error:", error);
-      return NextResponse.json(
-        { error: "Failed to update settings" },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "Failed to update settings" }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Notification settings PATCH error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

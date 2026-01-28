@@ -26,18 +26,12 @@ export async function POST(request: NextRequest) {
 
     // Validate file type
     if (!file.type.startsWith("image/")) {
-      return NextResponse.json(
-        { error: "File must be an image" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "File must be an image" }, { status: 400 });
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      return NextResponse.json(
-        { error: "Image must be under 5MB" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Image must be under 5MB" }, { status: 400 });
     }
 
     // Generate unique filename
@@ -62,16 +56,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Get public URL
-    const { data: urlData } = supabaseAdmin.storage
-      .from("message-images")
-      .getPublicUrl(data.path);
+    const { data: urlData } = supabaseAdmin.storage.from("message-images").getPublicUrl(data.path);
 
     return NextResponse.json({ url: urlData.publicUrl });
   } catch (error) {
     console.error("Image upload error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

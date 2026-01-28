@@ -23,12 +23,13 @@ import {
   X,
 } from "lucide-react";
 
+import { MessageButton } from "@/components/messaging/MessageButton";
+
 import { Auction, formatPrice } from "@/types/auction";
 
 import { ComicImage } from "../ComicImage";
 import { SellerBadge } from "./SellerBadge";
 import { WatchlistButton } from "./WatchlistButton";
-import { MessageButton } from "@/components/messaging/MessageButton";
 
 type SellerAction = "mark_as_sold" | "pull_off_shelf";
 
@@ -297,7 +298,9 @@ export function ListingDetailModal({
                       {!listing.isSeller && listing.sellerId && (
                         <MessageButton
                           sellerId={listing.sellerId}
-                          sellerName={listing.seller.username ? `@${listing.seller.username}` : undefined}
+                          sellerName={
+                            listing.seller.username ? `@${listing.seller.username}` : undefined
+                          }
                           listingId={listing.id}
                           size="sm"
                         />

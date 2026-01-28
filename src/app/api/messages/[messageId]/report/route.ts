@@ -4,15 +4,10 @@ import { auth } from "@clerk/nextjs/server";
 
 import { getProfileByClerkId } from "@/lib/db";
 import { supabaseAdmin } from "@/lib/supabase";
+
 import { ReportReason } from "@/types/messaging";
 
-const VALID_REASONS: ReportReason[] = [
-  "spam",
-  "scam",
-  "harassment",
-  "inappropriate",
-  "other",
-];
+const VALID_REASONS: ReportReason[] = ["spam", "scam", "harassment", "inappropriate", "other"];
 
 export async function POST(
   request: NextRequest,
@@ -35,10 +30,7 @@ export async function POST(
 
     // Validate reason
     if (!reason || !VALID_REASONS.includes(reason)) {
-      return NextResponse.json(
-        { error: "Invalid report reason" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid report reason" }, { status: 400 });
     }
 
     // Verify the message exists
@@ -64,10 +56,7 @@ export async function POST(
     }
 
     // Check if user is a participant in the conversation
-    if (
-      conv.participant_1_id !== profile.id &&
-      conv.participant_2_id !== profile.id
-    ) {
+    if (conv.participant_1_id !== profile.id && conv.participant_2_id !== profile.id) {
       return NextResponse.json({ error: "Access denied" }, { status: 403 });
     }
 
@@ -92,9 +81,6 @@ export async function POST(
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Report error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

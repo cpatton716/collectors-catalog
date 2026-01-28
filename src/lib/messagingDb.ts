@@ -6,10 +6,10 @@ import {
   SendMessageInput,
 } from "@/types/messaging";
 
-import { supabase, supabaseAdmin } from "./supabase";
 import { getSellerProfile } from "./auctionDb";
 import { checkMessageContent } from "./contentFilter";
 import { sendNotificationEmail } from "./email";
+import { supabase, supabaseAdmin } from "./supabase";
 
 // ============================================================================
 // CONVERSATION HELPERS
@@ -35,13 +35,12 @@ export async function getOrCreateConversation(
 /**
  * Get all conversations for a user with previews
  */
-export async function getUserConversations(
-  userId: string
-): Promise<ConversationPreview[]> {
+export async function getUserConversations(userId: string): Promise<ConversationPreview[]> {
   // Get conversations where user is a participant
   const { data: conversations, error } = await supabase
     .from("conversations")
-    .select(`
+    .select(
+      `
       id,
       participant_1_id,
       participant_2_id,
@@ -53,7 +52,8 @@ export async function getUserConversations(
         created_at,
         is_read
       )
-    `)
+    `
+    )
     .or(`participant_1_id.eq.${userId},participant_2_id.eq.${userId}`)
     .order("last_message_at", { ascending: false })
     .limit(50);
@@ -85,9 +85,7 @@ export async function getUserConversations(
     messages.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
     const lastMessage = messages[0];
-    const unreadCount = messages.filter(
-      (m) => m.sender_id !== userId && !m.is_read
-    ).length;
+    const unreadCount = messages.filter((m) => m.sender_id !== userId && !m.is_read).length;
 
     if (lastMessage) {
       previews.push({
@@ -169,7 +167,8 @@ export async function getConversationMessages(
   // Get messages
   const { data: messages, error: msgError } = await supabase
     .from("messages")
-    .select(`
+    .select(
+      `
       *,
       auctions:listing_id (
         id,
@@ -187,7 +186,8 @@ export async function getConversationMessages(
           cover_image_url
         )
       )
-    `)
+    `
+    )
     .eq("conversation_id", conversationId)
     .order("created_at", { ascending: true });
 
@@ -248,10 +248,7 @@ export async function getConversationMessages(
 /**
  * Send a message
  */
-export async function sendMessage(
-  senderId: string,
-  input: SendMessageInput
-): Promise<Message> {
+export async function sendMessage(senderId: string, input: SendMessageInput): Promise<Message> {
   const { recipientId, content, listingId, imageUrls, embeddedListingId } = input;
 
   // Validate content
@@ -327,8 +324,7 @@ export async function sendMessage(
           .single();
 
         const senderName = senderProfile?.display_name || "Someone";
-        const messagePreview =
-          content.length > 100 ? content.slice(0, 100) + "..." : content;
+        const messagePreview = content.length > 100 ? content.slice(0, 100) + "..." : content;
 
         await sendNotificationEmail({
           to: recipientProfile.email,

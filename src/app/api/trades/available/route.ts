@@ -22,7 +22,8 @@ export async function GET(request: NextRequest) {
     // Query comics marked for trade
     let query = supabase
       .from("comics")
-      .select(`
+      .select(
+        `
         id,
         title,
         issue_number,
@@ -37,9 +38,14 @@ export async function GET(request: NextRequest) {
           display_name,
           username,
           seller_rating,
-          seller_rating_count
+          seller_rating_count,
+          location_city,
+          location_state,
+          location_country,
+          location_privacy
         )
-      `)
+      `
+      )
       .eq("for_trade", true)
       .order("updated_at", { ascending: false })
       .limit(100);
@@ -79,6 +85,10 @@ export async function GET(request: NextRequest) {
             username: comic.profiles?.username,
             rating: comic.profiles?.seller_rating,
             ratingCount: comic.profiles?.seller_rating_count,
+            locationCity: comic.profiles?.location_city,
+            locationState: comic.profiles?.location_state,
+            locationCountry: comic.profiles?.location_country,
+            locationPrivacy: comic.profiles?.location_privacy || "state_country",
           },
         };
       })
@@ -87,9 +97,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ comics: comicsWithWantCount });
   } catch (error) {
     console.error("Error fetching tradeable comics:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch tradeable comics" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch tradeable comics" }, { status: 500 });
   }
 }

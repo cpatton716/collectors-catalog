@@ -14,7 +14,6 @@ import {
   ListingCard,
   ListingDetailModal,
 } from "@/components/auction";
-
 import { TradeableComicCard } from "@/components/trading";
 
 import { Auction, AuctionSortBy, ListingSortBy } from "@/types/auction";

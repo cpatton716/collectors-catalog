@@ -172,7 +172,7 @@ The Dev Log is stored at: `DEV_LOG.md` in the project root.
 | Item | Cost | Billing Cycle |
 |------|------|---------------|
 | Netlify Personal Plan | $9/mo | 13th of each month |
-| GoCollect Pro | $9/mo (or $89/yr) | Awaiting API key approval |
+| GoCollect Pro | $89/yr | Awaiting API key approval |
 | Domain (collectors-chest.com) | $13.99/yr | Renews Jan 13, 2027 ($16.99) |
 
 **Variable Costs:**

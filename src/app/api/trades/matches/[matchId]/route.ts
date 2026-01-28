@@ -39,9 +39,6 @@ export async function PATCH(
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error updating match:", error);
-    return NextResponse.json(
-      { error: "Failed to update match" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to update match" }, { status: 500 });
   }
 }

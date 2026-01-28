@@ -25,19 +25,14 @@ export async function GET(request: NextRequest) {
       }
       const profile = await getProfileByClerkId(clerkUserId);
       if (!profile) {
-        return NextResponse.json(
-          { error: "Profile not found" },
-          { status: 404 }
-        );
+        return NextResponse.json({ error: "Profile not found" }, { status: 404 });
       }
       profileId = profile.id;
     }
 
     const { data: comics, error } = await supabase
       .from("comics")
-      .select(
-        "id, title, issue_number, publisher, cover_image_url, grade, estimated_value"
-      )
+      .select("id, title, issue_number, publisher, cover_image_url, grade, estimated_value")
       .eq("user_id", profileId)
       .eq("for_trade", true)
       .order("title");
@@ -57,9 +52,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ comics: transformed });
   } catch (error) {
     console.error("Error fetching for-trade comics:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch comics" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch comics" }, { status: 500 });
   }
 }

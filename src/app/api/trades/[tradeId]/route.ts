@@ -3,12 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 
 import { getProfileByClerkId } from "@/lib/db";
-import {
-  getTradeById,
-  updateTradeStatus,
-  markAsShipped,
-  confirmReceipt,
-} from "@/lib/tradingDb";
+import { confirmReceipt, getTradeById, markAsShipped, updateTradeStatus } from "@/lib/tradingDb";
 
 // GET - Get trade details
 export async function GET(
@@ -35,10 +30,7 @@ export async function GET(
     return NextResponse.json({ trade });
   } catch (error) {
     console.error("Error fetching trade:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch trade" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch trade" }, { status: 500 });
   }
 }
 
@@ -76,10 +68,7 @@ export async function PATCH(
         cancelReason,
       });
     } else {
-      return NextResponse.json(
-        { error: "No action or status provided" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "No action or status provided" }, { status: 400 });
     }
 
     return NextResponse.json({ trade });

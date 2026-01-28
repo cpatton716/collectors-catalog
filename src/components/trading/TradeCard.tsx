@@ -15,11 +15,7 @@ import {
   X,
 } from "lucide-react";
 
-import {
-  TradePreview,
-  getTradeStatusLabel,
-  getTradeStatusColor,
-} from "@/types/trade";
+import { TradePreview, getTradeStatusColor, getTradeStatusLabel } from "@/types/trade";
 
 interface TradeCardProps {
   trade: TradePreview;
@@ -33,10 +29,7 @@ export function TradeCard({ trade, onStatusChange }: TradeCardProps) {
   const [trackingCarrier, setTrackingCarrier] = useState("");
   const [trackingNumber, setTrackingNumber] = useState("");
 
-  const handleAction = async (
-    action: string,
-    data?: Record<string, unknown>
-  ) => {
+  const handleAction = async (action: string, data?: Record<string, unknown>) => {
     setIsUpdating(true);
     try {
       const response = await fetch(`/api/trades/${trade.id}`, {
@@ -103,9 +96,7 @@ export function TradeCard({ trade, onStatusChange }: TradeCardProps) {
 
         <div className="flex items-center gap-3">
           <span
-            className={`px-3 py-1 text-sm font-bold rounded ${getTradeStatusColor(
-              trade.status
-            )}`}
+            className={`px-3 py-1 text-sm font-bold rounded ${getTradeStatusColor(trade.status)}`}
           >
             {getTradeStatusLabel(trade.status)}
           </span>
@@ -180,9 +171,7 @@ export function TradeCard({ trade, onStatusChange }: TradeCardProps) {
           <div className="grid grid-cols-2 gap-6">
             {/* You're giving */}
             <div>
-              <h4 className="font-bold text-sm text-gray-600 mb-2">
-                You&apos;re Giving
-              </h4>
+              <h4 className="font-bold text-sm text-gray-600 mb-2">You&apos;re Giving</h4>
               <div className="space-y-2">
                 {trade.myItems.map((item) => (
                   <div key={item.id} className="flex items-center gap-2">
@@ -208,9 +197,7 @@ export function TradeCard({ trade, onStatusChange }: TradeCardProps) {
 
             {/* You're getting */}
             <div>
-              <h4 className="font-bold text-sm text-gray-600 mb-2">
-                You&apos;re Getting
-              </h4>
+              <h4 className="font-bold text-sm text-gray-600 mb-2">You&apos;re Getting</h4>
               <div className="space-y-2">
                 {trade.theirItems.map((item) => (
                   <div key={item.id} className="flex items-center gap-2">

@@ -32,10 +32,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error fetching matches:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch matches" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch matches" }, { status: 500 });
   }
 }
 
@@ -63,9 +60,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error triggering match finding:", error);
-    return NextResponse.json(
-      { error: "Failed to find matches" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to find matches" }, { status: 500 });
   }
 }

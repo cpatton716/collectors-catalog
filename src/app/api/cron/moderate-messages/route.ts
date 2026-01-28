@@ -27,7 +27,10 @@ interface FlaggedMessage {
 /**
  * Analyze a message using Claude to determine if it violates policies
  */
-async function analyzeMessage(content: string, flagReason: string | null): Promise<ModerationResult> {
+async function analyzeMessage(
+  content: string,
+  flagReason: string | null
+): Promise<ModerationResult> {
   const response = await anthropic.messages.create({
     model: "claude-3-5-haiku-20241022",
     max_tokens: 500,

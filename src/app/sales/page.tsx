@@ -76,9 +76,7 @@ export default function SalesPage() {
               </div>
               <h1 className="text-3xl font-black text-pop-black font-comic">SALES HISTORY</h1>
             </div>
-            <p className="text-gray-600 mt-1 ml-14">
-              Track your sales and profit margins
-            </p>
+            <p className="text-gray-600 mt-1 ml-14">Track your sales and profit margins</p>
           </div>
         </div>
       </div>

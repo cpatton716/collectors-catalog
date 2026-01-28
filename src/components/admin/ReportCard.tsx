@@ -114,10 +114,7 @@ function ReasonBadge({ reason }: { reason: string }) {
   };
 
   return (
-    <span
-      className="badge-pop text-xs"
-      style={{ background: colors[reason] || colors.other }}
-    >
+    <span className="badge-pop text-xs" style={{ background: colors[reason] || colors.other }}>
       {reason.charAt(0).toUpperCase() + reason.slice(1)}
     </span>
   );

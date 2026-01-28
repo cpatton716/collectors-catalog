@@ -8,18 +8,12 @@ interface ConversationListProps {
   onSelect: (conversationId: string) => void;
 }
 
-export function ConversationList({
-  conversations,
-  selectedId,
-  onSelect,
-}: ConversationListProps) {
+export function ConversationList({ conversations, selectedId, onSelect }: ConversationListProps) {
   if (conversations.length === 0) {
     return (
       <div className="p-4 text-center text-gray-500">
         <p>No conversations yet</p>
-        <p className="mt-1 text-sm">
-          Message a seller to start a conversation
-        </p>
+        <p className="mt-1 text-sm">Message a seller to start a conversation</p>
       </div>
     );
   }
@@ -40,17 +34,19 @@ export function ConversationList({
             key={conv.id}
             onClick={() => onSelect(conv.id)}
             className={`w-full px-4 py-3 text-left transition-colors ${
-              isSelected
-                ? "bg-pop-blue/10"
-                : "bg-pop-white hover:bg-gray-50"
+              isSelected ? "bg-pop-blue/10" : "bg-pop-white hover:bg-gray-50"
             }`}
           >
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
-                <p className={`truncate font-bold ${isUnread ? "text-pop-black" : "text-gray-700"}`}>
+                <p
+                  className={`truncate font-bold ${isUnread ? "text-pop-black" : "text-gray-700"}`}
+                >
                   {displayName}
                 </p>
-                <p className={`truncate text-sm ${isUnread ? "font-medium text-pop-black" : "text-gray-500"}`}>
+                <p
+                  className={`truncate text-sm ${isUnread ? "font-medium text-pop-black" : "text-gray-500"}`}
+                >
                   {conv.lastMessage.content}
                 </p>
               </div>

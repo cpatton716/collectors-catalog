@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useRef, useState } from "react";
 
 import { ImagePlus, Loader2, Send, X } from "lucide-react";
 
@@ -142,16 +142,10 @@ export function MessageComposer({
           disabled={!content.trim() || isSending || disabled}
           className="flex h-10 w-10 items-center justify-center rounded-lg border-2 border-pop-black bg-pop-blue text-white transition-all hover:shadow-[2px_2px_0px_#000] disabled:opacity-50 disabled:hover:shadow-none"
         >
-          {isSending ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
-          ) : (
-            <Send className="h-5 w-5" />
-          )}
+          {isSending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
         </button>
       </div>
-      <p className="mt-1 text-xs text-gray-500">
-        Press Enter to send, Shift+Enter for new line
-      </p>
+      <p className="mt-1 text-xs text-gray-500">Press Enter to send, Shift+Enter for new line</p>
     </form>
   );
 }

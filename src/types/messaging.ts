@@ -1,7 +1,6 @@
 // ============================================================================
 // MESSAGING TYPES
 // ============================================================================
-
 import { SellerProfile } from "./auction";
 
 /**
@@ -115,12 +114,7 @@ export interface UserBlock {
 /**
  * Reason for reporting a message
  */
-export type ReportReason =
-  | "spam"
-  | "scam"
-  | "harassment"
-  | "inappropriate"
-  | "other";
+export type ReportReason = "spam" | "scam" | "harassment" | "inappropriate" | "other";
 
 /**
  * A message report for admin review

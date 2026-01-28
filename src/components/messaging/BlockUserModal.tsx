@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+
 import { Loader2, ShieldX, X } from "lucide-react";
 
 interface BlockUserModalProps {
@@ -64,8 +65,8 @@ export function BlockUserModal({
           <h2 className="mb-2 text-xl font-black">Block {username}?</h2>
 
           <p className="mb-6 text-gray-600">
-            They won&apos;t be able to send you messages, and you won&apos;t see
-            their messages. You can unblock them later from your settings.
+            They won&apos;t be able to send you messages, and you won&apos;t see their messages. You
+            can unblock them later from your settings.
           </p>
 
           {error && <p className="mb-4 text-sm text-pop-red">{error}</p>}

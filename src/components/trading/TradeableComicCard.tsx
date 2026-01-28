@@ -4,6 +4,10 @@ import Image from "next/image";
 
 import { ArrowLeftRight, Star } from "lucide-react";
 
+import { LocationBadge } from "@/components/LocationBadge";
+
+import { LocationPrivacy } from "@/app/api/location/route";
+
 interface TradeableComicCardProps {
   comic: {
     id: string;
@@ -20,6 +24,10 @@ interface TradeableComicCardProps {
       username?: string;
       rating?: number;
       ratingCount?: number;
+      locationCity?: string | null;
+      locationState?: string | null;
+      locationCountry?: string | null;
+      locationPrivacy?: LocationPrivacy;
     };
   };
   onClick: () => void;
@@ -63,9 +71,7 @@ export function TradeableComicCard({ comic, onClick }: TradeableComicCardProps) 
         <h3 className="font-bold text-sm line-clamp-1">{comic.title}</h3>
         <p className="text-xs text-gray-600">#{comic.issueNumber}</p>
 
-        {comic.grade && (
-          <p className="text-xs text-gray-500 mt-1">Grade: {comic.grade}</p>
-        )}
+        {comic.grade && <p className="text-xs text-gray-500 mt-1">Grade: {comic.grade}</p>}
 
         {comic.estimatedValue && (
           <p className="text-sm font-bold text-pop-green mt-1">
@@ -75,9 +81,7 @@ export function TradeableComicCard({ comic, onClick }: TradeableComicCardProps) 
 
         {/* Owner Info */}
         <div className="mt-2 pt-2 border-t border-gray-200">
-          <p className="text-xs text-gray-600 truncate">
-            {comic.owner.displayName}
-          </p>
+          <p className="text-xs text-gray-600 truncate">{comic.owner.displayName}</p>
           {comic.owner.rating !== undefined && comic.owner.rating > 0 && (
             <div className="flex items-center gap-1 mt-1">
               <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
@@ -88,6 +92,15 @@ export function TradeableComicCard({ comic, onClick }: TradeableComicCardProps) 
                 )}
               </span>
             </div>
+          )}
+          {comic.owner.locationPrivacy && comic.owner.locationPrivacy !== "hidden" && (
+            <LocationBadge
+              city={comic.owner.locationCity}
+              state={comic.owner.locationState}
+              country={comic.owner.locationCountry}
+              privacy={comic.owner.locationPrivacy}
+              className="mt-1"
+            />
           )}
         </div>
       </div>

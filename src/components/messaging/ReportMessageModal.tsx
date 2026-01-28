@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+
 import { Flag, Loader2, X } from "lucide-react";
+
 import { ReportReason } from "@/types/messaging";
 
 interface ReportMessageModalProps {
@@ -102,9 +104,7 @@ export function ReportMessageModal({
           </div>
 
           <div className="mb-4">
-            <label className="mb-2 block text-sm font-bold">
-              Additional details (optional)
-            </label>
+            <label className="mb-2 block text-sm font-bold">Additional details (optional)</label>
             <textarea
               value={details}
               onChange={(e) => setDetails(e.target.value)}

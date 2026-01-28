@@ -195,17 +195,14 @@ Trial expired. Need to set up Sentry free tier (or paid) before public launch fo
 
 ### Re-enable Live Hottest Books API
 **Priority:** High
-**Status:** Pending
+**Status:** ✅ Complete (Jan 28, 2026)
 **File:** `src/app/api/hottest-books/route.ts`
 
-Currently using a static list (`USE_STATIC_LIST = true`) to conserve API credits during testing. Before launch:
-
-1. Set `USE_STATIC_LIST = false` in `src/app/api/hottest-books/route.ts`
-2. Ensure Anthropic API credits are topped up
-3. Verify Supabase cache is working for 24-hour TTL
-4. Test the live API generates fresh results
-
-**Related file:** `src/lib/staticHotBooks.ts` (fallback list)
+The `USE_STATIC_LIST` flag has been removed. The API now:
+- Fetches hot books from the `hot_books` database table
+- Uses eBay Finding API for real-time price data
+- Caches results with 24-hour TTL via Redis
+- Falls back gracefully when price data is unavailable
 
 ---
 
@@ -213,36 +210,30 @@ Currently using a static list (`USE_STATIC_LIST = true`) to conserve API credits
 
 ### Peer-to-Peer Messaging
 **Priority:** Medium
-**Status:** 🔶 Phase 1 Complete (Jan 27, 2026) - Phases 2-7 Pending
+**Status:** ✅ Complete (Jan 27-28, 2026)
 
 Direct messaging between users to facilitate communication around purchases and trades.
 
-**Phase 1 Complete - Core Messaging:**
-- Database tables: `conversations`, `messages` with RLS policies
-- API routes: GET/POST `/api/messages`, GET `/api/messages/[id]`, GET `/api/messages/unread-count`
-- Components: MessageComposer, MessageBubble, MessageThread, ConversationList, MessageButton
-- `/messages` inbox page with conversation list and thread view
-- MessageButton integrated in ListingDetailModal
-- Text-only messages with listing context
-
-**Remaining Phases:**
-- Phase 2: Rich content (images, listing embeds) + entry points everywhere + unread badge
+**All Phases Complete:**
+- Phase 1: Core messaging (conversations, messages, inbox page)
+- Phase 2: Rich content (images via Supabase Storage) + entry points + unread badge in nav
 - Phase 3: Block & report functionality + content filters
-- Phase 4: Notification preferences (push/email toggles)
+- Phase 4: Notification preferences (email toggles in settings)
 - Phase 5: Real-time messaging via Supabase Realtime
 - Phase 6: Admin moderation dashboard + auto-flagging
-- Phase 7: AI-assisted moderation (scam detection)
+- Phase 7: AI-assisted moderation (scam/spam detection via Claude)
 
 **Design Document:** `docs/plans/2026-01-27-peer-to-peer-messaging-design.md`
-**Implementation Plan:** `docs/plans/2026-01-27-messaging-phase1-implementation.md`
 
-**Files Added (Phase 1):**
-- `supabase/migrations/20260127_messaging.sql`
+**Key Files:**
+- `supabase/migrations/20260127_messaging*.sql` (multiple migrations)
 - `src/types/messaging.ts`
 - `src/lib/messagingDb.ts`
-- `src/app/api/messages/` (3 routes)
-- `src/components/messaging/` (5 components)
+- `src/app/api/messages/` (routes for conversations, images, reports)
+- `src/components/messaging/` (7 components)
 - `src/app/messages/page.tsx`
+- `src/app/settings/notifications/page.tsx`
+- `src/app/admin/moderation/page.tsx`
 
 ---
 
@@ -307,40 +298,32 @@ Implemented comprehensive auction cancellation policy with code enforcement.
 
 ### Book Trading Feature
 **Priority:** Medium
-**Status:** Pending
+**Status:** ✅ Complete (Jan 28, 2026)
 
 Allow two users to agree to exchange books directly without money changing hands.
 
-**Use Cases:**
-- Trade duplicates for books you need
-- Exchange keys of similar value
-- Build relationships with other collectors
+**All Phases Complete:**
+- Phase 1: Foundation (`for_trade` column, trades/trade_items tables, For Trade toggle, Shop tab)
+- Phase 2: Trade Workflow (propose, accept, decline, ship, confirm receipt, ownership swap)
+- Phase 3: Matching System (Hunt List integration, quality scoring, matches tab)
+- Phase 4: Polish & Integration (navigation, filters, "X users want this" badges, auto-removal from Hunt List)
 
-**Potential Flow:**
-1. User A proposes a trade: "My [Book X] for your [Book Y]"
-2. User B receives trade offer notification
-3. User B can accept, decline, or counter-offer
-4. Both parties confirm final terms
-5. Trade is recorded, books move between collections
-6. Optional: Coordinate shipping via peer-to-peer messaging
+**Design Document:** `docs/plans/2026-01-28-book-trading-design.md`
 
-**Considerations:**
-- Value matching/fairness indicators (optional)
-- Trade history for reputation
-- Dispute resolution if trade goes wrong
-- Integration with peer-to-peer messaging feature
-- How to handle multi-book trades
+**Key Files:**
+- `supabase/migrations/20260128_trading_phase1.sql`
+- `supabase/migrations/20260128_trading_phase3_matching.sql`
+- `src/types/trade.ts`
+- `src/lib/tradingDb.ts`
+- `src/app/api/trades/` (routes for trades, matches)
+- `src/app/api/comics/[id]/for-trade/route.ts`
+- `src/components/trading/` (TradeCard, TradeMatchCard, TradeProposalModal, TradeableComicCard)
+- `src/app/trades/page.tsx`
 
-**Legal/TOS Requirements:**
+**Legal/TOS Requirements (to add before launch):**
 - Terms of Service must clearly state Collectors Chest is NOT responsible for trades
 - Users trade at their own risk
 - Platform facilitates connection only, not the transaction itself
-- Privacy Policy considerations for sharing user info during trades
-- Disclaimer: no guarantees on book condition, authenticity, or delivery
-
-**Related Features:**
-- Peer-to-peer messaging (for coordination)
-- User location (for local trades)
 
 ---
 
@@ -368,28 +351,24 @@ Added username system so sellers can display @username instead of email or real 
 
 ### User Profile Location
 **Priority:** Medium
-**Status:** Pending
+**Status:** ✅ Complete (Jan 28, 2026)
 
 Add location field to user profiles so collectors can see where books are located when browsing the marketplace or viewing collections.
 
-**Use Cases:**
-- Buyers can see where a seller is located before purchasing
-- Local collectors can find others nearby for in-person trades
-- Shipping cost estimates based on distance
-- Filter marketplace listings by region
-- Peer-to-peer sales and auctions: helps buyers estimate shipping costs and delivery times
+**Features Implemented:**
+- Location fields added to profiles (city, state, country - all optional)
+- Privacy control: full, state_country, country_only, or hidden
+- Location section in Profile settings (CustomProfilePage)
+- LocationBadge component for displaying location (respects privacy)
+- Location shown on tradeable comic cards in Shop
 
-**Implementation:**
-- Add `location` field to profiles table (city, state/region, country)
-- Location input on profile settings (optional)
-- Privacy control: show full location, state/country only, or hide
-- Display location badge on seller listings and public profiles
-- Future: distance-based filtering in Shop
-
-**Privacy Considerations:**
-- Location should be optional (not required)
-- Allow granularity control (city vs state vs country)
-- Never show exact address
+**Key Files:**
+- `supabase/migrations/20260128_user_location.sql`
+- `src/app/api/location/route.ts`
+- `src/components/LocationBadge.tsx`
+- `src/components/CustomProfilePage.tsx` (updated)
+- `src/components/trading/TradeableComicCard.tsx` (updated)
+- `src/app/api/trades/available/route.ts` (updated)
 
 ---
 
@@ -426,25 +405,19 @@ Implemented client-side image compression to prevent oversized images and reduce
 
 ### Project Cost Tracking Dashboard
 **Priority:** Low
-**Status:** Pending
+**Status:** ✅ Complete (Jan 28, 2026)
 
-Create a unified view of all project costs. Currently tracked across multiple service dashboards.
+Unified view of all project costs tracked in CLAUDE.md (Option 1 - Simple approach).
 
-**Fixed Monthly Costs:**
-- Netlify Personal Plan: $9/mo (charged 13th of each month)
+**Implementation:**
+- All costs documented in CLAUDE.md "Services & Infrastructure" → "Project Costs" section
+- Fixed costs, variable costs, and free tier limits all tracked
+- Close Up Shop skill (Phase 4c) ensures costs stay updated when new services are added
 
-**Annual Costs:**
-- Domain (collectors-chest.com): $13.99/yr (renews Jan 13, 2027 at $16.99)
-
-**Variable/Pay-per-use:**
-- Anthropic API: ~$0.015/scan (prepaid $10 credits)
-- Stripe: 2.9% + $0.30 per transaction
-- All others on free tiers (Supabase, Clerk, Upstash, Resend, PostHog)
-
-**Implementation Options:**
-1. Simple: Add cost summary to CLAUDE.md
-2. Medium: Create spreadsheet for monthly tracking
-3. Advanced: Build admin dashboard with cost aggregation
+**Costs Tracked:**
+- Fixed: Netlify ($9/mo), GoCollect ($89/yr), Domain ($13.99/yr)
+- Variable: Anthropic API (~$0.015/scan), Stripe (2.9% + $0.30)
+- Free tiers: Supabase, Clerk, Upstash, Resend, PostHog, Sentry
 
 ---
 
@@ -460,7 +433,7 @@ Integrate GoCollect API for accurate, market-based pricing data.
 - No price trends → 30/90/365-day trend indicators
 
 **API Details:**
-- Tier: Pro ($9/mo or $89/yr)
+- Tier: Pro ($89/yr annual plan)
 - Rate Limit: 100 calls/day
 - Endpoints: `/v1/collectibles`, `/v1/insights/item/{id}?grade=X`
 - Auth: Bearer token
@@ -522,12 +495,13 @@ Integrate Marvel API for accurate comic metadata and high-quality cover images o
 
 ### Sales Flow - Use Actual Transaction Price
 **Priority:** High
-**Status:** Pending
+**Status:** ✅ Complete (Jan 28, 2026)
 
-Currently, when marking a comic as sold, users manually enter the sale price. Once the app goes live with Stripe Connect integration, the system should automatically record the actual transaction amount from completed purchases. This will:
-- Ensure accurate profit/loss tracking
-- Integrate with the user-to-user marketplace flow
-- Remove potential for user entry errors
+Stripe Connect integration automatically records actual transaction amounts:
+- Auction sales: Uses `winning_bid` from completed auction
+- Fixed-price sales: Uses the listing price at checkout
+- Manual sales: User enters actual sale price via "Mark as Sold" prompt
+- All transactions recorded via Stripe webhook (`/api/webhooks/stripe/route.ts`)
 
 ---
 
@@ -842,11 +816,18 @@ Review and update the FAQ questions and answers in the "Ask the Professor" help 
 
 ### Clean Up Copy Throughout the Site
 **Priority:** Low
-**Status:** Pending
+**Status:** Pending (Reviewed Jan 28, 2026 - Acceptable for Launch)
 
 Review and improve all user-facing text throughout the application for consistency, clarity, and brand voice.
 
-**Areas to Review:**
+**Audit Notes (Jan 28, 2026):**
+- Toast messages: Consistent tone, clear success/error messaging
+- Empty states: Good user guidance across all pages
+- Sign-in prompts: Consistent "Sign in to..." pattern
+- Milestone modals: Well-crafted progressive urgency
+- Overall: Copy is clean and launch-ready; this is a polish task for post-launch
+
+**Areas for Future Polish:**
 - Page titles and descriptions
 - Button labels and CTAs
 - Error messages and confirmations
@@ -859,40 +840,44 @@ Review and improve all user-facing text throughout the application for consisten
 
 ### Fix TypeScript Errors in Test Files
 **Priority:** Low
-**Status:** Pending
+**Status:** ✅ Complete (Jan 28, 2026)
 
-Test files use partial mock objects that don't fully satisfy TypeScript types. Tests pass at runtime but `npm run typecheck` reports errors.
+Test files now use proper factory functions that create complete mock objects satisfying TypeScript types.
 
-**Files Affected:**
-- `src/lib/__tests__/gradePrice.test.ts` - Missing `label` property on GradeEstimate mocks
-- `src/lib/__tests__/statsCalculator.test.ts` - Partial PriceData and ComicDetails mocks
+**Implementation (Option 3 - Factory Functions):**
+- `createGradeEstimates()` - Complete GradeEstimate[] with label property
+- `createPriceData()` - Complete PriceData with all required fields
+- `createComicDetails()` - Complete ComicDetails with all required fields
+- `createCollectionItem()` / `createItem()` - Complete CollectionItem objects
 
-**Fix Options:**
-1. Add missing properties to mock objects
-2. Use `Partial<T>` or `as unknown as T` type assertions
-3. Create test helper factories that return complete mock objects
+**Files:**
+- `src/lib/__tests__/gradePrice.test.ts`
+- `src/lib/__tests__/statsCalculator.test.ts`
 
-**Note:** Tests pass at runtime - this is a type-checking strictness issue only.
+Both `npm run typecheck` and `npm test` pass without errors.
 
 ---
 
 ### Key Hunt Scan History
 **Priority:** Low
-**Status:** Pending
+**Status:** ✅ Complete (Jan 2026)
 
-Add a history feature to Key Hunt that saves recent lookups for quick reference.
+History feature for Key Hunt that saves recent lookups for quick reference.
 
-**Features:**
-- Store last 20-30 lookups in localStorage
-- Show history as a scrollable list when opening Key Hunt
-- Quick tap to re-lookup with different grade
-- Clear history option
-- Persist across sessions
+**Features Implemented:**
+- Store last 30 lookups in localStorage (MAX_HISTORY_ITEMS = 30)
+- Scrollable history list via "Recent" button in header
+- Tap entry to view details or re-lookup with different grade
+- Clear history option with confirmation dialog
+- Persists across sessions in localStorage
+- 7-day TTL for automatic cleanup (HISTORY_TTL_MS)
+- Stores: title, issue, grade, price result, timestamp, cover image
 
-**Implementation Notes:**
-- Similar to the original Key Hunt offline cache concept
-- Consider 7-day TTL for automatic cleanup
-- Store: title, issue, grade, price result, timestamp
+**Key Files:**
+- `src/lib/offlineCache.ts` - History storage functions
+- `src/components/KeyHuntHistoryList.tsx` - History list UI
+- `src/components/KeyHuntHistoryDetail.tsx` - Entry detail view
+- `src/app/key-hunt/page.tsx` - Integration with "history" flow state
 
 ---
 

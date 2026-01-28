@@ -695,14 +695,22 @@ export default function CollectionPage() {
             <BookOpen className="w-10 h-10 text-pop-black" />
           </div>
           <h3 className="text-2xl font-black text-pop-black mb-2 font-comic uppercase">
-            {searchQuery || publisherFilter !== "all" || titleFilter !== "all" || showStarredOnly || showForTradeOnly
+            {searchQuery ||
+            publisherFilter !== "all" ||
+            titleFilter !== "all" ||
+            showStarredOnly ||
+            showForTradeOnly
               ? "No comics match your filters"
               : selectedList !== "collection"
                 ? "This list is empty"
                 : "Your collection is empty"}
           </h3>
           <p className="text-gray-600 mb-6">
-            {searchQuery || publisherFilter !== "all" || titleFilter !== "all" || showStarredOnly || showForTradeOnly
+            {searchQuery ||
+            publisherFilter !== "all" ||
+            titleFilter !== "all" ||
+            showStarredOnly ||
+            showForTradeOnly
               ? "Try adjusting your filters or search terms"
               : selectedList !== "collection"
                 ? "Add comics to this list from the comic details view"

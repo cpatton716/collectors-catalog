@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { auth } from "@clerk/nextjs/server";
-import { supabaseAdmin } from "@/lib/supabase";
+
 import { getProfileByClerkId } from "@/lib/db";
+import { supabaseAdmin } from "@/lib/supabase";
 
 export async function POST(
   request: NextRequest,
@@ -21,10 +23,7 @@ export async function POST(
     const { userId: blockedId } = await params;
 
     if (profile.id === blockedId) {
-      return NextResponse.json(
-        { error: "Cannot block yourself" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Cannot block yourself" }, { status: 400 });
     }
 
     const { error } = await supabaseAdmin.from("user_blocks").insert({
@@ -40,10 +39,7 @@ export async function POST(
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Block error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
@@ -73,9 +69,6 @@ export async function DELETE(
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Unblock error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

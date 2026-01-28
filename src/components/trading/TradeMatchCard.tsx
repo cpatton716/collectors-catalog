@@ -14,11 +14,7 @@ interface TradeMatchCardProps {
   onMessage: (userId: string, comicId: string) => void;
 }
 
-export function TradeMatchCard({
-  group,
-  onDismiss,
-  onMessage,
-}: TradeMatchCardProps) {
+export function TradeMatchCard({ group, onDismiss, onMessage }: TradeMatchCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const handleDismiss = async (matchId: string) => {
@@ -59,21 +55,16 @@ export function TradeMatchCard({
 
           <div className="flex-1 min-w-0">
             <h3 className="font-bold truncate">{group.myComic?.title}</h3>
-            <p className="text-sm text-gray-600">
-              #{group.myComic?.issueNumber}
-            </p>
+            <p className="text-sm text-gray-600">#{group.myComic?.issueNumber}</p>
             {group.myComic?.grade && (
-              <p className="text-xs text-gray-500">
-                Grade: {group.myComic.grade}
-              </p>
+              <p className="text-xs text-gray-500">Grade: {group.myComic.grade}</p>
             )}
           </div>
 
           <div className="flex items-center gap-3">
             {/* Match count badge */}
             <div className="bg-pop-orange text-white px-3 py-1 font-bold border-2 border-pop-black">
-              {group.matches.length}{" "}
-              {group.matches.length === 1 ? "Match" : "Matches"}
+              {group.matches.length} {group.matches.length === 1 ? "Match" : "Matches"}
             </div>
 
             {/* Expand button */}
@@ -110,16 +101,10 @@ export function TradeMatchCard({
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">
-                    {match.theirComic?.title}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    #{match.theirComic?.issueNumber}
-                  </p>
+                  <p className="font-medium truncate">{match.theirComic?.title}</p>
+                  <p className="text-sm text-gray-600">#{match.theirComic?.issueNumber}</p>
                   <div className="flex items-center gap-2 mt-1">
-                    <span className="text-sm text-gray-600">
-                      {match.otherUser.displayName}
-                    </span>
+                    <span className="text-sm text-gray-600">{match.otherUser.displayName}</span>
                     {match.otherUser.positivePercentage > 0 && (
                       <span className="flex items-center gap-1 text-sm">
                         <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
@@ -132,9 +117,7 @@ export function TradeMatchCard({
                 {/* Actions */}
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() =>
-                      onMessage(match.otherUser.id, match.theirComic?.id || "")
-                    }
+                    onClick={() => onMessage(match.otherUser.id, match.theirComic?.id || "")}
                     className="flex items-center gap-1 px-3 py-2 bg-pop-blue text-white font-bold border-2 border-pop-black shadow-[2px_2px_0px_#000] text-sm"
                   >
                     <MessageCircle className="w-4 h-4" />

@@ -24,8 +24,9 @@ import {
   X,
 } from "lucide-react";
 
-import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/lib/supabase";
+
+import { useSubscription } from "@/hooks/useSubscription";
 
 import { NotificationBell } from "./NotificationBell";
 import { ChestIcon } from "./icons/ChestIcon";

@@ -6,20 +6,69 @@ This log tracks session-by-session progress on Collectors Chest.
 
 ## Changes Since Last Deploy
 
-**Sessions since last deploy:** 2
-**Deploy Readiness:** Needs Testing
+**Sessions since last deploy:** 3
+**Deploy Readiness:** Ready for Testing
 
-- Peer-to-peer messaging Phase 1 (core messaging, inbox, text-only)
+- Peer-to-peer messaging (all 7 phases complete)
+- Book trading feature (all 4 phases complete)
+- User profile location with privacy controls
 - Sales History page with profit tracking
 - Mark as Sold for all comics (not just forSale)
 - Auto-record platform sales via Stripe webhook
+- Live Hottest Books API (USE_STATIC_LIST removed)
 - Auction cancellation policy in Terms of Service
 - Notify offer-makers when listings are cancelled
 - Duplicate listing prevention
 - Prettier code formatting setup
-- Color palette mockup for review
-- Updated EVALUATION.md priorities (GoCollect, Messaging 2-7, Trading)
-- Fixed TypeScript errors in test files
+
+---
+
+## January 28, 2026
+
+### Session Summary
+Major backlog audit and cleanup session. Implemented User Profile Location feature, then conducted comprehensive backlog review discovering several items were already complete. Updated documentation and cost tracking.
+
+### Key Accomplishments
+- **User Profile Location Feature:**
+  - Database migration with location_city, location_state, location_country, location_privacy columns
+  - API route `/api/location` for GET/POST location management
+  - `LocationBadge.tsx` component respecting privacy settings
+  - Location section added to Profile page settings
+  - Seller location displayed on tradeable comic cards
+
+- **Backlog Audit (8 items marked complete):**
+  - Peer-to-Peer Messaging (all 7 phases) - was already done
+  - Book Trading Feature (all 4 phases) - was already done
+  - User Profile Location - implemented this session
+  - Project Cost Tracking Dashboard - already in CLAUDE.md
+  - Fix TypeScript Errors in Test Files - already fixed
+  - Key Hunt Scan History - already implemented with localStorage
+  - Re-enable Live Hottest Books API - USE_STATIC_LIST removed
+  - Sales Flow - Use Actual Transaction Price - Stripe webhook handles it
+
+- **Documentation Updates:**
+  - Updated GoCollect pricing to $89/yr (annual plan)
+  - Added audit notes to "Clean Up Copy" backlog item
+  - Cleaned up BACKLOG.md with accurate status updates
+
+### Files Modified
+- `supabase/migrations/20260128_user_location.sql` (new)
+- `src/app/api/location/route.ts` (new)
+- `src/components/LocationBadge.tsx` (new)
+- `src/components/CustomProfilePage.tsx` - Location section
+- `src/components/trading/TradeableComicCard.tsx` - Seller location
+- `src/app/api/trades/available/route.ts` - Return location data
+- `BACKLOG.md` - Multiple status updates
+- `CLAUDE.md` - GoCollect pricing update
+
+### Issues Encountered
+- Import error in location/route.ts: `createClient` not exported
+  - Fixed by using `supabase` import instead
+
+### Next Session Focus
+1. Run SQL migration in Supabase (if not done)
+2. Test location feature on mobile/web
+3. Consider tackling remaining high-priority items from EVALUATION.md
 
 ---
 

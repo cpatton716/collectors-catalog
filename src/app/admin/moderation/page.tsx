@@ -123,7 +123,9 @@ export default function ModerationPage() {
       if (!res.ok) {
         throw new Error("Failed to update report");
       }
-      setSuccessMessage(`Report ${status === "dismissed" ? "dismissed" : status === "actioned" ? "actioned - user warned" : "marked as reviewed"}`);
+      setSuccessMessage(
+        `Report ${status === "dismissed" ? "dismissed" : status === "actioned" ? "actioned - user warned" : "marked as reviewed"}`
+      );
       // Refresh both the list and stats
       fetchReports(pagination?.page || 1);
       fetchStats();
@@ -217,10 +219,7 @@ export default function ModerationPage() {
             }}
             onClick={() => setStatusFilter("pending")}
           >
-            <Clock
-              className="w-8 h-8 mx-auto mb-2"
-              style={{ color: "var(--pop-yellow)" }}
-            />
+            <Clock className="w-8 h-8 mx-auto mb-2" style={{ color: "var(--pop-yellow)" }} />
             <p className="text-2xl font-bold" style={{ fontFamily: "var(--font-bangers)" }}>
               {loadingStats ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : stats.pending}
             </p>
@@ -234,10 +233,7 @@ export default function ModerationPage() {
             }}
             onClick={() => setStatusFilter("reviewed")}
           >
-            <Eye
-              className="w-8 h-8 mx-auto mb-2"
-              style={{ color: "var(--pop-blue)" }}
-            />
+            <Eye className="w-8 h-8 mx-auto mb-2" style={{ color: "var(--pop-blue)" }} />
             <p className="text-2xl font-bold" style={{ fontFamily: "var(--font-bangers)" }}>
               {loadingStats ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : stats.reviewed}
             </p>
@@ -251,10 +247,7 @@ export default function ModerationPage() {
             }}
             onClick={() => setStatusFilter("actioned")}
           >
-            <CheckCircle
-              className="w-8 h-8 mx-auto mb-2"
-              style={{ color: "var(--pop-green)" }}
-            />
+            <CheckCircle className="w-8 h-8 mx-auto mb-2" style={{ color: "var(--pop-green)" }} />
             <p className="text-2xl font-bold" style={{ fontFamily: "var(--font-bangers)" }}>
               {loadingStats ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : stats.actioned}
             </p>
@@ -270,7 +263,11 @@ export default function ModerationPage() {
           >
             <XCircle className="w-8 h-8 mx-auto mb-2 text-gray-400" />
             <p className="text-2xl font-bold" style={{ fontFamily: "var(--font-bangers)" }}>
-              {loadingStats ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : stats.dismissed}
+              {loadingStats ? (
+                <Loader2 className="w-6 h-6 animate-spin mx-auto" />
+              ) : (
+                stats.dismissed
+              )}
             </p>
             <p className="text-sm text-gray-600">Dismissed</p>
           </div>
@@ -313,10 +310,7 @@ export default function ModerationPage() {
         ) : reports.length === 0 ? (
           <div className="comic-panel p-12 text-center">
             <MessageSquare className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-            <h2
-              className="text-xl font-bold mb-2"
-              style={{ fontFamily: "var(--font-bangers)" }}
-            >
+            <h2 className="text-xl font-bold mb-2" style={{ fontFamily: "var(--font-bangers)" }}>
               No Reports Found
             </h2>
             <p className="text-gray-500">

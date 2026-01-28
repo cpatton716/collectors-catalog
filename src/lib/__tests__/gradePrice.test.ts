@@ -4,7 +4,7 @@
  * Tests the critical pricing logic used for comic valuations.
  * These functions determine collection values displayed to users.
  */
-import { CollectionItem, GradeEstimate, PriceData, ComicDetails } from "@/types/comic";
+import { CollectionItem, ComicDetails, GradeEstimate, PriceData } from "@/types/comic";
 
 import {
   calculateCollectionValue,
@@ -219,7 +219,12 @@ describe("getGradeLabel", () => {
 });
 
 describe("formatGradeEstimate", () => {
-  const estimate: GradeEstimate = { grade: 9.8, label: "Near Mint/Mint", rawValue: 500, slabbedValue: 800 };
+  const estimate: GradeEstimate = {
+    grade: 9.8,
+    label: "Near Mint/Mint",
+    rawValue: 500,
+    slabbedValue: 800,
+  };
 
   it("formats with default separator", () => {
     const result = formatGradeEstimate(estimate);
@@ -232,7 +237,12 @@ describe("formatGradeEstimate", () => {
   });
 
   it("formats large numbers with commas", () => {
-    const bigEstimate: GradeEstimate = { grade: 9.8, label: "Near Mint/Mint", rawValue: 10000, slabbedValue: 15000 };
+    const bigEstimate: GradeEstimate = {
+      grade: 9.8,
+      label: "Near Mint/Mint",
+      rawValue: 10000,
+      slabbedValue: 15000,
+    };
     const result = formatGradeEstimate(bigEstimate);
     expect(result).toBe("$10,000 raw / $15,000 slabbed");
   });

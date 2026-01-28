@@ -22,18 +22,12 @@ export function MessageBubble({ message, isOwnMessage }: MessageBubbleProps) {
     <div className={`flex ${isOwnMessage ? "justify-end" : "justify-start"}`}>
       <div
         className={`max-w-[75%] rounded-lg px-3 py-2 ${
-          isOwnMessage
-            ? "bg-pop-blue text-white"
-            : "border-2 border-pop-black bg-pop-white"
+          isOwnMessage ? "bg-pop-blue text-white" : "border-2 border-pop-black bg-pop-white"
         }`}
       >
         {/* Listing context badge */}
         {message.listing && (
-          <div
-            className={`mb-1 text-xs ${
-              isOwnMessage ? "text-blue-100" : "text-gray-500"
-            }`}
-          >
+          <div className={`mb-1 text-xs ${isOwnMessage ? "text-blue-100" : "text-gray-500"}`}>
             Re: {message.listing.title}
           </div>
         )}
@@ -43,9 +37,7 @@ export function MessageBubble({ message, isOwnMessage }: MessageBubbleProps) {
 
         {/* Images */}
         {message.imageUrls && message.imageUrls.length > 0 && (
-          <div
-            className={`mt-2 flex gap-2 ${message.imageUrls.length === 1 ? "" : "flex-wrap"}`}
-          >
+          <div className={`mt-2 flex gap-2 ${message.imageUrls.length === 1 ? "" : "flex-wrap"}`}>
             {message.imageUrls.map((url, i) => (
               <a key={i} href={url} target="_blank" rel="noopener noreferrer">
                 <img
@@ -70,26 +62,18 @@ export function MessageBubble({ message, isOwnMessage }: MessageBubbleProps) {
                 />
               )}
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-bold">
-                  {message.embeddedListing.title}
-                </p>
+                <p className="truncate text-sm font-bold">{message.embeddedListing.title}</p>
                 <p className="text-sm font-bold text-pop-blue">
                   ${message.embeddedListing.currentPrice}
                 </p>
-                <p className="text-xs capitalize text-gray-500">
-                  {message.embeddedListing.status}
-                </p>
+                <p className="text-xs capitalize text-gray-500">{message.embeddedListing.status}</p>
               </div>
             </div>
           </div>
         )}
 
         {/* Timestamp */}
-        <p
-          className={`mt-1 text-xs ${
-            isOwnMessage ? "text-blue-100" : "text-gray-400"
-          }`}
-        >
+        <p className={`mt-1 text-xs ${isOwnMessage ? "text-blue-100" : "text-gray-400"}`}>
           {formattedDate} at {formattedTime}
         </p>
       </div>

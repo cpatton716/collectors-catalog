@@ -9,8 +9,9 @@ import { useAuth } from "@clerk/nextjs";
 
 import { ArrowLeftRight, History, Package, Sparkles } from "lucide-react";
 
-import { TradePreview, GroupedMatch } from "@/types/trade";
 import { TradeCard, TradeMatchCard } from "@/components/trading";
+
+import { GroupedMatch, TradePreview } from "@/types/trade";
 
 type TradesTab = "matches" | "active" | "history";
 
@@ -50,9 +51,7 @@ function TradesPageContent() {
     setIsLoading(true);
     try {
       const statuses =
-        activeTab === "active"
-          ? "proposed,accepted,shipped"
-          : "completed,cancelled,declined";
+        activeTab === "active" ? "proposed,accepted,shipped" : "completed,cancelled,declined";
 
       const response = await fetch(`/api/trades?status=${statuses}`);
       if (response.ok) {
@@ -205,7 +204,8 @@ function TradesPageContent() {
                     No matches yet
                   </p>
                   <p className="mt-2 text-gray-600">
-                    Mark comics as &quot;For Trade&quot; and add comics to your Key Hunt list to find matches
+                    Mark comics as &quot;For Trade&quot; and add comics to your Key Hunt list to
+                    find matches
                   </p>
                   <div className="flex gap-3 justify-center mt-4">
                     <Link
@@ -276,11 +276,7 @@ function TradesPageContent() {
               ) : (
                 <div className="space-y-4">
                   {trades.map((trade) => (
-                    <TradeCard
-                      key={trade.id}
-                      trade={trade}
-                      onStatusChange={loadTrades}
-                    />
+                    <TradeCard key={trade.id} trade={trade} onStatusChange={loadTrades} />
                   ))}
                 </div>
               )}
