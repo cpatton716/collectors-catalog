@@ -7,6 +7,7 @@ import {
   CreateTradeInput,
   UpdateTradeInput,
   TradeStatus,
+  GroupedMatch,
 } from "@/types/trade";
 
 // ============================================================================
@@ -447,4 +448,156 @@ function transformDbTradeItem(db: any): TradeItem {
       : undefined,
     createdAt: db.created_at,
   };
+}
+
+// ============================================================================
+// MATCHING HELPERS
+// ============================================================================
+
+/**
+ * Trigger match finding for a user (call after marking comic for trade or adding to hunt list)
+ */
+export async function triggerMatchFinding(
+  userId: string,
+  comicId?: string
+): Promise<number> {
+  const { data, error } = await supabaseAdmin.rpc("find_trade_matches", {
+    p_user_id: userId,
+    p_comic_id: comicId || null,
+  });
+
+  if (error) {
+    console.error("Error finding matches:", error);
+    return 0;
+  }
+
+  return data || 0;
+}
+
+/**
+ * Get all pending matches for a user, grouped by their comic
+ */
+export async function getUserMatches(userId: string): Promise<GroupedMatch[]> {
+  const { data: matches, error } = await supabaseAdmin
+    .from("trade_matches")
+    .select(`
+      id,
+      user_a_id,
+      user_b_id,
+      user_a_comic_id,
+      user_b_comic_id,
+      quality_score,
+      status,
+      created_at
+    `)
+    .or(`user_a_id.eq.${userId},user_b_id.eq.${userId}`)
+    .in("status", ["pending", "viewed"])
+    .order("quality_score", { ascending: false });
+
+  if (error) throw error;
+  if (!matches || matches.length === 0) return [];
+
+  // Group matches by user's comic
+  const groupedMap = new Map<string, GroupedMatch>();
+
+  for (const match of matches) {
+    const isUserA = match.user_a_id === userId;
+    const myComicId = isUserA ? match.user_a_comic_id : match.user_b_comic_id;
+    const theirComicId = isUserA ? match.user_b_comic_id : match.user_a_comic_id;
+    const otherUserId = isUserA ? match.user_b_id : match.user_a_id;
+
+    // Fetch comic details
+    const [myComicData, theirComicData] = await Promise.all([
+      supabaseAdmin
+        .from("comics")
+        .select(
+          "id, title, issue_number, publisher, cover_image_url, grade, estimated_value"
+        )
+        .eq("id", myComicId)
+        .single(),
+      supabaseAdmin
+        .from("comics")
+        .select(
+          "id, title, issue_number, publisher, cover_image_url, grade, estimated_value"
+        )
+        .eq("id", theirComicId)
+        .single(),
+    ]);
+
+    const otherUser = await getSellerProfile(otherUserId);
+    if (!otherUser || !myComicData.data || !theirComicData.data) continue;
+
+    const myComic = {
+      id: myComicData.data.id,
+      title: myComicData.data.title,
+      issueNumber: myComicData.data.issue_number,
+      publisher: myComicData.data.publisher,
+      coverImageUrl: myComicData.data.cover_image_url,
+      grade: myComicData.data.grade,
+      estimatedValue: myComicData.data.estimated_value,
+    };
+
+    const theirComic = {
+      id: theirComicData.data.id,
+      title: theirComicData.data.title,
+      issueNumber: theirComicData.data.issue_number,
+      publisher: theirComicData.data.publisher,
+      coverImageUrl: theirComicData.data.cover_image_url,
+      grade: theirComicData.data.grade,
+      estimatedValue: theirComicData.data.estimated_value,
+    };
+
+    // Group by my comic
+    if (!groupedMap.has(myComicId)) {
+      groupedMap.set(myComicId, {
+        myComic,
+        matches: [],
+      });
+    }
+
+    groupedMap.get(myComicId)!.matches.push({
+      otherUser,
+      theirComic,
+      qualityScore: match.quality_score,
+      matchId: match.id,
+    });
+  }
+
+  return Array.from(groupedMap.values());
+}
+
+/**
+ * Mark a match as viewed
+ */
+export async function markMatchViewed(matchId: string): Promise<void> {
+  await supabaseAdmin
+    .from("trade_matches")
+    .update({
+      status: "viewed",
+      viewed_at: new Date().toISOString(),
+    })
+    .eq("id", matchId);
+}
+
+/**
+ * Dismiss a match
+ */
+export async function dismissMatch(matchId: string): Promise<void> {
+  await supabaseAdmin
+    .from("trade_matches")
+    .update({
+      status: "dismissed",
+      dismissed_at: new Date().toISOString(),
+    })
+    .eq("id", matchId);
+}
+
+/**
+ * Mark match as traded (when a trade is created from a match)
+ */
+export async function markMatchTraded(matchId: string): Promise<void> {
+  await supabaseAdmin
+    .from("trade_matches")
+    .update({ status: "traded" })
+    .eq("id", matchId);
 }

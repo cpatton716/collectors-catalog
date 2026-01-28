@@ -1,5 +1,39 @@
 import { SellerProfile } from "./auction";
 
+// Match status
+export type MatchStatus = "pending" | "viewed" | "dismissed" | "traded";
+
+// Trade match
+export interface TradeMatch {
+  id: string;
+  userAId: string;
+  userBId: string;
+  userAComicId: string;
+  userBComicId: string;
+  qualityScore: number;
+  status: MatchStatus;
+  notifiedAt?: string;
+  viewedAt?: string;
+  dismissedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  // Populated fields
+  otherUser?: SellerProfile;
+  myComic?: TradeItem["comic"];
+  theirComic?: TradeItem["comic"];
+}
+
+// Grouped matches (by your comic)
+export interface GroupedMatch {
+  myComic: TradeItem["comic"];
+  matches: {
+    otherUser: SellerProfile;
+    theirComic: TradeItem["comic"];
+    qualityScore: number;
+    matchId: string;
+  }[];
+}
+
 // Trade status enum
 export type TradeStatus =
   | "proposed"
