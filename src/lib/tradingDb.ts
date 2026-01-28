@@ -379,6 +379,33 @@ export async function completeTrade(tradeId: string): Promise<void> {
         acquired_via: "trade",
       })
       .eq("id", item.comic_id);
+
+    // Remove from new owner's hunt list if present
+    // First get the new owner's clerk_user_id
+    const { data: newOwnerProfile } = await supabaseAdmin
+      .from("profiles")
+      .select("clerk_user_id")
+      .eq("id", newOwnerId)
+      .single();
+
+    if (newOwnerProfile) {
+      // Get comic details for hunt list matching
+      const { data: comicDetails } = await supabaseAdmin
+        .from("comics")
+        .select("title, issue_number")
+        .eq("id", item.comic_id)
+        .single();
+
+      if (comicDetails) {
+        // Remove from hunt list (case-insensitive match)
+        await supabaseAdmin
+          .from("key_hunt_lists")
+          .delete()
+          .eq("user_id", newOwnerProfile.clerk_user_id)
+          .ilike("title_normalized", comicDetails.title.toLowerCase().trim())
+          .eq("issue_number", comicDetails.issue_number.trim());
+      }
+    }
   }
 }
 
