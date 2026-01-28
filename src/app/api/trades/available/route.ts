@@ -33,6 +33,7 @@ export async function GET(request: NextRequest) {
         user_id,
         profiles!comics_user_id_fkey (
           id,
+          clerk_user_id,
           display_name,
           username,
           seller_rating,
@@ -52,25 +53,38 @@ export async function GET(request: NextRequest) {
 
     if (error) throw error;
 
-    // Transform to response format
-    const transformed = (comics || []).map((comic: any) => ({
-      id: comic.id,
-      title: comic.title,
-      issueNumber: comic.issue_number,
-      publisher: comic.publisher,
-      coverImageUrl: comic.cover_image_url,
-      grade: comic.grade,
-      estimatedValue: comic.estimated_value,
-      owner: {
-        id: comic.profiles?.id,
-        displayName: comic.profiles?.display_name || "Collector",
-        username: comic.profiles?.username,
-        rating: comic.profiles?.seller_rating,
-        ratingCount: comic.profiles?.seller_rating_count,
-      },
-    }));
+    // Transform to response format with want counts
+    const comicsWithWantCount = await Promise.all(
+      (comics || []).map(async (comic: any) => {
+        // Count users who want this comic (excluding the owner)
+        const { count } = await supabase
+          .from("key_hunt_lists")
+          .select("*", { count: "exact", head: true })
+          .ilike("title_normalized", comic.title.toLowerCase().trim())
+          .eq("issue_number", comic.issue_number.trim())
+          .neq("user_id", comic.profiles?.clerk_user_id || "");
 
-    return NextResponse.json({ comics: transformed });
+        return {
+          id: comic.id,
+          title: comic.title,
+          issueNumber: comic.issue_number,
+          publisher: comic.publisher,
+          coverImageUrl: comic.cover_image_url,
+          grade: comic.grade,
+          estimatedValue: comic.estimated_value,
+          wantCount: count || 0,
+          owner: {
+            id: comic.profiles?.id,
+            displayName: comic.profiles?.display_name || "Collector",
+            username: comic.profiles?.username,
+            rating: comic.profiles?.seller_rating,
+            ratingCount: comic.profiles?.seller_rating_count,
+          },
+        };
+      })
+    );
+
+    return NextResponse.json({ comics: comicsWithWantCount });
   } catch (error) {
     console.error("Error fetching tradeable comics:", error);
     return NextResponse.json(

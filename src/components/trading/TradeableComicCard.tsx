@@ -13,6 +13,7 @@ interface TradeableComicCardProps {
     coverImageUrl?: string;
     grade?: string;
     estimatedValue?: number;
+    wantCount?: number;
     owner: {
       id: string;
       displayName: string;
@@ -49,6 +50,12 @@ export function TradeableComicCard({ comic, onClick }: TradeableComicCardProps) 
           <ArrowLeftRight className="w-3 h-3 inline mr-1" />
           FOR TRADE
         </div>
+        {/* Want Count Badge */}
+        {comic.wantCount && comic.wantCount > 0 && (
+          <div className="absolute bottom-2 left-2 bg-pop-blue text-white px-2 py-1 text-xs font-bold border-2 border-pop-black">
+            {comic.wantCount} {comic.wantCount === 1 ? "wants" : "want"} this
+          </div>
+        )}
       </div>
 
       {/* Details */}
