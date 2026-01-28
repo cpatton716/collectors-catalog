@@ -80,6 +80,7 @@ const createItem = (overrides: Record<string, any> = {}): CollectionItem => {
     purchaseDate: null,
     notes: null,
     forSale: false,
+    forTrade: false,
     askingPrice: null,
     averagePrice: null,
     dateAdded: new Date().toISOString(),

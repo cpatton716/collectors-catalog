@@ -587,6 +587,7 @@ function transformDbComicToCollectionItem(dbComic: Record<string, unknown>): Col
     purchaseDate: dbComic.purchase_date as string | null,
     notes: dbComic.notes as string | null,
     forSale: dbComic.for_sale as boolean,
+    forTrade: (dbComic.for_trade as boolean) || false,
     askingPrice: dbComic.asking_price as number | null,
     averagePrice: dbComic.average_price as number | null,
     dateAdded: dbComic.date_added as string,

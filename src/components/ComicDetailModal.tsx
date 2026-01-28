@@ -6,6 +6,7 @@ import Image from "next/image";
 
 import {
   AlertTriangle,
+  ArrowLeftRight,
   Award,
   Building,
   Calendar,
@@ -111,6 +112,8 @@ export function ComicDetailModal({
   >(null);
   const [isProcessingAction, setIsProcessingAction] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [isForTrade, setIsForTrade] = useState(item.forTrade || false);
+  const [isUpdatingTrade, setIsUpdatingTrade] = useState(false);
 
   const { comic } = item;
 
@@ -216,6 +219,24 @@ export function ComicDetailModal({
   };
 
   const isInList = (listId: string) => item.listIds.includes(listId);
+
+  const handleToggleForTrade = async () => {
+    setIsUpdatingTrade(true);
+    try {
+      const response = await fetch(`/api/comics/${item.id}/for-trade`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ forTrade: !isForTrade }),
+      });
+      if (response.ok) {
+        setIsForTrade(!isForTrade);
+      }
+    } catch (error) {
+      console.error("Error toggling for trade:", error);
+    } finally {
+      setIsUpdatingTrade(false);
+    }
+  };
 
   const toggleList = (listId: string) => {
     if (isInList(listId)) {
@@ -942,6 +963,20 @@ export function ComicDetailModal({
                   Mark as Sold
                 </button>
               )}
+
+              {/* For Trade Toggle */}
+              <button
+                onClick={handleToggleForTrade}
+                disabled={isUpdatingTrade}
+                className={`w-full flex items-center justify-center gap-2 px-4 py-2 border-2 border-pop-black font-bold transition-all ${
+                  isForTrade
+                    ? "bg-pop-orange text-white shadow-[2px_2px_0px_#000]"
+                    : "bg-pop-white text-pop-black hover:shadow-[2px_2px_0px_#000]"
+                }`}
+              >
+                <ArrowLeftRight className="w-4 h-4" />
+                {isUpdatingTrade ? "Updating..." : isForTrade ? "For Trade" : "Mark for Trade"}
+              </button>
             </div>
 
             {/* Remove Confirmation */}

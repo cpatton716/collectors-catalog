@@ -296,6 +296,7 @@ export function CSVImport({ onImportComplete, onCancel }: CSVImportProps) {
           purchaseDate: row.purchaseDate || null,
           notes: row.notes || null,
           forSale: row.forSale || false,
+          forTrade: false,
           askingPrice: row.askingPrice || null,
           averagePrice: null,
           dateAdded: new Date().toISOString(),

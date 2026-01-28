@@ -1593,6 +1593,7 @@ function transformDbAuction(data: Record<string, unknown>): Auction {
       purchaseDate: comics.purchase_date as string | null,
       notes: comics.notes as string | null,
       forSale: comics.for_sale as boolean,
+      forTrade: (comics.for_trade as boolean) || false,
       askingPrice: comics.asking_price as number | null,
       averagePrice: comics.average_price as number | null,
       dateAdded: comics.date_added as string,

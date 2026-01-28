@@ -67,6 +67,7 @@ export interface CollectionItem {
   purchaseDate: string | null;
   notes: string | null;
   forSale: boolean;
+  forTrade: boolean;
   askingPrice: number | null;
   averagePrice: number | null;
   dateAdded: string;

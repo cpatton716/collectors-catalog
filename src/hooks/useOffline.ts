@@ -169,6 +169,7 @@ function createCollectionItemFromAction(action: OfflineAction): CollectionItem {
     purchaseDate: null,
     notes: "Added from Key Hunt (synced from offline)",
     forSale: false,
+    forTrade: false,
     askingPrice: null,
     averagePrice: data.averagePrice,
     dateAdded: new Date(action.timestamp).toISOString(),

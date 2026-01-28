@@ -299,6 +299,7 @@ export default function ScanPage() {
         purchaseDate: itemData.purchaseDate || null,
         notes: itemData.notes || null,
         forSale: itemData.forSale || false,
+        forTrade: itemData.forTrade || false,
         askingPrice: itemData.askingPrice || null,
         averagePrice: null, // Would come from price API in production
         dateAdded: new Date().toISOString(),

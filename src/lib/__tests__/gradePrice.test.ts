@@ -76,6 +76,7 @@ const createCollectionItem = (overrides?: Partial<CollectionItem>): CollectionIt
     purchaseDate: null,
     notes: null,
     forSale: false,
+    forTrade: false,
     askingPrice: null,
     averagePrice: null,
     dateAdded: new Date().toISOString(),
