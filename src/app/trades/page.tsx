@@ -3,15 +3,16 @@
 import { Suspense, useEffect, useState } from "react";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { useAuth } from "@clerk/nextjs";
 
-import { ArrowLeftRight, History, Package } from "lucide-react";
+import { ArrowLeftRight, History, Package, Sparkles } from "lucide-react";
 
-import { TradePreview } from "@/types/trade";
-import { TradeCard } from "@/components/trading";
+import { TradePreview, GroupedMatch } from "@/types/trade";
+import { TradeCard, TradeMatchCard } from "@/components/trading";
 
-type TradesTab = "active" | "history";
+type TradesTab = "matches" | "active" | "history";
 
 export default function TradesPage() {
   return (
@@ -38,9 +39,12 @@ function TradesPageSkeleton() {
 
 function TradesPageContent() {
   const { isSignedIn, isLoaded } = useAuth();
-  const [activeTab, setActiveTab] = useState<TradesTab>("active");
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState<TradesTab>("matches");
   const [trades, setTrades] = useState<TradePreview[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [matches, setMatches] = useState<GroupedMatch[]>([]);
+  const [isLoadingMatches, setIsLoadingMatches] = useState(false);
 
   const loadTrades = async () => {
     setIsLoading(true);
@@ -62,11 +66,47 @@ function TradesPageContent() {
     }
   };
 
+  const loadMatches = async () => {
+    setIsLoadingMatches(true);
+    try {
+      const response = await fetch("/api/trades/matches");
+      if (response.ok) {
+        const data = await response.json();
+        setMatches(data.matches || []);
+      }
+    } catch (error) {
+      console.error("Error loading matches:", error);
+    } finally {
+      setIsLoadingMatches(false);
+    }
+  };
+
   useEffect(() => {
-    if (isLoaded && isSignedIn) {
+    if (isLoaded && isSignedIn && (activeTab === "active" || activeTab === "history")) {
       loadTrades();
     }
   }, [isLoaded, isSignedIn, activeTab]);
+
+  useEffect(() => {
+    if (isLoaded && isSignedIn && activeTab === "matches") {
+      loadMatches();
+    }
+  }, [isLoaded, isSignedIn, activeTab]);
+
+  const handleDismissMatch = (matchId: string) => {
+    setMatches((prev) =>
+      prev
+        .map((group) => ({
+          ...group,
+          matches: group.matches.filter((m) => m.matchId !== matchId),
+        }))
+        .filter((group) => group.matches.length > 0)
+    );
+  };
+
+  const handleMessageFromMatch = (userId: string, comicId: string) => {
+    router.push(`/messages?user=${userId}&comic=${comicId}`);
+  };
 
   if (!isLoaded) {
     return <TradesPageSkeleton />;
@@ -101,6 +141,22 @@ function TradesPageContent() {
         {/* Tabs */}
         <div className="flex gap-2 mt-6">
           <button
+            onClick={() => setActiveTab("matches")}
+            className={`flex items-center gap-2 px-4 py-2 font-bold border-2 border-pop-black transition-all ${
+              activeTab === "matches"
+                ? "bg-pop-green text-white shadow-[3px_3px_0px_#000]"
+                : "bg-pop-white text-pop-black hover:shadow-[2px_2px_0px_#000]"
+            }`}
+          >
+            <Sparkles className="w-4 h-4" />
+            Matches
+            {matches.length > 0 && (
+              <span className="ml-1 bg-white text-pop-green text-xs px-1.5 py-0.5 rounded-full font-bold">
+                {matches.reduce((sum, g) => sum + g.matches.length, 0)}
+              </span>
+            )}
+          </button>
+          <button
             onClick={() => setActiveTab("active")}
             className={`flex items-center gap-2 px-4 py-2 font-bold border-2 border-pop-black transition-all ${
               activeTab === "active"
@@ -126,50 +182,109 @@ function TradesPageContent() {
 
         {/* Content */}
         <div className="mt-6">
-          {isLoading ? (
-            <div className="space-y-4">
-              {[...Array(3)].map((_, i) => (
+          {activeTab === "matches" && (
+            <>
+              {isLoadingMatches ? (
+                <div className="space-y-4">
+                  {[...Array(3)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="bg-white border-3 border-pop-black h-32 animate-pulse"
+                    />
+                  ))}
+                </div>
+              ) : matches.length === 0 ? (
                 <div
-                  key={i}
-                  className="bg-white border-3 border-pop-black h-32 animate-pulse"
-                />
-              ))}
-            </div>
-          ) : trades.length === 0 ? (
-            <div
-              className="bg-pop-white border-3 border-pop-black p-12 text-center"
-              style={{ boxShadow: "4px 4px 0px #000" }}
-            >
-              <div className="w-16 h-16 bg-pop-yellow border-3 border-pop-black flex items-center justify-center mx-auto mb-4">
-                <ArrowLeftRight className="w-8 h-8 text-pop-black" />
-              </div>
-              <p className="text-xl font-black text-pop-black font-comic uppercase">
-                {activeTab === "active" ? "No active trades" : "No trade history"}
-              </p>
-              <p className="mt-2 text-gray-600">
-                {activeTab === "active"
-                  ? "Start trading by browsing the Shop's For Trade tab"
-                  : "Your completed trades will appear here"}
-              </p>
-              {activeTab === "active" && (
-                <Link
-                  href="/shop?tab=for-trade"
-                  className="inline-block mt-4 px-6 py-2 bg-pop-orange text-white font-bold border-2 border-pop-black shadow-[3px_3px_0px_#000] hover:shadow-[4px_4px_0px_#000] transition-all"
+                  className="bg-pop-white border-3 border-pop-black p-12 text-center"
+                  style={{ boxShadow: "4px 4px 0px #000" }}
                 >
-                  Browse Trades
-                </Link>
+                  <div className="w-16 h-16 bg-pop-yellow border-3 border-pop-black flex items-center justify-center mx-auto mb-4">
+                    <Sparkles className="w-8 h-8 text-pop-black" />
+                  </div>
+                  <p className="text-xl font-black text-pop-black font-comic uppercase">
+                    No matches yet
+                  </p>
+                  <p className="mt-2 text-gray-600">
+                    Mark comics as &quot;For Trade&quot; and add comics to your Key Hunt list to find matches
+                  </p>
+                  <div className="flex gap-3 justify-center mt-4">
+                    <Link
+                      href="/collection"
+                      className="px-4 py-2 bg-pop-orange text-white font-bold border-2 border-pop-black shadow-[2px_2px_0px_#000]"
+                    >
+                      My Collection
+                    </Link>
+                    <Link
+                      href="/key-hunt"
+                      className="px-4 py-2 bg-pop-blue text-white font-bold border-2 border-pop-black shadow-[2px_2px_0px_#000]"
+                    >
+                      Key Hunt
+                    </Link>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {matches.map((group) => (
+                    <TradeMatchCard
+                      key={group.myComic?.id}
+                      group={group}
+                      onDismiss={handleDismissMatch}
+                      onMessage={handleMessageFromMatch}
+                    />
+                  ))}
+                </div>
               )}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {trades.map((trade) => (
-                <TradeCard
-                  key={trade.id}
-                  trade={trade}
-                  onStatusChange={loadTrades}
-                />
-              ))}
-            </div>
+            </>
+          )}
+
+          {(activeTab === "active" || activeTab === "history") && (
+            <>
+              {isLoading ? (
+                <div className="space-y-4">
+                  {[...Array(3)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="bg-white border-3 border-pop-black h-32 animate-pulse"
+                    />
+                  ))}
+                </div>
+              ) : trades.length === 0 ? (
+                <div
+                  className="bg-pop-white border-3 border-pop-black p-12 text-center"
+                  style={{ boxShadow: "4px 4px 0px #000" }}
+                >
+                  <div className="w-16 h-16 bg-pop-yellow border-3 border-pop-black flex items-center justify-center mx-auto mb-4">
+                    <ArrowLeftRight className="w-8 h-8 text-pop-black" />
+                  </div>
+                  <p className="text-xl font-black text-pop-black font-comic uppercase">
+                    {activeTab === "active" ? "No active trades" : "No trade history"}
+                  </p>
+                  <p className="mt-2 text-gray-600">
+                    {activeTab === "active"
+                      ? "Start trading by browsing the Shop's For Trade tab"
+                      : "Your completed trades will appear here"}
+                  </p>
+                  {activeTab === "active" && (
+                    <Link
+                      href="/shop?tab=for-trade"
+                      className="inline-block mt-4 px-6 py-2 bg-pop-orange text-white font-bold border-2 border-pop-black shadow-[3px_3px_0px_#000] hover:shadow-[4px_4px_0px_#000] transition-all"
+                    >
+                      Browse Trades
+                    </Link>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {trades.map((trade) => (
+                    <TradeCard
+                      key={trade.id}
+                      trade={trade}
+                      onStatusChange={loadTrades}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
