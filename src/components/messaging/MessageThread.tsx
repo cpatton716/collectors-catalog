@@ -1,14 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
-import { Loader2 } from "lucide-react";
+import { Flag, Loader2, MoreVertical, ShieldX } from "lucide-react";
 
 import { Message, MessagesResponse } from "@/types/messaging";
 import { SellerProfile } from "@/types/auction";
 
+import { BlockUserModal } from "./BlockUserModal";
 import { MessageBubble } from "./MessageBubble";
 import { MessageComposer } from "./MessageComposer";
+import { ReportMessageModal } from "./ReportMessageModal";
 
 interface MessageThreadProps {
   conversationId: string;
@@ -21,11 +24,19 @@ export function MessageThread({
   currentUserId,
   onMessageSent,
 }: MessageThreadProps) {
+  const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([]);
   const [otherParticipant, setOtherParticipant] = useState<SellerProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Block/Report modal state
+  const [showMenu, setShowMenu] = useState(false);
+  const [showBlockModal, setShowBlockModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
 
   useEffect(() => {
     loadMessages();
@@ -35,6 +46,23 @@ export function MessageThread({
     // Scroll to bottom when messages change
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+
+    if (showMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showMenu]);
 
   const loadMessages = async () => {
     setIsLoading(true);
@@ -102,14 +130,59 @@ export function MessageThread({
 
   return (
     <div className="flex h-full flex-col">
-      {/* Header with participant info */}
+      {/* Header with participant info and menu */}
       {otherParticipant && (
-        <div className="border-b-2 border-pop-black bg-pop-white px-4 py-3">
+        <div className="flex items-center justify-between border-b-2 border-pop-black bg-pop-white px-4 py-3">
           <p className="font-bold">
             {otherParticipant.username
               ? `@${otherParticipant.username}`
               : otherParticipant.displayName || "User"}
           </p>
+
+          {/* Menu dropdown */}
+          <div ref={menuRef} className="relative">
+            <button
+              onClick={() => setShowMenu(!showMenu)}
+              className="rounded-lg p-2 hover:bg-gray-100"
+              aria-label="Conversation options"
+            >
+              <MoreVertical className="h-5 w-5" />
+            </button>
+
+            {showMenu && (
+              <div className="absolute right-0 top-full z-10 mt-1 w-48 rounded-lg border-2 border-pop-black bg-pop-white py-1 shadow-comic">
+                <button
+                  onClick={() => {
+                    setShowBlockModal(true);
+                    setShowMenu(false);
+                  }}
+                  className="flex w-full items-center gap-2 px-4 py-2 text-left font-medium hover:bg-gray-100"
+                >
+                  <ShieldX className="h-4 w-4 text-pop-red" />
+                  Block User
+                </button>
+                <button
+                  onClick={() => {
+                    // Find the most recent message from the other user to report
+                    const otherMessages = messages.filter(
+                      (m) => m.senderId !== currentUserId
+                    );
+                    if (otherMessages.length > 0) {
+                      setSelectedMessageId(
+                        otherMessages[otherMessages.length - 1].id
+                      );
+                      setShowReportModal(true);
+                    }
+                    setShowMenu(false);
+                  }}
+                  className="flex w-full items-center gap-2 px-4 py-2 text-left font-medium hover:bg-gray-100"
+                >
+                  <Flag className="h-4 w-4 text-pop-yellow" />
+                  Report
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -135,6 +208,31 @@ export function MessageThread({
 
       {/* Composer */}
       <MessageComposer onSend={handleSendMessage} />
+
+      {/* Block Modal */}
+      <BlockUserModal
+        isOpen={showBlockModal}
+        onClose={() => setShowBlockModal(false)}
+        userId={otherParticipant?.id || ""}
+        username={
+          otherParticipant?.username ||
+          otherParticipant?.displayName ||
+          "User"
+        }
+        onBlocked={() => {
+          router.push("/messages");
+        }}
+      />
+
+      {/* Report Modal */}
+      <ReportMessageModal
+        isOpen={showReportModal}
+        onClose={() => {
+          setShowReportModal(false);
+          setSelectedMessageId(null);
+        }}
+        messageId={selectedMessageId || ""}
+      />
     </div>
   );
 }
