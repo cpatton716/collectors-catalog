@@ -1,0 +1,1 @@
+export { TradeableComicCard } from "./TradeableComicCard";
