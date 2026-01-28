@@ -1,0 +1,666 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
+import Link from "next/link";
+
+import { useUser } from "@clerk/nextjs";
+
+import {
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  Eye,
+  Flag,
+  Loader2,
+  MessageSquare,
+  RefreshCw,
+  ShieldAlert,
+  ShieldCheck,
+  ShieldX,
+  XCircle,
+} from "lucide-react";
+
+interface Report {
+  id: string;
+  message_id: string;
+  reporter_id: string;
+  reason: string;
+  details: string | null;
+  status: "pending" | "reviewed" | "actioned" | "dismissed";
+  admin_notes: string | null;
+  created_at: string;
+  reviewed_at: string | null;
+  messages: {
+    id: string;
+    content: string;
+    sender_id: string;
+    created_at: string;
+  } | null;
+  reporter: {
+    id: string;
+    display_name: string | null;
+    email: string | null;
+  } | null;
+}
+
+interface PaginationInfo {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+interface Stats {
+  pending: number;
+  reviewed: number;
+  actioned: number;
+  dismissed: number;
+}
+
+function formatDate(dateString: string | null): string {
+  if (!dateString) return "N/A";
+  return new Date(dateString).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function formatDateTime(dateString: string | null): string {
+  if (!dateString) return "N/A";
+  return new Date(dateString).toLocaleString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function StatusBadge({ status }: { status: Report["status"] }) {
+  switch (status) {
+    case "pending":
+      return (
+        <span className="badge-pop badge-pop-yellow">
+          <Clock className="w-3 h-3" />
+          Pending
+        </span>
+      );
+    case "reviewed":
+      return (
+        <span className="badge-pop badge-pop-blue">
+          <Eye className="w-3 h-3" />
+          Reviewed
+        </span>
+      );
+    case "actioned":
+      return (
+        <span className="badge-pop badge-pop-green">
+          <CheckCircle className="w-3 h-3" />
+          Actioned
+        </span>
+      );
+    case "dismissed":
+      return (
+        <span className="badge-pop" style={{ background: "#ccc" }}>
+          <XCircle className="w-3 h-3" />
+          Dismissed
+        </span>
+      );
+    default:
+      return null;
+  }
+}
+
+function ReasonBadge({ reason }: { reason: string }) {
+  const colors: Record<string, string> = {
+    spam: "var(--pop-yellow)",
+    harassment: "var(--pop-red)",
+    inappropriate: "var(--pop-red)",
+    scam: "var(--pop-red)",
+    other: "var(--pop-blue)",
+  };
+
+  return (
+    <span
+      className="badge-pop text-xs"
+      style={{ background: colors[reason] || colors.other }}
+    >
+      {reason.charAt(0).toUpperCase() + reason.slice(1)}
+    </span>
+  );
+}
+
+function ReportCard({
+  report,
+  onAction,
+  updating,
+}: {
+  report: Report;
+  onAction: (id: string, status: string, notes?: string) => void;
+  updating: boolean;
+}) {
+  const [adminNotes, setAdminNotes] = useState(report.admin_notes || "");
+  const [showActions, setShowActions] = useState(false);
+
+  const isPending = report.status === "pending";
+
+  return (
+    <div
+      className="comic-panel overflow-hidden"
+      style={{
+        borderColor: isPending ? "var(--pop-yellow)" : undefined,
+        borderWidth: isPending ? "3px" : undefined,
+      }}
+    >
+      {/* Header */}
+      <div
+        className="p-3 border-b-2 border-black flex items-center justify-between"
+        style={{ background: isPending ? "var(--pop-yellow)" : "#f5f5f5" }}
+      >
+        <div className="flex items-center gap-2">
+          <Flag className="w-4 h-4" />
+          <span className="font-bold text-sm">Report #{report.id.slice(0, 8)}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <ReasonBadge reason={report.reason} />
+          <StatusBadge status={report.status} />
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="p-4 space-y-3">
+        {/* Reported Message */}
+        <div>
+          <p className="text-xs text-gray-500 mb-1 font-bold">Reported Message:</p>
+          {report.messages ? (
+            <div
+              className="p-3 border-2 border-black rounded"
+              style={{ background: "var(--pop-cream)" }}
+            >
+              <p className="text-sm">{report.messages.content}</p>
+              <p className="text-xs text-gray-500 mt-2">
+                Sent: {formatDateTime(report.messages.created_at)}
+              </p>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-400 italic">Message not available</p>
+          )}
+        </div>
+
+        {/* Report Details */}
+        {report.details && (
+          <div>
+            <p className="text-xs text-gray-500 mb-1 font-bold">Reporter Notes:</p>
+            <p className="text-sm bg-gray-100 p-2 rounded border border-gray-300">
+              {report.details}
+            </p>
+          </div>
+        )}
+
+        {/* Meta Info */}
+        <div className="flex flex-wrap gap-4 text-xs text-gray-500">
+          <div>
+            <span className="font-bold">Reporter:</span>{" "}
+            {report.reporter?.display_name || report.reporter?.email || "Unknown"}
+          </div>
+          <div>
+            <span className="font-bold">Reported:</span> {formatDateTime(report.created_at)}
+          </div>
+          {report.reviewed_at && (
+            <div>
+              <span className="font-bold">Reviewed:</span> {formatDateTime(report.reviewed_at)}
+            </div>
+          )}
+        </div>
+
+        {/* Admin Notes (if reviewed) */}
+        {report.admin_notes && report.status !== "pending" && (
+          <div>
+            <p className="text-xs text-gray-500 mb-1 font-bold">Admin Notes:</p>
+            <p className="text-sm bg-blue-50 p-2 rounded border border-blue-200">
+              {report.admin_notes}
+            </p>
+          </div>
+        )}
+
+        {/* Actions */}
+        {isPending && (
+          <div className="pt-3 border-t-2 border-black">
+            {!showActions ? (
+              <button
+                onClick={() => setShowActions(true)}
+                className="btn-pop btn-pop-blue text-sm w-full"
+              >
+                <ShieldAlert className="w-4 h-4" />
+                Take Action
+              </button>
+            ) : (
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-bold block mb-1">Admin Notes (optional):</label>
+                  <textarea
+                    value={adminNotes}
+                    onChange={(e) => setAdminNotes(e.target.value)}
+                    placeholder="Add notes about your decision..."
+                    className="input-pop text-sm h-20 resize-none"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => onAction(report.id, "dismissed", adminNotes)}
+                    disabled={updating}
+                    className="flex-1 btn-pop text-sm disabled:opacity-50"
+                    style={{ background: "#ccc" }}
+                  >
+                    {updating ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <XCircle className="w-4 h-4" />
+                    )}
+                    Dismiss
+                  </button>
+                  <button
+                    onClick={() => onAction(report.id, "reviewed", adminNotes)}
+                    disabled={updating}
+                    className="flex-1 btn-pop btn-pop-blue text-sm disabled:opacity-50"
+                  >
+                    {updating ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                    Mark Reviewed
+                  </button>
+                  <button
+                    onClick={() => onAction(report.id, "actioned", adminNotes)}
+                    disabled={updating}
+                    className="flex-1 btn-pop btn-pop-green text-sm disabled:opacity-50"
+                  >
+                    {updating ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <CheckCircle className="w-4 h-4" />
+                    )}
+                    Warn User
+                  </button>
+                </div>
+                <button
+                  disabled
+                  className="w-full btn-pop btn-pop-red text-sm opacity-50 cursor-not-allowed"
+                  title="Suspend functionality coming soon"
+                >
+                  <ShieldX className="w-4 h-4" />
+                  Suspend User (Coming Soon)
+                </button>
+                <button
+                  onClick={() => setShowActions(false)}
+                  className="w-full text-sm text-gray-500 hover:underline"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function ModerationPage() {
+  const { isLoaded, isSignedIn } = useUser();
+  const [reports, setReports] = useState<Report[]>([]);
+  const [pagination, setPagination] = useState<PaginationInfo | null>(null);
+  const [stats, setStats] = useState<Stats>({ pending: 0, reviewed: 0, actioned: 0, dismissed: 0 });
+  const [loading, setLoading] = useState(true);
+  const [loadingStats, setLoadingStats] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<string>("pending");
+  const [updating, setUpdating] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchReports();
+  }, [statusFilter]);
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => setSuccessMessage(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
+
+  async function fetchStats() {
+    setLoadingStats(true);
+    try {
+      // Fetch counts for each status
+      const statuses = ["pending", "reviewed", "actioned", "dismissed"];
+      const counts: Stats = { pending: 0, reviewed: 0, actioned: 0, dismissed: 0 };
+
+      await Promise.all(
+        statuses.map(async (status) => {
+          const res = await fetch(`/api/admin/message-reports?status=${status}&limit=1`);
+          if (res.ok) {
+            const data = await res.json();
+            counts[status as keyof Stats] = data.pagination.total;
+          }
+        })
+      );
+
+      setStats(counts);
+    } catch (error) {
+      console.error("Failed to fetch stats:", error);
+    } finally {
+      setLoadingStats(false);
+    }
+  }
+
+  async function fetchReports(page = 1) {
+    setLoading(true);
+    setError(null);
+    try {
+      const params = new URLSearchParams({ page: String(page), limit: "20" });
+      if (statusFilter) params.set("status", statusFilter);
+
+      const res = await fetch(`/api/admin/message-reports?${params}`);
+      if (!res.ok) {
+        if (res.status === 403) {
+          throw new Error("Access denied. Admin privileges required.");
+        }
+        throw new Error("Failed to fetch reports");
+      }
+      const data = await res.json();
+      setReports(data.reports);
+      setPagination(data.pagination);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Unknown error");
+      setReports([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function updateReportStatus(reportId: string, status: string, adminNotes?: string) {
+    setUpdating(reportId);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/message-reports/${reportId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status, adminNotes }),
+      });
+      if (!res.ok) {
+        throw new Error("Failed to update report");
+      }
+      setSuccessMessage(`Report ${status === "dismissed" ? "dismissed" : status === "actioned" ? "actioned - user warned" : "marked as reviewed"}`);
+      // Refresh both the list and stats
+      fetchReports(pagination?.page || 1);
+      fetchStats();
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Unknown error");
+    } finally {
+      setUpdating(null);
+    }
+  }
+
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin" style={{ color: "var(--pop-blue)" }} />
+      </div>
+    );
+  }
+
+  if (!isSignedIn) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="comic-panel p-8 text-center max-w-md">
+          <AlertTriangle className="w-12 h-12 mx-auto mb-4" style={{ color: "var(--pop-red)" }} />
+          <h1 className="text-2xl font-bold mb-2" style={{ fontFamily: "var(--font-bangers)" }}>
+            Sign In Required
+          </h1>
+          <p className="mb-6">Please sign in to access the admin dashboard.</p>
+          <Link href="/sign-in" className="btn-pop btn-pop-red">
+            Sign In
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen pb-8">
+      {/* Header */}
+      <header className="border-b-4 border-black mb-6" style={{ background: "var(--pop-red)" }}>
+        <div className="max-w-6xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 text-white">
+              <ShieldAlert className="w-8 h-8" />
+              <h1
+                className="text-2xl font-bold tracking-wide"
+                style={{ fontFamily: "var(--font-bangers)" }}
+              >
+                Message Moderation
+              </h1>
+            </div>
+            <Link href="/collection" className="btn-pop btn-pop-white text-sm">
+              Back to App
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-6xl mx-auto px-4">
+        {/* Messages */}
+        {error && (
+          <div
+            className="comic-panel p-4 mb-6"
+            style={{ borderColor: "var(--pop-red)", background: "#fff0f0" }}
+          >
+            <div className="flex items-center gap-2" style={{ color: "var(--pop-red)" }}>
+              <AlertTriangle className="w-5 h-5" />
+              <p className="font-bold">{error}</p>
+            </div>
+          </div>
+        )}
+
+        {successMessage && (
+          <div
+            className="comic-panel p-4 mb-6"
+            style={{ borderColor: "var(--pop-green)", background: "#f0fff0" }}
+          >
+            <div className="flex items-center gap-2" style={{ color: "var(--pop-green)" }}>
+              <CheckCircle className="w-5 h-5" />
+              <p className="font-bold">{successMessage}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div
+            className="comic-panel p-4 text-center cursor-pointer hover:scale-105 transition-transform"
+            style={{
+              background: statusFilter === "pending" ? "var(--pop-yellow)" : undefined,
+              borderWidth: statusFilter === "pending" ? "3px" : undefined,
+            }}
+            onClick={() => setStatusFilter("pending")}
+          >
+            <Clock
+              className="w-8 h-8 mx-auto mb-2"
+              style={{ color: "var(--pop-yellow)" }}
+            />
+            <p className="text-2xl font-bold" style={{ fontFamily: "var(--font-bangers)" }}>
+              {loadingStats ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : stats.pending}
+            </p>
+            <p className="text-sm text-gray-600">Pending</p>
+          </div>
+          <div
+            className="comic-panel p-4 text-center cursor-pointer hover:scale-105 transition-transform"
+            style={{
+              background: statusFilter === "reviewed" ? "var(--pop-blue)" : undefined,
+              borderWidth: statusFilter === "reviewed" ? "3px" : undefined,
+            }}
+            onClick={() => setStatusFilter("reviewed")}
+          >
+            <Eye
+              className="w-8 h-8 mx-auto mb-2"
+              style={{ color: "var(--pop-blue)" }}
+            />
+            <p className="text-2xl font-bold" style={{ fontFamily: "var(--font-bangers)" }}>
+              {loadingStats ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : stats.reviewed}
+            </p>
+            <p className="text-sm text-gray-600">Reviewed</p>
+          </div>
+          <div
+            className="comic-panel p-4 text-center cursor-pointer hover:scale-105 transition-transform"
+            style={{
+              background: statusFilter === "actioned" ? "var(--pop-green)" : undefined,
+              borderWidth: statusFilter === "actioned" ? "3px" : undefined,
+            }}
+            onClick={() => setStatusFilter("actioned")}
+          >
+            <CheckCircle
+              className="w-8 h-8 mx-auto mb-2"
+              style={{ color: "var(--pop-green)" }}
+            />
+            <p className="text-2xl font-bold" style={{ fontFamily: "var(--font-bangers)" }}>
+              {loadingStats ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : stats.actioned}
+            </p>
+            <p className="text-sm text-gray-600">Actioned</p>
+          </div>
+          <div
+            className="comic-panel p-4 text-center cursor-pointer hover:scale-105 transition-transform"
+            style={{
+              background: statusFilter === "dismissed" ? "#ccc" : undefined,
+              borderWidth: statusFilter === "dismissed" ? "3px" : undefined,
+            }}
+            onClick={() => setStatusFilter("dismissed")}
+          >
+            <XCircle className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+            <p className="text-2xl font-bold" style={{ fontFamily: "var(--font-bangers)" }}>
+              {loadingStats ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : stats.dismissed}
+            </p>
+            <p className="text-sm text-gray-600">Dismissed</p>
+          </div>
+        </div>
+
+        {/* Filter Bar */}
+        <div className="comic-panel p-4 mb-6 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <label className="font-bold text-sm">Filter by status:</label>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="input-pop py-2 text-sm"
+              style={{ width: "auto" }}
+            >
+              <option value="">All Reports</option>
+              <option value="pending">Pending</option>
+              <option value="reviewed">Reviewed</option>
+              <option value="actioned">Actioned</option>
+              <option value="dismissed">Dismissed</option>
+            </select>
+          </div>
+          <button
+            onClick={() => {
+              fetchReports();
+              fetchStats();
+            }}
+            className="btn-pop btn-pop-white text-sm"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Refresh
+          </button>
+        </div>
+
+        {/* Reports List */}
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin" style={{ color: "var(--pop-blue)" }} />
+          </div>
+        ) : reports.length === 0 ? (
+          <div className="comic-panel p-12 text-center">
+            <MessageSquare className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+            <h2
+              className="text-xl font-bold mb-2"
+              style={{ fontFamily: "var(--font-bangers)" }}
+            >
+              No Reports Found
+            </h2>
+            <p className="text-gray-500">
+              {statusFilter
+                ? `No ${statusFilter} reports at this time.`
+                : "No message reports have been submitted yet."}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {reports.map((report) => (
+              <ReportCard
+                key={report.id}
+                report={report}
+                onAction={updateReportStatus}
+                updating={updating === report.id}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {pagination && pagination.totalPages > 1 && (
+          <div className="flex justify-center gap-2 mt-6">
+            <button
+              onClick={() => fetchReports(pagination.page - 1)}
+              disabled={pagination.page <= 1}
+              className="btn-pop btn-pop-white text-sm disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <span className="flex items-center px-4 font-bold">
+              Page {pagination.page} of {pagination.totalPages}
+            </span>
+            <button
+              onClick={() => fetchReports(pagination.page + 1)}
+              disabled={pagination.page >= pagination.totalPages}
+              className="btn-pop btn-pop-white text-sm disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        )}
+
+        {/* Admin Links */}
+        <div className="mt-8 pt-4 border-t-2 border-black flex flex-wrap gap-4">
+          <Link
+            href="/admin/users"
+            className="text-sm font-bold hover:underline"
+            style={{ color: "var(--pop-blue)" }}
+          >
+            User Management
+          </Link>
+          <Link
+            href="/admin/usage"
+            className="text-sm font-bold hover:underline"
+            style={{ color: "var(--pop-blue)" }}
+          >
+            Service Usage Monitor
+          </Link>
+          <Link
+            href="/admin/key-info"
+            className="text-sm font-bold hover:underline"
+            style={{ color: "var(--pop-blue)" }}
+          >
+            Key Info Moderation
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
