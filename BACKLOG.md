@@ -1101,6 +1101,25 @@ Evaluate whether Gemini should be the primary scanner provider instead of Claude
 
 ---
 
+### Evaluate Sonnet 4.6 vs Sonnet 4.5 for Comic Cover Recognition
+**Priority:** Low (Post-Launch)
+**Status:** Pending
+**Added:** May 1, 2026
+
+Anthropic retired the 1M context beta on Sonnet 4 / Sonnet 4.5 (May 1, 2026) and surfaced Sonnet 4.6 as the recommended path forward — same price, 1M context now GA. We currently pin `MODEL_PRIMARY = "claude-sonnet-4-5-20250929"` in `src/lib/models.ts`. The retirement does NOT affect us today (no `context-1m` beta header set, all calls cap at `max_tokens: 256–1536`, well under the 200K threshold). But Sonnet 4.5 will eventually follow Sonnet 4 into retirement, so a planned migration is worthwhile.
+
+**What to do:**
+1. A/B test Sonnet 4.6 against 4.5 on a representative sample of comic cover scans (~50 covers spanning publishers, eras, slabbed/raw, partial covers).
+2. Compare: title accuracy, issue # accuracy, publisher accuracy, latency p50/p95, token usage delta.
+3. If 4.6 is at-or-better on accuracy with no regression: flip `MODEL_PRIMARY` to `claude-sonnet-4-6-<date>` and add a DEV_LOG entry.
+4. If 4.6 regresses: keep on 4.5, document the eval, set a reminder to re-evaluate before 4.5's retirement date is announced.
+
+**Reminder:** Gemini is currently primary (`VISION_PROVIDER_ORDER = ["gemini", "anthropic"]`); Anthropic is the fallback path. So the impact of any Sonnet flip is on fallback quality, not primary scan accuracy.
+
+**Files to touch:** `src/lib/models.ts:9` (the single pin point).
+
+---
+
 ### Expand Curated Key Info DB
 **Priority:** Medium
 **Status:** Pending
