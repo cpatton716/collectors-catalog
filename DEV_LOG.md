@@ -4,6 +4,221 @@ This log tracks session-by-session progress on Collectors Chest.
 
 ---
 
+## May 5, 2026 (Tuesday) - Session 44: Show-Floor Feedback Bundle + Curated Key DB Expansion + CLZ Sales Brief
+
+### Summary
+End-of-day post-show wrap-up bundling production bug fixes from the May 3-4 weekend show feedback, a major curated key-issue DB expansion, and partner-shareable competitive sales materials for tomorrow's Aponte meeting:
+
+1. **Production marketplace bug** — Second Chance "Offer to Runner-up" button was still rendering after the offer expired. Root cause: RLS-anon-read pattern. Fixed.
+2. **Convention-floor Key Hunt feature gap** — scanned books weren't showing key-issue context (Daredevil #181 didn't show "Death of Elektra"). Two-layer bug: UI prop missing + data layer not consulting curated DB. Both fixed.
+3. **Key Hunt cover verification UX** — built a reusable `CoverLightbox` component for full-screen cover viewing (variant verification at the booth).
+4. **Curated key-issue DB expansion** — three rounds of upfront seed pass: 404 → 1,130 entries (+726 net-new), spanning Golden Age through 2020s+ canonical keys. Years normalized to series-start convention.
+5. **CLZ competitive materials** — verified pricing, authored partner-shareable sales brief, built admin-only tablet "slide" page at `/admin/clz-comparison` for Aponte to use during convention conversations.
+6. **Clerk dashboard** — username rules tightened (length 4-20, extended chars off). Residual gap: Clerk's UI doesn't expose full base-allowlist regex.
+
+### Features Shipped
+
+#### 1. Second Chance "Offer to Runner-up" Button RLS Bug 🔒
+
+**Reported:** From PROD listing of Giant-Size X-Men #1 (auction `adbae0f6-1abb-493f-93da-238f748d5f48`). The Apr 27 Second Chance offer to the runner-up expired around Apr 29, but on May 5 the seller still saw the "Offer to Runner-up for $5.00" button when clicking the `second_chance_expired` notification.
+
+**Root cause:** `getAuctionSecondChanceState()` in `src/lib/auctionDb.ts:370` used the anon `supabase` client to read the `second_chance_offers` table. The migration `20260423_second_chance_offers.sql` defines RLS policies gated on `current_setting('request.jwt.claims', true)::json->>'sub'` — a Supabase JWT identity. We use Clerk for auth, so Supabase never sees a matching JWT. RLS silently returned no rows; `secondChanceOfferStatus` was always `null` for the seller; the modal fell through to the "show offer button" branch every time.
+
+**Fix:** 1-line client swap from `supabase` to `supabaseAdmin`. The call site (`getAuction()`) already verifies `auction.isSeller === userId` before reaching the helper, so the service-role read is owner-scoped at the gate.
+
+**Audit confirmation:** Of the 11 `second_chance_offers` callsites in `auctionDb.ts`, the read in `getAuctionSecondChanceState` was the lone outlier — the other 10 already used `supabaseAdmin`. This is the same class of bug as the Session 43 trade_matches IDOR (service-role write scoping); the EVALUATION.md Risk Assessment was updated to capture this as a defensive pattern reference.
+
+**Tests:** 1-line config swap with no logic change, matching Session 43 trade_matches IDOR precedent. Skipped unit test in favor of two manual TEST_CASES.md entries (one for the listing-modal render, one for validating the Apr 27 offer's actual final state in PROD).
+
+**Files changed:**
+- `src/lib/auctionDb.ts` (1 line + 4-line comment explaining service-role rationale)
+
+#### 2. Key Hunt Missing Key-Issue Info — Two-Layer Fix 🔑
+
+**Reported:** From May 3-4 weekend show. Scanning Daredevil #181 in Key Hunt returned a clean ID + cover but no notes about "Death of Elektra." Convention-floor regression — Key Hunt's marquee value (recognize the book + tell you why it matters) was broken.
+
+**Root cause analysis (two layers):**
+
+**Layer A — UI wiring gap.** `KeyHuntPriceResult.tsx` didn't define a `keyInfo` prop, didn't destructure it, didn't render it. `key-hunt/page.tsx:877-911` had `result.keyInfo` available but never passed it to the component. Data was reaching the page but never rendered.
+
+**Layer B — Data-path gap.** `con-mode-lookup/route.ts` only checked the Supabase `comic_metadata` cache + AI fallback. It never consulted the curated `keyComicsDatabase.ts` (where Daredevil #181 → "Death of Elektra" has been in source for months). Stale cache rows from earlier silent AI failures returned `keyInfo: []` forever.
+
+**Fix:**
+
+UI side:
+- `KeyHuntPriceResult.tsx` — added `keyInfo?: string[]` prop, destructured it, rendered yellow "KEY ISSUE" chips between the grade badge and the price (matching `ComicDetailModal` styling pattern with `KeyRound` icon).
+- `key-hunt/page.tsx` — added `keyInfo={result.keyInfo}` to the `<KeyHuntPriceResult>` props.
+
+Data side — `con-mode-lookup/route.ts`:
+- Added `import { lookupKeyInfo } from "@/lib/keyComicsDatabase"`.
+- Wired `lookupKeyInfo()` into all three result paths:
+  - **DB cache early-return** — curated DB beats stale cache (handles the long-tail bug)
+  - **eBay+AI path** — curated DB beats AI fallback (skips the AI call entirely for popular keys; cost reduction at scale)
+  - **No-data fallback** — still surfaces curated key info when there's no eBay price signal
+
+**Verification:** Hit the dev `/api/con-mode-lookup` endpoint with 5 canonical keys (DD #181, ASM #300, Hulk #181, Batman Adv #12, NYX #3, Walking Dead #1) — all returned correct curated info, no AI fallback noise.
+
+**Files changed:**
+- `src/components/KeyHuntPriceResult.tsx` (added KeyRound import, prop, JSX section)
+- `src/app/key-hunt/page.tsx` (1-line prop pass)
+- `src/app/api/con-mode-lookup/route.ts` (import + 3 lookup integration points)
+
+#### 3. CoverLightbox Component 🖼️
+
+**Reported:** Same May 3-4 show — collectors needed a way to **visually verify** the AI got the right book before trusting the price. The small thumbnail was insufficient for variant verification.
+
+**Built:** New `src/components/CoverLightbox.tsx` — reusable full-screen cover viewer:
+- Fixed-positioned modal, `z-[60]`, black/95 backdrop, click-to-close
+- iPhone safe-area aware (`env(safe-area-inset-*)` padding on backdrop + button positioning)
+- Escape key closes (desktop)
+- ARIA `role="dialog"` + `aria-modal="true"` for screen-reader correctness
+- 95vw × 90vh `object-contain` Image — fits any aspect ratio cleanly
+- Optional caption (we pass `${title} #${issueNumber}`)
+- `animate-in fade-in` + `zoom-in-95` matches existing modal motion
+
+**Decision logged in component comments:** No pinch-zoom yet because site `viewport.maximumScale = 1` disables browser-native zoom across the app. Full-screen view is sufficient for cover verification (the user's stated need). If pinch-zoom becomes a need post-launch, drop in `react-zoom-pan-pinch` and lift the viewport restriction inside this overlay.
+
+**Wired into:** `KeyHuntPriceResult.tsx` — the gradient-header cover thumbnail is now a `<button>` with hover ring + active scale-down. Tapping opens the lightbox. Component is generic — future enhancement: extend to `ComicDetailModal`, `ComicDetailsForm`, `AuctionDetailModal` for consistency.
+
+**Files created:**
+- `src/components/CoverLightbox.tsx`
+
+**Files modified:**
+- `src/components/KeyHuntPriceResult.tsx` (lightbox import + state + button wrap + render)
+
+#### 4. Curated Key-Issue DB Expansion (404 → 1,130) 📚
+
+**Background:** With the curated DB now consulted at scan time (Session 44 fix #2), expanding its coverage directly improves Key Hunt accuracy and reduces AI costs. The user requested an upfront seed pass — three rounds, each targeting progressively deeper canonical keys.
+
+**Rounds:**
+- **Round 1 (+283 net-new):** Top canonical seed pass — Golden Age firsts (Marvel Comics #1, Captain America Comics #1, Whiz #2 first Shazam, All-American #16 first Alan Scott GL, More Fun #73 first Aquaman/Green Arrow, Detective #38 first Robin, Action #252 already there, etc.), Silver Age (Showcase #6/8/17/30/37, Brave & Bold #25/34/54/60, FF #4/13/17-21/25/36/44/47/51/53/65/66, Tales to Astonish #13/35/44/59/62/82, Tales of Suspense #40/48/50/58/59/63, Strange Tales #101/115/126/146, JIM #85/86/112/114, X-Men #5/11/15/17/35/50/54/58/60, Avengers #9/11/25/28/32/55/83, DD #1/2/8/10/168, Sgt. Fury #1), Bronze Age (Marvel Premiere #1/28, Marvel Spotlight #2/12/32, Special Marvel Edition #15 first Shang-Chi, Iron Fist #14 first Sabretooth, Captain Marvel #25/27/29 Starlin, Eternals #2/3/5, Star Wars #1, Transformers #1, G.I. Joe #1/21, Saga of Swamp Thing #21/37, etc.), Copper Age (Wolverine LS #1, Marvel Comics Presents #72, Excalibur #1, X-Factor #1, Generation X #1, Uncanny X-Men #168/171/186/201/210/211/221/248/256/267/268, Man of Steel #1, Det #574/608/647, Animal Man #1/5, Doom Patrol #19/35, Sandman #2/6/21, JL International #1/7, Lobo #1, JLA #1, Kingdom Come #1, Marvels #1, Robin #1 1991), Image/Indie launches (WildC.A.T.s #1, Youngblood #1, Cyberforce #1, ShadowHawk #1, Pitt #1, The Maxx #1, Witchblade #1, The Darkness #1, Gen 13 #1, Stormwatch #1, Astro City #1, The Authority #1, Planetary #1, Hellboy: Seed of Destruction #1, Stray Bullets #1, Strangers in Paradise #1, Madman #1, Cerebus #1, Love and Rockets #1), 2000s+ (Ultimate Spider-Man #1, Ultimates #1, All-New X-Men #1, Hawkeye #1 Fraction, Captain Marvel #14/17 first Kamala, Star Wars #1 2015, House of X #1, Powers of X #1, Civil War II #1), DC Modern (Identity Crisis #2, All Star Superman #1, Final Crisis #7, Batman and Robin #1, Batman Inc #8, JL #1 New 52, Forever Evil #1, Convergence #1, DC Universe Rebirth #1, Doomsday Clock #1, Heroes in Crisis #1, Tom King Batman #1/50, Det #1000, Action #1000), Krakoa-era (X-Men #1 2019, Marauders #1, Excalibur #1 2019, X-Force #1 2019, Fallen Angels #1, New Mutants #1 2019, S.W.O.R.D. #1, Strange Academy #1).
+- **Round 2 (+257 net-new):** Second-tier deeper run keys — ASM deeper (#15 Kraven, #41 Rhino, #51 Robbie Robertson, #100 4-arms, #134 Tarantula, #149 clone, #210 Madame Web, #248 Roger Stern classic, #256 Puma, #265 Silver Sable, #290-292 engagement+wedding, #294 Kraven's Last Hunt, #312 McFarlane, #315/317 Venom, #345 Carnage prelude), Uncanny X-Men deeper (#95 Thunderbird death, #96 Moira, #100, #102 Storm origin, #104, #107 Starjammers, #108 Byrne begins, #109 Vindicator, #117 Xavier origin, #122-128 Arcade+Proteus, #139 Kitty joins, #150 Magneto origin, #155 Brood, #200 Magneto trial, #205 Lady Deathstrike, #212-213 Wolverine vs Sabretooth, #251 Wolverine crucified), X-Men vol 2 #1 (best-selling comic of all time)/#4/#5/#25/#30, Avengers deeper (#29/31/59/66/71/80/89/93/98/100/137/144/162/211/300/400), Hulk deeper, Iron Man deeper, Thor (JIM #97; Thor #126/129/132/134/154/225/339/340), FF deeper (#6/11/57/112/150/232/236/244/265/347/350/371), Daredevil deeper, Captain America (#112/150/155/180/200/217/337/350/444), Doctor Strange (#169 first solo title; vol 2 #1 1974), Bronze Age titles (Conan #1/23, Savage Sword #1, Defenders #1, Werewolf by Night #1, Tomb of Dracula #1, Iron Fist #1, Power Pack #1, Squadron Supreme #1, What If #1), DC Detective deeper (#156/265/439/466/476/500/569/823/871), Batman deeper (#11/16 Alfred, #47, #100, #121 Mr. Freeze, #139, #156 Robin Dies at Dawn, #200, #300, #366, #407, #442 Tim Drake, #475 Renee Montoya, #492 Knightfall, #500, #680, #700), Action/Superman anniversaries, Adventure (#267/346/352), JLA deeper, Brave & Bold (#79/85/200), Wonder Woman/Flash/Green Lantern deeper, Vertigo/Sandman (Sandman Mystery Theatre #1, Death HCOL #1, Books of Magic #1, Lucifer #1), DC Modern events (Crisis #12, Zero Hour #0, DC One Million #1, Final Night #1, Underworld Unleashed #1, Bloodlines #1, Knightfall #1, Blackest Night #1, Brightest Day #1, Flashpoint #5), Spawn deep cuts (#5/8/10/11/100/200/300), Walking Dead/Saga/Invincible/Chew anniversaries, EC/Mad horror keys (Tales from the Crypt #20, Vault of Horror #12, Weird Fantasy #13, Mad #1).
+- **Round 3 (+185 net-new):** Modern hot keys, licensed comics, Charlton heroes, recent Image — Cates Venom (#1-4 + Knull origins, Edge of Venomverse, Symbiote Spider-Man), Cates Thor (#1/5/6/13/19, God of Hammers, Donald Blake revival, Black Winter), modern X-Men (Astonishing #1 Whedon, New X-Men #114 Morrison, Wolverine: Origin #1, Old Man Logan #1, All-New Wolverine #1, X-23 #1, Krakoa-era titles, Death/Return of Wolverine, X of Swords, Hellions #1, Way of X #1), modern Spider-Man (Ultimate Comics #1, Spider-Man #1 2016 Miles Morales main MU, Champions #1, Ghost-Spider #1, Spider-Boy #1, Friendly Neighborhood Spider-Man #1), modern Avengers (Young Avengers #1/12, Mighty Avengers #1, Captain Marvel #1 2014, A-Force #1, Falcon #1, Ironheart #1, World of Wakanda #1, Mockingbird #1, Black Widow #1 2014/2020, Hellcat #1, Squirrel Girl #1, America Chavez #1, Iceman #1), Star Wars Marvel-era (Darth Vader #1/3/5 2015 — Aphra/Triple-Zero/BT-1, Vader #1/3 2017 — Crimson Dawn, Doctor Aphra #1 2016/2020, Bounty Hunters #1, High Republic #1, Star Wars #1 2020), Joker War / Tom King Batman (Snyder Batman #1/5/13/21/92/95/100/125, Curse of White Knight, Batman/Catwoman #1, Damned #1, Three Jokers, Black Label, Strange Adventures, Mister Miracle, Far Sector), modern Justice League (Snyder JL #1, JL Dark v2, Multiversity, Black Adam #1, Wonder Girl #1), Charlton heroes (Captain Atom #78, Blue Beetle #1 1964, Question #1 Vic Sage, Peacemaker #1), Vintage horror/westerns (Jonah Hex via All-Star Western #10, Phantom Stranger #1 1969, Spectre #1 1967, Doom Patrol #86, Strange Adventures #205 Deadman, House of Mystery #175 Cain, House of Secrets #81/90 Abel/Eclipso), Vertigo modern (Preacher #5, Y final #60, 100 Bullets #100, Sandman: Overture #1), recent Image (I Hate Fairyland, Reckless, Gunslinger Spawn, King Spawn, Family Tree, Decorum, Ascender, Once & Future, Stillwater, Newburn, Murder Falcon, Bone Orchard, Public Domain, Kaya, Twig), BOOM/Dark Horse/IDW (Mouse Guard, MMPR, Lumberjanes, Wynd, House of Slaughter, B.P.R.D. #1, Buffy Dark Horse, Sonic Archie+IDW, MLP IDW, IDW TMNT #1+#100), more Marvel 2000s+ (MK Spider-Man #1, World War Hulk #1, Punisher MAX #1, Thor: God of Thunder #1/2 first Gorr, Mighty Thor #1 Jane Foster, Earth X #0/Universe X/Paradise X, 1602 #1, Eternals #1 Gaiman/Gillen), modern DC (Action #1006 Bendis, Superman #1 2018 Bendis, Son of Kal-El #1, Future State titles, I Am Batman, Aquaman/Green Arrow/Green Lantern relaunches, New Frontier, Other History of DCU), Power Girl debut (All Star Comics #58), Marvel's Voices anthology launches.
+
+**Workflow per round:** generate → year-normalize → dedupe → typecheck → tests → API spot-check.
+
+**Year normalization caught a footgun.** Initially used issue-publication years; this caused resolver ambiguity (e.g., new Detective #38 entry with `year: 1940` collided with existing entries using `year: 1937` series-start). Wrote a script to normalize all new entries to the existing series-start convention. 142 entries normalized in Round 1; 45 in Round 2; 29 in Round 3.
+
+**Dedup at every round caught:** R1 dropped 31 (existing dupes); R2 dropped 16; R3 dropped 36 (more title-overlap with existing).
+
+**Final:** 1,130 entries · 2 hard duplicates remaining (both pre-existing — `Marvel Super Heroes Secret Wars` vs `Marvel Super-Heroes Secret Wars` title-spelling variants, normalized at lookup time but raw entries should be merged for hygiene; deferred).
+
+**Files modified:**
+- `src/lib/keyComicsDatabase.ts` (~867 line increase)
+
+#### 5. CLZ Competitive Sales Brief + Admin Tablet Page 🎯
+
+**Background:** May 3-4 show feedback was that CLZ Comics came up most often in customer comparisons. User needed materials for tomorrow's partner meeting with Aponte and a tool he can use on the convention floor.
+
+**Verified competitor data** (May 5, 2026, via clz.com + manual + App Store, no credentials used):
+- CLZ Comics Mobile alone: $1.99/mo / $19.99/yr (catalog only — NO real-time pricing)
+- CovrPrice Premium add-on (REQUIRED for actual comic values inside CLZ): $8.95/mo / $89.95/yr
+- **Apples-to-apples (catalog + pricing): $10.94/mo for CLZ vs $4.99/mo for Collectors Chest Premium → ~half the price.**
+- Free trial: 7 days (CLZ) vs 30 days (CC) + 5 free guest scans + ongoing free tier (10/mo).
+
+**Critical reframe captured:** original talking point #2 said *"Collectors Chest is roughly half the price of CLZ"* — naively wrong because CLZ Mobile alone is $1.99 (cheaper than us). The brief catches this and reframes to "what it costs to ACTUALLY use it" (catalog + pricing). A savvy collector who only hears "we're cheaper" will check $1.99 vs $4.99 and walk. Brief gives Aponte the right delivery so the line lands.
+
+**Authored:** `docs/CLZ_COMPARISON_BRIEF.md` — TL;DR pitch, verified pricing tables, refined 5 talking points with floor-pitch delivery cues + pitfall warnings, full feature-set comparison (where CC wins / where CLZ wins / both have / strategic gap-closers / what NOT to compete on), 6 common objections with responses, pocket cheat-sheet, **data partnership talking points** (active CovrPrice conversations on pricing API + key issue details, GoCollect API discontinuation context, Marvel API deprecation context, resilience pitch, safe-to-say / don't-say guardrails), source footnotes.
+
+**Built:** `/admin/clz-comparison` — admin-only React page rendering the brief as a tablet-friendly "slide" Aponte can pull up during convention conversations:
+- Hero card (yellow framed, 30-second pitch)
+- Pricing apples-to-apples cards (red CLZ vs green CC, totals stacked)
+- 5 color-coded talking-point cards with floor-pitch quotes + red "Avoid" warning on the cost reframe
+- Trophy-icon "Where CC Wins" table (11 rows, check/x icons)
+- Shield-icon "Where CLZ Wins" table (9 rows, honest acknowledgment + gap-closing notes)
+- Both Have grid (9 ties)
+- **Data Partnerships section** — indigo "active conversations" card (CovrPrice API + key data), amber "industry consolidation" card (GoCollect + Marvel APIs), black-bordered resilience pitch, safe-to-say / don't-say cards
+- Expandable common-objections cards
+- Printable pocket cheat-sheet (comic-style border)
+
+Linked into admin nav as "vs CLZ" tab in `src/app/admin/layout.tsx` (Sparkles icon).
+
+**Decision logged:** declined offer of CLZ login credentials. Used only public CLZ marketing pages, manual, and App Store listing — clean from a ToS perspective.
+
+**Files created:**
+- `docs/CLZ_COMPARISON_BRIEF.md`
+- `src/app/admin/clz-comparison/page.tsx`
+
+**Files modified:**
+- `src/app/admin/layout.tsx` (added "vs CLZ" nav entry)
+
+#### 6. Clerk Username Rules Dashboard ⚙️
+
+User updated Clerk dashboard during session: min length 4, max 20, "Allow extended characters" disabled. **Discovery:** Clerk's "Username requirements" panel only exposes length + extended-chars toggle — doesn't let you restrict the *base* allowlist (`A-Z`, `-`, `.` still allowed despite Supabase rejecting them).
+
+**Mitigation already in place** (Session 43): webhook sanitizer rejects invalid chars before Supabase upsert; sync-on-write path pushes CC usernames back to Clerk. The residual gap is now a UX papercut (user picks `John-Doe.123` at Clerk, gets `johndoe123` in CC profile silently). Acceptable for Beta.
+
+**BACKLOG entry updated** to "Partially closed" status with the residual decision (custom signup validator vs accept the webhook-sanitizer floor).
+
+### Tests
+
+Per-feature reasoning for skipping unit tests:
+- **Second Chance RLS fix:** 1-line client-config swap with no logic change. Matches Session 43 trade_matches IDOR precedent. 2 manual TEST_CASES.md cases added (one for the listing-modal render, one for validating the Apr 27 PROD offer state).
+- **Key Hunt key-info chips:** pure JSX wiring + integration of an existing helper (`lookupKeyInfo`). Helper already has full test coverage in `keyComicsDatabase.test.ts`. 4 manual TEST_CASES.md cases added.
+- **CoverLightbox:** pure presentation component, no business logic. 4 manual TEST_CASES.md cases added (open/close paths, iPhone safe-area, no-cover disabled state).
+- **CLZ admin page:** pure presentation, no business logic.
+- **Curated DB expansion:** content addition; existing `keyComicsDatabase.ts` test suite still passes.
+
+**773/773 tests pass across 50 suites** (unchanged from Session 43 baseline).
+
+### Files Modified / Created
+
+**Created:**
+- `src/components/CoverLightbox.tsx` (lightbox component)
+- `src/app/admin/clz-comparison/page.tsx` (admin tablet "slide" page)
+- `docs/CLZ_COMPARISON_BRIEF.md` (partner sales brief)
+
+**Modified:**
+- `src/lib/auctionDb.ts` — Second Chance RLS fix (1 line + comment)
+- `src/components/KeyHuntPriceResult.tsx` — keyInfo prop, KEY ISSUE chips, lightbox wiring
+- `src/app/key-hunt/page.tsx` — keyInfo prop pass
+- `src/app/api/con-mode-lookup/route.ts` — `lookupKeyInfo` integration at 3 result paths
+- `src/lib/keyComicsDatabase.ts` — three-round expansion, +726 entries
+- `src/app/admin/layout.tsx` — "vs CLZ" nav entry
+- `BACKLOG.md`, `EVALUATION.md`, `ARCHITECTURE.md`, `TEST_CASES.md`, `TESTING_RESULTS.md`, `docs/TECHNICAL_FEATURES.md` — close-up-shop documentation pass
+
+### Migrations Applied to Supabase Before Deploy
+
+None — pure code changes this session.
+
+### Quality Checks (pre-deploy May 5)
+
+- TypeScript: 0 errors
+- ESLint: 0 errors / 114 warnings (all pre-existing `no-explicit-any`)
+- Tests: 773/773 passing across 50 suites
+- npm audit: 7 vulnerabilities (3 moderate, 4 high) — all pre-existing, dependency-tree, non-blocking
+- Production build: clean
+- Circular deps: none
+- Dead code (knip): pre-existing unused exports (offlineCache history aliases, email type re-exports) — not session-introduced
+
+### Issues Encountered
+
+- **Clerk dashboard UI limitation** — discovered mid-session that Clerk's "Username requirements" panel only exposes length + extended-chars toggle, not full allowlist regex. Original BACKLOG entry assumed dashboard could fully match Supabase. Updated entry, captured residual decision.
+- **Year-convention footgun in curated DB** — first Round 1 batch used issue-publication years which caused resolver ambiguity with existing series-start-year entries. Caught via post-batch audit; wrote a normalization script. Added a comment to the `KEY_COMICS` array header so future contributors don't repeat the mistake.
+- **Pre-existing duplicate title spellings** — `Marvel Super Heroes Secret Wars` vs `Marvel Super-Heroes Secret Wars` (with/without dash) both exist in original DB. Title normalization at lookup time merges them, but raw entries should eventually be unified for hygiene. Captured in BACKLOG cleanup follow-up note.
+
+### BACKLOG follow-ups
+- 3 entries removed (completed): Key Hunt missing key info, Second Chance button bug, Tap-to-Enlarge cover lightbox.
+- 3 entries updated to reflect partial completion: Align Clerk Username Rules (Low priority now, dashboard portion done), Expand Curated Key Info DB (404→1,130 done; scan-data-driven phase pending), CLZ Talking Points (escalated Medium for partner meeting, brief drafted, admin page built).
+- No new BACKLOG entries added this session beyond what was surfaced earlier in the day (CLZ talking points entry was added at session start during weekend feedback intake).
+
+### Memory updates this session
+- None this session — patterns captured were already in memory from Sessions 38-43 (RLS-bypass scoping, dev-server mobile testing constraints).
+
+### Where We Left Off
+Session 44 changes pending deploy (May 5, 2026 evening). User initiated `/collectors-chest-close-up-shop` workflow to commit. Will deploy to Netlify next via standard deploy command.
+
+### Changes Since Last Deploy (May 1, 2026)
+- Second Chance "Offer to Runner-up" RLS-anon-read fix
+- Key Hunt key-issue chips (UI + curated DB integration at 3 paths)
+- CoverLightbox component for cover verification
+- Curated key-issue DB expansion (404 → 1,130 entries)
+- Admin `/admin/clz-comparison` tablet page
+- TECHNICAL_FEATURES.md Section 10 (Key Hunt) full rewrite
+- ARCHITECTURE.md updated for Session 44
+
+---
+
 ## Apr 28, 2026 (Tuesday) - Session 43: Yesterday's Round-3 Follow-ups + Trade IDOR + Comp Premium + My Collection Filter Refactor (Deployed May 1, 2026)
 
 > **Note on dates:** Code work in this entry began Apr 28, 2026. Deploy to production happened May 1, 2026. Several deep-dive review notes from session 42d's Round 3 carry forward into this session.

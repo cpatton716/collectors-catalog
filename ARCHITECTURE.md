@@ -2,7 +2,9 @@
 
 > **Comprehensive map of pages, features, and service dependencies**
 
-*Last Updated: Apr 28, 2026 (deployed May 1) — Sessions 38 + 39 + 40 + 42d + 43 (Payment deadline enforcement, Second Chance Offers, Payment-Miss Strike System, Auction Audit Log, Zod validation across 82 routes, Email Notification Preferences, hCaptcha guest-scan protection, Cover crop validator, Clerk ↔ Supabase username sync-on-write, Metron + Hottest Books removed, seller onboarding help page, 10MB upload cap; Session 40: manual FMV refresh endpoint for owned comics, feedback rating-request moved from payment to ship, `/api/checkout` image URL guard against Supabase signed URLs + base64 data URIs, partial pricing-gate on `/sales` page (Cost + Profit columns + summary cards behind `fullStats`), outbid email now surfaces recipient's max bid, Active Bids tab column-name fix, site-wide em dash removal, mobile auction/buy-now modal image caps, Ask the Professor FAQ scroll-lock; Sessions 42d + 43: notifications + trade_matches IDOR closures with cross-cutting service-role write-scoping pattern)*
+*Last Updated: May 5, 2026 — Session 44 (Second Chance "Offer to Runner-up" RLS-anon-read bug closed in `getAuctionSecondChanceState`; Key Hunt key-issue chips wired UI-side + curated DB lookup integrated into `/api/con-mode-lookup` at all 3 result paths; new reusable `CoverLightbox` component for full-screen cover verification on Key Hunt; admin-only `/admin/clz-comparison` tablet "slide" page for convention-floor competitive talking points; `keyComicsDatabase.ts` curated DB expanded 404 → 1,130 entries (+726 net-new across 3 rounds, years normalized to series-start convention); Clerk dashboard username rules tightened (length 4-20, extended chars disabled — residual gap mitigated by webhook sanitizer); `docs/CLZ_COMPARISON_BRIEF.md` partner sales brief with verified pricing + feature comparison + data-partnership talking points authored. Session 43 + earlier context preserved below.)*
+
+*Earlier sessions: Apr 28, 2026 (deployed May 1) — Sessions 38 + 39 + 40 + 42d + 43 (Payment deadline enforcement, Second Chance Offers, Payment-Miss Strike System, Auction Audit Log, Zod validation across 82 routes, Email Notification Preferences, hCaptcha guest-scan protection, Cover crop validator, Clerk ↔ Supabase username sync-on-write, Metron + Hottest Books removed, seller onboarding help page, 10MB upload cap; Session 40: manual FMV refresh endpoint for owned comics, feedback rating-request moved from payment to ship, `/api/checkout` image URL guard against Supabase signed URLs + base64 data URIs, partial pricing-gate on `/sales` page (Cost + Profit columns + summary cards behind `fullStats`), outbid email now surfaces recipient's max bid, Active Bids tab column-name fix, site-wide em dash removal, mobile auction/buy-now modal image caps, Ask the Professor FAQ scroll-lock; Sessions 42d + 43: notifications + trade_matches IDOR closures with cross-cutting service-role write-scoping pattern)*
 
 ---
 
@@ -104,6 +106,8 @@
 | Quick-Add Buttons | 💾 | Want List, Collection, Passed On |
 | My Hunt List | 🗄️ 🔐 | Wishlist of comics user wants to find |
 | Add to Hunt List | 🗄️ 🔐 | From scan results or cover scan |
+| **Key Issue Chips (Session 44)** | 🗄️ 🤖 | Yellow KEY ISSUE tags rendered between grade and price; pulled from curated `keyComicsDatabase.ts` (1,130 entries) first, AI fallback for non-curated. Wins over stale `comic_metadata.key_info: []` rows. |
+| **Cover Lightbox (Session 44)** | 💾 | Tap thumbnail → full-screen `CoverLightbox` for variant verification; iPhone safe-area aware; Escape/backdrop tap to close. Reusable component. |
 
 ---
 
@@ -387,6 +391,20 @@ Admin access is controlled via the `is_admin` field in the `profiles` table.
 |---------|----------|-------|
 | Cover Image Queue | 🗄️ | Pending cover image submissions |
 | Approve/Reject | 🗄️ | Moderate community-submitted cover images |
+
+#### CLZ Comparison Slide (`/admin/clz-comparison`) — Session 44
+
+| Feature | Services | Notes |
+|---------|----------|-------|
+| Tablet "slide" page | — | Convention-floor competitive talking points designed for partner to pull up on tablet during customer conversations |
+| 30-second pitch hero | — | Pop-art framed pitch quote |
+| Pricing apples-to-apples cards | — | Side-by-side CLZ ($10.94 catalog+pricing) vs CC ($4.99 all-in) |
+| 5 talking points | — | Color-coded cards with floor-pitch delivery cues + pitfall warnings (specifically the cost-reframe trap) |
+| Where CC Wins / Where CLZ Wins / Both Have | — | Verdict tables |
+| Data partnerships section | — | Active CovrPrice conversations, GoCollect API discontinued context, resilience pitch quote, safe-to-say / don't-say guardrails |
+| Common objections | — | Expandable Q&A cards |
+| Pocket cheat sheet | — | Printable comic-style card |
+| Source: `docs/CLZ_COMPARISON_BRIEF.md` | — | Brief is the markdown source of truth; admin page is the rendered version |
 
 #### Flagged Users (Session 39)
 

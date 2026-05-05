@@ -126,9 +126,101 @@ Dedicated scan pipeline for slabbed/graded comics that bypasses standard cover r
 ---
 
 ## 10. Key Hunt (Convention Mode)
-Mobile-first quick-lookup: cover scan or manual entry → grade selector → `/api/con-mode-lookup` → eBay pricing with grade extrapolation table. Offline-capable via localStorage cache (30 items). History tracking with re-lookup. Wishlist with price drop notifications (`key_hunt_lists` table).
 
-**Key files:** `src/app/key-hunt/page.tsx`, `src/app/api/con-mode-lookup/route.ts`, `src/app/api/key-hunt/route.ts`, `src/lib/offlineCache.ts`
+Mobile-first quick-lookup designed for the convention floor: scan a cover, get title + grade-aware price + key-issue context in 2-3 seconds, with graceful degradation when WiFi is unreliable. Updated extensively in Session 44 (May 5, 2026).
+
+### End-to-end flow
+
+**Step 0 — Entry point.** User taps Key Hunt in the mobile nav (or opens `/key-hunt` directly), then selects "Scan Cover" (camera) or "Manual Entry" (autocomplete + form). Camera path described below; manual path skips Step 1 and goes straight to Step 2 with user-provided `{title, issueNumber}`.
+
+**Step 1 — Cover image → AI vision (`POST /api/analyze`).**
+- `src/app/key-hunt/page.tsx:153` POSTs `{image: base64, mediaType}` to `/api/analyze`
+- `src/app/api/analyze/route.ts` enforces auth + scan-limit (guest 5 / free 10/mo / premium ∞)
+- Image goes to **Anthropic Claude vision** (Sonnet 4.5 primary; Gemini fallback on 5xx)
+- Claude returns `{title, issueNumber, publisher, releaseYear, isSlabbed, grade?}`
+- **`lookupKeyInfo()` consulted** with the recognized title+issue+year — pulls key facts from the curated `src/lib/keyComicsDatabase.ts` (945 entries as of Session 44) and attaches them to the response
+- `recordScanAnalytics()` logs the scan to the `scan_analytics` table (cost ~$0.015, latency, AI calls, cache hit/miss, tier)
+- Returns `ComicDetails` to the client
+
+**Step 2 — Grade decision.**
+- Slabbed: Claude detected a CGC/CBCS label and read the grade — client skips the picker and calls Step 3 with the detected grade
+- Raw: client renders the 6-grade picker (9.8 / 9.4 / 8.0 / 6.0 / 4.0 / 2.0). User taps; client proceeds to Step 3.
+
+**Step 3 — Price + key info lookup (`POST /api/con-mode-lookup`).**
+- `src/app/api/con-mode-lookup/route.ts` runs three resolvers in order:
+
+  **3a. Supabase cache hit** (`getComicMetadata` on `comic_metadata` table, ~50ms). If a row exists with eBay-sourced price data:
+  - Pull cached `priceData`, `gradeEstimates`, `coverImageUrl`
+  - **Curated DB beats stale cache (Session 44):** call `lookupKeyInfo()` against `keyComicsDatabase.ts`. If curated returns a hit, that wins over `dbResult.keyInfo`. Closes the long-tail bug where an earlier silent AI failure baked `key_info: []` into a row and returned empty key info forever.
+  - Increment `comic_lookup_count` (powers future "top scans" gap analytics)
+  - Return immediately — **no eBay call, no AI call, ~$0.00 cost**
+
+  **3b. Cache miss → eBay Browse API + targeted AI.**
+  - `searchActiveListings` queries eBay for current grade-aware listings
+  - `convertBrowseToPriceData` produces `gradeEstimates`, `recentSales`, etc.
+  - `runCoverPipeline` resolves the canonical cover URL with aspect-ratio guard (`coverCropValidator.ts` rejects bad crops — grade label strips, full slab regions)
+  - **Curated DB beats AI (Session 44):** `lookupKeyInfo()` is called *before* `fetchKeyInfoFromAI()`. If the 945-entry curated DB has the answer, the AI call is skipped entirely. Saves cost on every scan of a popular key.
+  - If curated DB doesn't have it: `fetchKeyInfoFromAI` runs (small ~$0.005 call). Failures are swallowed (returns `[]`).
+  - `saveComicMetadata` persists the full result back to Supabase for next time
+  - Return to client
+
+  **3c. No eBay data → graceful fallback.** Returns `priceData: null` + `totalListings` + `ebaySearchQuery` so the client can render "X active listings on eBay" link instead of a price. **Curated key info still surfaces** (Session 44 — `lookupKeyInfo` consulted on this path too).
+
+**Step 4 — Client receives result, caches, renders.**
+- `page.tsx:283` builds `LookupResult { title, issue, grade, price, keyInfo, coverImageUrl, source, ... }`
+- **`cacheLookup()`** writes to `localStorage` keyed by `${title}-${years}|${issueNumber}|${grade}`. This is what makes re-scanning the same book at the con instant, even on bad WiFi.
+- **`addToKeyHuntHistory()`** logs the scan to localStorage history (powers the "Recent Scans" view)
+- `setResult(lookupResult)` + `setFlow("result")` triggers the result modal
+
+**Step 5 — Result modal renders (`KeyHuntPriceResult.tsx`).**
+- Cover thumbnail (top-left of gradient header) — **tappable → opens full-screen `CoverLightbox` for verification** (Session 44, addresses convention-floor variant verification need)
+- Source badge: "eBay Data" / "Cached" / etc.
+- Title + issue
+- Grade badge
+- **Yellow "KEY ISSUE" chips (Session 44)** — one chip per curated key fact (e.g. "Death of Elektra"). Renders between grade and price so collectors see context next to value. Hidden cleanly when `keyInfo` is empty.
+- Raw / Slabbed price toggle (when both available)
+- Big bold average price
+- Recent sale (color-coded — red 20%+ above avg = market cooling, green 20%+ below = deal)
+- "Recent Sales on eBay" deep link
+- Add to Hunt List (Premium-gated, Capacitor-friendly)
+- Add to Collection / New Lookup actions
+
+### Convention-floor resilience matrix
+
+| Scenario | Behavior |
+|----------|----------|
+| Online, fresh scan | Full Step 1-5 pipeline. Cache populated for next time. |
+| Same book scanned again | localStorage cache hit, **instant return**, no network. "Cached" badge on result. |
+| WiFi drops mid-fetch | `/api/con-mode-lookup` failure → automatic fallback to localStorage cache if available |
+| Offline Mode toggled | Skips network entirely. localStorage only. Errors gracefully if not cached. |
+| eBay returned but <3 listings at exact grade | Below-threshold display: "X active listings found" + eBay search link, key info still rendered |
+| Anthropic API 5xx | `/api/analyze` falls back to Gemini for cover recognition automatically |
+| Curated DB has the issue | Zero AI calls for key info on the entire flow. Faster + cheaper. |
+
+### Curated key issue database
+
+**`src/lib/keyComicsDatabase.ts`** — 945 hand-vetted canonical key issues (404 baseline + 541 added Session 44). Examples: Action #1 (first Superman), Detective #27 (first Batman), Detective #38 (first Robin), AF #15 (first Spider-Man), FF #1 (first Fantastic Four), FF #5 (first Doctor Doom), Hulk #181 (first Wolverine), GS X-Men #1, DD #181 (death of Elektra), ASM #300 (first Venom), ASM #129 (first Punisher), Batman Adventures #12 (first Harley Quinn), Walking Dead #1, NYX #3 (first X-23), Ultimate Fallout #4 (first Miles Morales), Captain America Comics #1, Marvel Comics #1, Whiz #2 (first Captain Marvel/Shazam), All-American #16 (first Alan Scott Green Lantern), Tales of Suspense #59 (first solo Cap modern), House of X #1 (Krakoa era), Mad #1, etc.
+
+**Year convention: series-start year, NOT issue-publication year.** Detective Comics #38 (published 1940) uses `year: 1937` because Detective Comics started in 1937. ASM #700 (published 2012) uses `year: 1963` because the series started in 1963. The `resolveEntry()` function in `keyComicsDatabase.ts` rejects matches where `releaseYear < entry.year` (i.e., the comic claims to be from before the series started — wrong volume).
+
+**Multi-volume disambiguation.** When a series has been relaunched (X-Men 1963 vs 1991 vs 2019, Iron Man volumes, Justice League #1 1987 vs 2011, etc.), every relaunch is a separate entry with its own `year`. The resolver picks by exact-year match, then by "most recent series start ≤ release year."
+
+**Expansion path.** Curated DB is consulted by both `/api/analyze` (regular collection scans) and `/api/con-mode-lookup` (Key Hunt). Future entries will come from scan-data-driven gap mining (`npm run keys:gaps` tooling, planned post-launch — see BACKLOG "Expand Curated Key Info DB"). The DB also feeds the planned ETL for "Pre-populate Top Comics Cache" so seeded `comic_metadata` rows get correct `key_info` from day one.
+
+### Wishlist (Hunt List)
+
+Premium feature. `key_hunt_lists` table tracks comics the user is hunting. Add-to-list button on result modal. Future enhancement: price-drop notifications when a hunted issue's eBay listing data hits a target.
+
+### Key files
+
+- `src/app/key-hunt/page.tsx` — entry, scan handler, lookup orchestration, localStorage cache + history
+- `src/app/api/analyze/route.ts` — AI cover recognition, calls `lookupKeyInfo()`, scan-limit enforcement, scan analytics
+- `src/app/api/con-mode-lookup/route.ts` — three-tier price + key-info resolver (cache → eBay+curated/AI → fallback)
+- `src/lib/keyComicsDatabase.ts` — 945-entry curated key-issue DB + `lookupKeyInfo()` + `resolveEntry()`
+- `src/components/KeyHuntPriceResult.tsx` — result modal, KEY ISSUE chips, lightbox trigger
+- `src/components/CoverLightbox.tsx` — full-screen cover viewer (Session 44)
+- `src/lib/offlineCache.ts` / `useOffline.ts` — localStorage cache and history helpers
+- `src/lib/coverValidation.ts` + `coverCropValidator.ts` — aspect-ratio guard for AI-returned crops
 
 ---
 

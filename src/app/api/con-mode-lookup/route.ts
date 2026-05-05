@@ -4,6 +4,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 
 import { getComicMetadata, incrementComicLookupCount, saveComicMetadata } from "@/lib/db";
+import { lookupKeyInfo } from "@/lib/keyComicsDatabase";
 import { MODEL_PRIMARY } from "@/lib/models";
 import { recordScanAnalytics, estimateScanCostCents } from "@/lib/analyticsServer";
 import { isBrowseApiConfigured, searchActiveListings, convertBrowseToPriceData } from "@/lib/ebayBrowse";
@@ -91,6 +92,19 @@ export async function POST(request: NextRequest) {
           (g) => g.grade === selectedGrade
         );
 
+        // Curated keyComicsDatabase wins over the cached row — handles stale
+        // cache rows where an earlier AI key-info call silently failed and
+        // baked an empty array into comic_metadata.key_info.
+        const curatedKeyInfo = lookupKeyInfo(
+          dbResult.title,
+          dbResult.issueNumber,
+          dbResult.releaseYear ? parseInt(String(dbResult.releaseYear)) : null
+        );
+        const resolvedKeyInfo =
+          curatedKeyInfo && curatedKeyInfo.length > 0
+            ? curatedKeyInfo
+            : dbResult.keyInfo || [];
+
         const result: ConModeLookupResult = {
           title: dbResult.title,
           issueNumber: dbResult.issueNumber,
@@ -100,7 +114,7 @@ export async function POST(request: NextRequest) {
           averagePrice: gradeEstimate?.rawValue || dbResult.priceData.estimatedValue || null,
           recentSale: dbResult.priceData.recentSales?.[0] || null,
           gradeEstimates: dbResult.priceData.gradeEstimates || [],
-          keyInfo: dbResult.keyInfo || [],
+          keyInfo: resolvedKeyInfo,
           coverImageUrl: dbResult.coverImageUrl,
           source: "database",
           disclaimer: dbResult.priceData.disclaimer || "Based on current eBay listings",
@@ -179,13 +193,20 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // We need key info from AI since eBay doesn't provide that
+      // Prefer curated keyComicsDatabase over an AI call — instant, free,
+      // and hand-vetted for the 403+ tracked keys. AI is the fallback for
+      // anything not in the curated set.
       let keyInfo: string[] = [];
-      try {
-        keyInfo = await fetchKeyInfoFromAI(normalizedTitle, normalizedIssue);
-        aiCallsMade++;
-      } catch {
-        // Ignore key info errors
+      const curatedKeyInfo = lookupKeyInfo(normalizedTitle, normalizedIssue);
+      if (curatedKeyInfo && curatedKeyInfo.length > 0) {
+        keyInfo = curatedKeyInfo;
+      } else {
+        try {
+          keyInfo = await fetchKeyInfoFromAI(normalizedTitle, normalizedIssue);
+          aiCallsMade++;
+        } catch {
+          // Ignore key info errors
+        }
       }
 
       const result: ConModeLookupResult = {
@@ -250,7 +271,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(result);
     }
 
-    // 4. No eBay data available — return null priceData with listing metadata
+    // 4. No eBay data available — return null priceData with listing metadata.
+    // Still surface curated key info if we have it (collectors care about
+    // the "why" even when there's no current price signal).
+    const noDataKeyInfo = lookupKeyInfo(normalizedTitle, normalizedIssue) || [];
     const result: ConModeLookupResult = {
       title: normalizedTitle,
       issueNumber: normalizedIssue,
@@ -260,7 +284,7 @@ export async function POST(request: NextRequest) {
       averagePrice: null,
       recentSale: null,
       gradeEstimates: [],
-      keyInfo: [],
+      keyInfo: noDataKeyInfo,
       coverImageUrl: null,
       source: "ebay",
       disclaimer: "No pricing data available at this time.",

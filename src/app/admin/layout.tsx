@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Users, BarChart3, KeyRound, MessageSquare, ArrowLeft, Barcode, ImageIcon } from "lucide-react";
+import { Users, BarChart3, KeyRound, MessageSquare, ArrowLeft, Barcode, ImageIcon, Sparkles } from "lucide-react";
 import AdminAlertBadge from "@/components/AdminAlertBadge";
 
 const adminLinks = [
@@ -12,6 +12,7 @@ const adminLinks = [
   { href: "/admin/barcode-reviews", label: "Barcodes", icon: Barcode },
   { href: "/admin/cover-queue", label: "Covers", icon: ImageIcon },
   { href: "/admin/usage", label: "Usage", icon: BarChart3 },
+  { href: "/admin/clz-comparison", label: "vs CLZ", icon: Sparkles },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

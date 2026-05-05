@@ -908,6 +908,7 @@ export default function KeyHuntPage() {
             source={result.source}
             totalListings={result.totalListings}
             ebaySearchQuery={result.ebaySearchQuery}
+            keyInfo={result.keyInfo}
           />
         )}
 

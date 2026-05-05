@@ -2,7 +2,7 @@
 
 > Launch readiness scorecard. See `BACKLOG.md` for open work items and `DEV_LOG.md` for session history.
 
-*Last Updated: April 28, 2026*
+*Last Updated: May 5, 2026*
 
 ---
 
@@ -10,7 +10,7 @@
 
 Collectors Chest is a comic book collection tracking app with AI-powered cover recognition and a new auction marketplace feature. The app is currently in **Private Beta** with public registration disabled.
 
-**Overall Score: 9.5/10** (up from 9.4/10 — Session 43 (Apr 28, 2026) closed three pre-launch items in one bundle: Payment-deadline anchor fix in `processEndedAuctions` (now anchors to `auction.end_time` instead of cron run time, eliminating drift on slow cron runs), a NEW High-risk IDOR uncovered during a broader RLS-bypass audit (`/api/trades/matches/[matchId]` PATCH route — `dismissMatch` / `markMatchViewed` were updating by row id only with no `user_a_id`/`user_b_id` predicate), and rate-limit on `GET /api/notifications/:id` (Capacitor retry-storm guard). Also: My Collection filter UX refactor (Phase 1 + 2) — desktop/mobile both — including bug fixes for cloud-synced list filtering. Comp Premium granted to all 3 co-founder accounts via new `subscription_source` column. Deployed May 1, 2026.)
+**Overall Score: 9.6/10** (up from 9.5/10 — Session 44 (May 5, 2026) closed a production-affecting Second Chance "Offer to Runner-up" RLS-anon-read bug in `getAuctionSecondChanceState` (anon `supabase` client → `supabaseAdmin`), fixed Key Hunt missing key-issue chips on scanned books across both UI wiring and a new three-tier data resolver (curated DB → cache → eBay+AI), expanded the curated `keyComicsDatabase.ts` from 404 → 1,130 entries (+726 net-new canonical keys, years normalized to series-start), added a reusable `CoverLightbox` full-screen viewer wired into Key Hunt, and shipped an admin-only tablet "slide" page at `/admin/clz-comparison` for convention-floor competitive talking points. Authored partner-shareable `docs/CLZ_COMPARISON_BRIEF.md` (verified CLZ pricing, feature comparison, data-partnership talking points). Clerk dashboard username rules tightened. 773/773 tests passing throughout.)
 
 **Current Status: PRIVATE BETA**
 - Site is live at collectors-chest.com
@@ -51,7 +51,7 @@ _(No open Medium items. Hottest Books was removed from scope Apr 22, 2026 — se
 
 ## 1. Code Quality & Technical Debt
 
-**Score: 9.3/10** (up from 9.2/10 — Session 43 added `isPrimaryList` helper + My Collection filter card refactor (Phase 1 + 2) splitting desktop/mobile presentation cleanly; bug fixes for cloud-synced list filtering. 773/773 tests passing across 50 suites.)
+**Score: 9.4/10** (up from 9.3/10 — Session 44 surfaced a recurring RLS-anon-read pattern via the Second Chance bug fix in `auctionDb.ts` (`getAuctionSecondChanceState` switched from anon `supabase` to `supabaseAdmin`), reinforcing the "Clerk-authed reads of RLS-protected tables must use admin client" pattern across the data layer. Also added: reusable `CoverLightbox.tsx` component, three-tier Key Hunt resolver (curated DB → cache → eBay+AI) consolidating logic in `con-mode-lookup/route.ts`, +726 curated key comic entries with normalized series-start year convention. 773/773 tests passing across 50 suites.)
 
 ### Issues Status
 
@@ -75,7 +75,7 @@ _(No open Medium items. Hottest Books was removed from scope Apr 22, 2026 — se
 
 ## 2. Security Posture
 
-**Score: 9.6/10** (up from 9.5/10 — Session 43 closed a NEW High-risk IDOR in `/api/trades/matches/[matchId]` PATCH route, found during a broader RLS-bypass audit. `dismissMatch` / `markMatchViewed` were updating by row id only with no `user_a_id`/`user_b_id` predicate.)
+**Score: 9.6/10** (Session 44 closed an RLS-anon-read bug in `getAuctionSecondChanceState` (anon `supabase` client couldn't read `second_chance_offers` because RLS policies key off Supabase JWT claims that Clerk-authed sessions don't provide → switched to `supabaseAdmin`). Production-affecting marketplace correctness bug, security-adjacent. Reinforces the codebase pattern: Clerk-authed server reads of RLS-protected tables must use the admin client. No new vulns introduced.)
 
 | Item | Status | Notes |
 |------|--------|-------|
@@ -93,6 +93,7 @@ _(No open Medium items. Hottest Books was removed from scope Apr 22, 2026 — se
 | Payment-miss strike system | ✅ Complete | First-offense warning email, 2-strikes-in-90-days triggers bid restriction + reputation hit (Apr 23, 2026) — partial fraud mitigation |
 | Trade matches IDOR | ✅ Closed Apr 28, 2026 | `/api/trades/matches/[matchId]` PATCH was updating by row id only; now scoped by `user_a_id`/`user_b_id` predicate (Session 43 RLS-bypass audit) |
 | Notifications GET rate limit | ✅ Added Apr 28, 2026 | `GET /api/notifications/:id` now rate-limited — Capacitor retry-storm guard (Session 43) |
+| Second Chance Offer RLS read | ✅ Closed May 5, 2026 | `getAuctionSecondChanceState` was using anon Supabase client to read `second_chance_offers` (RLS keys off Supabase JWT — Clerk-authed sessions don't provide it). Switched to `supabaseAdmin` (Session 44). Reinforces "Clerk-authed server reads of RLS tables = admin client" pattern. |
 | CSRF protection | ⚠️ Implicit | Next.js provides some protection |
 | Middleware protection | ⚠️ Minimal | Few routes marked as protected |
 | Bid fraud detection | ⚠️ Partial | Strike system covers payment-miss pattern; pattern-based bid anomaly detection is post-launch — see BACKLOG |
@@ -108,7 +109,7 @@ Remaining items tracked in BACKLOG.md:
 
 ## 3. Auction Feature Evaluation
 
-**Score: 9.6/10** (up from 9.5/10)
+**Score: 9.7/10** (up from 9.6/10 — Session 44 closed the production-affecting Second Chance "Offer to Runner-up" button RLS-anon-read bug; the seller CTA now actually renders for sellers whose winners didn't pay, completing the documented Session 42 wiring.)
 
 ### What's Working Well
 - eBay-style proxy bidding system
@@ -121,7 +122,7 @@ Remaining items tracked in BACKLOG.md:
 - **Buy Now fixed-price listings** ✅ PROD-validated end-to-end Apr 23, 2026 (Session 40a hotfix resolved Stripe 2048-char image URL cap; full flow — checkout, payment, ship, ownership transfer, emails — verified in 40b)
 - **Stripe Connect fee split** ✅ Validated end-to-end (Apr 21, 2026) — `transfer.created` webhook firing correctly
 - **Payment deadline enforcement** ✅ Complete — checkout-time deadline guard, T-24h reminder cron, expire-unpaid-auctions cron, live countdown UI (Sessions 38 + 39)
-- **Second Chance Offer** ✅ Complete — seller-initiated 48h offer to runner-up when winner doesn't pay (Session 39); seller CTA now wired into `AuctionDetailModal` + Phase 3 cancellation email mutex preventing the contradictory "cancelled, relist ready" email from firing alongside (Session 42); confirm-dialog "Send Offer" button moved blue → green for clarity (Session 42b)
+- **Second Chance Offer** ✅ Complete — seller-initiated 48h offer to runner-up when winner doesn't pay (Session 39); seller CTA now wired into `AuctionDetailModal` + Phase 3 cancellation email mutex preventing the contradictory "cancelled, relist ready" email from firing alongside (Session 42); confirm-dialog "Send Offer" button moved blue → green for clarity (Session 42b); RLS-anon-read bug fixed May 5, 2026 — `getAuctionSecondChanceState` now uses `supabaseAdmin`, restoring the "Offer to Runner-up" button render in production (Session 44)
 - **Notifications Inbox v1** ✅ Complete — full `/notifications` page (Session 42d), infinite scroll + per-row dismiss + Mark All Read + offline cache + 30/90-day auto-prune cron + Capacitor-ready deep-link contract. Pre-existing `markNotificationRead` IDOR patched in same commit. Dedicated `shipped` notification type + Truck icon.
 - **Marketplace Fee Floor** ✅ Complete — $0.75 minimum platform fee on every sale closes the sub-$6 platform-loss zone (free-tier break-even was $5.88, premium was $14.29). Above $9.38 (8%) / $15.00 (5%) the floor is invisible. Documented in pricing FAQ + Navigation Ask the Professor + Terms 4.5 + TECHNICAL_FEATURES.md Feature #11.
 - **Payment-Miss Strike System** ✅ Complete — warn on 1st offense, bid restriction on 2 strikes within 90 days (Session 39)
@@ -145,7 +146,7 @@ See BACKLOG.md for open auction/marketplace work.
 
 ## 4. User Experience & Onboarding
 
-**Score: 8.2/10** (up from 8/10 — Session 43 My Collection filter UX refactor materially improves mobile: ~600px filter card pushing content below fold replaced with ~80px collapsed bar + on-demand bottom-sheet drawer + active-filter chips with one-tap remove)
+**Score: 8.4/10** (up from 8.2/10 — Session 44 Key Hunt now surfaces canonical KEY ISSUE chips on scanned books (yellow chips rendered via `KeyHuntPriceResult.tsx` driven by curated `keyComicsDatabase.ts`, now 1,130 entries). Cover lightbox component (`CoverLightbox.tsx`) wired into Key Hunt result lets users tap-to-zoom on grainy convention-floor scans. Both materially improve the convention-floor decision-making UX.)
 
 ### Guest Experience Flow
 1. Land on home page → see features & "How It Works"
@@ -250,7 +251,7 @@ See BACKLOG.md for open auction/marketplace work.
 
 ## 7. Mobile Experience
 
-**Score: 8.9/10** (up from 8.7/10 — Session 43 introduced new reusable mobile pattern: bottom-sheet drawer + active-filter chips with one-tap remove, applied to My Collection. Sets up Phase 3 of mobile UX work for other pages (Sales, Auctions, Key Hunt).)
+**Score: 9.0/10** (up from 8.9/10 — Session 44 added reusable `CoverLightbox.tsx` full-screen cover viewer wired into Key Hunt; primes a pattern for tap-to-zoom across other cover-display surfaces (My Collection, Auction Detail, Sales). Convention-floor users on phones can now read tiny cover details without leaving Key Hunt.)
 
 | Feature | Status |
 |---------|--------|
@@ -261,6 +262,7 @@ See BACKLOG.md for open auction/marketplace work.
 | Camera scanning | ✅ |
 | Touch interactions | ✅ |
 | Mobile auction/listing modal layout | ✅ Fixed Apr 23, 2026 (Session 40a) |
+| Cover lightbox (tap-to-zoom) | ✅ Added May 5, 2026 (Session 44) — reusable `CoverLightbox`, wired into Key Hunt |
 | Haptic feedback | ❌ |
 | Batch scanning | ❌ |
 
@@ -268,7 +270,7 @@ See BACKLOG.md for open auction/marketplace work.
 
 ## 8. Feature Completeness
 
-**Score: 9.5/10** (up from 9.4/10 — Notifications Inbox v1 added; $0.75 fee floor closes the small-sale loss zone)
+**Score: 9.6/10** (up from 9.5/10 — Session 44: Key Hunt now surfaces canonical KEY ISSUE chips backed by an expanded curated database (404 → 1,130 entries, +726 net-new keys, years normalized to series-start), three-tier resolver (curated → cache → eBay+AI) ensures stale cache rows can no longer hide key-issue context. Reusable cover lightbox added. Admin-only `/clz-comparison` tablet "slide" page shipped for convention-floor competitive talking points.)
 
 | Feature | Status |
 |---------|--------|
@@ -276,7 +278,7 @@ See BACKLOG.md for open auction/marketplace work.
 | AI Cover Recognition | ✅ Complete |
 | Listed Value (eBay Browse API) | ✅ Complete |
 | Grade-Aware Pricing | ✅ Complete |
-| Key Hunt (offline) | ✅ Complete |
+| Key Hunt (offline) | ✅ Complete — KEY ISSUE chips on scanned books + 3-tier resolver + 1,130-entry curated DB (May 5, 2026, Session 44) |
 | CSV Import/Export | ✅ Complete |
 | Cover Image Search (CSV Import) | ✅ Complete |
 | Collection Statistics | ✅ Complete |
@@ -365,6 +367,7 @@ See BACKLOG.md for open auction/marketplace work.
 | Limited deploys | 🟡 Medium | Strategic batching |
 | Auction fraud potential | 🟢 Low | **Mitigated Apr 23, 2026**: audit log (20 event types), payment-miss strike system (warn + flag), Zod input validation on 82 routes, hCaptcha on guest scans. Pattern-based bid anomaly detection remains post-launch — see BACKLOG |
 | Input validation gaps | 🟢 Low | **Mitigated Apr 23, 2026**: Zod validation sweep closed; remaining risk is basic CSRF + middleware expansion — see BACKLOG |
+| RLS-anon-read pattern (Clerk-authed reads vs Supabase RLS) | 🟢 Low | Surfaced May 5, 2026 via Second Chance bug — Clerk-authed server reads of RLS-protected tables must use `supabaseAdmin`. Codebase pattern now reinforced; future occurrences should be caught in review. Broader audit of similar paths tracked in BACKLOG. |
 
 ---
 
@@ -384,3 +387,5 @@ See BACKLOG.md for open auction/marketplace work.
 See `BACKLOG.md` for the full prioritized list of open items.
 
 _Deployed May 1, 2026 — Session 43 bundle (payment-deadline anchor, trade_matches IDOR fix, notifications GET rate-limit, My Collection filter UX refactor, comp Premium for co-founders)._
+
+_Session 44 changes (May 5, 2026, not yet deployed): Second Chance "Offer to Runner-up" RLS-anon-read fix, Key Hunt KEY ISSUE chips + 3-tier resolver, curated DB expansion 404 → 1,130, `CoverLightbox` component, admin-only `/clz-comparison` page, partner-shareable CLZ comparison brief, TECHNICAL_FEATURES.md Key Hunt section update, Clerk dashboard username rules tightened._

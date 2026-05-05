@@ -367,7 +367,11 @@ async function getAuctionSecondChanceState(auctionId: string): Promise<{
       .eq("auction_id", auctionId)
       .order("bid_amount", { ascending: false })
       .order("created_at", { ascending: true }),
-    supabase
+    // Must use supabaseAdmin: second_chance_offers RLS gates SELECT on
+    // current_setting('request.jwt.claims') which our Clerk-authed sessions
+    // do not provide. Caller already verified auction.isSeller before reaching
+    // here, so service-role read is owner-scoped at the call site.
+    supabaseAdmin
       .from("second_chance_offers")
       .select("status")
       .eq("auction_id", auctionId)

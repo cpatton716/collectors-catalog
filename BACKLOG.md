@@ -214,15 +214,25 @@ Our AI cover scan pipeline costs ~$0.015/scan. Most scans target popular issues 
 ---
 
 ### Align Clerk Username Rules with Supabase Regex
-**Priority:** Medium
-**Status:** Pending
+**Priority:** Low (residual gap mitigated by webhook sanitizer)
+**Status:** Partially closed May 5, 2026 — dashboard portion done; residual decision pending
 **Added:** Apr 23, 2026
+**Updated:** May 5, 2026
 
-Clerk dashboard currently accepts dashes in usernames, but Supabase `profiles.username` enforces `^[a-z0-9_]{3,20}$`. This means users can set a username at Clerk signup that silently fails to sync to Supabase. Today's session added a sanitizer on the Clerk webhook that rejects invalid characters before upsert (so invalid usernames don't crash the whole row), and a sync-on-write path that pushes CC usernames back to Clerk — but the root fix is to tighten Clerk's username rules to match Supabase at the source.
+Clerk dashboard currently accepts dashes/periods/uppercase in usernames, but Supabase `profiles.username` enforces `^[a-z0-9_]{3,20}$`. Session 43 (Apr 28) added a sanitizer on the Clerk webhook that rejects invalid characters before upsert + a sync-on-write path that pushes CC usernames back to Clerk.
 
-**How to fix:** In Clerk Dashboard → User & Authentication → Email, Phone, Username → edit the username format settings to require `[a-z0-9_]` only, 3-20 chars. This is a dashboard-only change, no code required. Takes ~2 min.
+**Done May 5, 2026 — dashboard tightening (as far as Clerk's UI allows):**
+- Min length: 4 (Supabase allows 3 — Clerk slightly more restrictive, fine; new users must pick 4+)
+- Max length: 20 (matches Supabase)
+- "Allow extended characters" toggle: OFF (blocks `^$!.\`#+~``)
 
-**Impact:** Prevents silent username drops at signup. Users get a friendly Clerk-side error ("Username can only contain lowercase letters, numbers, and underscores") instead of an account whose username disappears into a DB constraint violation.
+**Limitation (newly discovered May 5, 2026):** Clerk's "Username requirements" dashboard panel ONLY exposes length + the extended-chars toggle. It does NOT let you restrict the *base* allowlist, which still includes `A-Z` (uppercase), `-` (dashes), and `.` (periods) — all of which Supabase rejects. So the dashboard tightening can't fully close the gap.
+
+**Residual options (decide before re-prioritizing):**
+1. **Accept current state** — webhook sanitizer + sync-on-write already prevent crashes. The gap is now a UX papercut: a user picks `John-Doe.123` at Clerk signup, sees their Supabase profile silently sanitize to `johndoe123`. No data loss, no errors, just a slight rename surprise. **Recommended for Beta — close this BACKLOG item.**
+2. **Build a custom Clerk signup validator** — Clerk SDK lets you validate usernames client-side with `addOnsManager` or via a custom signup form. ~2-4 hours. Gives users a friendly inline error at signup ("Username can only contain lowercase letters, numbers, and underscores") instead of a post-signup rename. **Required only if Beta surfaces user complaints about the silent rename.**
+
+**Impact of accepting current state:** Users get a working profile every time. The username they picked at Clerk may not exactly match what shows up in Collectors Chest URLs/profiles. Most users won't notice (auto-generated usernames typically already match the regex), but power users picking deliberate handles with dashes/periods may.
 
 ---
 
@@ -514,6 +524,28 @@ Users flag series they're actively collecting. System tracks upcoming release da
 
 ---
 
+### Dealer Mode for Conventions
+**Priority:** Medium (Post-Launch — Needs Brainstorming)
+**Status:** Pending — concept, NOT scoped. Run `/brainstorming` before scoping.
+**Added:** May 5, 2026
+
+Convention dealers are a high-value user segment whose workflows our current app doesn't address. Need to design what "Dealer Mode" looks like — likely a different default home, faster bulk-list flows, possibly a different pricing tier. **No spec yet — explicit brainstorming session required before this gets sized.**
+
+**Open questions to bring into brainstorming:**
+- What does a dealer's day at a con look like that a collector's doesn't? (Bulk receipt-quick-list, in-person sales, cash-vs-app payment recording, mid-show inventory checks, end-of-show profit summary?)
+- Pricing — is this its own subscription tier (Dealer = $19.99/mo?) or a Premium add-on (Dealer Mode toggle inside Premium)?
+- Multi-user — does a dealer need staff accounts that can use the same inventory at the same con?
+- Offline-heavier — convention WiFi is often awful. Should Dealer Mode pre-cache more aggressively?
+- POS-adjacent — do dealers want Stripe Terminal / Square integration to take card payments at the booth?
+- "Show this booth" — public-facing dealer profile with their inventory, picked up by con-goers searching titles?
+- Inventory bulk-add — bulk import + label-print workflows?
+
+**Competitive note:** No competitor has a dealer-focused mode. CLZ, Key Collector, CovrPrice are all collector-facing. This could be a strong moat.
+
+**Next step:** when prioritized, run `/brainstorming` to scope.
+
+---
+
 ### Demo Collection / Sample-Data Mode
 **Priority:** Medium (Post-Launch)
 **Status:** Pending
@@ -578,6 +610,53 @@ Traditional comic-shop pull list integration — users subscribe to a local shop
 **Effort:** High — significant product work. Multi-party coordination (shops have opinions, POS integrations may be needed).
 
 **Related:** Follow List (Effort B — separate, in-app-only; already filed as Medium).
+
+---
+
+### CLZ Comics — Approved Competitor Talking Points (Marketing Content)
+**Priority:** Medium (escalated May 5 for tomorrow's partner meeting)
+**Status:** Brief drafted, pending Aponte review. Full document at `docs/CLZ_COMPARISON_BRIEF.md`.
+**Added:** May 5, 2026
+**Updated:** May 5, 2026 (escalated, brief drafted, pricing verified)
+
+User-validated talking points from May 3-4 weekend show (CLZ came up most among comparables). Brief built for: (a) partner sales-strategy meeting, (b) convention-floor sales talking points, (c) future "Why Collectors Chest vs CLZ" page or FAQ embed.
+
+**Verified CLZ pricing (May 5, 2026 — clz.com):**
+- CLZ Comics Mobile alone: $1.99/mo or $19.99/yr (catalog only, NO real-time pricing)
+- CovrPrice Premium add-on (REQUIRED for actual comic values inside CLZ): $8.95/mo or $89.95/yr
+- **Apples-to-apples (catalog + pricing): $10.94/mo** for CLZ
+- vs Collectors Chest Premium $4.99/mo all-in → **~half the price**
+- Free trial: 7 days (CLZ) vs 30 days (Collectors Chest)
+
+**Approved talking points (verified May 5, 2026 — see brief for full delivery cues):**
+1. **Design** — Modern PWA + pop-art aesthetic vs CLZ's legacy desktop port
+2. **Cost** — ~half the price apples-to-apples ($4.99 all-in vs $10.94 catalog+pricing). **CRITICAL framing — don't just say "we're cheaper"; reframe to "what it costs to actually USE it."**
+3. **Authenticity** — Your real cover photo vs stock catalog image
+4. **Free tier + extended trial** — 5 free guest scans + 10/mo free tier + 30-day trial vs 7-day trial only
+5. **No-account scanning** — Guest scans on first launch vs CLZ's subscription dialog at first launch
+
+**Done May 5, 2026:**
+- Verified CLZ pricing via clz.com + CovrPrice page
+- Identified the apples-to-apples reframe (the $1.99 vs $4.99 gotcha — CLZ is actually MORE expensive once you add CovrPrice)
+- Authored full sales brief: `docs/CLZ_COMPARISON_BRIEF.md` — TL;DR pitch, pricing tables, refined talking points with delivery cues, common objections + responses, pocket cheat-sheet (printable), source footnotes
+- **Feature-set comparison added** to brief — pulled from public CLZ marketing/manual/App Store docs (no credentials used). Side-by-side: where CC wins, where CLZ wins, where both tie, plus strategic gap-closing recommendations (storage location field, back-cover photo upload, signature tracking are easy wins to consider).
+- **Built admin-facing tablet "slide" page** at `/admin/clz-comparison` — designed for Aponte to pull up on his tablet during convention conversations. Hero pitch, side-by-side pricing cards, color-coded talking points with floor-pitch delivery cues + pitfall warnings, where-CC-wins / where-CLZ-wins / both-tie tables with verdict icons, expandable common-objection cards, printable pocket cheat-sheet. Linked into admin nav as "vs CLZ" tab (`src/app/admin/clz-comparison/page.tsx` + `src/app/admin/layout.tsx`). User has done CLZ first-launch verification firsthand.
+
+**Remaining open items:**
+- Aponte review of the brief and tablet page — flag anything off-brand or factually off
+- Decide placement of public-facing version: FAQ embed (next), standalone `/compare/clz` marketing page (later — would unblock SEO + QR-code-on-business-cards play). Admin tablet page is the immediate convention-floor tool.
+
+**Considered gap-closers (low-effort wins surfaced from feature-set audit — see brief for full analysis):**
+- Storage box location field (~30 min, real collector value)
+- Back cover photo upload (~2 hrs, helpful for slab listings)
+- Signature/autograph tracking field (~1 hr)
+
+**Files (if standalone page eventually built):**
+- New: `src/app/compare/clz/page.tsx`
+- Updated: footer links to `/compare/clz`
+- Brief content already in `docs/CLZ_COMPARISON_BRIEF.md` would be the source of truth for the page copy
+
+**Related:** Testimonials / Social Proof on Homepage; Competitive Positioning (EVALUATION § 5); CLAUDE.md branding section.
 
 ---
 
@@ -1121,11 +1200,30 @@ Anthropic retired the 1M context beta on Sonnet 4 / Sonnet 4.5 (May 1, 2026) and
 ---
 
 ### Expand Curated Key Info DB
-**Priority:** Medium
-**Status:** Pending
+**Priority:** Low (post-launch, scan-data-driven)
+**Status:** Partially complete — May 5, 2026 seeded +283 canonical entries (404 → 687)
 **Added:** Mar 18, 2026
+**Updated:** May 5, 2026
 
-Add more vintage key issues to the curated key info database based on user scanning patterns. Current DB has 403+ entries — expand with additional silver/bronze/copper age keys that users are frequently scanning.
+**Done May 5, 2026 — upfront seed pass (three rounds, 726 net-new entries: 404 → 1,130):**
+
+**Round 3 (+185 net-new) — modern hot keys, licensed comics, Charlton heroes, recent Image:**
+Cates Venom (#1-#4 + Knull origins, Edge of Venomverse, Symbiote Spider-Man), Cates Thor (#1/5/6/13/19, God of Hammers, Donald Blake revival, Black Winter), modern X-Men (Astonishing #1 Whedon, New X-Men #114 Morrison, Wolverine: Origin #1, Old Man Logan #1, All-New Wolverine #1, X-23 #1, Cates Krakoa-era titles, Death/Return of Wolverine, X of Swords, Hellions #1, Way of X #1), modern Spider-Man (Ultimate Comics #1, Spider-Man Miles Morales #1 2016, Champions #1, Ghost-Spider #1, Spider-Boy #1, Friendly Neighborhood Spider-Man #1), modern Avengers (New Avengers #27 Illuminati, Mighty Avengers #1, Young Avengers #1/12, Captain Marvel #1 2014, A-Force #1, Falcon #1, Ironheart #1, World of Wakanda #1, Mockingbird #1, Black Widow #1 2014/2020, Hellcat #1, America Chavez #1, Iceman #1), Star Wars Marvel era (Darth Vader #1/3/5 2015 — Aphra/Triple-Zero/BT-1, Vader #1/3 2017 — Crimson Dawn, Doctor Aphra #1 2016/2020, Bounty Hunters #1, High Republic #1, Star Wars #1 2020), Joker War / Tom King Batman (Batman #1 2011 Snyder, #5/13/21/92/95/100/125, Curse of White Knight, Batman/Catwoman #1, Damned #1, Three Jokers #1, Last Knight on Earth, Detective #1027, Joker #1 2021, Punchline #1, DC Vs Vampires, Batgirls #1, Robins #1, Catwoman #1 2018), modern Justice League (Snyder JL #1, JL Dark v2, Multiversity, Mister Miracle Tom King, Far Sector, Strange Adventures Tom King, WW Dead Earth, Tom Taylor Suicide Squad, Black Adam #1, Wonder Girl #1), Charlton heroes (Captain Atom #78, Blue Beetle #1 1964, Question #1, Peacemaker #1), Vintage westerns/horror (All-Star Western #10 first Jonah Hex, Weird Western Tales #12, Phantom Stranger #1 1969, Spectre #1 1967, Doom Patrol #86, Strange Adventures #205 Deadman, House of Mystery #175 Cain, House of Secrets #81/90 Abel/Eclipso), Vertigo modern (Preacher #5, Y final #60, 100 Bullets #100, Sandman: Overture #1), recent Image (Saga #54 return, I Hate Fairyland #1, Reckless #1, Gunslinger Spawn #1, King Spawn #1, Family Tree, Decorum, Ascender, Once & Future, Stillwater, Made in Korea, Newburn, Murder Falcon, Step by Bloody Step, Two Moons, Kaya, Bone Orchard, Public Domain, I Hate This Place, Twig), Spawn-verse (Sam and Twitch #1, Hellspawn #1, Curse of the Spawn #1), BOOM/Dark Horse/IDW (Mouse Guard, MMPR, Lumberjanes, Wynd, Something Killing Children #15 House of Slaughter, Black Hammer crossovers, B.P.R.D. #1, Buffy Dark Horse, Sonic Archie+IDW, MLP IDW, IDW TMNT #1+#100), more Marvel 2000s+ (MK Spider-Man #1, World War Hulk #1, Punisher MAX #1, Thor: God of Thunder #1/2 first Gorr, Mighty Thor #1 Jane Foster, Unworthy Thor, Earth X #0/Universe X/Paradise X, 1602 #1, Eternals #1 Gaiman/Gillen), modern DC (Action #1006 Bendis, Superman #1 2018 Bendis, Son of Kal-El #1, Superman: Lost, Up in the Sky, Future State Superman/Detective/Next Batman, I Am Batman, Wonder Woman: Historia, Aquaman/Green Arrow/Green Lantern relaunches, New Frontier, Other History of DCU), Vertigo black label (Animal Man N52, Swamp Thing N52), Power Girl debut (All Star #58), Marvel's Voices anthology launches.
+
+**Round 2 (+257 net-new) — second-tier deeper run keys:**
+Spider-Man deeper (#15/17/38/39/41/51/75/100/113/134/135/149/161/210/226/248/256/265/287/290/292/294/312/315/317/324/330/345/350/375/400/545/546/583/600/800/900), X-Men deeper (Uncanny #95/96/100/102/104-109/117/122-128/139/140/143/150/155/161/165/166/173/200/205/207/212/213/229/239/251/270/281/300/350; X-Men vol 2 #1/4/5/25/30), Avengers deeper (#29/31/59/66/71/80/89/93/98/100/137/144/162/211/300/400), Hulk deeper (#102/140/162/169/200/347/393), Iron Man (#54/100/120/144/150/225/281), Thor (JIM #97; Thor #126/129/132/134/154/225/339/340), FF deeper (#6/11/57/112/150/232/236/244/265/347/350/371), Daredevil deeper (#8/16/17/200/230/254), Captain America (#112/150/155/180/200/217/337/350/444), Doctor Strange (#169 first solo title; vol 2 #1 1974), Bronze Age (Conan #1/23, Savage Sword #1, Defenders #1, Werewolf by Night #1, Tomb of Dracula #1, Iron Fist #1, Marvel Two-in-One #1, Marvel Team-Up #1, Power Pack #1, Squadron Supreme #1, What If #1), DC Detective (#156/265/439/466/476/500/569/823/871), Batman deeper (#11/16/47/100/121/139/156/200/300/366/407/410/442/475/492/500/680/700), Action/Superman anniversaries (#100/266/300/340/500/654; Superman #100/300/400/423), Adventure (#267/346/352), JLA deeper (#4/22/31/100/200/208), Brave & Bold (#79/85/200), Wonder Woman (#204/288/300), Flash deeper (#106/108/112/117/155/163/175/200/300/350), Green Lantern (#21/40/45/100/172/200), Vertigo/Sandman (Sandman Mystery Theatre #1, Death HCOL #1, Books of Magic #1, Lucifer #1, Hellblazer #27), DC Modern events (Crisis #12, Zero Hour #0, DC One Million #1, Final Night #1, Underworld Unleashed #1, Bloodlines #1, Knightfall #1, Blackest Night #1, Brightest Day #1, Flashpoint #5), Spawn deep cuts (#5/8/10/11/100/200/300), Walking Dead/Saga/Invincible/Chew anniversaries, EC/Mad horror keys (Tales from the Crypt #20, Vault of Horror #12, Weird Fantasy #13, Mad #1).
+
+**Round 1 (+283 net-new) — top canonical seed pass:**
+- Added 283 net-new key issues spanning Golden Age (Detective Comics #29/33/38/58/66/359, Marvel Comics #1, Captain America Comics #1, Whiz Comics #2, All-American Comics #16, More Fun Comics #52/53/73/101, Police Comics #1, Adventure Comics #40/48/61/260/283/300, Pep Comics #22, Flash Comics #1/86/104, etc.), Silver Age (Showcase #6/8/17/30/37, Brave and the Bold #25/34/54/60, Mystery in Space #75, Fantastic Four #4/13/17-21/25/36/44/47/51/53/65/66/94, Tales to Astonish #13/35/44/59/62/82, Tales of Suspense #40/48/50/58/59/63, Strange Tales #101/115/126/146, Journey Into Mystery #85/86/112/114, X-Men #5/11/15/17/35/50/54/58/60, Avengers #9/11/25/28/32/55/83, Daredevil #2/10/168, Sgt. Fury #1, Detective Comics #267/298/327/395, Action Comics #276/285, JLA #9/30/35), Bronze Age (Marvel Premiere #1/28, Marvel Spotlight #2/12/32, Special Marvel Edition #15, Iron Fist #14, Captain Marvel #25/27/29, Eternals #2/3/5, Star Wars #1, Transformers #1, G.I. Joe #1/21, House of Secrets #92, Saga of the Swamp Thing #21/37, etc.), Copper Age (Wolverine #1 1988, Marvel Comics Presents #72, Excalibur #1, X-Factor #1, Generation X #1, X-Men #266, Uncanny X-Men #168/171/186/201/210/211/221/248/256/267/268, New Mutants #86, Man of Steel #1, Detective Comics #574/608/647, Action Comics #584/775, Animal Man #1/5, Doom Patrol #19/35, Sandman #2/6/21, Justice League International #1/7, Lobo #1, JLA #1, Kingdom Come #1, Marvels #1, Robin #1 1991), Image/Indie launches (WildC.A.T.s #1, Youngblood #1, Cyberforce #1, ShadowHawk #1, Pitt #1, The Maxx #1, Witchblade #1, The Darkness #1, Gen 13 #1, Stormwatch #1, Astro City #1, The Authority #1, Planetary #1, Hellboy: Seed of Destruction #1, Concrete #1, Stray Bullets #1, Strangers in Paradise #1, Madman #1, Cerebus #1, Love and Rockets #1, Eightball #1, Yummy Fur #1, Hate #1), 2000s+ (Ultimate Spider-Man #1, Ultimate X-Men #1, Ultimates #1, All-New X-Men #1, Hawkeye #1, Captain Marvel #14/17, Star Wars #1 2015, House of X #1, Powers of X #1, Civil War II #1, Invincible Iron Man #1/7/9, Empyre #1, Heroes Reborn #1, Powers #1, Ex Machina #1, American Vampire #1, Wytches #1, Black Hammer #1, Monstress #1, Lazarus #1, Sex Criminals #1, Pretty Deadly #1, Tokyo Ghost #1, Birthright #1, The Boys #1, Manifest Destiny #1, Seven to Eternity #1, Strange Academy #1), DC Modern (Identity Crisis #2, All Star Superman #1, All Star Batman #1, Final Crisis #7, Batman and Robin #1, Batman Incorporated #1/8, Justice League #1 2011, Forever Evil #1, Convergence #1, DC Universe Rebirth #1, Doomsday Clock #1, Heroes in Crisis #1, Batman #1 2016, Batman #50, Detective Comics #1000, Action Comics #1000), Krakoan X-titles (X-Men #1 2019, Marauders #1, Excalibur #1 2019, X-Force #1 2019, Fallen Angels #1, New Mutants #1 2019, S.W.O.R.D. #1).
+- Years normalized to series-start convention (e.g. Detective Comics entries all use `year: 1937`, ASM entries all use `year: 1963`).
+- Cross-checked + deduped against original 404 entries; resolver ambiguity verified zero.
+
+**Remaining (ongoing — scan-data-driven):**
+After Beta has scan volume, build the `npm run keys:gaps` tooling described in the May 5 conversation and run periodic 50-100 issue batches against actual user scans where `comic_metadata.key_info` is empty.
+
+**Cleanup follow-up:** Original DB has duplicate title-spelling variants for `Marvel Super Heroes Secret Wars` vs `Marvel Super-Heroes Secret Wars` (#1 + #8 in both). Title normalization collapses them at lookup time, but the duplicate entries should be merged to one canonical spelling for hygiene. Trivial cleanup, deferred.
+
+**ETL note (relevant to "Pre-populate Top Comics Cache"):** When that BACKLOG item runs the bulk Marvel.com / DC.com scrape, the ETL must layer in `lookupKeyInfo()` from this database so seeded `comic_metadata` rows get the correct `key_info` rather than empty arrays. Adding here as cross-reference; the actual code spec lives under "Pre-populate Top Comics Cache".
 
 ---
 

@@ -327,6 +327,14 @@ A guide for testing the main and secondary features of the application.
 | Price result | Complete any lookup | Shows average price and most recent sale |
 | Recent sale highlighting | View result with recent sale | Red = market cooling (20%+ above avg), Green = deal (20%+ below) |
 | Add to collection | Tap "Add to Collection" on result | Comic added, confirmation shown |
+| **(Session 44 — May 5) Key info chips render for known keys** | Scan / lookup Daredevil #181, ASM #300, Hulk #181, Batman Adventures #12, NYX #3, Walking Dead #1 | Result modal shows yellow "KEY ISSUE" header with chips for the issue's keys (e.g., "Death of Elektra" for DD #181, "First full appearance of Venom" + "Origin of Venom" for ASM #300). Chips render between Grade badge and price. |
+| **(Session 44 — May 5) Curated DB beats stale cache** | Scan a comic that previously cached `keyInfo: []` due to a prior silent AI failure (verify in DB before scan) | Result still shows curated key info chips. The curated `keyComicsDatabase.ts` is consulted preferentially even when the cached `comic_metadata.key_info` is empty. |
+| **(Session 44 — May 5) AI fallback for non-curated keys** | Scan a comic NOT in the 403+ curated DB that the AI knows is a key issue (e.g., a recent ratio variant) | Result shows AI-generated key info chips (one AI call counted in scan analytics). |
+| **(Session 44 — May 5) No key info gracefully hidden** | Scan a non-key issue (e.g., random run book) | "KEY ISSUE" header + chips section is NOT rendered. Result shows grade + price only. |
+| **(Session 44 — May 5) Tap-to-enlarge cover lightbox** | On a Key Hunt result modal, tap the small cover thumbnail (top-left of the gradient header) | Full-screen lightbox opens with cover at viewport-fit size, black backdrop, × close button top-right, comic title caption at bottom. |
+| **(Session 44 — May 5) Lightbox close paths** | Open lightbox; (a) tap backdrop, (b) tap × button, (c) press Escape on desktop | All 3 close the lightbox cleanly and return to the result modal underneath. |
+| **(Session 44 — May 5) Lightbox iPhone safe-area** | Open lightbox on iPhone (real device or DevTools iPhone emulator) | × button doesn't sit under the notch; bottom caption doesn't sit under the home indicator. |
+| **(Session 44 — May 5) Lightbox disabled when no cover** | If a Key Hunt scan returns with `coverImageUrl: null`, attempt to tap the placeholder thumbnail | Button is disabled (no opacity change required); no lightbox opens. No error. |
 | New lookup | Tap "New Lookup" | Returns to entry selection |
 
 ### 15. Title Autocomplete & Auto-Refresh
@@ -1814,6 +1822,8 @@ If you encounter bugs or unexpected behavior:
 | **(Session 42) Modal copy reflects offer state** | Cycle through all 4 second-chance states for a cancelled auction the seller owns | Pending → "offer sent, 48h to respond"; Accepted → "awaiting payment"; Declined → "back in collection, ready to re-list"; Expired → "didn't respond in 48h, ready to re-list"; no-runner-up → "no runner-up bid was placed". | Pending |
 | **(Session 42) Email deadline shows ET timezone** | Win an auction or trigger payment_reminder cron | "Complete payment by April 26, 2026 at 10:20 AM EDT" (or "EST" in winter). NEVER an unlabeled time. Verify in DST and standard-time periods. | Pending |
 | **(Session 42) Second-chance email shows ET expiry** | Trigger second-chance offer to runner-up | Runner-up email reads "You have until April 28, 2026 at 10:20 AM EDT (48 hours)…" | Pending |
+| **(Session 44 — May 5) RLS-anon read fix on `second_chance_offers`** | As seller, open the listing modal for a cancelled auction whose Second Chance Offer status is `pending`, `accepted`, `declined`, or `expired`. (Production repro: Giant-Size X-Men #1, auction `adbae0f6-1abb-493f-93da-238f748d5f48` — its Apr 27 offer expired Apr 29.) | "Buyer Did Not Pay" panel shows the correct status copy for the offer's actual state — NOT the "Offer to Runner-up for $X" button. The button must only appear when NO `second_chance_offers` row exists for the auction. | Pending |
+| **(Session 44 — May 5) Validate Apr 27 in-flight offer state in PROD** | After May 5 deploy, query `SELECT id, status, expires_at FROM second_chance_offers WHERE auction_id = 'adbae0f6-1abb-493f-93da-238f748d5f48';` in Supabase | One row, `status='expired'`, `expires_at` ≈ Apr 29 2026 (48h after offer creation). Confirms `expireSecondChanceOffers` cron ran cleanly. | Pending |
 
 ### Payment-Miss Strike System (Apr 23, 2026)
 

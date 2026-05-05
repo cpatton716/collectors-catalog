@@ -7,6 +7,7 @@ import {
   CloudOff,
   Database,
   ExternalLink,
+  KeyRound,
   Loader2,
   Plus,
   RotateCcw,
@@ -15,6 +16,7 @@ import {
 } from "lucide-react";
 
 import { ComicImage } from "./ComicImage";
+import { CoverLightbox } from "./CoverLightbox";
 
 interface RecentSale {
   price: number;
@@ -47,6 +49,7 @@ interface KeyHuntPriceResultProps {
   source?: "database" | "ebay";
   totalListings?: number;
   ebaySearchQuery?: string;
+  keyInfo?: string[];
 }
 
 export function KeyHuntPriceResult({
@@ -68,11 +71,13 @@ export function KeyHuntPriceResult({
   source = "ebay",
   totalListings,
   ebaySearchQuery,
+  keyInfo,
 }: KeyHuntPriceResultProps) {
   const [showSlabbed, setShowSlabbed] = useState(false);
   const [isAddingToHunt, setIsAddingToHunt] = useState(false);
   const [addedToHunt, setAddedToHunt] = useState(isInHuntList);
   const [huntError, setHuntError] = useState<string | null>(null);
+  const [showLightbox, setShowLightbox] = useState(false);
 
   // Get the current grade's estimate for raw/slabbed values
   const currentGradeEstimate = gradeEstimates?.find((g) => g.grade === grade);
@@ -158,15 +163,20 @@ export function KeyHuntPriceResult({
 
           {/* Content with cover thumbnail */}
           <div className="absolute inset-0 flex items-center px-4 gap-4">
-            {/* Cover thumbnail */}
-            <div className="flex-shrink-0 w-20 h-28 rounded-lg overflow-hidden shadow-lg ring-2 ring-white/20">
+            {/* Cover thumbnail — tap to enlarge for verification */}
+            <button
+              onClick={() => coverImageUrl && setShowLightbox(true)}
+              className="flex-shrink-0 w-20 h-28 rounded-lg overflow-hidden shadow-lg ring-2 ring-white/20 hover:ring-white/60 transition-all active:scale-95"
+              aria-label={`Enlarge cover image for ${title} #${issueNumber}`}
+              disabled={!coverImageUrl}
+            >
               <ComicImage
                 src={coverImageUrl}
                 alt={`${title} #${issueNumber}`}
                 aspectRatio="fill"
                 sizes="80px"
               />
-            </div>
+            </button>
 
             {/* Title info */}
             <div className="flex-1 min-w-0 pr-10">
@@ -176,6 +186,14 @@ export function KeyHuntPriceResult({
           </div>
         </div>
 
+        <CoverLightbox
+          isOpen={showLightbox}
+          onClose={() => setShowLightbox(false)}
+          src={coverImageUrl}
+          alt={`${title} #${issueNumber}`}
+          caption={`${title} #${issueNumber}`}
+        />
+
         {/* Price Info */}
         <div className="p-6">
           {/* Grade Badge */}
@@ -184,6 +202,28 @@ export function KeyHuntPriceResult({
               Grade: {formatGrade(grade)}
             </span>
           </div>
+
+          {/* Key Info Tags */}
+          {keyInfo && keyInfo.length > 0 && (
+            <div className="mb-4">
+              <div className="flex items-center justify-center gap-1.5 mb-2">
+                <KeyRound className="w-3.5 h-3.5 text-yellow-600" />
+                <span className="text-xs font-semibold uppercase tracking-wide text-yellow-700">
+                  Key Issue
+                </span>
+              </div>
+              <div className="flex flex-wrap justify-center gap-1.5">
+                {keyInfo.map((info, idx) => (
+                  <span
+                    key={idx}
+                    className="px-2 py-1 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded text-xs"
+                  >
+                    {info}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Raw/Slabbed Toggle */}
           {hasRawSlabbedData && (
