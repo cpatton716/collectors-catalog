@@ -4,7 +4,7 @@ This log tracks session-by-session progress on Collectors Chest.
 
 ---
 
-## May 5, 2026 (Tuesday) - Session 44: Show-Floor Feedback Bundle + Curated Key DB Expansion + CLZ Sales Brief
+## May 5, 2026 (Tuesday) - Session 44: Show-Floor Feedback Bundle + Curated Key DB Expansion + CLZ Sales Brief (Deployed May 5, 2026)
 
 ### Summary
 End-of-day post-show wrap-up bundling production bug fixes from the May 3-4 weekend show feedback, a major curated key-issue DB expansion, and partner-shareable competitive sales materials for tomorrow's Aponte meeting:
@@ -206,16 +206,14 @@ None — pure code changes this session.
 - None this session — patterns captured were already in memory from Sessions 38-43 (RLS-bypass scoping, dev-server mobile testing constraints).
 
 ### Where We Left Off
-Session 44 changes pending deploy (May 5, 2026 evening). User initiated `/collectors-chest-close-up-shop` workflow to commit. Will deploy to Netlify next via standard deploy command.
+Deployed to PROD May 5, 2026 evening (commit `c8f8f68` pushed to main → Netlify auto-build triggered). Awaiting:
+- PROD verification of Second Chance fix on Giant-Size X-Men #1 listing (offer button should be replaced with "didn't respond in 48 hours" copy)
+- PROD verification of Key Hunt KEY ISSUE chips on Daredevil #181 + a few canonical keys
+- Aponte review of `/admin/clz-comparison` tablet page tomorrow + brief tweaks before public-facing `/compare/clz` page
+- Testing of cover lightbox on real iPhone (not LAN-IP dev — Clerk constraint)
 
-### Changes Since Last Deploy (May 1, 2026)
-- Second Chance "Offer to Runner-up" RLS-anon-read fix
-- Key Hunt key-issue chips (UI + curated DB integration at 3 paths)
-- CoverLightbox component for cover verification
-- Curated key-issue DB expansion (404 → 1,130 entries)
-- Admin `/admin/clz-comparison` tablet page
-- TECHNICAL_FEATURES.md Section 10 (Key Hunt) full rewrite
-- ARCHITECTURE.md updated for Session 44
+### Changes Since Last Deploy
+*(empty — Session 44 deployed May 5, 2026.)*
 
 ---
 
