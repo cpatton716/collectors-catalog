@@ -86,7 +86,7 @@ export function NotificationsInbox() {
   const searchParams = useSearchParams();
   const focusId = searchParams.get("focus");
   const { user, isLoaded: userLoaded } = useUser();
-  // Cache key uses Clerk user.id — always available on signed-in users and
+  // Cache key uses Clerk user.id - always available on signed-in users and
   // unique per account. Profile.id (Supabase) isn't exposed to the client by
   // default; the API route does that mapping server-side.
   const cacheKey = user?.id ?? null;
@@ -105,7 +105,12 @@ export function NotificationsInbox() {
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [hydratedFromCache, setHydratedFromCache] = useState(false);
+  // True ONLY when we're displaying cached data without a successful fresh
+  // fetch confirmation. Must NOT toggle on/off during the normal initial load
+  // (cache → fresh fetch within ~200ms creates a visible banner flash). Only
+  // surface the banner when fresh fetch actually fails or we're definitively
+  // offline. See "/notifications inbox initial-render flash" bug fix May 6.
+  const [showCacheBanner, setShowCacheBanner] = useState(false);
   const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
   const [focusedId, setFocusedId] = useState<string | null>(null);
@@ -136,7 +141,7 @@ export function NotificationsInbox() {
     []
   );
 
-  // Initial load — try cache first for instant render, then fetch fresh.
+  // Initial load - try cache first for instant render, then fetch fresh.
   // Don't gate on cacheKey: the API uses the Clerk session cookie directly,
   // so we can fetch without knowing the cache key. We just skip the cache
   // read/write when there's no key yet.
@@ -150,31 +155,35 @@ export function NotificationsInbox() {
 
     const cached = startKey ? readNotificationsCache(startKey) : null;
     if (cached) {
+      // Pre-populate from cache so the cards render instantly.
+      // Deliberately do NOT set showCacheBanner here - that would surface
+      // the banner for ~200ms before the fresh fetch resolves, creating
+      // a jarring visual flash on every load.
       setNotifications(cached.notifications);
       setUnreadCount(cached.unreadCount);
-      setHydratedFromCache(true);
       setIsLoading(false);
     }
 
     (async () => {
       const result = await fetchPage(null);
       if (cancelled) return;
-      // Mid-flight Clerk userId check — abort if the active user has
+      // Mid-flight Clerk userId check - abort if the active user has
       // changed since fetch started.
       if (currentCacheKeyRef.current !== startKey) return;
       if (result) {
         setNotifications(result.notifications);
         setUnreadCount(result.unreadCount);
         setNextCursor(result.nextCursor);
-        setHydratedFromCache(false);
+        setShowCacheBanner(false);
         setLastUpdatedAt(new Date());
         if (startKey) {
           writeNotificationsCache(startKey, result.notifications, result.unreadCount);
         }
-      } else if (!cached) {
-        // Network failed AND no cache — still show empty state without
-        // the "you're all caught up" lie.
-        setHydratedFromCache(false);
+      } else if (cached) {
+        // Fresh fetch failed AND we have cached data showing - NOW surface
+        // the "Showing cached notifications" banner so the user knows the
+        // data may be stale.
+        setShowCacheBanner(true);
       }
       setIsLoading(false);
     })();
@@ -197,7 +206,7 @@ export function NotificationsInbox() {
     }
   }, [cacheKey, userLoaded]);
 
-  // Poll unread count quietly (don't refresh the list — too disruptive
+  // Poll unread count quietly (don't refresh the list - too disruptive
   // mid-scroll).
   useEffect(() => {
     if (!userLoaded || !user) return;
@@ -209,7 +218,7 @@ export function NotificationsInbox() {
           setUnreadCount(data.count);
         }
       } catch {
-        // ignore — polling is best-effort
+        // ignore - polling is best-effort
       }
     }, POLL_INTERVAL_MS);
     return () => clearInterval(interval);
@@ -220,13 +229,24 @@ export function NotificationsInbox() {
   // it directly to confirm existence; if 404, toast and clear the param.
   useEffect(() => {
     if (!focusId || isLoading) return;
+    // Defensive: skip silently if the focus param isn't a valid UUID.
+    // Avoids the wasted API roundtrip and prevents bogus URLs (e.g.,
+    // someone copy-pasting the literal `<id-of-row-N>` placeholder from
+    // a test doc) from triggering the not-found toast or cluttering logs.
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!UUID_RE.test(focusId)) return;
+
     const found = notifications.find((n) => n.id === focusId);
     if (found) {
       setFocusedId(focusId);
-      setTimeout(() => setFocusedId(null), 1500);
-      return;
+      // 2.5s - longer than the original 1.5s so the highlight is more
+      // noticeable post-scroll on slow connections / users glancing at
+      // the screen mid-navigation.
+      const ringTimeout = setTimeout(() => setFocusedId(null), 2500);
+      return () => clearTimeout(ringTimeout);
     }
-    // Not in current page — verify it exists at all.
+
+    // Not in current page - verify it exists at all.
     let cancelled = false;
     (async () => {
       try {
@@ -234,14 +254,18 @@ export function NotificationsInbox() {
         if (cancelled) return;
         if (res.status === 404) {
           showToast(
-            "Notification not found — it may have been cleared.",
+            "Notification not found - it may have been cleared.",
             "info"
           );
           // Strip ?focus from URL so a remount doesn't re-trigger.
           router.replace(pathname);
         }
+        // 200 OK = notification exists but is past the current page. The
+        // user will need to scroll/load-more to see it. Future enhancement:
+        // auto-page until found. For now we leave the focus param in place
+        // so it activates the moment the row enters `notifications`.
       } catch {
-        // network blip — leave focus param in place; user can refresh
+        // network blip - leave focus param in place; user can refresh
       }
     })();
     return () => {
@@ -249,10 +273,19 @@ export function NotificationsInbox() {
     };
   }, [focusId, isLoading, notifications, router, pathname, showToast]);
 
-  // Scroll the focused row into view once it renders.
+  // Scroll the focused row into view once it renders. Use rAF so the DOM
+  // has committed the ref attachment before we read .current - protects
+  // against React render-vs-effect timing edge cases (the ring class is
+  // set in the same render that attaches the ref, so the element exists
+  // by the time the next paint runs).
   useEffect(() => {
-    if (!focusedId || !focusedRowRef.current) return;
-    focusedRowRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (!focusedId) return;
+    const rafId = requestAnimationFrame(() => {
+      if (focusedRowRef.current) {
+        focusedRowRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    });
+    return () => cancelAnimationFrame(rafId);
   }, [focusedId]);
 
   const loadMore = useCallback(async () => {
@@ -291,7 +324,7 @@ export function NotificationsInbox() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ notificationId: notification.id }),
       }).catch(() => {
-        // best-effort — server is the truth on next refresh
+        // best-effort - server is the truth on next refresh
       });
     }
     router.push(getNotificationDeepLink(notification));
@@ -319,7 +352,7 @@ export function NotificationsInbox() {
         throw new Error(`status ${res.status}`);
       }
     } catch {
-      // Rollback — re-insert at original position.
+      // Rollback - re-insert at original position.
       setNotifications((prev) => {
         const next = [...prev];
         next.splice(removedIndex, 0, notification);
@@ -328,7 +361,7 @@ export function NotificationsInbox() {
       if (!notification.isRead) {
         setUnreadCount((prev) => prev + 1);
       }
-      showToast("Couldn't delete — try again.", "error");
+      showToast("Couldn't delete - try again.", "error");
     }
   };
 
@@ -347,7 +380,7 @@ export function NotificationsInbox() {
         body: JSON.stringify({ markAll: true }),
       });
     } catch {
-      showToast("Couldn't mark all read — try again.", "error");
+      showToast("Couldn't mark all read - try again.", "error");
     }
   };
 
@@ -358,7 +391,7 @@ export function NotificationsInbox() {
       setNotifications(result.notifications);
       setUnreadCount(result.unreadCount);
       setNextCursor(result.nextCursor);
-      setHydratedFromCache(false);
+      setShowCacheBanner(false);
       setLastUpdatedAt(new Date());
       if (cacheKey) {
         writeNotificationsCache(cacheKey, result.notifications, result.unreadCount);
@@ -374,8 +407,10 @@ export function NotificationsInbox() {
 
   return (
     <div className="space-y-3">
-      {/* Cache banner */}
-      {hydratedFromCache && (
+      {/* Cache banner - surfaces ONLY when fresh fetch failed and we're
+          showing stale cached data. Suppressed during normal initial load
+          (would otherwise flash visible for ~200ms before fresh fetch). */}
+      {showCacheBanner && (
         <div className="rounded-lg border-2 border-pop-black bg-yellow-50 px-3 py-2 text-sm flex items-center justify-between gap-3">
           <span>Showing cached notifications.</span>
           <button
@@ -399,7 +434,7 @@ export function NotificationsInbox() {
               Last updated {lastUpdatedLabel} · tap to refresh
             </button>
           ) : (
-            "—"
+            "-"
           )}
         </span>
         {unreadCount > 0 && (
@@ -436,7 +471,7 @@ export function NotificationsInbox() {
                 onClick={() => handleRowClick(notification)}
                 className={`relative flex items-start gap-3 px-4 py-3 sm:py-4 cursor-pointer transition-colors min-h-[88px] ${
                   !notification.isRead ? "bg-blue-50" : "hover:bg-gray-50"
-                } ${isFocused ? "ring-2 ring-pop-blue ring-inset" : ""}`}
+                } ${isFocused ? "ring-4 ring-pop-blue ring-inset bg-blue-100" : ""}`}
               >
                 <div className="flex-shrink-0 w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center mt-0.5">
                   {getIconFor(notification.type)}

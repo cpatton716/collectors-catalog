@@ -4,7 +4,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 
 import { getComicMetadata, incrementComicLookupCount, saveComicMetadata } from "@/lib/db";
-import { lookupKeyInfo } from "@/lib/keyComicsDatabase";
+import { lookupKeyInfoWithMeta } from "@/lib/keyComicsDatabase";
 import { MODEL_PRIMARY } from "@/lib/models";
 import { recordScanAnalytics, estimateScanCostCents } from "@/lib/analyticsServer";
 import { isBrowseApiConfigured, searchActiveListings, convertBrowseToPriceData } from "@/lib/ebayBrowse";
@@ -49,6 +49,25 @@ interface ConModeLookupResult {
     slabbedValue: number;
   }>;
   keyInfo: string[];
+  /**
+   * Confidence metadata for the curated keyInfo lookup. Present only when
+   * keyInfo came from the curated DB. UI uses this to render a "verify volume"
+   * advisory when matchType === 'year-resolved' (multi-volume disambiguation
+   * by AI's reported year - could be misled if AI year is inaccurate).
+   *
+   * - matchType: 'exact'         → high confidence; render normally
+   * - matchType: 'year-resolved' → medium confidence; render ⚠️ advisory
+   *
+   * matchedYear is the series-START year of the resolved entry (useful for
+   * volume context like "Volume started 1963"). totalCandidates lets the UI
+   * decide how prominent the advisory should be (e.g., 4-volume Batman #1
+   * deserves a louder hint than 2-volume Star Wars #1).
+   */
+  keyInfoMeta?: {
+    matchType: "exact" | "year-resolved";
+    matchedYear?: number;
+    totalCandidates: number;
+  };
   coverImageUrl: string | null;
   source: "database" | "ebay";
   disclaimer: string;
@@ -92,17 +111,17 @@ export async function POST(request: NextRequest) {
           (g) => g.grade === selectedGrade
         );
 
-        // Curated keyComicsDatabase wins over the cached row — handles stale
+        // Curated keyComicsDatabase wins over the cached row - handles stale
         // cache rows where an earlier AI key-info call silently failed and
         // baked an empty array into comic_metadata.key_info.
-        const curatedKeyInfo = lookupKeyInfo(
+        const curatedMatch = lookupKeyInfoWithMeta(
           dbResult.title,
           dbResult.issueNumber,
           dbResult.releaseYear ? parseInt(String(dbResult.releaseYear)) : null
         );
         const resolvedKeyInfo =
-          curatedKeyInfo && curatedKeyInfo.length > 0
-            ? curatedKeyInfo
+          curatedMatch && curatedMatch.keyInfo.length > 0
+            ? curatedMatch.keyInfo
             : dbResult.keyInfo || [];
 
         const result: ConModeLookupResult = {
@@ -115,6 +134,16 @@ export async function POST(request: NextRequest) {
           recentSale: dbResult.priceData.recentSales?.[0] || null,
           gradeEstimates: dbResult.priceData.gradeEstimates || [],
           keyInfo: resolvedKeyInfo,
+          // Only attach meta when the keyInfo actually came from the curated
+          // match (not when we fell through to the cached row's keyInfo).
+          keyInfoMeta:
+            curatedMatch && curatedMatch.keyInfo.length > 0
+              ? {
+                  matchType: curatedMatch.matchType,
+                  matchedYear: curatedMatch.matchedYear,
+                  totalCandidates: curatedMatch.totalCandidates,
+                }
+              : undefined,
           coverImageUrl: dbResult.coverImageUrl,
           source: "database",
           disclaimer: dbResult.priceData.disclaimer || "Based on current eBay listings",
@@ -159,7 +188,7 @@ export async function POST(request: NextRequest) {
           }
 
           if (!priceData && browseResult.totalResults > 0) {
-            // Below threshold — pass listing count so UI can show "X active listings found"
+            // Below threshold - pass listing count so UI can show "X active listings found"
             totalListings = browseResult.totalResults;
             ebaySearchQuery = browseResult.searchQuery;
           }
@@ -193,19 +222,39 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Prefer curated keyComicsDatabase over an AI call — instant, free,
+      // Prefer curated keyComicsDatabase over an AI call - instant, free,
       // and hand-vetted for the 403+ tracked keys. AI is the fallback for
       // anything not in the curated set.
       let keyInfo: string[] = [];
-      const curatedKeyInfo = lookupKeyInfo(normalizedTitle, normalizedIssue);
-      if (curatedKeyInfo && curatedKeyInfo.length > 0) {
-        keyInfo = curatedKeyInfo;
+      let keyInfoMeta: ConModeLookupResult["keyInfoMeta"] = undefined;
+      const curatedMatch = lookupKeyInfoWithMeta(
+        normalizedTitle,
+        normalizedIssue,
+        seriesYears?.match(/\d{4}/)?.[0] ? parseInt(seriesYears.match(/\d{4}/)![0]) : null,
+      );
+      if (curatedMatch && curatedMatch.keyInfo.length > 0) {
+        keyInfo = curatedMatch.keyInfo;
+        keyInfoMeta = {
+          matchType: curatedMatch.matchType,
+          matchedYear: curatedMatch.matchedYear,
+          totalCandidates: curatedMatch.totalCandidates,
+        };
       } else {
         try {
           keyInfo = await fetchKeyInfoFromAI(normalizedTitle, normalizedIssue);
           aiCallsMade++;
         } catch {
           // Ignore key info errors
+        }
+        // Drift-candidate breadcrumb: when AI confirms key info but our curated
+        // DB missed, the most likely cause is a title-format mismatch (cover
+        // prominently displays a feature character / subtitle that the AI
+        // returned but isn't aliased on the curated entry). Grep server logs
+        // for [keyinfo-drift] to surface candidates for new aliases.
+        if (keyInfo.length > 0) {
+          console.warn(
+            `[keyinfo-drift] curated DB miss for likely key issue: title="${normalizedTitle}" issue="${normalizedIssue}" aiKeyInfo=${JSON.stringify(keyInfo)}`,
+          );
         }
       }
 
@@ -219,6 +268,7 @@ export async function POST(request: NextRequest) {
         recentSale: ebayPriceData.recentSales?.[0] || null,
         gradeEstimates: ebayPriceData.gradeEstimates || [],
         keyInfo,
+        keyInfoMeta,
         coverImageUrl,
         source: "ebay",
         disclaimer: ebayPriceData.disclaimer || "Based on current eBay listings",
@@ -271,10 +321,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(result);
     }
 
-    // 4. No eBay data available — return null priceData with listing metadata.
+    // 4. No eBay data available - return null priceData with listing metadata.
     // Still surface curated key info if we have it (collectors care about
     // the "why" even when there's no current price signal).
-    const noDataKeyInfo = lookupKeyInfo(normalizedTitle, normalizedIssue) || [];
+    const noDataMatch = lookupKeyInfoWithMeta(
+      normalizedTitle,
+      normalizedIssue,
+      seriesYears?.match(/\d{4}/)?.[0] ? parseInt(seriesYears.match(/\d{4}/)![0]) : null,
+    );
     const result: ConModeLookupResult = {
       title: normalizedTitle,
       issueNumber: normalizedIssue,
@@ -284,7 +338,15 @@ export async function POST(request: NextRequest) {
       averagePrice: null,
       recentSale: null,
       gradeEstimates: [],
-      keyInfo: noDataKeyInfo,
+      keyInfo: noDataMatch?.keyInfo || [],
+      keyInfoMeta:
+        noDataMatch && noDataMatch.keyInfo.length > 0
+          ? {
+              matchType: noDataMatch.matchType,
+              matchedYear: noDataMatch.matchedYear,
+              totalCandidates: noDataMatch.totalCandidates,
+            }
+          : undefined,
       coverImageUrl: null,
       source: "ebay",
       disclaimer: "No pricing data available at this time.",

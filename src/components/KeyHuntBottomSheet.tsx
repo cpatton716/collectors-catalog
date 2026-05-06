@@ -53,7 +53,7 @@ export function KeyHuntBottomSheet({
 
     if (isOpen) {
       document.addEventListener("keydown", handleEscape);
-      // Only lock body scroll on mobile — this component is inside md:hidden
+      // Only lock body scroll on mobile - this component is inside md:hidden
       // but React still mounts it on desktop, so guard with a media query check
       const isMobile = window.matchMedia("(max-width: 767px)").matches;
       if (isMobile) {

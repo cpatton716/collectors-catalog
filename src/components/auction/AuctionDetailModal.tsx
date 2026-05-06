@@ -349,7 +349,7 @@ export function AuctionDetailModal({
                   </div>
                 )}
 
-                {/* Seller Controls — Cancelled (Second Chance Flow) */}
+                {/* Seller Controls - Cancelled (Second Chance Flow) */}
                 {auction.isSeller && auction.status === "cancelled" && (
                   <div className="mt-6 pt-4 border-t">
                     <h4 className="text-sm font-medium text-gray-700 mb-3">

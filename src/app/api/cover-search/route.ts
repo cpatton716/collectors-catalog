@@ -28,36 +28,16 @@ export async function POST(request: NextRequest) {
     const searchQuery =
       `${title} ${issueNumber ? `#${issueNumber}` : ""} ${publisher || ""} comic book cover`.trim();
 
-    // For now, return a Google Images search URL that the user can use
-    // In production, you'd integrate with Comic Vine API or similar
+    // Return a Google Images search URL that the user can use to find a cover
+    // manually. Open Library was previously consulted here for graphic-novel
+    // hits but had low single-issue accuracy and the response field
+    // (`coverUrls`) was never read by the consuming UI — removed Session 45.
     const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}&tbm=isch`;
 
-    // Try to fetch from Open Library (free, no API key needed)
-    // This works better for graphic novels/collected editions
-    const openLibraryUrl = `https://openlibrary.org/search.json?q=${encodeURIComponent(title)}&limit=5`;
-
-    let coverUrls: string[] = [];
-
-    try {
-      const olResponse = await fetch(openLibraryUrl);
-      if (olResponse.ok) {
-        const olData = await olResponse.json();
-        coverUrls = olData.docs
-          .filter((doc: { cover_i?: number }) => doc.cover_i)
-          .slice(0, 5)
-          .map(
-            (doc: { cover_i: number }) => `https://covers.openlibrary.org/b/id/${doc.cover_i}-L.jpg`
-          );
-      }
-    } catch {}
-
     return NextResponse.json({
-      coverUrls,
+      coverUrls: [],
       searchUrl: googleSearchUrl,
-      message:
-        coverUrls.length > 0
-          ? "Found potential covers"
-          : "No covers found. Use the search link to find covers manually.",
+      message: "No covers found. Use the search link to find covers manually.",
     });
   } catch (error) {
     console.error("Error searching for covers:", error);

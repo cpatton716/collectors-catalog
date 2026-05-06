@@ -2,7 +2,7 @@
  * Email notification preference types.
  *
  * Granularity is per-category (not per-event). Transactional emails are
- * always-on and are NOT stored on the profile — they always send regardless
+ * always-on and are NOT stored on the profile - they always send regardless
  * of user preferences.
  */
 
@@ -14,7 +14,7 @@ export type NotificationCategory =
 
 /**
  * User-facing preferences surfaced in `/settings/notifications`.
- * `transactional` is intentionally omitted — it's always on.
+ * `transactional` is intentionally omitted - it's always on.
  */
 export interface NotificationPreferences {
   marketplace: boolean;

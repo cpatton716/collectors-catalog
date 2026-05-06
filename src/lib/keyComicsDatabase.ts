@@ -17,7 +17,20 @@ interface KeyComic {
   title: string;
   issue: string;
   keyInfo: string[];
-  year?: number; // Release year — required for titles with multiple volumes (e.g., X-Men 1963 vs 1991)
+  year?: number; // Release year - required for titles with multiple volumes (e.g., X-Men 1963 vs 1991)
+  /**
+   * Alternate titles that should resolve to this same entry. Use when the AI
+   * vision pipeline is known to return a different title than the canonical
+   * series masthead - typically because the cover prominently displays a
+   * character logo or subtitle alongside (or instead of) the series title.
+   *
+   * Example: Ultimate Fallout #4 - cover shows "ULTIMATE FALLOUT" + "SPIDER-MAN"
+   * stacked, and AI commonly returns "Ultimate Fallout: Spider-Man".
+   *
+   * Aliases register the same keyInfo + year under additional normalized
+   * lookup keys. Year disambiguation still applies.
+   */
+  aliases?: string[];
 }
 
 // Normalized title lookup map for fast searching
@@ -412,7 +425,7 @@ const KEY_COMICS: KeyComic[] = [
   // ============================================
   // MARVEL - IRON MAN / CAPTAIN AMERICA / THOR
   // ============================================
-  { title: "Tales of Suspense", issue: "39", year: 1963, keyInfo: ["First appearance of Iron Man"] },
+  { title: "Tales of Suspense", issue: "39", year: 1963, keyInfo: ["First appearance of Iron Man"], aliases: ["Tales of Suspense: Iron Man"] },
   { title: "Tales of Suspense", issue: "52", year: 1963, keyInfo: ["First appearance of Black Widow"] },
   { title: "Tales of Suspense", issue: "57", year: 1963, keyInfo: ["First appearance of Hawkeye"] },
   { title: "Tales to Astonish", issue: "27", year: 1962, keyInfo: ["First Ant-Man"] },
@@ -446,7 +459,7 @@ const KEY_COMICS: KeyComic[] = [
   { title: "Captain America", issue: "360", year: 1968, keyInfo: ["First Crossbones"] },
   { title: "Captain America", issue: "383", year: 1968, keyInfo: ["50th anniversary"] },
   { title: "Captain America", issue: "25", year: 2005, keyInfo: ["Death of Captain America"] },
-  { title: "Journey Into Mystery", issue: "83", year: 1962, keyInfo: ["First appearance of Thor"] },
+  { title: "Journey Into Mystery", issue: "83", year: 1962, keyInfo: ["First appearance of Thor"], aliases: ["Journey Into Mystery: Thor"] },
   { title: "Thor", issue: "165", year: 1966, keyInfo: ["First full Him/Adam Warlock"] },
   { title: "Thor", issue: "337", year: 1966, keyInfo: ["First appearance of Beta Ray Bill"] },
   { title: "Thor", issue: "411", year: 1966, keyInfo: ["First New Warriors"] },
@@ -528,7 +541,7 @@ const KEY_COMICS: KeyComic[] = [
   { title: "Daredevil", issue: "181", year: 1964, keyInfo: ["Death of Elektra"] },
   { title: "Daredevil", issue: "227", year: 1964, keyInfo: ["Born Again begins"] },
   { title: "Hero for Hire", issue: "1", year: 1972, keyInfo: ["First appearance of Luke Cage"] },
-  { title: "Marvel Premiere", issue: "15", year: 1972, keyInfo: ["First appearance of Iron Fist"] },
+  { title: "Marvel Premiere", issue: "15", year: 1972, keyInfo: ["First appearance of Iron Fist"], aliases: ["Marvel Premiere: Iron Fist"] },
   { title: "Werewolf by Night", issue: "32", year: 1975, keyInfo: ["First appearance of Moon Knight"] },
   { title: "Moon Knight", issue: "1", year: 1980, keyInfo: ["First Moon Knight solo"] },
 
@@ -540,10 +553,11 @@ const KEY_COMICS: KeyComic[] = [
     issue: "5",
     year: 1972,
     keyInfo: ["First appearance of Ghost Rider (Johnny Blaze)"],
+    aliases: ["Marvel Spotlight: Ghost Rider"],
   },
   { title: "Ghost Rider", issue: "1", year: 1973, keyInfo: ["First Ghost Rider solo"] },
   { title: "Tomb of Dracula", issue: "10", year: 1972, keyInfo: ["First appearance of Blade"] },
-  { title: "Strange Tales", issue: "110", year: 1963, keyInfo: ["First Doctor Strange"] },
+  { title: "Strange Tales", issue: "110", year: 1963, keyInfo: ["First Doctor Strange"], aliases: ["Strange Tales: Doctor Strange"] },
   { title: "Strange Tales", issue: "135", year: 1963, keyInfo: ["First Nick Fury, SHIELD"] },
   { title: "Strange Tales", issue: "169", year: 1963, keyInfo: ["First Brother Voodoo"] },
   { title: "Strange Tales", issue: "178", year: 1963, keyInfo: ["First Magus"] },
@@ -557,6 +571,10 @@ const KEY_COMICS: KeyComic[] = [
     issue: "4",
     year: 2011,
     keyInfo: ["First appearance of Miles Morales as Spider-Man"],
+    // Cover prominently displays SPIDER-MAN above the series title, so AI
+    // recognition commonly returns the masthead+feature variant. All three
+    // listed forms normalize to "ultimatefalloutspiderman".
+    aliases: ["Ultimate Fallout: Spider-Man", "Ultimate Fallout - Spider-Man", "Ultimate Fallout Spider-Man"],
   },
   {
     title: "Edge of Spider-Verse",
@@ -1068,15 +1086,15 @@ const KEY_COMICS: KeyComic[] = [
   { title: "Locke & Key", issue: "1", year: 2008, keyInfo: ["First Locke & Key"] },
 
   // ============================================
-  // SESSION 44 EXPANSION — May 5, 2026
+  // SESSION 44 EXPANSION - May 5, 2026
   // Top-canonical key-issue seed pass (+283 net new after dedup).
   // Years normalized to series-start convention (matches existing DB:
-  // e.g. Detective Comics #38 uses year=1937 — the series start — not
+  // e.g. Detective Comics #38 uses year=1937 - the series start - not
   // 1940, the issue's publication year. See resolveEntry comment above).
   // Cross-checked against the original 404 entries; collisions removed.
   // ============================================
 
-  // --- GOLDEN AGE — DC ---
+  // --- GOLDEN AGE - DC ---
   { title: "Detective Comics", issue: "29", year: 1937, keyInfo: ["First Batman cover"] },
   { title: "Detective Comics", issue: "33", year: 1937, keyInfo: ["Origin of Batman"] },
   { title: "Detective Comics", issue: "58", year: 1937, keyInfo: ["First appearance of the Penguin"] },
@@ -1102,7 +1120,7 @@ const KEY_COMICS: KeyComic[] = [
   { title: "Master Comics", issue: "21", year: 1941, keyInfo: ["First appearance of Bulletman"] },
   { title: "World's Finest Comics", issue: "71", year: 1954, keyInfo: ["First Superman/Batman team-up"] },
 
-  // --- GOLDEN AGE — Marvel/Timely & Other Publishers ---
+  // --- GOLDEN AGE - Marvel/Timely & Other Publishers ---
   { title: "Marvel Comics", issue: "1", year: 1939, keyInfo: ["First appearance of the Human Torch (android)", "First appearance of Sub-Mariner (in U.S. comics)", "First appearance of Ka-Zar"] },
   { title: "Marvel Mystery Comics", issue: "9", year: 1940, keyInfo: ["First Sub-Mariner vs Human Torch battle"] },
   { title: "Captain America Comics", issue: "1", year: 1941, keyInfo: ["First appearance of Captain America", "First appearance of Bucky Barnes", "First appearance of the Red Skull (imposter)"] },
@@ -1114,7 +1132,7 @@ const KEY_COMICS: KeyComic[] = [
   { title: "Pep Comics", issue: "22", year: 1941, keyInfo: ["First appearance of Archie Andrews", "First appearance of Betty Cooper", "First appearance of Jughead"] },
   { title: "Archie Comics", issue: "1", year: 1942, keyInfo: ["First Archie ongoing series"] },
 
-  // --- SILVER AGE — DC ---
+  // --- SILVER AGE - DC ---
   { title: "Showcase", issue: "6", year: 1956, keyInfo: ["First appearance of Challengers of the Unknown"] },
   { title: "Showcase", issue: "8", year: 1956, keyInfo: ["First Silver Age Flash origin"] },
   { title: "Showcase", issue: "17", year: 1956, keyInfo: ["First appearance of Adam Strange"] },
@@ -1142,7 +1160,7 @@ const KEY_COMICS: KeyComic[] = [
   { title: "Justice League of America", issue: "30", year: 1960, keyInfo: ["First JLA/JSA crossover", "First Earth-Two appearance in JLA"] },
   { title: "Justice League of America", issue: "35", year: 1960, keyInfo: ["First Silver Age T.O. Morrow"] },
 
-  // --- SILVER AGE — Marvel ---
+  // --- SILVER AGE - Marvel ---
   { title: "Fantastic Four", issue: "4", year: 1961, keyInfo: ["First Silver Age Sub-Mariner appearance"] },
   { title: "Fantastic Four", issue: "13", year: 1961, keyInfo: ["First appearance of the Watcher (Uatu)", "First appearance of Red Ghost"] },
   { title: "Fantastic Four", issue: "17", year: 1961, keyInfo: ["Fantastic Four meet Spider-Man (post-AF #15)"] },
@@ -1199,7 +1217,7 @@ const KEY_COMICS: KeyComic[] = [
   { title: "Daredevil", issue: "10", year: 1964, keyInfo: ["First appearance of the Ani-Men"] },
   { title: "Sgt. Fury and his Howling Commandos", issue: "1", year: 1963, keyInfo: ["First appearance of Sgt. Nick Fury", "First appearance of Dum Dum Dugan"] },
 
-  // --- BRONZE AGE — Marvel ---
+  // --- BRONZE AGE - Marvel ---
   { title: "Marvel Premiere", issue: "1", year: 1972, keyInfo: ["First appearance of Adam Warlock in cocoon (renumbered)", "Warlock origin begins"] },
   { title: "Marvel Premiere", issue: "28", year: 1972, keyInfo: ["First appearance of the Legion of Monsters"] },
   { title: "Marvel Spotlight", issue: "2", year: 1972, keyInfo: ["First appearance of Werewolf by Night (Jack Russell)"] },
@@ -1231,9 +1249,9 @@ const KEY_COMICS: KeyComic[] = [
   { title: "G.I. Joe: A Real American Hero", issue: "21", year: 1984, keyInfo: ["First silent issue (Snake Eyes), Larry Hama classic"] },
   { title: "Transformers", issue: "1", year: 1984, keyInfo: ["First Marvel Transformers series", "First comic appearance of Optimus Prime, Megatron, etc."] },
 
-  // --- BRONZE AGE — DC ---
+  // --- BRONZE AGE - DC ---
   { title: "House of Secrets", issue: "92", year: 1971, keyInfo: ["First appearance of Swamp Thing (Alex Olsen)"] },
-  { title: "Saga of the Swamp Thing", issue: "21", year: 1984, keyInfo: ["'The Anatomy Lesson' — Alan Moore run begins"] },
+  { title: "Saga of the Swamp Thing", issue: "21", year: 1984, keyInfo: ["'The Anatomy Lesson' - Alan Moore run begins"] },
   { title: "Saga of the Swamp Thing", issue: "37", year: 1985, keyInfo: ["First appearance of John Constantine"] },
   { title: "Wonder Woman", issue: "204", year: 1942, keyInfo: ["Wonder Woman regains powers", "Return to classic costume"] },
   { title: "Wonder Woman", issue: "288", year: 1942, keyInfo: ["First appearance of the modern Silver Swan"] },
@@ -1246,7 +1264,7 @@ const KEY_COMICS: KeyComic[] = [
   { title: "World's Finest Comics", issue: "176", year: 1968, keyInfo: ["Neal Adams Batman/Superman cover classic"] },
   { title: "Green Lantern", issue: "85", year: 1960, keyInfo: ["Speedy on drugs cover", "Award-winning O'Neil/Adams story"] },
 
-  // --- COPPER AGE — Marvel ---
+  // --- COPPER AGE - Marvel ---
   { title: "Marvel Graphic Novel", issue: "1", year: 1982, keyInfo: ["First Marvel Graphic Novel format", "Death of Captain Marvel (Mar-Vell)"] },
   { title: "Marvel Graphic Novel", issue: "5", year: 1984, keyInfo: ["First New Mutants graphic novel", "First appearance of New Mutants team"] },
   { title: "Marvel Comics Presents", issue: "72", year: 1991, keyInfo: ["'Weapon X' Wolverine origin story begins (Barry Windsor-Smith)"] },
@@ -1270,7 +1288,7 @@ const KEY_COMICS: KeyComic[] = [
   { title: "Punisher", issue: "1", year: 1987, keyInfo: ["First Punisher ongoing series"] },
   { title: "Hulk", issue: "1", year: 1999, keyInfo: ["Hulk volume 2 first issue (John Byrne)"] },
 
-  // --- COPPER AGE — DC ---
+  // --- COPPER AGE - DC ---
   { title: "Man of Steel", issue: "1", year: 1986, keyInfo: ["John Byrne Superman reboot begins"] },
   { title: "The Dark Knight Returns", issue: "1", year: 1986, keyInfo: ["First The Dark Knight Returns", "Frank Miller's seminal Batman"] },
   { title: "The Dark Knight Returns", issue: "2", year: 1986, keyInfo: ["First appearance of Carrie Kelley as Robin"] },
@@ -1281,7 +1299,7 @@ const KEY_COMICS: KeyComic[] = [
   { title: "Action Comics", issue: "584", year: 1938, keyInfo: ["John Byrne's first Action Comics issue", "Post-Crisis Superman begins in Action"] },
   { title: "Action Comics", issue: "775", year: 1938, keyInfo: ["'What's So Funny About Truth, Justice and the American Way?'", "First appearance of the Elite"] },
   { title: "Animal Man", issue: "1", year: 1988, keyInfo: ["Grant Morrison's Animal Man begins"] },
-  { title: "Animal Man", issue: "5", year: 1988, keyInfo: ["'The Coyote Gospel' — landmark Morrison issue"] },
+  { title: "Animal Man", issue: "5", year: 1988, keyInfo: ["'The Coyote Gospel' - landmark Morrison issue"] },
   { title: "Doom Patrol", issue: "19", year: 1963, keyInfo: ["Grant Morrison's Doom Patrol begins"] },
   { title: "Doom Patrol", issue: "35", year: 1963, keyInfo: ["First appearance of Flex Mentallo"] },
   { title: "Sandman", issue: "2", year: 1989, keyInfo: ["First cameo of Death of the Endless"] },
@@ -1294,7 +1312,7 @@ const KEY_COMICS: KeyComic[] = [
   { title: "Kingdom Come", issue: "1", year: 1996, keyInfo: ["First Kingdom Come", "Mark Waid/Alex Ross"] },
   { title: "Marvels", issue: "1", year: 1994, keyInfo: ["First Marvels", "Kurt Busiek/Alex Ross"] },
 
-  // --- COPPER/MODERN — Image & Indie ---
+  // --- COPPER/MODERN - Image & Indie ---
   { title: "WildC.A.T.s", issue: "1", year: 1992, keyInfo: ["First WildC.A.T.s", "First major Jim Lee creator-owned"] },
   { title: "Youngblood", issue: "1", year: 1992, keyInfo: ["First Youngblood", "Rob Liefeld creator-owned launch"] },
   { title: "Cyberforce", issue: "1", year: 1992, keyInfo: ["First Cyberforce", "Marc Silvestri creator-owned"] },
@@ -1319,7 +1337,7 @@ const KEY_COMICS: KeyComic[] = [
   { title: "Yummy Fur", issue: "1", year: 1986, keyInfo: ["First Yummy Fur (Chester Brown)"] },
   { title: "Hate", issue: "1", year: 1990, keyInfo: ["First Hate (Peter Bagge)"] },
 
-  // --- 2000s+ — Marvel ---
+  // --- 2000s+ - Marvel ---
   { title: "Ultimate Spider-Man", issue: "1", year: 2000, keyInfo: ["First Ultimate Spider-Man series", "Bendis/Bagley reboot"] },
   { title: "Ultimate X-Men", issue: "1", year: 2001, keyInfo: ["First Ultimate X-Men series"] },
   { title: "Ultimates", issue: "1", year: 2002, keyInfo: ["First Ultimates series", "Mark Millar/Bryan Hitch", "Inspired MCU Avengers tone"] },
@@ -1337,7 +1355,7 @@ const KEY_COMICS: KeyComic[] = [
   { title: "Empyre", issue: "1", year: 2020, keyInfo: ["First Empyre event"] },
   { title: "Heroes Reborn", issue: "1", year: 2021, keyInfo: ["First Heroes Reborn (2021 event)", "Squadron Supreme of America focus"] },
 
-  // --- 2000s+ — DC ---
+  // --- 2000s+ - DC ---
   { title: "Identity Crisis", issue: "2", year: 2004, keyInfo: ["Identity Crisis: Sue Dibny death revealed"] },
   { title: "All Star Superman", issue: "1", year: 2005, keyInfo: ["First All Star Superman", "Grant Morrison/Frank Quitely"] },
   { title: "All Star Batman & Robin", issue: "1", year: 2005, keyInfo: ["First All Star Batman & Robin", "Frank Miller/Jim Lee"] },
@@ -1353,7 +1371,7 @@ const KEY_COMICS: KeyComic[] = [
   { title: "Detective Comics", issue: "1000", year: 1937, keyInfo: ["1000th issue", "First appearance of the Arkham Knight (comics)"] },
   { title: "Action Comics", issue: "1000", year: 1938, keyInfo: ["1000th issue of Action Comics"] },
 
-  // --- 2000s+ — Image / Independent ---
+  // --- 2000s+ - Image / Independent ---
   { title: "Powers", issue: "1", year: 2000, keyInfo: ["First Powers (Bendis/Oeming)"] },
   { title: "The Walking Dead", issue: "53", year: 2003, keyInfo: ["The Walking Dead death of Lori and Judith"] },
   { title: "The Walking Dead", issue: "75", year: 2003, keyInfo: ["The Walking Dead introduction of Hilltop"] },
@@ -1388,12 +1406,12 @@ const KEY_COMICS: KeyComic[] = [
   { title: "Fallen Angels", issue: "1", year: 2019, keyInfo: ["First Krakoan Fallen Angels"] },
 
   // ============================================
-  // SESSION 44 EXPANSION — ROUND 2 — May 5, 2026
+  // SESSION 44 EXPANSION - ROUND 2 - May 5, 2026
   // Second-tier canonical keys: deeper Marvel/DC runs, anniversary issues,
   // event launches, and indie deep cuts. Years use series-start convention.
   // ============================================
 
-  // --- MARVEL — Spider-Man (deep cuts) ---
+  // --- MARVEL - Spider-Man (deep cuts) ---
   { title: "Amazing Spider-Man", issue: "15", year: 1963, keyInfo: ["First appearance of Kraven the Hunter"] },
   { title: "Amazing Spider-Man", issue: "17", year: 1963, keyInfo: ["Second appearance of the Green Goblin", "First appearance of Liz Allan"] },
   { title: "Amazing Spider-Man", issue: "38", year: 1963, keyInfo: ["Final Steve Ditko Spider-Man issue", "First appearance of Mary Jane Watson (silhouette tease retold)"] },
@@ -1430,7 +1448,7 @@ const KEY_COMICS: KeyComic[] = [
   { title: "Amazing Spider-Man", issue: "583", year: 1963, keyInfo: ["Inauguration Day variant, Obama cover"] },
   { title: "Amazing Spider-Man", issue: "600", year: 1963, keyInfo: ["600th issue anniversary"] },
 
-  // --- MARVEL — X-Men (continuing run) ---
+  // --- MARVEL - X-Men (continuing run) ---
   { title: "Uncanny X-Men", issue: "95", year: 1963, keyInfo: ["Death of Thunderbird"] },
   { title: "Uncanny X-Men", issue: "96", year: 1963, keyInfo: ["First appearance of Moira MacTaggert"] },
   { title: "Uncanny X-Men", issue: "100", year: 1963, keyInfo: ["100th issue", "Phoenix transformation prelude"] },
@@ -1473,7 +1491,7 @@ const KEY_COMICS: KeyComic[] = [
   { title: "X-Men", issue: "25", year: 1963, keyInfo: ["Magneto removes Wolverine's adamantium"] },
   { title: "X-Men", issue: "30", year: 1963, keyInfo: ["Cyclops and Jean Grey wedding"] },
 
-  // --- MARVEL — Avengers (deeper) ---
+  // --- MARVEL - Avengers (deeper) ---
   { title: "Avengers", issue: "29", year: 1963, keyInfo: ["First appearance of Power Man (Erik Josten)"] },
   { title: "Avengers", issue: "31", year: 1963, keyInfo: ["First appearance of the Living Laser"] },
   { title: "Avengers", issue: "59", year: 1963, keyInfo: ["First appearance of Yellowjacket (Hank Pym)"] },
@@ -1491,7 +1509,7 @@ const KEY_COMICS: KeyComic[] = [
   { title: "Avengers", issue: "300", year: 1963, keyInfo: ["300th issue anniversary, Avengers reform"] },
   { title: "Avengers", issue: "400", year: 1963, keyInfo: ["400th issue anniversary"] },
 
-  // --- MARVEL — Hulk (deeper) ---
+  // --- MARVEL - Hulk (deeper) ---
   { title: "Incredible Hulk", issue: "102", year: 1962, keyInfo: ["Hulk solo title begins (renumbered from Tales to Astonish)"] },
   { title: "Incredible Hulk", issue: "140", year: 1962, keyInfo: ["First appearance of Jarella"] },
   { title: "Incredible Hulk", issue: "162", year: 1962, keyInfo: ["First appearance of Wendigo"] },
@@ -1500,7 +1518,7 @@ const KEY_COMICS: KeyComic[] = [
   { title: "Incredible Hulk", issue: "347", year: 1962, keyInfo: ["First appearance of Joe Fixit (gray Hulk Las Vegas persona)"] },
   { title: "Incredible Hulk", issue: "393", year: 1962, keyInfo: ["Anniversary issue, gold foil cover"] },
 
-  // --- MARVEL — Iron Man (deeper) ---
+  // --- MARVEL - Iron Man (deeper) ---
   { title: "Iron Man", issue: "54", year: 1968, keyInfo: ["First appearance of Moondragon"] },
   { title: "Iron Man", issue: "100", year: 1968, keyInfo: ["100th issue anniversary"] },
   { title: "Iron Man", issue: "120", year: 1968, keyInfo: ["'Demon in a Bottle' begins"] },
@@ -1509,7 +1527,7 @@ const KEY_COMICS: KeyComic[] = [
   { title: "Iron Man", issue: "225", year: 1968, keyInfo: ["Armor Wars begins"] },
   { title: "Iron Man", issue: "281", year: 1968, keyInfo: ["First War Machine cameo"] },
 
-  // --- MARVEL — Thor (deeper) ---
+  // --- MARVEL - Thor (deeper) ---
   { title: "Journey Into Mystery", issue: "97", year: 1962, keyInfo: ["First Tales of Asgard backup feature"] },
   { title: "Thor", issue: "126", year: 1966, keyInfo: ["Title rename from Journey Into Mystery", "First Thor as title"] },
   { title: "Thor", issue: "129", year: 1966, keyInfo: ["First Marvel appearance of Hercules"] },
@@ -1520,7 +1538,7 @@ const KEY_COMICS: KeyComic[] = [
   { title: "Thor", issue: "339", year: 1966, keyInfo: ["First Stormbreaker hammer"] },
   { title: "Thor", issue: "340", year: 1966, keyInfo: ["Surtur saga continues"] },
 
-  // --- MARVEL — Fantastic Four (deeper) ---
+  // --- MARVEL - Fantastic Four (deeper) ---
   { title: "Fantastic Four", issue: "6", year: 1961, keyInfo: ["Doctor Doom and Sub-Mariner team-up"] },
   { title: "Fantastic Four", issue: "11", year: 1961, keyInfo: ["First appearance of the Impossible Man"] },
   { title: "Fantastic Four", issue: "57", year: 1961, keyInfo: ["Doctor Doom returns, steals Surfer's power"] },
@@ -1534,7 +1552,7 @@ const KEY_COMICS: KeyComic[] = [
   { title: "Fantastic Four", issue: "350", year: 1961, keyInfo: ["350th issue anniversary"] },
   { title: "Fantastic Four", issue: "371", year: 1961, keyInfo: ["First appearance of Lyja the Lazerfist (Skrull-Alicia revealed)"] },
 
-  // --- MARVEL — Daredevil (deeper) ---
+  // --- MARVEL - Daredevil (deeper) ---
   { title: "Daredevil", issue: "8", year: 1964, keyInfo: ["First appearance of Stilt-Man"] },
   { title: "Daredevil", issue: "16", year: 1964, keyInfo: ["First Romita Sr. Daredevil art"] },
   { title: "Daredevil", issue: "17", year: 1964, keyInfo: ["Romita Sr. art continues"] },
@@ -1543,7 +1561,7 @@ const KEY_COMICS: KeyComic[] = [
   { title: "Daredevil", issue: "254", year: 1964, keyInfo: ["First appearance of Typhoid Mary"] },
   { title: "Daredevil", issue: "284", year: 1964, keyInfo: ["First appearance of Lord Deathstrike... actually skip", "Acts of Vengeance crossover"] },
 
-  // --- MARVEL — Captain America (deeper) ---
+  // --- MARVEL - Captain America (deeper) ---
   { title: "Captain America", issue: "112", year: 1941, keyInfo: ["Captain America origin retold (Silver Age definitive)"] },
   { title: "Captain America", issue: "150", year: 1941, keyInfo: ["150th issue"] },
   { title: "Captain America", issue: "155", year: 1941, keyInfo: ["First Madame Hydra (Viper)"] },
@@ -1554,11 +1572,11 @@ const KEY_COMICS: KeyComic[] = [
   { title: "Captain America", issue: "350", year: 1941, keyInfo: ["350th issue anniversary, Steve Rogers returns"] },
   { title: "Captain America", issue: "444", year: 1941, keyInfo: ["Sharon Carter returns"] },
 
-  // --- MARVEL — Doctor Strange ---
+  // --- MARVEL - Doctor Strange ---
   { title: "Doctor Strange", issue: "169", year: 2015, keyInfo: ["Doctor Strange's first solo title (renumbered from Strange Tales)"] },
   { title: "Doctor Strange", issue: "15", year: 2015, keyInfo: ["First appearance of Brother Voodoo's brother Daniel"] },
 
-  // --- MARVEL — Bronze Age titles ---
+  // --- MARVEL - Bronze Age titles ---
   { title: "Conan the Barbarian", issue: "1", year: 1970, keyInfo: ["First Marvel Conan the Barbarian", "First Marvel comic appearance of Conan"] },
   { title: "Conan the Barbarian", issue: "23", year: 1970, keyInfo: ["First appearance of Red Sonja"] },
   { title: "Savage Sword of Conan", issue: "1", year: 1974, keyInfo: ["First Savage Sword of Conan magazine"] },
@@ -1569,7 +1587,7 @@ const KEY_COMICS: KeyComic[] = [
   { title: "Squadron Supreme", issue: "1", year: 1985, keyInfo: ["First Squadron Supreme limited series", "Mark Gruenwald deconstruction"] },
   { title: "Daredevil/Black Widow", issue: "92", year: 1964, keyInfo: ["Title shared with Black Widow begins"] },
 
-  // --- DC — Detective Comics (deeper) ---
+  // --- DC - Detective Comics (deeper) ---
   { title: "Detective Comics", issue: "156", year: 1937, keyInfo: ["First appearance of the Batmobile (named)"] },
   { title: "Detective Comics", issue: "265", year: 1937, keyInfo: ["First detailed Batman origin retelling"] },
   { title: "Detective Comics", issue: "439", year: 1937, keyInfo: ["First Manhunter (Paul Kirk) revival"] },
@@ -1580,7 +1598,7 @@ const KEY_COMICS: KeyComic[] = [
   { title: "Detective Comics", issue: "823", year: 1937, keyInfo: ["Penguin classic story"] },
   { title: "Detective Comics", issue: "871", year: 1937, keyInfo: ["Scott Snyder Detective run begins"] },
 
-  // --- DC — Batman (deeper) ---
+  // --- DC - Batman (deeper) ---
   { title: "Batman", issue: "11", year: 1940, keyInfo: ["Joker / Penguin classic"] },
   { title: "Batman", issue: "16", year: 1940, keyInfo: ["First appearance of Alfred Pennyworth"] },
   { title: "Batman", issue: "47", year: 1940, keyInfo: ["Batman's origin retold in detail"] },
@@ -1599,7 +1617,7 @@ const KEY_COMICS: KeyComic[] = [
   { title: "Batman", issue: "680", year: 1940, keyInfo: ["Batman R.I.P. continues"] },
   { title: "Batman", issue: "700", year: 1940, keyInfo: ["700th issue anniversary"] },
 
-  // --- DC — Action Comics & Superman (deeper) ---
+  // --- DC - Action Comics & Superman (deeper) ---
   { title: "Action Comics", issue: "100", year: 1938, keyInfo: ["100th issue anniversary"] },
   { title: "Action Comics", issue: "266", year: 1938, keyInfo: ["First appearance of Bizarro Superman (Silver Age)"] },
   { title: "Action Comics", issue: "300", year: 1938, keyInfo: ["300th issue anniversary"] },
@@ -1611,12 +1629,12 @@ const KEY_COMICS: KeyComic[] = [
   { title: "Superman", issue: "400", year: 1939, keyInfo: ["400th issue anniversary"] },
   { title: "Superman", issue: "423", year: 1939, keyInfo: ["'Whatever Happened to the Man of Tomorrow' (Alan Moore)"] },
 
-  // --- DC — Adventure & Legion ---
+  // --- DC - Adventure & Legion ---
   { title: "Adventure Comics", issue: "267", year: 1938, keyInfo: ["Second Legion of Super-Heroes appearance"] },
   { title: "Adventure Comics", issue: "346", year: 1938, keyInfo: ["First appearance of Karate Kid"] },
   { title: "Adventure Comics", issue: "352", year: 1938, keyInfo: ["First appearance of Computo"] },
 
-  // --- DC — Justice League ---
+  // --- DC - Justice League ---
   { title: "Justice League of America", issue: "4", year: 1960, keyInfo: ["Green Arrow joins the JLA"] },
   { title: "Justice League of America", issue: "22", year: 1960, keyInfo: ["JLA/JSA crossover continues, Earth-Two"] },
   { title: "Justice League of America", issue: "31", year: 1960, keyInfo: ["First Hawkman in JLA"] },
@@ -1624,15 +1642,15 @@ const KEY_COMICS: KeyComic[] = [
   { title: "Justice League of America", issue: "200", year: 1960, keyInfo: ["200th issue anniversary"] },
   { title: "Justice League of America", issue: "208", year: 1960, keyInfo: ["Death of Aquaman's son Arthur Jr."] },
 
-  // --- DC — Brave and the Bold ---
+  // --- DC - Brave and the Bold ---
   { title: "Brave and the Bold", issue: "79", year: 1960, keyInfo: ["Neal Adams' first Batman work (with Deadman)"] },
   { title: "Brave and the Bold", issue: "85", year: 1960, keyInfo: ["First Green Arrow with Van Dyke beard / new look"] },
   { title: "Brave and the Bold", issue: "200", year: 1960, keyInfo: ["200th issue, first Batman and the Outsiders preview"] },
 
-  // --- DC — Wonder Woman (deeper) ---
+  // --- DC - Wonder Woman (deeper) ---
   { title: "Wonder Woman", issue: "300", year: 1942, keyInfo: ["300th issue anniversary"] },
 
-  // --- DC — Flash (deeper) ---
+  // --- DC - Flash (deeper) ---
   { title: "The Flash", issue: "155", year: 1959, keyInfo: ["First appearance of Abra Kadabra"] },
   { title: "The Flash", issue: "163", year: 1959, keyInfo: ["First appearance of Kid Flash in modern costume"] },
   { title: "The Flash", issue: "175", year: 1959, keyInfo: ["Second Superman vs Flash race"] },
@@ -1640,7 +1658,7 @@ const KEY_COMICS: KeyComic[] = [
   { title: "The Flash", issue: "300", year: 1959, keyInfo: ["300th issue anniversary"] },
   { title: "The Flash", issue: "350", year: 1959, keyInfo: ["350th issue anniversary, Trial of the Flash"] },
 
-  // --- DC — Green Lantern (deeper) ---
+  // --- DC - Green Lantern (deeper) ---
   { title: "Green Lantern", issue: "21", year: 1960, keyInfo: ["First appearance of Doctor Polaris"] },
   { title: "Green Lantern", issue: "40", year: 1960, keyInfo: ["First appearance of the Anti-Matter Universe"] },
   { title: "Green Lantern", issue: "45", year: 1960, keyInfo: ["First Silver Age appearance of Jay Garrick"] },
@@ -1648,14 +1666,14 @@ const KEY_COMICS: KeyComic[] = [
   { title: "Green Lantern", issue: "172", year: 1960, keyInfo: ["First John Stewart in costume regular role"] },
   { title: "Green Lantern", issue: "200", year: 1960, keyInfo: ["200th issue anniversary"] },
 
-  // --- DC — Sandman / Vertigo ---
+  // --- DC - Sandman / Vertigo ---
   { title: "Sandman Mystery Theatre", issue: "1", year: 1993, keyInfo: ["First Sandman Mystery Theatre"] },
   { title: "Death: The High Cost of Living", issue: "1", year: 1993, keyInfo: ["First Death miniseries"] },
   { title: "Books of Magic", issue: "1", year: 1990, keyInfo: ["First Books of Magic", "First appearance of Tim Hunter"] },
   { title: "Lucifer", issue: "1", year: 2000, keyInfo: ["First Lucifer ongoing series"] },
   { title: "Hellblazer", issue: "27", year: 1988, keyInfo: ["First appearance of Constantine's daughter Astra Logue (full)"] },
 
-  // --- DC — Modern Anniversaries / Events ---
+  // --- DC - Modern Anniversaries / Events ---
   { title: "Crisis on Infinite Earths", issue: "12", year: 1985, keyInfo: ["Crisis on Infinite Earths conclusion", "Multiverse collapsed into one Earth"] },
   { title: "Zero Hour", issue: "0", year: 1994, keyInfo: ["Zero Hour conclusion / DCU reset"] },
   { title: "DC One Million", issue: "1", year: 1998, keyInfo: ["First DC One Million event"] },
@@ -1667,7 +1685,7 @@ const KEY_COMICS: KeyComic[] = [
   { title: "Brightest Day", issue: "1", year: 2010, keyInfo: ["First Brightest Day"] },
   { title: "Flashpoint", issue: "5", year: 2011, keyInfo: ["Flashpoint conclusion, New 52 begins"] },
 
-  // --- IMAGE — Spawn deep cuts + indie ---
+  // --- IMAGE - Spawn deep cuts + indie ---
   { title: "Spawn", issue: "5", year: 1992, keyInfo: ["Frank Miller cover variant"] },
   { title: "Spawn", issue: "8", year: 1992, keyInfo: ["First appearance of the Freaks"] },
   { title: "Spawn", issue: "10", year: 1992, keyInfo: ["Cerebus crossover (Dave Sim guest issue)"] },
@@ -1703,12 +1721,12 @@ const KEY_COMICS: KeyComic[] = [
   { title: "Amazing Spider-Man", issue: "900", year: 1963, keyInfo: ["900th issue (legacy numbering)"] },
 
   // ============================================
-  // SESSION 44 EXPANSION — ROUND 3 — May 5, 2026
+  // SESSION 44 EXPANSION - ROUND 3 - May 5, 2026
   // Third-tier: modern hot keys, licensed comics, Charlton vintage,
   // Image recent indies, and 2nd/3rd appearances of canon characters.
   // ============================================
 
-  // --- MARVEL — Modern Venom / Symbiote / Carnage (Cates era) ---
+  // --- MARVEL - Modern Venom / Symbiote / Carnage (Cates era) ---
   { title: "Venom", issue: "2", year: 2018, keyInfo: ["First Knull cameo (silhouette)"] },
   { title: "Venom", issue: "4", year: 2018, keyInfo: ["Knull origin", "First full Knull cover"] },
   { title: "Venom", issue: "27", year: 2018, keyInfo: ["First appearance of Virus"] },
@@ -1719,7 +1737,7 @@ const KEY_COMICS: KeyComic[] = [
   { title: "Absolute Carnage", issue: "5", year: 2019, keyInfo: ["Absolute Carnage conclusion"] },
   { title: "King in Black", issue: "5", year: 2020, keyInfo: ["King in Black conclusion"] },
 
-  // --- MARVEL — Modern Thor / Cosmic ---
+  // --- MARVEL - Modern Thor / Cosmic ---
   { title: "Thor", issue: "1", year: 1966, keyInfo: ["Donny Cates Thor begins", "First appearance of the Black Winter"] },
   { title: "Thor", issue: "5", year: 1966, keyInfo: ["First full appearance of the Black Winter"] },
   { title: "Thor", issue: "6", year: 1966, keyInfo: ["First appearance of God of Hammers (cameo)"] },
@@ -1728,7 +1746,7 @@ const KEY_COMICS: KeyComic[] = [
   { title: "Silver Surfer: Black", issue: "1", year: 2019, keyInfo: ["First Silver Surfer: Black", "Knull connection"] },
   { title: "Annihilation: Conquest", issue: "1", year: 2007, keyInfo: ["First Annihilation: Conquest"] },
 
-  // --- MARVEL — Modern X-Men ---
+  // --- MARVEL - Modern X-Men ---
   { title: "Astonishing X-Men", issue: "1", year: 2004, keyInfo: ["Joss Whedon Astonishing X-Men begins"] },
   { title: "New X-Men", issue: "114", year: 2001, keyInfo: ["Grant Morrison New X-Men begins"] },
   { title: "New X-Men", issue: "121", year: 2001, keyInfo: ["First appearance of Stuff"] },
@@ -1746,14 +1764,14 @@ const KEY_COMICS: KeyComic[] = [
   { title: "Hellions", issue: "1", year: 2020, keyInfo: ["First Krakoan Hellions"] },
   { title: "Way of X", issue: "1", year: 2021, keyInfo: ["First Way of X (Si Spurrier)"] },
 
-  // --- MARVEL — Modern Spider-Man ---
+  // --- MARVEL - Modern Spider-Man ---
   { title: "Ultimate Comics: Spider-Man", issue: "1", year: 2011, keyInfo: ["First Ultimate Comics Spider-Man (Miles Morales solo)"] },
   { title: "Spider-Gwen: Ghost-Spider", issue: "1", year: 2018, keyInfo: ["First Ghost-Spider ongoing"] },
   { title: "Ghost-Spider", issue: "1", year: 2019, keyInfo: ["Ghost-Spider 2nd ongoing series"] },
   { title: "Spider-Boy", issue: "1", year: 2023, keyInfo: ["First Spider-Boy (Bailey Briggs) ongoing"] },
   { title: "Friendly Neighborhood Spider-Man", issue: "1", year: 2019, keyInfo: ["Tom Taylor Friendly Neighborhood Spider-Man begins"] },
 
-  // --- MARVEL — Modern Avengers / Heroes ---
+  // --- MARVEL - Modern Avengers / Heroes ---
   { title: "New Avengers", issue: "27", year: 2004, keyInfo: ["First appearance of Illuminati (modern reveal)"] },
   { title: "Mighty Avengers", issue: "1", year: 2007, keyInfo: ["First Mighty Avengers ongoing"] },
   { title: "Young Avengers", issue: "12", year: 2005, keyInfo: ["First appearance of Cassie Lang as Stature"] },
@@ -1769,7 +1787,7 @@ const KEY_COMICS: KeyComic[] = [
   { title: "America Chavez", issue: "1", year: 2017, keyInfo: ["First America Chavez solo ongoing"] },
   { title: "Iceman", issue: "1", year: 2017, keyInfo: ["First Iceman solo ongoing (Sina Grace)"] },
 
-  // --- MARVEL — Star Wars (Marvel era 2015+) ---
+  // --- MARVEL - Star Wars (Marvel era 2015+) ---
   { title: "Star Wars: Darth Vader", issue: "1", year: 2015, keyInfo: ["First Marvel Darth Vader ongoing", "First Black Krrsantan (cameo)"] },
   { title: "Star Wars: Darth Vader", issue: "3", year: 2015, keyInfo: ["First appearance of Doctor Aphra"] },
   { title: "Star Wars: Darth Vader", issue: "5", year: 2015, keyInfo: ["First appearance of 0-0-0 (Triple-Zero)", "First appearance of BT-1"] },
@@ -1782,7 +1800,7 @@ const KEY_COMICS: KeyComic[] = [
   { title: "Crimson Empire", issue: "1", year: 1997, keyInfo: ["First Crimson Empire (Dark Horse Star Wars)"] },
   { title: "Knights of the Old Republic", issue: "1", year: 2006, keyInfo: ["First Knights of the Old Republic (Dark Horse)"] },
 
-  // --- DC — Modern Batman / Joker War / Tom King ---
+  // --- DC - Modern Batman / Joker War / Tom King ---
   { title: "Batman", issue: "5", year: 1940, keyInfo: ["Court of Owls labyrinth issue"] },
   { title: "Batman", issue: "13", year: 1940, keyInfo: ["Death of the Family begins"] },
   { title: "Batman", issue: "21", year: 1940, keyInfo: ["Zero Year begins"] },
@@ -1804,7 +1822,7 @@ const KEY_COMICS: KeyComic[] = [
   { title: "Batgirls", issue: "1", year: 2021, keyInfo: ["First Batgirls ongoing (multiple Batgirls)"] },
   { title: "Robins", issue: "1", year: 2021, keyInfo: ["First Robins limited series"] },
 
-  // --- DC — Modern Justice League / Multiverse ---
+  // --- DC - Modern Justice League / Multiverse ---
   { title: "Justice League: No Justice", issue: "1", year: 2018, keyInfo: ["First Justice League: No Justice"] },
   { title: "Justice League Dark", issue: "1", year: 2018, keyInfo: ["Justice League Dark volume 2 (James Tynion)"] },
   { title: "The Multiversity", issue: "1", year: 2014, keyInfo: ["First The Multiversity (Grant Morrison)"] },
@@ -1814,12 +1832,12 @@ const KEY_COMICS: KeyComic[] = [
   { title: "Black Adam", issue: "1", year: 2022, keyInfo: ["First Black Adam ongoing solo"] },
   { title: "Wonder Girl", issue: "1", year: 2021, keyInfo: ["First Yara Flor Wonder Girl ongoing"] },
 
-  // --- DC — Charlton Heroes ---
+  // --- DC - Charlton Heroes ---
   { title: "Captain Atom", issue: "78", year: 1965, keyInfo: ["Charlton Captain Atom begins"] },
   { title: "The Question", issue: "1", year: 1967, keyInfo: ["First Charlton The Question (Vic Sage)"] },
   { title: "Peacemaker", issue: "1", year: 1967, keyInfo: ["First Charlton Peacemaker"] },
 
-  // --- DC — Vintage Westerns / Phantoms ---
+  // --- DC - Vintage Westerns / Phantoms ---
   { title: "All-Star Western", issue: "10", year: 1970, keyInfo: ["First appearance of Jonah Hex"] },
   { title: "Weird Western Tales", issue: "12", year: 1972, keyInfo: ["Jonah Hex backup begins"] },
   { title: "Jonah Hex", issue: "1", year: 1977, keyInfo: ["First Jonah Hex ongoing solo"] },
@@ -1834,14 +1852,14 @@ const KEY_COMICS: KeyComic[] = [
   { title: "House of Secrets", issue: "90", year: 1971, keyInfo: ["First appearance of Eclipso"] },
   { title: "Witching Hour", issue: "1", year: 1969, keyInfo: ["First Witching Hour"] },
 
-  // --- DC — Vertigo modern ---
+  // --- DC - Vertigo modern ---
   { title: "Preacher", issue: "5", year: 1995, keyInfo: ["Saint of Killers origin begins"] },
   { title: "Y: The Last Man", issue: "60", year: 2002, keyInfo: ["Y: The Last Man final issue"] },
   { title: "100 Bullets", issue: "100", year: 1999, keyInfo: ["100 Bullets final issue"] },
   { title: "Transmetropolitan", issue: "60", year: 1997, keyInfo: ["Transmetropolitan final issue"] },
   { title: "Sandman: Overture", issue: "1", year: 2013, keyInfo: ["First Sandman: Overture (Gaiman returns)"] },
 
-  // --- IMAGE — Recent breakouts ---
+  // --- IMAGE - Recent breakouts ---
   { title: "Saga", issue: "54", year: 2012, keyInfo: ["Saga returns from hiatus"] },
   { title: "I Hate Fairyland", issue: "1", year: 2015, keyInfo: ["First I Hate Fairyland (Skottie Young)"] },
   { title: "Reckless", issue: "1", year: 2020, keyInfo: ["First Reckless OGN series (Brubaker/Phillips)"] },
@@ -1851,7 +1869,7 @@ const KEY_COMICS: KeyComic[] = [
   { title: "Family Tree", issue: "1", year: 2019, keyInfo: ["First Family Tree (Lemire)"] },
   { title: "Decorum", issue: "1", year: 2020, keyInfo: ["First Decorum (Hickman/Müller)"] },
   { title: "Ascender", issue: "1", year: 2019, keyInfo: ["First Ascender (Lemire/Nguyen Descender sequel)"] },
-  { title: "Once & Future", issue: "1", year: 2019, keyInfo: ["First Once & Future (Boom Studios — Kieron Gillen)"] },
+  { title: "Once & Future", issue: "1", year: 2019, keyInfo: ["First Once & Future (Boom Studios - Kieron Gillen)"] },
   { title: "Stillwater", issue: "1", year: 2020, keyInfo: ["First Stillwater (Zdarsky/Pérez)"] },
   { title: "Made in Korea", issue: "1", year: 2021, keyInfo: ["First Made in Korea"] },
   { title: "Newburn", issue: "1", year: 2021, keyInfo: ["First Newburn (Chip Zdarsky)"] },
@@ -1865,7 +1883,7 @@ const KEY_COMICS: KeyComic[] = [
   { title: "The Department of Truth", issue: "12", year: 2020, keyInfo: ["12th issue / first arc conclusion"] },
   { title: "Twig", issue: "1", year: 2022, keyInfo: ["First Twig (Tradd Moore)"] },
 
-  // --- IMAGE — Spawn-verse expansion ---
+  // --- IMAGE - Spawn-verse expansion ---
   { title: "Sam and Twitch", issue: "1", year: 1999, keyInfo: ["First Sam and Twitch spinoff"] },
   { title: "Hellspawn", issue: "1", year: 2000, keyInfo: ["First Hellspawn"] },
   { title: "Curse of the Spawn", issue: "1", year: 1996, keyInfo: ["First Curse of the Spawn"] },
@@ -1875,7 +1893,7 @@ const KEY_COMICS: KeyComic[] = [
   { title: "Mouse Guard", issue: "1", year: 2006, keyInfo: ["First Mouse Guard (David Petersen)"] },
   { title: "Mighty Morphin Power Rangers", issue: "1", year: 2016, keyInfo: ["First Boom MMPR ongoing series"] },
   { title: "Lumberjanes", issue: "1", year: 2014, keyInfo: ["First Lumberjanes (Boom)"] },
-  { title: "Wynd", issue: "1", year: 2020, keyInfo: ["First Wynd (James Tynion IV — Boom)"] },
+  { title: "Wynd", issue: "1", year: 2020, keyInfo: ["First Wynd (James Tynion IV - Boom)"] },
   { title: "Something is Killing the Children", issue: "15", year: 2019, keyInfo: ["First appearance of the House of Slaughter"] },
   { title: "Black Hammer: Age of Doom", issue: "1", year: 2018, keyInfo: ["First Black Hammer: Age of Doom"] },
   { title: "Black Hammer / Justice League", issue: "1", year: 2019, keyInfo: ["First Black Hammer / Justice League crossover"] },
@@ -1888,11 +1906,11 @@ const KEY_COMICS: KeyComic[] = [
   { title: "My Little Pony: Friendship is Magic", issue: "1", year: 2012, keyInfo: ["First IDW MLP ongoing"] },
   { title: "Teenage Mutant Ninja Turtles", issue: "100", year: 1984, keyInfo: ["IDW TMNT 100th issue"] },
 
-  // --- MARVEL — More Bronze/Silver firsts ---
+  // --- MARVEL - More Bronze/Silver firsts ---
   { title: "Nick Fury, Agent of S.H.I.E.L.D.", issue: "1", year: 1968, keyInfo: ["First Nick Fury ongoing solo"] },
   { title: "Sub-Mariner", issue: "1", year: 1968, keyInfo: ["First Silver Age Sub-Mariner solo ongoing"] },
 
-  // --- MARVEL — More 2000s+ ---
+  // --- MARVEL - More 2000s+ ---
   { title: "Marvel Knights: Spider-Man", issue: "1", year: 2004, keyInfo: ["First Marvel Knights Spider-Man (Mark Millar)"] },
   { title: "World War Hulk", issue: "1", year: 2007, keyInfo: ["First World War Hulk"] },
   { title: "Punisher MAX", issue: "1", year: 2004, keyInfo: ["First Punisher MAX (Garth Ennis)"] },
@@ -1907,7 +1925,7 @@ const KEY_COMICS: KeyComic[] = [
   { title: "Paradise X", issue: "0", year: 2002, keyInfo: ["First Paradise X"] },
   { title: "1602", issue: "1", year: 2003, keyInfo: ["First Marvel 1602 (Neil Gaiman)"] },
 
-  // --- DC — Modern hot keys ---
+  // --- DC - Modern hot keys ---
   { title: "Action Comics", issue: "1006", year: 1938, keyInfo: ["Bendis Action Comics begins"] },
   { title: "Superman: Son of Kal-El", issue: "1", year: 2021, keyInfo: ["First Jon Kent Superman ongoing"] },
   { title: "Superman: Lost", issue: "1", year: 2023, keyInfo: ["First Superman: Lost"] },
@@ -1916,7 +1934,7 @@ const KEY_COMICS: KeyComic[] = [
   { title: "Future State: Dark Detective", issue: "1", year: 2021, keyInfo: ["First Future State Dark Detective"] },
   { title: "Future State: The Next Batman", issue: "1", year: 2021, keyInfo: ["First Future State Next Batman (Tim Fox)"] },
   { title: "I Am Batman", issue: "1", year: 2021, keyInfo: ["First Tim Fox Batman ongoing"] },
-  { title: "Wonder Woman: Historia — The Amazons", issue: "1", year: 2021, keyInfo: ["First Wonder Woman: Historia"] },
+  { title: "Wonder Woman: Historia - The Amazons", issue: "1", year: 2021, keyInfo: ["First Wonder Woman: Historia"] },
   { title: "Aquaman", issue: "1", year: 1962, keyInfo: ["Geoff Johns New 52 Aquaman begins"] },
 
   // --- VERTIGO / BLACK LABEL ---
@@ -1924,7 +1942,7 @@ const KEY_COMICS: KeyComic[] = [
   { title: "DC: The New Frontier", issue: "1", year: 2004, keyInfo: ["First DC: The New Frontier (Darwyn Cooke)"] },
   { title: "Other History of the DC Universe", issue: "1", year: 2020, keyInfo: ["First Other History of the DC Universe (Ridley)"] },
 
-  // --- BRONZE/COPPER — DC firsts I missed ---
+  // --- BRONZE/COPPER - DC firsts I missed ---
   { title: "All Star Comics", issue: "3", year: 1941, keyInfo: ["First Justice Society of America"] },
   { title: "All Star Comics", issue: "58", year: 1941, keyInfo: ["First appearance of Power Girl"] },
 
@@ -1934,7 +1952,7 @@ const KEY_COMICS: KeyComic[] = [
   { title: "Marvel's Voices: Legacy", issue: "1", year: 2021, keyInfo: ["First Marvel's Voices: Legacy"] },
 ];
 
-// Entry in the lookup map — stores keyInfo and optional year for disambiguation
+// Entry in the lookup map - stores keyInfo and optional year for disambiguation
 interface KeyComicEntry {
   keyInfo: string[];
   year?: number;
@@ -1944,85 +1962,165 @@ interface KeyComicEntry {
 // Multiple entries per title+issue are possible (different volumes/years)
 const keyComicsMap = new Map<string, Map<string, KeyComicEntry[]>>();
 
-KEY_COMICS.forEach((comic) => {
-  const normalizedTitle = normalizeTitle(comic.title);
+function registerEntry(normalizedTitle: string, issue: string, entry: KeyComicEntry) {
   if (!keyComicsMap.has(normalizedTitle)) {
     keyComicsMap.set(normalizedTitle, new Map());
   }
   const issueMap = keyComicsMap.get(normalizedTitle)!;
-  if (!issueMap.has(comic.issue)) {
-    issueMap.set(comic.issue, []);
+  if (!issueMap.has(issue)) {
+    issueMap.set(issue, []);
   }
-  issueMap.get(comic.issue)!.push({ keyInfo: comic.keyInfo, year: comic.year });
+  issueMap.get(issue)!.push(entry);
+}
+
+KEY_COMICS.forEach((comic) => {
+  const entry: KeyComicEntry = { keyInfo: comic.keyInfo, year: comic.year };
+  const canonicalNormalized = normalizeTitle(comic.title);
+
+  // Register canonical title
+  registerEntry(canonicalNormalized, comic.issue, entry);
+
+  // Register each alias as an additional lookup key pointing to the same entry.
+  // Aliases share keyInfo + year, so year-disambiguation still works correctly
+  // when an alias collides with a *different* canonical entry at the same issue.
+  // We dedupe within this entry's aliases - multiple author-supplied variants
+  // (e.g., "Foo: Bar", "Foo - Bar", "Foo Bar") may normalize to the same key
+  // and registering them multiple times would create phantom multi-entry
+  // ambiguity in resolveEntry.
+  if (comic.aliases) {
+    const registered = new Set<string>([canonicalNormalized]);
+    for (const alias of comic.aliases) {
+      const normalizedAlias = normalizeTitle(alias);
+      if (registered.has(normalizedAlias)) continue;
+      registered.add(normalizedAlias);
+      registerEntry(normalizedAlias, comic.issue, entry);
+    }
+  }
 });
 
 /**
- * Resolve the best match from multiple entries for the same title+issue.
- * - If releaseYear is provided and an entry has a matching year, use it.
- * - If releaseYear is provided and an entry has a year within ±5 years, use it.
- * - If only one entry exists (no year conflict), use it regardless.
- * - If multiple entries exist and no year matches, return null (ambiguous — let AI handle it).
+ * Result of a key-info lookup, with confidence metadata so UI can decide
+ * whether to render a "verify volume" advisory.
+ *
+ * - `matchType: 'exact'` - single curated entry exists at this title+issue,
+ *   OR multiple entries existed and one matched the release year exactly.
+ *   High confidence; no UI advisory needed.
+ *
+ * - `matchType: 'year-resolved'` - multiple curated volumes exist at this
+ *   title+issue and no entry matched the release year exactly. Resolver
+ *   picked the closest series-start year ≤ AI's reported year (or fell back
+ *   to ±5 years). MEDIUM confidence - UI should surface a "verify cover/year"
+ *   advisory, since an inaccurate AI year reading could push the disambiguator
+ *   across a volume boundary.
  */
-function resolveEntry(entries: KeyComicEntry[], releaseYear?: number | null): string[] | null {
-  // SINGLE ENTRY — no volume conflict exists in our database
+export interface KeyInfoLookupResult {
+  keyInfo: string[];
+  matchType: "exact" | "year-resolved";
+  /** Series-start year of the matched entry. Useful for UI volume context. */
+  matchedYear?: number;
+  /** How many curated entries were registered at this title+issue. */
+  totalCandidates: number;
+}
+
+/**
+ * Resolve the best match from multiple entries for the same title+issue.
+ * Returns metadata alongside the keyInfo so callers can render confidence cues.
+ */
+function resolveEntryWithMeta(
+  entries: KeyComicEntry[],
+  releaseYear?: number | null,
+): KeyInfoLookupResult | null {
+  const totalCandidates = entries.length;
+
+  // SINGLE ENTRY - no volume conflict exists in our database
   if (entries.length === 1) {
     const entry = entries[0];
 
     if (!entry.year) {
-      // No year on entry — safe to use, no conflict possible
-      return entry.keyInfo;
+      return { keyInfo: entry.keyInfo, matchType: "exact", totalCandidates };
     }
 
     if (!releaseYear) {
-      // Entry has year but comic doesn't — trust the match since there's no conflict
-      return entry.keyInfo;
+      // Entry has year but comic doesn't - single match means no conflict possible
+      return { keyInfo: entry.keyInfo, matchType: "exact", matchedYear: entry.year, totalCandidates };
     }
 
     // Both have years. The entry year is the series START year.
     // For long-running series (e.g., ASM started 1963, issue published 2012 at #700),
-    // the comic's publication year will be much later than the series start — that's fine.
+    // the comic's publication year will be much later than the series start - that's fine.
     if (releaseYear < entry.year) {
-      // Comic claims to be published before the series started — wrong volume
-      return null;
+      return null; // Comic claims to predate the series - wrong volume
     }
 
-    // Comic published after series started — valid match
     // NOTE: If a title has known relaunches (e.g., X-Men 1963 vs 1991), BOTH volumes
     // must be in the curated DB. That triggers the multi-entry path above instead.
-    return entry.keyInfo;
+    return { keyInfo: entry.keyInfo, matchType: "exact", matchedYear: entry.year, totalCandidates };
   }
 
-  // MULTIPLE ENTRIES — need releaseYear to disambiguate between volumes
+  // MULTIPLE ENTRIES - need releaseYear to disambiguate between volumes
   if (!releaseYear) {
-    return null; // Can't pick without a year
+    return null; // Resolver explicitly refuses to guess without a year - fall back to AI
   }
 
-  // Find exact year match first
+  // Find exact year match first - high-confidence disambiguation
   const exactMatch = entries.find((e) => e.year === releaseYear);
-  if (exactMatch) return exactMatch.keyInfo;
+  if (exactMatch) {
+    return { keyInfo: exactMatch.keyInfo, matchType: "exact", matchedYear: exactMatch.year, totalCandidates };
+  }
 
-  // Find the entry whose series start year is closest to (but not after) the release year
+  // Find the entry whose series start year is closest to (but not after) the release year.
+  // This is a JUDGMENT CALL - flag as 'year-resolved' so UI can surface advisory.
   const validEntries = entries
     .filter((e) => e.year && releaseYear >= e.year)
     .sort((a, b) => b.year! - a.year!); // Prefer the most recent series that started before this issue
 
-  if (validEntries.length > 0) return validEntries[0].keyInfo;
+  if (validEntries.length > 0) {
+    return {
+      keyInfo: validEntries[0].keyInfo,
+      matchType: "year-resolved",
+      matchedYear: validEntries[0].year,
+      totalCandidates,
+    };
+  }
 
-  // Fallback: find closest year within ±5 years
+  // Fallback: closest year within ±5 years (also a judgment call)
   const closeMatch = entries
     .filter((e) => e.year && Math.abs(e.year - releaseYear) <= 5)
     .sort((a, b) => Math.abs(a.year! - releaseYear) - Math.abs(b.year! - releaseYear))[0];
-  if (closeMatch) return closeMatch.keyInfo;
+  if (closeMatch) {
+    return {
+      keyInfo: closeMatch.keyInfo,
+      matchType: "year-resolved",
+      matchedYear: closeMatch.year,
+      totalCandidates,
+    };
+  }
 
-  return null; // No matching volume found
+  return null;
 }
 
 /**
- * Look up key info for a comic from our curated database.
- * Pass releaseYear to disambiguate titles with multiple volumes.
- * Returns null if not found (should fall back to AI lookup).
+ * @deprecated Internal - use resolveEntryWithMeta. Kept until call sites migrate.
  */
-export function lookupKeyInfo(title: string, issueNumber: string, releaseYear?: number | null): string[] | null {
+function resolveEntry(entries: KeyComicEntry[], releaseYear?: number | null): string[] | null {
+  return resolveEntryWithMeta(entries, releaseYear)?.keyInfo ?? null;
+}
+
+/**
+ * Look up key info for a comic from our curated database, returning the
+ * full result metadata (match type, matched year, total candidates).
+ *
+ * Pass releaseYear to disambiguate titles with multiple volumes. When
+ * matchType === 'year-resolved', UI should render a "verify volume/year"
+ * advisory so the user can sanity-check the disambiguation.
+ *
+ * Returns null if not found (caller should fall back to AI lookup).
+ */
+export function lookupKeyInfoWithMeta(
+  title: string,
+  issueNumber: string,
+  releaseYear?: number | null,
+): KeyInfoLookupResult | null {
   const normalizedTitle = normalizeTitle(title);
   const issueMap = keyComicsMap.get(normalizedTitle);
 
@@ -2033,17 +2131,26 @@ export function lookupKeyInfo(title: string, issueNumber: string, releaseYear?: 
   // Try exact issue match
   const entries = issueMap.get(issueNumber);
   if (entries) {
-    return resolveEntry(entries, releaseYear);
+    return resolveEntryWithMeta(entries, releaseYear);
   }
 
   // Try without leading zeros (e.g., "01" -> "1")
   const cleanIssue = issueNumber.replace(/^0+/, "") || "0";
   const entriesClean = issueMap.get(cleanIssue);
   if (entriesClean) {
-    return resolveEntry(entriesClean, releaseYear);
+    return resolveEntryWithMeta(entriesClean, releaseYear);
   }
 
   return null;
+}
+
+/**
+ * Look up key info for a comic. Backwards-compatible wrapper around
+ * lookupKeyInfoWithMeta - returns just the keyInfo array. Prefer the
+ * `WithMeta` variant if you need confidence metadata for UI affordances.
+ */
+export function lookupKeyInfo(title: string, issueNumber: string, releaseYear?: number | null): string[] | null {
+  return lookupKeyInfoWithMeta(title, issueNumber, releaseYear)?.keyInfo ?? null;
 }
 
 /**

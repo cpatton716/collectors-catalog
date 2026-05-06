@@ -9,7 +9,7 @@ import type { Notification } from "@/types/auction";
  * and all modern browsers; survives PWA reload). One key per profile id
  * to prevent cross-user leakage on a shared device.
  *
- * Versioned shape — bump CACHE_VERSION any time the cached object's shape
+ * Versioned shape - bump CACHE_VERSION any time the cached object's shape
  * changes (e.g., adding a field that the renderer reads). Mismatch
  * triggers a discard + refetch instead of crashing the renderer.
  */
@@ -42,7 +42,7 @@ function isAvailable(): boolean {
 
 /**
  * Read the cached inbox snapshot for a profile. Returns null on miss,
- * version mismatch, or any parse error — callers should treat null as
+ * version mismatch, or any parse error - callers should treat null as
  * "no cache; fetch from network."
  */
 export function readNotificationsCache(
@@ -82,7 +82,7 @@ export function writeNotificationsCache(
     };
     window.localStorage.setItem(cacheKey(profileId), JSON.stringify(entry));
   } catch {
-    // Quota or serialization failure — drop silently. The next successful
+    // Quota or serialization failure - drop silently. The next successful
     // fetch will repopulate.
   }
 }

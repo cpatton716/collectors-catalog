@@ -97,7 +97,7 @@ export function ListingDetailModal({
     }
   };
 
-  // Buy Now: direct-to-Stripe-Checkout. No intermediate "reserve" state —
+  // Buy Now: direct-to-Stripe-Checkout. No intermediate "reserve" state -
   // the listing stays active until the Stripe webhook confirms payment and
   // marks it sold. See BACKLOG bug #1 for flow design rationale.
   const handlePurchase = async () => {
@@ -453,7 +453,7 @@ export function ListingDetailModal({
                       )}
                     </div>
                   ) : listing.status === "active" && listing.isSeller ? (
-                    // Seller viewing their own active listing — no Buy Now.
+                    // Seller viewing their own active listing - no Buy Now.
                     // Seller controls (Mark as Sold / Pull off the Shelf) render below.
                     null
                   ) : listing.status === "active" ? (

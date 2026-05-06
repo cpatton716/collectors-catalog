@@ -100,7 +100,7 @@ const faqs = [
   {
     question: "What does it cost me to sell on Collectors Chest?",
     answer:
-      "We charge a flat platform fee on each completed sale — 8% on Free accounts, 5% on Premium — with a $0.75 minimum per sale. The rate is locked at the moment you create the listing, so changing tiers later doesn't change fees on listings that are already up. Stripe's processing fee is on us, not you. Sell a $100 comic on Free and you receive $92.00; on Premium you receive $95.00. The $0.75 minimum only kicks in on small sales (below $9.38 on Free, below $15.00 on Premium).",
+      "We charge a flat platform fee on each completed sale - 8% on Free accounts, 5% on Premium - with a $0.75 minimum per sale. The rate is locked at the moment you create the listing, so changing tiers later doesn't change fees on listings that are already up. Stripe's processing fee is on us, not you. Sell a $100 comic on Free and you receive $92.00; on Premium you receive $95.00. The $0.75 minimum only kicks in on small sales (below $9.38 on Free, below $15.00 on Premium).",
   },
   {
     question: "What happens after I buy a comic?",
@@ -202,6 +202,16 @@ export function Navigation() {
   const [profileId, setProfileId] = useState<string | null>(null);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const moreMenuRef = useRef<HTMLDivElement>(null);
+  // Hydration-safe mount flag. Server-render is always auth-unaware, so any
+  // className that depends on `isSignedIn` will diverge between SSR and the
+  // first client render once Clerk resolves. Gate auth-dependent classNames
+  // on this flag so SSR and initial CSR match exactly; the post-mount render
+  // applies the auth-aware variant. See BACKLOG "Hydration Mismatch on Ask
+  // the Professor Button" (Apr 22, 2026 entry).
+  const [hasMounted, setHasMounted] = useState(false);
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   // Lock background scroll while the Ask the Professor modal is open so
   // scrolling inside the FAQ list doesn't bleed through to the underlying
@@ -446,11 +456,14 @@ export function Navigation() {
                 <NotificationBell />
               </SignedIn>
 
-              {/* Ask the Professor button — hidden on mobile for guests so Sign In takes priority */}
+              {/* Ask the Professor button - hidden on mobile for guests so Sign In takes priority */}
               <button
                 onClick={() => setShowProfessor(true)}
                 className={`p-2 bg-pop-blue border-2 border-pop-black shadow-comic-sm hover:shadow-comic hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all ${
-                  !isSignedIn ? "hidden sm:inline-flex" : "inline-flex"
+                  // Default to the guest visibility shape until mount so SSR
+                  // and first client render produce identical HTML. The auth
+                  // -aware variant only kicks in after `hasMounted` flips true.
+                  hasMounted && isSignedIn ? "inline-flex" : "hidden sm:inline-flex"
                 }`}
                 aria-label="Ask the Professor"
               >
@@ -480,7 +493,7 @@ export function Navigation() {
                   >
                     <LogIn className="w-5 h-5 text-pop-white" />
                   </Link>
-                  {/* Desktop: full SIGN IN button (no btn-pop class — collides with `hidden`) */}
+                  {/* Desktop: full SIGN IN button (no btn-pop class - collides with `hidden`) */}
                   <Link
                     href="/sign-in"
                     className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 bg-pop-blue text-pop-white border-2 border-pop-black shadow-comic-sm hover:shadow-comic hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all text-sm"
@@ -535,7 +548,7 @@ export function Navigation() {
               className="overflow-y-auto max-h-[calc(80vh-120px)] p-4 dots-blue-light"
               onClick={(e) => {
                 // Close the modal when the user clicks an internal link inside
-                // an FAQ answer — otherwise they navigate but the modal stays
+                // an FAQ answer - otherwise they navigate but the modal stays
                 // open, floating over the destination page.
                 const anchor = (e.target as HTMLElement).closest("a");
                 if (anchor) setShowProfessor(false);

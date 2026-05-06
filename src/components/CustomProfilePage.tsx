@@ -295,7 +295,7 @@ export function CustomProfilePage() {
           const data: ConnectStatus = await res.json();
           setConnectStatus(data);
         } else {
-          // API not available or user has no connect account — show "not connected" state
+          // API not available or user has no connect account - show "not connected" state
           setConnectStatus({
             connected: false,
             onboardingComplete: false,

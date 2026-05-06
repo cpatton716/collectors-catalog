@@ -567,7 +567,7 @@ export async function getUserMatches(userId: string): Promise<GroupedMatch[]> {
 }
 
 /**
- * Mark a match as viewed. `userId` MUST be the caller's profile id —
+ * Mark a match as viewed. `userId` MUST be the caller's profile id -
  * `supabaseAdmin` bypasses RLS, so an `.eq("id", matchId)`-only update
  * would be IDOR (any user could mark anyone's match viewed by guessing
  * UUIDs). Returns true iff a row matched.

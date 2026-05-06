@@ -278,7 +278,7 @@ Use null for any field you're not confident about. Most issues should have empty
       result.keyInfo = [];
     }
 
-    // No price data — pricing handled by eBay Browse API
+    // No price data - pricing handled by eBay Browse API
     result.priceData = null;
 
     return result;

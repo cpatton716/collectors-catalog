@@ -14,6 +14,7 @@ export type NotificationType =
   | "ended"
   | "bid_auction_lost"
   | "new_bid_received"
+  | "auction_ending_soon_bidder"
   | "payment_reminder"
   | "auction_payment_expired"
   | "auction_payment_expired_seller"
@@ -94,7 +95,7 @@ export interface Auction {
   paymentStatus: PaymentStatus | null;
   paymentDeadline: string | null;
 
-  // Shipping (Option A — self-reported tracking; Option B adds carrier validation)
+  // Shipping (Option A - self-reported tracking; Option B adds carrier validation)
   shippedAt: string | null;
   trackingNumber: string | null;
   trackingCarrier: string | null;
@@ -193,6 +194,12 @@ export interface PlaceBidResult {
   currentBid?: number;
   isHighBidder?: boolean;
   outbidAmount?: number; // If outbid, the amount needed to be high bidder
+  /**
+   * Sniping protection: when present, the auction's `end_time` was extended
+   * because the bid arrived inside the protection window. UI can surface
+   * "Auction extended!" with the new end time.
+   */
+  extendedTo?: string; // ISO 8601 — new end_time after extension
 }
 
 export interface BidHistoryItem {
@@ -370,7 +377,7 @@ export function isListingFinalized(status: AuctionStatus): boolean {
 }
 
 /**
- * The listing has a completed sale — a winner was selected AND payment
+ * The listing has a completed sale - a winner was selected AND payment
  * has cleared. Used to gate feedback + "you purchased this" UI.
  *
  * Implemented as a type predicate so consumers that narrow with it can
@@ -601,7 +608,7 @@ export function calculatePaymentDeadline(fromDate: Date = new Date()): Date {
  * Is an auction's payment deadline inside the reminder window
  * (i.e., the reminder email should fire now)?
  * Returns `true` when `deadline - now <= PAYMENT_REMINDER_WINDOW_HOURS` AND
- * the deadline has not yet passed. Pure function — no side effects.
+ * the deadline has not yet passed. Pure function - no side effects.
  */
 export function isWithinPaymentReminderWindow(
   paymentDeadline: Date,
@@ -609,7 +616,7 @@ export function isWithinPaymentReminderWindow(
 ): boolean {
   const msUntilDeadline = paymentDeadline.getTime() - now.getTime();
   if (msUntilDeadline <= 0) {
-    // Deadline has passed — expiration handles this, not reminders.
+    // Deadline has passed - expiration handles this, not reminders.
     return false;
   }
   const reminderWindowMs = PAYMENT_REMINDER_WINDOW_HOURS * 60 * 60 * 1000;
@@ -635,7 +642,7 @@ export interface SecondChanceOffer {
 }
 
 /**
- * The runner-up accept window matches the original 48h payment window — lets
+ * The runner-up accept window matches the original 48h payment window - lets
  * a seller's cancelled auction cycle finish in the same elapsed time.
  */
 export const SECOND_CHANCE_WINDOW_HOURS = PAYMENT_WINDOW_HOURS;
@@ -668,7 +675,7 @@ export const PAYMENT_MISS_STRIKE_THRESHOLD = 2;
 
 /**
  * Returns true when `timestamp` falls inside the rolling strike window.
- * Pure — takes `now` for deterministic tests.
+ * Pure - takes `now` for deterministic tests.
  */
 export function isWithinStrikeWindow(
   timestamp: Date,
@@ -685,7 +692,7 @@ export function isWithinStrikeWindow(
  * prior `auction_payment_expired` audit-log events for this user PLUS the
  * current miss. All timestamps should be within the window to count.
  *
- * Pure — no DB access.
+ * Pure - no DB access.
  */
 export function shouldFlagForPaymentMisses(
   pastMissTimestamps: Date[],

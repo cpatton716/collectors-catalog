@@ -48,10 +48,10 @@ describe("validateImageUrl", () => {
     ).toBe(true);
   });
 
-  it("accepts Open Library URLs", () => {
+  it("rejects Open Library URLs (removed from pipeline May 6, 2026)", () => {
     expect(
       validateImageUrl("https://covers.openlibrary.org/b/title/Batman-L.jpg")
-    ).toBe(true);
+    ).toBe(false);
   });
 
   it("accepts Wikimedia URLs", () => {
@@ -80,6 +80,25 @@ describe("validateImageUrl", () => {
     expect(validateImageUrl("https://127.0.0.1/image.jpg")).toBe(false);
     expect(validateImageUrl("https://172.16.0.1/image.jpg")).toBe(false);
     expect(validateImageUrl("https://169.254.1.1/image.jpg")).toBe(false);
+  });
+
+  it("rejects private IPv6 addresses", () => {
+    // Loopback ::1 (with and without leading-zero groups)
+    expect(validateImageUrl("https://[::1]/image.jpg")).toBe(false);
+    expect(validateImageUrl("https://[0:0:0:0:0:0:0:1]/image.jpg")).toBe(false);
+    // Unspecified ::
+    expect(validateImageUrl("https://[::]/image.jpg")).toBe(false);
+    // Link-local fe80::/10
+    expect(validateImageUrl("https://[fe80::1]/image.jpg")).toBe(false);
+    expect(validateImageUrl("https://[fe80:0:0:0:1234:5678:9abc:def0]/image.jpg")).toBe(false);
+    expect(validateImageUrl("https://[febf::1]/image.jpg")).toBe(false);
+    // Unique-local fc00::/7
+    expect(validateImageUrl("https://[fc00::1]/image.jpg")).toBe(false);
+    expect(validateImageUrl("https://[fd12:3456:789a::1]/image.jpg")).toBe(false);
+    // IPv4-mapped IPv6 with private IPv4 — must NOT bypass the IPv4 guard
+    expect(validateImageUrl("https://[::ffff:127.0.0.1]/image.jpg")).toBe(false);
+    expect(validateImageUrl("https://[::ffff:192.168.1.1]/image.jpg")).toBe(false);
+    expect(validateImageUrl("https://[::ffff:10.0.0.1]/image.jpg")).toBe(false);
   });
 
   it("rejects invalid URLs", () => {
@@ -409,26 +428,14 @@ describe("runCoverPipeline", () => {
     expect(result.validated).toBe(true);
   });
 
-  it("continues to next candidate when image fetch fails", async () => {
-    const jpegBuffer = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x01, 0x02]);
-    const openLibraryUrl = "https://covers.openlibrary.org/b/title/Batman-L.jpg";
-
-    global.fetch = jest.fn().mockImplementation((url: string, opts?: any) => {
-      if (opts?.method === "HEAD" && typeof url === "string" && url.includes("openlibrary.org")) {
-        return Promise.resolve({ ok: true, headers: new Headers({ "content-type": "image/jpeg" }) });
-      }
-      if (opts?.method === "HEAD") {
-        return Promise.resolve({ ok: false, headers: new Headers() });
-      }
+  it("returns null when eBay image fetch fails and no other candidates exist (Open Library removed May 6)", async () => {
+    // Open Library was previously a backup candidate when eBay failed; that
+    // path was removed in Session 45 due to low single-issue accuracy. With
+    // Open Library gone, an eBay-only pipeline should return null when the
+    // eBay image fetch fails — there's no other candidate source.
+    global.fetch = jest.fn().mockImplementation((url: string) => {
       if (typeof url === "string" && url.includes("ebayimg.com")) {
         return Promise.resolve({ ok: false, headers: new Headers() });
-      }
-      if (typeof url === "string" && url.includes("openlibrary.org")) {
-        return Promise.resolve({
-          ok: true,
-          headers: new Headers({ "content-type": "image/jpeg", "content-length": "7" }),
-          arrayBuffer: () => Promise.resolve(jpegBuffer.buffer),
-        });
       }
       return Promise.resolve({ ok: false, headers: new Headers() });
     });
@@ -448,9 +455,9 @@ describe("runCoverPipeline", () => {
       geminiClient: mockGeminiClient,
     });
 
-    expect(result.coverUrl).toBe(openLibraryUrl);
-    expect(result.coverSource).toBe("openlibrary");
-    expect(result.validated).toBe(true);
+    expect(result.coverUrl).toBeNull();
+    // validated=false because the fetch failure marks allCandidatesChecked=false.
+    expect(result.validated).toBe(false);
   });
 
   it("returns validated=false when max failures reached", async () => {
@@ -490,28 +497,18 @@ describe("runCoverPipeline", () => {
     expect(result.validated).toBe(false);
   });
 
-  it("skips image that exceeds size limit and continues to next candidate", async () => {
+  it("skips image that exceeds size limit (Open Library fallback removed May 6 — returns null)", async () => {
+    // Pre-removal: oversized eBay image was skipped and the OL candidate
+    // succeeded. Post-removal: oversized image is the only candidate, so the
+    // pipeline returns null. We're asserting the SAFE path (no fallback to a
+    // wrong cover) is preserved.
     const jpegBuffer = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x01, 0x02]);
-    const openLibraryUrl = "https://covers.openlibrary.org/b/title/Batman-L.jpg";
 
-    global.fetch = jest.fn().mockImplementation((url: string, opts?: any) => {
-      if (opts?.method === "HEAD" && typeof url === "string" && url.includes("openlibrary.org")) {
-        return Promise.resolve({ ok: true, headers: new Headers({ "content-type": "image/jpeg" }) });
-      }
-      if (opts?.method === "HEAD") {
-        return Promise.resolve({ ok: false, headers: new Headers() });
-      }
+    global.fetch = jest.fn().mockImplementation((url: string) => {
       if (typeof url === "string" && url.includes("ebayimg.com")) {
         return Promise.resolve({
           ok: true,
           headers: new Headers({ "content-type": "image/jpeg", "content-length": "6000000" }),
-          arrayBuffer: () => Promise.resolve(jpegBuffer.buffer),
-        });
-      }
-      if (typeof url === "string" && url.includes("openlibrary.org")) {
-        return Promise.resolve({
-          ok: true,
-          headers: new Headers({ "content-type": "image/jpeg", "content-length": "7" }),
           arrayBuffer: () => Promise.resolve(jpegBuffer.buffer),
         });
       }
@@ -533,35 +530,20 @@ describe("runCoverPipeline", () => {
       geminiClient: mockGeminiClient,
     });
 
-    expect(result.coverUrl).toBe(openLibraryUrl);
-    expect(result.coverSource).toBe("openlibrary");
-    expect(result.validated).toBe(true);
+    expect(result.coverUrl).toBeNull();
+    // Oversized image counts as a failure → allCandidatesChecked=false → validated=false
+    expect(result.validated).toBe(false);
   });
 
-  it("skips image with invalid MIME type and continues to next candidate", async () => {
+  it("skips image with invalid MIME type (Open Library fallback removed May 6 — returns null)", async () => {
     const badBuffer = Buffer.from([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
-    const jpegBuffer = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x01, 0x02]);
-    const openLibraryUrl = "https://covers.openlibrary.org/b/title/Batman-L.jpg";
 
-    global.fetch = jest.fn().mockImplementation((url: string, opts?: any) => {
-      if (opts?.method === "HEAD" && typeof url === "string" && url.includes("openlibrary.org")) {
-        return Promise.resolve({ ok: true, headers: new Headers({ "content-type": "image/jpeg" }) });
-      }
-      if (opts?.method === "HEAD") {
-        return Promise.resolve({ ok: false, headers: new Headers() });
-      }
+    global.fetch = jest.fn().mockImplementation((url: string) => {
       if (typeof url === "string" && url.includes("ebayimg.com")) {
         return Promise.resolve({
           ok: true,
           headers: new Headers({ "content-type": "application/octet-stream", "content-length": "7" }),
           arrayBuffer: () => Promise.resolve(badBuffer.buffer),
-        });
-      }
-      if (typeof url === "string" && url.includes("openlibrary.org")) {
-        return Promise.resolve({
-          ok: true,
-          headers: new Headers({ "content-type": "image/jpeg", "content-length": "7" }),
-          arrayBuffer: () => Promise.resolve(jpegBuffer.buffer),
         });
       }
       return Promise.resolve({ ok: false, headers: new Headers() });
@@ -582,9 +564,9 @@ describe("runCoverPipeline", () => {
       geminiClient: mockGeminiClient,
     });
 
-    expect(result.coverUrl).toBe(openLibraryUrl);
-    expect(result.coverSource).toBe("openlibrary");
-    expect(result.validated).toBe(true);
+    expect(result.coverUrl).toBeNull();
+    // Bad MIME counts as a failure → allCandidatesChecked=false → validated=false
+    expect(result.validated).toBe(false);
   });
 
   it("returns validated=true when no candidates found", async () => {

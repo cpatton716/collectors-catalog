@@ -19,7 +19,6 @@ export interface CoverPipelineResult {
   coverSource:
     | "community"
     | "ebay"
-    | "openlibrary"
     | "comicvine"
     | null;
   validated: boolean;
@@ -44,7 +43,6 @@ const ALLOWED_MIME_TYPES = new Set([
 ]);
 
 const ALLOWED_EXACT_HOSTS = new Set([
-  "covers.openlibrary.org",
   "upload.wikimedia.org",
 ]);
 
@@ -73,6 +71,49 @@ const PRIVATE_IP_PREFIXES = [
   "169.254.",
 ];
 
+/**
+ * Detect IPv6 addresses in the private/loopback ranges that should be rejected
+ * by SSRF-defense URL validation. Mirrors the IPv4 PRIVATE_IP_PREFIXES set
+ * for IPv6:
+ *
+ *   - `::1`               loopback (IPv4 127.0.0.1 equivalent)
+ *   - `::`                unspecified
+ *   - `fe80::/10`         link-local (IPv4 169.254.0.0/16 equivalent)
+ *   - `fc00::/7`          unique-local / private (IPv4 10/192.168/172.16-31 equivalent)
+ *   - `::ffff:a.b.c.d`    IPv4-mapped IPv6 — checked against PRIVATE_IP_PREFIXES
+ *                         to prevent bypassing the IPv4 guard via mapped form
+ *
+ * `URL.hostname` returns IPv6 wrapped in `[...]` per WHATWG; we strip those
+ * brackets and lowercase before matching.
+ */
+export function isPrivateIPv6(hostname: string): boolean {
+  const h = hostname.replace(/^\[|\]$/g, "").toLowerCase();
+  if (!h.includes(":")) return false; // not IPv6
+
+  // Loopback: ::1, with optional leading zero groups (0:0:0:0:0:0:0:1)
+  if (h === "::1" || /^(0+:){1,7}0*1$/.test(h)) return true;
+
+  // Unspecified: ::, with optional leading zero groups
+  if (h === "::" || /^(0+:){0,7}0+$/.test(h)) return true;
+
+  // Link-local fe80::/10 — first 10 bits are 1111 1110 10, which means the
+  // first hex group is 0xfe80-0xfebf (i.e., fe8x or fe9x or feax or febx).
+  if (/^fe[89ab][0-9a-f]:/.test(h)) return true;
+
+  // Unique-local fc00::/7 — first 7 bits are 1111 110, which means the first
+  // hex group starts with fc or fd.
+  if (/^f[cd][0-9a-f]{2}:/.test(h)) return true;
+
+  // IPv4-mapped IPv6: ::ffff:a.b.c.d — extract the IPv4 and check it against
+  // the existing IPv4 private prefixes.
+  const ipv4Mapped = h.match(/^::ffff:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/);
+  if (ipv4Mapped) {
+    return PRIVATE_IP_PREFIXES.some((prefix) => ipv4Mapped[1].startsWith(prefix));
+  }
+
+  return false;
+}
+
 // Module-level rate-limit cooldown
 let rateLimitCooldownUntil = 0;
 
@@ -92,10 +133,15 @@ export function validateImageUrl(url: string): boolean {
     // Reject localhost
     if (hostname === "localhost") return false;
 
-    // Reject private IPs
+    // Reject private IPv4 ranges
     for (const prefix of PRIVATE_IP_PREFIXES) {
       if (hostname.startsWith(prefix)) return false;
     }
+
+    // Reject private IPv6 ranges (loopback, link-local, unique-local,
+    // IPv4-mapped private). hostname may include brackets for IPv6 — handled
+    // inside the helper.
+    if (isPrivateIPv6(hostname)) return false;
 
     // Check exact hosts
     if (ALLOWED_EXACT_HOSTS.has(hostname)) return true;
@@ -164,7 +210,7 @@ export function shouldRunPipeline(
   // Already validated with a URL → skip
   if (metadata.coverValidated === true && metadata.coverImageUrl) return false;
 
-  // Validated but no URL — retry after RETRY_AFTER_DAYS
+  // Validated but no URL - retry after RETRY_AFTER_DAYS
   if (
     metadata.coverValidated === true &&
     !metadata.coverImageUrl &&
@@ -230,7 +276,7 @@ function buildPrompt(
   if (publisher) parts.push(publisher);
   if (parts.length > 0) desc += ` (${parts.join(", ")})`;
 
-  return `Is this a cover of ${desc}? Variant covers, reprints, and different printings of the same issue are acceptable. The comic may be shown inside a CGC/CBCS grading slab — this is still acceptable if the cover is visible. Answer YES or NO. If NO, briefly say what comic this actually appears to be.`;
+  return `Is this a cover of ${desc}? Variant covers, reprints, and different printings of the same issue are acceptable. The comic may be shown inside a CGC/CBCS grading slab - this is still acceptable if the cover is visible. Answer YES or NO. If NO, briefly say what comic this actually appears to be.`;
 }
 
 type GeminiVerdict = "yes" | "no" | "ambiguous";
@@ -285,31 +331,6 @@ async function validateWithGemini(
 }
 
 // ---------------------------------------------------------------------------
-// Open Library Candidate
-// ---------------------------------------------------------------------------
-
-async function tryOpenLibrary(title: string): Promise<string | null> {
-  const encoded = encodeURIComponent(title);
-  const url = `https://covers.openlibrary.org/b/title/${encoded}-L.jpg`;
-
-  try {
-    const res = await fetch(url, {
-      method: "HEAD",
-      signal: AbortSignal.timeout(5_000),
-    });
-
-    if (!res.ok) return null;
-
-    const ct = res.headers.get("content-type") ?? "";
-    if (!ct.startsWith("image/")) return null;
-
-    return url;
-  } catch {
-    return null;
-  }
-}
-
-// ---------------------------------------------------------------------------
 // Main Pipeline
 // ---------------------------------------------------------------------------
 
@@ -354,15 +375,10 @@ export async function runCoverPipeline(
     }
   }
 
-  // Open Library candidate
-  try {
-    const olUrl = await tryOpenLibrary(title);
-    if (olUrl) {
-      candidates.push({ url: olUrl, source: "openlibrary" });
-    }
-  } catch (err) {
-    console.error(`${LOG_PREFIX} Open Library lookup failed`, err);
-  }
+  // Open Library candidate previously lived here. Removed Session 45
+  // (May 6, 2026) — low single-issue accuracy + burned Gemini quota on
+  // bad candidates. See BACKLOG entry "Remove Open Library from Cover
+  // Pipeline" (closed in Session 45 batch).
 
   if (candidates.length === 0) return NULL_RESULT;
 
@@ -428,11 +444,11 @@ export async function runCoverPipeline(
       }
 
       if (verdict === "no") {
-        // Confirmed wrong cover — skip this candidate
+        // Confirmed wrong cover - skip this candidate
         continue;
       }
 
-      // Ambiguous — don't count as failure, just skip
+      // Ambiguous - don't count as failure, just skip
       continue;
     } catch (err: unknown) {
       failures++;

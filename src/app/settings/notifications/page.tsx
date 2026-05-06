@@ -225,7 +225,7 @@ export default function NotificationSettingsPage() {
       </div>
 
       <div className="bg-pop-white border-3 border-pop-black shadow-[4px_4px_0px_#000]">
-        {/* Transactional — always on */}
+        {/* Transactional - always on */}
         <div className="p-6 border-b-3 border-pop-black bg-pop-cream/40">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-3">

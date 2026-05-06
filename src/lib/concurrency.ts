@@ -58,7 +58,7 @@ export async function mapWithConcurrency<T, R>(
  * Like `mapWithConcurrency` but never rejects: each task's outcome is
  * returned as a `{ status: 'fulfilled' | 'rejected' }` descriptor.
  *
- * Useful when one failing task should not abort the rest — e.g. sending
+ * Useful when one failing task should not abort the rest - e.g. sending
  * 50 emails where one bad recipient address shouldn't block the others.
  */
 export async function mapWithConcurrencySettled<T, R>(

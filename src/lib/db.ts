@@ -1,6 +1,7 @@
 import { CollectionItem, SaleRecord, UserList } from "@/types/comic";
 
 import { cacheDelete, cacheGet, cacheSet } from "./cache";
+import { sanitizeCoverImageUrl } from "./coverImageUrlSanitizer";
 import { filterCustomKeyInfoForPublic } from "./keyInfoHelpers";
 import { normalizeTitle, normalizeIssueNumber } from "./normalizeTitle";
 import { supabase, supabaseAdmin } from "./supabase";
@@ -95,7 +96,7 @@ export async function invalidateProfileCache(clerkUserId: string): Promise<void>
 
 // Comics
 export async function getUserComics(profileId: string): Promise<CollectionItem[]> {
-  // Exclude sold comics from the active collection view — they live in the
+  // Exclude sold comics from the active collection view - they live in the
   // user's sold history (/sales page) and should not clutter the main
   // collection. See BACKLOG bug #6.
   const { data, error } = await supabase
@@ -197,7 +198,7 @@ export class ComicSoldError extends Error {
 
 export async function updateComic(comicId: string, updates: Partial<CollectionItem>) {
   // Guard: sold comics live in the seller's read-only sold history.
-  // See BACKLOG "Marketplace UX / Purchase Flow Cleanup" bug #6 — seller's
+  // See BACKLOG "Marketplace UX / Purchase Flow Cleanup" bug #6 - seller's
   // original row is preserved for their history but cannot be edited after sale.
   const { data: existing } = await supabase
     .from("comics")
@@ -393,7 +394,7 @@ export async function recordSale(
       comic_issue_number: item.comic.issueNumber,
       comic_variant: item.comic.variant,
       comic_publisher: item.comic.publisher,
-      cover_image_url: item.coverImageUrl,
+      cover_image_url: sanitizeCoverImageUrl(item.coverImageUrl),
       purchase_price: item.purchasePrice,
       sale_price: salePrice,
       profit: salePrice - (item.purchasePrice || 0),
@@ -486,7 +487,7 @@ export async function migrateLocalDataToCloud(
       comic_issue_number: sale.comic.issueNumber,
       comic_variant: sale.comic.variant,
       comic_publisher: sale.comic.publisher,
-      cover_image_url: sale.coverImageUrl,
+      cover_image_url: sanitizeCoverImageUrl(sale.coverImageUrl),
       purchase_price: sale.purchasePrice,
       sale_price: sale.salePrice,
       sale_date: sale.saleDate,
@@ -604,8 +605,10 @@ export async function saveComicMetadata(metadata: {
       interior_artist: metadata.interiorArtist,
       key_info: metadata.keyInfo || [],
       price_data: metadata.priceData,
-      // Conditional spread — only include cover fields when explicitly provided
-      ...(metadata.coverImageUrl !== undefined && { cover_image_url: metadata.coverImageUrl }),
+      // Conditional spread - only include cover fields when explicitly provided
+      ...(metadata.coverImageUrl !== undefined && {
+        cover_image_url: sanitizeCoverImageUrl(metadata.coverImageUrl),
+      }),
       ...(metadata.coverSource !== undefined && { cover_source: metadata.coverSource }),
       ...(metadata.coverValidated !== undefined && { cover_validated: metadata.coverValidated }),
     },
@@ -617,7 +620,7 @@ export async function saveComicMetadata(metadata: {
 
   if (error) {
     if (error.code === "23505") {
-      console.warn("[metadata] Duplicate key violation — possible unnormalized title:", metadata.title);
+      console.warn("[metadata] Duplicate key violation - possible unnormalized title:", metadata.title);
     }
     console.error("[metadata] Save failed:", error);
     // Don't throw - cache failures shouldn't break the app
@@ -714,7 +717,7 @@ function transformCollectionItemToDbComic(item: CollectionItem, profileId: strin
     signed_by: item.comic.signedBy,
     key_info: item.comic.keyInfo,
     price_data: item.comic.priceData,
-    cover_image_url: item.coverImageUrl,
+    cover_image_url: sanitizeCoverImageUrl(item.coverImageUrl),
     condition_grade: item.conditionGrade,
     condition_label: item.conditionLabel,
     is_graded: item.isGraded,
@@ -1119,7 +1122,7 @@ export async function catalogBarcode(entry: BarcodeCatalogEntry): Promise<void> 
         .insert({
           barcode_catalog_id: catalogEntry.id,
           detected_upc: entry.raw,
-          cover_image_url: entry.coverImageUrl,
+          cover_image_url: sanitizeCoverImageUrl(entry.coverImageUrl),
           comic_title: entry.comicTitle || null,
           comic_issue: entry.comicIssue || null,
           status: "pending",
@@ -1158,7 +1161,7 @@ export async function lookupBarcodeCatalog(rawBarcode: string): Promise<{
     // Clean the barcode
     const cleanBarcode = rawBarcode.replace(/[\s-]/g, "");
 
-    // Look up in barcode_catalog — only approved entries
+    // Look up in barcode_catalog - only approved entries
     const { data: catalogEntry, error } = await supabaseAdmin
       .from("barcode_catalog")
       .select("comic_id, status")
@@ -1181,7 +1184,7 @@ export async function lookupBarcodeCatalog(rawBarcode: string): Promise<{
 
         if (!entry2) return null;
 
-        // Found via prefix match — get the comic data
+        // Found via prefix match - get the comic data
         const { data: comic } = await supabaseAdmin
           .from("comics")
           .select("title, issue_number, publisher, release_year, writer, cover_artist, interior_artist, variant")

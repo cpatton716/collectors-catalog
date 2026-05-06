@@ -2,7 +2,7 @@
  * Email notification preference helpers.
  *
  * Maps each `NotificationEmailType` to a user-facing category and exposes
- * a single gate — `shouldSendEmailForUser` — that every outbound email
+ * a single gate - `shouldSendEmailForUser` - that every outbound email
  * should consult before Resend is called.
  *
  * Transactional emails (payment, shipping, account security, auction-win
@@ -19,7 +19,7 @@ import type { NotificationCategory } from "@/types/notificationPreferences";
  *
  * Keyed by string (not the `NotificationEmailType` union) so it can absorb
  * new types added by parallel work without breaking this file. Any type
- * NOT in the map falls through to a safe default (`marketplace`) — callers
+ * NOT in the map falls through to a safe default (`marketplace`) - callers
  * in production should always find a match; unknowns surface during tests.
  */
 export const NOTIFICATION_CATEGORY_MAP: Record<string, NotificationCategory> = {
@@ -35,8 +35,8 @@ export const NOTIFICATION_CATEGORY_MAP: Record<string, NotificationCategory> = {
   payment_reminder: "transactional",
   auction_payment_expired: "transactional",
   auction_payment_expired_seller: "transactional",
-  payment_missed_warning: "transactional", // security-adjacent — must reach user
-  payment_missed_flagged: "transactional", // account status — must reach user
+  payment_missed_warning: "transactional", // security-adjacent - must reach user
+  payment_missed_flagged: "transactional", // account status - must reach user
 
   // ── Marketplace ────────────────────────────────────────────────────────
   offer_received: "marketplace",
@@ -59,6 +59,7 @@ export const NOTIFICATION_CATEGORY_MAP: Record<string, NotificationCategory> = {
   rating_request: "marketplace",
   feedback_received: "marketplace",
   watchlist_auction_ending: "marketplace",
+  auction_ending_soon_bidder: "marketplace",
 
   // ── Social ─────────────────────────────────────────────────────────────
   new_follower: "social",
@@ -89,7 +90,7 @@ export function getNotificationCategory(emailType: string): NotificationCategory
  * Returns `true` when the email should be sent, `false` when the user has
  * opted out of this category. Transactional emails always return `true`.
  *
- * Failure modes (profile missing, query error) err on the side of sending —
+ * Failure modes (profile missing, query error) err on the side of sending -
  * we treat them as transactional-like since a silent miss is worse than a
  * duplicate notification.
  *
@@ -107,7 +108,7 @@ export async function shouldSendEmailForUser(
   // Transactional always sends.
   if (category === "transactional") return true;
 
-  // No user context — e.g., guest-adjacent sends. Default to sending.
+  // No user context - e.g., guest-adjacent sends. Default to sending.
   if (!profileId) return true;
 
   const { data, error } = await client
@@ -168,7 +169,7 @@ export async function filterEmailsByPreference<T extends { profileId: string | n
     .in("id", profileIds);
 
   if (error || !data) {
-    // On error, err on sending — concat everything.
+    // On error, err on sending - concat everything.
     return [...alwaysSend, ...needsCheck];
   }
 
@@ -186,7 +187,7 @@ export async function filterEmailsByPreference<T extends { profileId: string | n
 
   const kept = needsCheck.filter((item) => {
     const prefs = prefsByProfile.get(item.profileId as string);
-    // No row found — err on sending.
+    // No row found - err on sending.
     if (!prefs) return true;
     const category = getNotificationCategory(item.emailType);
     if (category === "marketplace") return prefs.marketplace;

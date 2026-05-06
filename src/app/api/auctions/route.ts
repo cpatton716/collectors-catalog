@@ -210,7 +210,7 @@ export async function POST(request: NextRequest) {
     } = validatedBody.data;
 
     // Ensure comic exists in Supabase (sync from localStorage if needed).
-    // Zod validated structural shape only — helper does deeper validation.
+    // Zod validated structural shape only - helper does deeper validation.
     if (comicData) {
       await ensureComicInSupabase(profile.id, comicData as CollectionItem);
     }

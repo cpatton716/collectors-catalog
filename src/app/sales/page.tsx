@@ -101,7 +101,7 @@ export default function SalesPage() {
         </div>
       </div>
 
-      {/* Summary Cards — blurred + overlaid with upgrade CTA for free users.
+      {/* Summary Cards - blurred + overlaid with upgrade CTA for free users.
           Data is still persisted on every sale regardless of tier, so stats
           become available retroactively on upgrade. */}
       <div className="relative mb-8">
@@ -214,7 +214,7 @@ export default function SalesPage() {
         )}
       </div>
 
-      {/* Sales List — always visible regardless of tier. */}
+      {/* Sales List - always visible regardless of tier. */}
         {sales.length === 0 ? (
           <div className="bg-pop-white border-2 border-pop-black p-8 text-center shadow-[4px_4px_0px_#000]">
             <div className="w-16 h-16 bg-pop-yellow border-2 border-pop-black flex items-center justify-center mx-auto mb-4">

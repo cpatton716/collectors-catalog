@@ -1,7 +1,7 @@
 // src/lib/aiProvider.ts
 // Fallback orchestrator for multi-provider AI calls.
 // Each AI call is independently wrapped with per-call fallback.
-// If Anthropic fails on Call 2, we retry Call 2 on Gemini — we do NOT re-run Call 1.
+// If Anthropic fails on Call 2, we retry Call 2 on Gemini - we do NOT re-run Call 1.
 
 import { AnthropicProvider } from "./providers/anthropic";
 import { GeminiProvider } from "./providers/gemini";
@@ -106,7 +106,7 @@ export async function executeWithFallback<T>(
       lastReason = reason;
       lastRawError = rawMessage;
 
-      // Don't fallback for client errors — same input will fail on both
+      // Don't fallback for client errors - same input will fail on both
       if (NON_RETRYABLE_ERRORS.includes(reason)) {
         throw error;
       }

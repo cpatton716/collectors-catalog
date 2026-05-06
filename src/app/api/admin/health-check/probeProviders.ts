@@ -22,7 +22,7 @@ interface AlertMetric {
 export async function probeProvider(provider: AIProvider): Promise<ProbeResult> {
   const start = Date.now();
   try {
-    // Tiny 1x1 transparent PNG — minimal token cost
+    // Tiny 1x1 transparent PNG - minimal token cost
     const tinyPng =
       "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==";
 

@@ -1,12 +1,10 @@
 # Collectors Chest Backlog
 
-## ⭐ Next Session — Main Priority (set Apr 27, 2026)
+## ⭐ Next Session — Main Priority (updated May 6, 2026)
 
-Lead with these when the next session opens. Surfaced from session 42d's deep-dive review + in-flight testing; details under their full BACKLOG entries below.
+Lead with these when the next session opens.
 
-1. **Validate Second Chance offer flow live** (in-flight test). The Apr 27 offer's 48h window expired around Apr 29; verify cron flipped offer to `expired` and the cancellation-email mutex worked correctly. Either path was informative:
-   - **Acceptance path** → checkout → Stripe payment → seller marks shipped → ownership transfer → both leave feedback → feedback button auto-hides on submit. Validates the full Session 39+40 + 42 fixes end-to-end with a real purchase.
-   - **Expiry path** → cron flips offer to `expired` after 48h → seller receives `second_chance_expired` notification + email, listing is back in seller's collection. Validates Phase 4 → cancellation email path (which now correctly fires post-second-chance via the Session 42 mutex logic).
+1. ~~**Validate Second Chance offer flow live**~~ ✅ Verified May 6, 2026 (PROD): listing modal correctly renders "didn't respond in 48 hours" copy on Giant-Size X-Men #1 — the RLS-anon read fix (Session 44) is working in production. Closed.
 2. **Validate Notifications Inbox manual TEST_CASES** (27 added Apr 27). Most are quick — tap-X-dismisses-row, mark-all-read button hidden when 0 unread, infinite scroll, focus-on-mount, NON_DELETABLE types reject delete, suspended-user DELETE returns 403. Defer the Capacitor-specific ones (push-tap deep-link, iOS safe-area) until iOS native ships. Note: Phase 1 + Phase 2 of the My Collection filter refactor (Session 43) also added new test cases — see TEST_CASES.md.
 
 After those: pick from the standing pre-launch list below (Auction Ending Soon Reminder, FMV graceful fallback, `account.updated` webhook validation, iOS native, Apple Developer enrollment).
@@ -14,6 +12,33 @@ After those: pick from the standing pre-launch list below (Auction Ending Soon R
 ---
 
 ## Pre-Launch — Critical / High Priority
+
+### Native App Splash Screen — iOS + Android Capacitor Wiring
+**Priority:** High (Pre-Launch — first impression on native app launch)
+**Status:** Pending — flagged May 6, 2026; assets ready, Capacitor wiring deferred until native shells land
+**Added:** May 6, 2026
+
+**What's done (Session 45 — May 6, 2026):**
+- Source asset captured at `Splash Screen (figma).png` (585x781 portrait — pop-blue `#0066FF` background with centered Collectors-Chest logo).
+- Generator script `scripts/generate-splash-assets.ts` produces 14 derived assets via Sharp: 192/512 app icons (any + maskable), 180px Apple touch icon, and 5 iPhone-sized `apple-touch-startup-image` bitmaps (1284x2778 / 1170x2532 / 1125x2436 / 828x1792 / 750x1334).
+- PWA manifest updated: `background_color` set to `#0066FF` so Android Chrome's auto-generated install splash matches the brand. `theme_color` stays yellow (`#FFF200`) for the in-app status bar.
+- iOS PWA: `apple-touch-startup-image` link tags wired in `src/app/layout.tsx` for the 5 most common iPhone form factors. iOS users who Add-to-Home-Screen now see the brand splash instead of a blank white screen.
+
+**What's still needed (this entry — gated on native app initiatives):**
+- **iOS native (Capacitor):** install `@capacitor/splash-screen` plugin, configure via `capacitor.config.ts` (showSpec, fadeOutDuration, backgroundColor `#0066FF`), generate the iOS-required asset set via `npx capacitor-assets generate --ios` from a 1024x1024 source (will need a higher-res logo OR re-export from Figma at larger scale — current 585x781 is upscale-only).
+- **Android native (Capacitor):** same plugin handles both. Generate density buckets (mdpi/hdpi/xhdpi/xxhdpi/xxxhdpi) via `npx capacitor-assets generate --android`. Configure same backgroundColor + fade.
+- **Real-device test before submission:** TestFlight (iOS) and internal testing track (Google Play) verification.
+
+**Source asset path:** `Splash Screen (figma).png` (project root).
+**Recommendation:** Re-export the Figma at 2048x2048 or 4096x4096 before kicking off native splash work — the current 585x781 source is too small to upscale cleanly to iPad Pro 12.9" splash sizes (2732x2732 base) without softness.
+
+**Effort once native shells exist:** ~2-4 hours including asset re-export, Capacitor plugin install + config, and device testing.
+
+**Blocked on:** iOS Native App + Android Native App (both BACKLOG entries below) — splash wiring happens during native shell setup, not standalone.
+
+**Related:** iOS Native App; Android Native App; PWA splash already shipped (this session).
+
+---
 
 ### Shipping Tracking for Sold Items (payment gated on validated tracking)
 **Priority:** High (Pre-Launch Blocker — required for Full Launch, NOT Beta)
@@ -148,6 +173,10 @@ Native iOS app via Capacitor wrapping our existing Next.js/PWA codebase. Distrib
 
 **Timeline note:** Apple App Store review can take 1-7 days; factor into Full Launch scheduling.
 
+**Native-shell UX constraints (must address during native build):**
+- **Disable pull-to-refresh on `/notifications`** in the Capacitor wrapper. Browser/PWA accepts both PTR + tap-pill, but native iOS gesture conventions (swipe-back, edge swipes, navigation gestures) conflict with PTR. Only the "tap to refresh" pill should trigger refresh in native shell. (Established as a constraint May 6, 2026 during inbox testing walkthrough.)
+- Similar constraint applies to the Android native build — see Android Native App entry.
+
 **Related:** Sign in with Apple (prerequisite); Android Native App (Pending Enhancements — parallel codebase but Post-Launch); Native App Cover Image Search (low-priority polish for once app ships).
 
 ---
@@ -215,7 +244,7 @@ Our AI cover scan pipeline costs ~$0.015/scan. Most scans target popular issues 
 
 ### Align Clerk Username Rules with Supabase Regex
 **Priority:** Low (residual gap mitigated by webhook sanitizer)
-**Status:** Partially closed May 5, 2026 — dashboard portion done; residual decision pending
+**Status:** Partially closed May 5, 2026 — dashboard portion done. **Decision May 6, 2026: build the custom Clerk signup validator** so users see an inline error at signup ("Username can only contain lowercase letters, numbers, and underscores") instead of the post-signup silent rename. ~2-4 hours UX work.
 **Added:** Apr 23, 2026
 **Updated:** May 5, 2026
 
@@ -259,6 +288,9 @@ Android Play Store app built from the same Capacitor project as iOS. Google Play
 5. Internal testing track → production rollout
 
 **Effort:** ~2-3 days once iOS native app foundation is built.
+
+**Native-shell UX constraints (must address during native build):**
+- **Disable pull-to-refresh on `/notifications`** in the Capacitor wrapper. Browser/PWA accepts both PTR + tap-pill, but native Android gesture conventions (back gesture, navigation drawer swipe) conflict with PTR. Only the "tap to refresh" pill should trigger refresh in native shell. (Established as a constraint May 6, 2026 during inbox testing walkthrough.)
 
 **Related:** iOS Native App (shares Capacitor codebase); IAP strategy applies equally here.
 
@@ -323,50 +355,10 @@ On the `/sales` (Sales History) page, clicking a row does nothing on desktop —
 
 ---
 
-### Hydration Mismatch on "Ask the Professor" Button
-**Priority:** Low (Post-Launch)
-**Status:** Pending — non-fatal ("Recoverable Error")
-**Added:** Apr 22, 2026
-
-React logs a hydration error on initial page load: the server-rendered `<button aria-label="Ask the Professor">` has `className="p-2 bg-pop-blue …"` but the client render adds a leading `mr-4`:
-
-- Server: `p-2 bg-pop-blue border-2 border-pop-black shadow-comic-sm hover:shadow-comi…`
-- Client: `p-2 mr-4 bg-pop-blue border-2 border-pop-black shadow-comic-sm hover:shadow…`
-
-Non-fatal — the tree just re-renders on the client — but it's a sign of SSR/client drift. Likely culprit: a conditional className tied to Clerk's `isSignedIn` (which is always false on the server but resolves true on the client), or a responsive class applied by a parent that reads `window` before first paint.
-
-**Files to investigate:**
-- `src/components/Navigation.tsx` — the button lives here (line ~395). The only existing conditional is `hidden sm:inline-flex` vs `inline-flex`, which wouldn't add `mr-4`. Something else must be injecting it.
-- Possibly a wrapper, a global stylesheet collision, or a browser extension (Grammarly etc. has been known to inject attributes).
-
-**Fix approach:** stabilize the rendered HTML between server + client. Either key the button off a `mounted` state (render `null` until mounted) or move the layout class to a non-Clerk-gated context.
-
-**Repro:** load any page in dev mode with React error overlay enabled — the error surfaces immediately on first load.
-
----
-
-### Stripe Webhook: Send Resend Email on Failed Payment
-**Priority:** Low (Post-Launch)
-**Status:** Pending
-**Added:** Apr 22, 2026
-
-Existing TODO at `src/app/api/webhooks/stripe/route.ts:505` — when a Stripe payment fails (invoice.payment_failed / payment_intent.payment_failed), we log the event but do not notify the user via email. Buyers who had a card decline, expired card, or other payment issue get no heads-up and can silently drop off.
-
-**Scope:**
-- In the failed-payment webhook handler, look up the user's email (via Clerk or profile)
-- Send a Resend transactional email: "Your payment for <listing title> could not be processed" with the reason (if Stripe provides it), a retry link, and support contact info
-- Respect `notification_preferences` once that system ships (this is borderline transactional so probably always-send)
-- Consider also sending an in-app notification for real-time visibility
-
-**Files:**
-- `src/app/api/webhooks/stripe/route.ts` — remove the TODO at line ~505, wire in the Resend send
-- `src/lib/email/` — new template for failed-payment notification
-
----
 
 ### Re-engagement Email Drip Campaign
 **Priority:** Medium (Post-Launch)
-**Status:** Pending
+**Status:** Pending. **Decision May 6, 2026: trigger after 14 days inactive** (balanced — most apps land here as the default).
 **Added:** Apr 22, 2026
 
 No re-engagement email flow exists today for users who register but go inactive. Resend is integrated for transactional email (welcome, verification, purchase confirmations) but no drip campaigns for inactive or underutilizing users.
@@ -379,34 +371,6 @@ No re-engagement email flow exists today for users who register but go inactive.
 - 30-day inactivity re-engagement
 
 **Files:** build on existing `src/lib/email/` templates; add a scheduled Netlify function for batch sends; respect `notification_preferences`.
-
----
-
-### Haptic Feedback on Mobile
-**Priority:** Medium (Post-Launch — **escalate to Pre-Launch if Option A is confirmed trivial**)
-**Status:** Pending
-**Added:** Apr 22, 2026
-
-iOS/Android haptic feedback on key interactions (scan success, milestone hit, bid placed, payment complete) adds polish to mobile UX. User direction (Apr 22, 2026): *"No, but if it's super easy, it'd be a great add-value for launch."*
-
-**Two implementation paths:**
-
-**Option A — Web Vibration API (trivial; ~1 hour of work):**
-- `navigator.vibrate(100)` at key success events in the web/PWA app
-- Limited device support — works on Android Chrome; **does NOT work on iOS Safari** (Apple does not support the Vibration API)
-- Deploy as progressive enhancement — silently no-ops on unsupported browsers; zero risk
-
-**Option B — Native Haptics via Capacitor (waits for native apps):**
-- Capacitor `Haptics` plugin in the iOS/Android wrappers (see "Apple Sign-In & Native iOS/Android Apps" BACKLOG entry)
-- Full iOS + Android support, proper tactile feedback (not just vibration)
-- Blocked on native app initiative
-
-**Recommendation:** ship Option A pre-launch as a no-cost polish for Android users. Revisit Option B when native apps land.
-
-**Scope (Option A):**
-- Add `navigator.vibrate()` calls at: scan success, collection add, bid placed, outbid, payment complete, milestone hit
-- Device settings already honored automatically by the API
-- No UI changes
 
 ---
 
@@ -548,7 +512,7 @@ Convention dealers are a high-value user segment whose workflows our current app
 
 ### Demo Collection / Sample-Data Mode
 **Priority:** Medium (Post-Launch)
-**Status:** Pending
+**Status:** Pending. **Decision May 6, 2026: surface as "Try the demo" button on homepage** (visible CTA in guest experience to drive discovery). The `/demo` URL also works as a share-link fallback.
 **Added:** Apr 22, 2026
 
 Guests can explore the app with a pre-populated sample collection (~12 iconic comics) — `/demo` route or "Demo mode" toggle. Lowers friction for cold visitors who don't have a comic in hand. EVALUATION § 4 Gaps flagged this.
@@ -703,28 +667,6 @@ No formal dispute resolution or refund workflow exists for marketplace transacti
 
 ---
 
-### Auction Sniping Protection (Auto-Extend on Late Bids)
-**Priority:** Medium (Post-Launch)
-**Status:** Pending
-**Added:** Apr 22, 2026
-
-eBay-style auction sniping — bidders placing winning bids in the final seconds — is not prevented today. Competitors like eBay extend auctions when a bid arrives near the end to keep auctions fair and encourage higher final prices.
-
-**Proposed behavior:**
-- If a bid arrives within the last N minutes of an auction (e.g., last 5 min), auto-extend `ends_at` by N minutes
-- Cap at a max extension count or time (e.g., no extensions after N hours beyond original end) to prevent runaway auctions
-- Display "auction extended!" indicator in UI for active bidders / watchers
-- Fire notification to watchers when auction is extended
-
-**Files expected:**
-- `src/lib/auctionDb.ts` `placeBid` — add extension logic after successful bid insert
-- `src/components/auction/AuctionDetailModal.tsx` — show extended status
-- Schema: add `original_ends_at` (immutable, for display) alongside mutable `ends_at`
-
-**Related:** existing `processEndedAuctions` cron (no change expected); watchlist notifications.
-
----
-
 ### Second Chance Offer — Cascade to Third-Highest Bidder
 **Priority:** Low (Post-Launch)
 **Status:** Pending
@@ -733,64 +675,6 @@ eBay-style auction sniping — bidders placing winning bids in the final seconds
 The Second Chance Offer feature shipped today (seller-initiated, 48h window, runner-up's last actual bid). If the runner-up declines or ignores, the offer currently ends and the seller must re-list manually. This item tracks the potential enhancement to cascade automatically to the 3rd-highest bidder, 4th, etc., with a cap (e.g., 3 deep).
 
 Rationale for deferring: Spam risk and unclear conversion value. Wait for post-launch data on how often Second Chance Offers happen and what the accept rate looks like before adding cascade complexity.
-
----
-
-### Cover Harvest Aspect-Ratio Server-Side Guard Expansion
-**Priority:** Low (Post-Launch)
-**Status:** Implemented (basic version) — future enhancements possible
-**Added:** Apr 23, 2026
-
-Today's session shipped `coverCropValidator.ts` with a 0.55–0.85 w/h aspect ratio guard on AI-returned crop coordinates. Rejects clearly-wrong crops (grade label strips, full slab regions) before they pollute the cover cache. Future enhancements worth tracking:
-
-- Per-slab-type ratio tuning (CGC/CBCS/PGX have slightly different clear-window proportions)
-- y-coordinate validation (crop must START below the expected label height, not at top of slab)
-- Rejection metrics / alerts if the guard fires more than X% of the time (signals the AI prompt needs further refinement)
-
----
-
-### Payment-Expiry Cron Batching Enhancements
-**Priority:** Low (Post-Launch)
-**Status:** Basic batching shipped — further enhancements possible
-**Added:** Apr 23, 2026
-
-Today's session shipped Resend `batch.send()` + `mapWithConcurrency(5)` for the payment-expiry cron pipeline. Further enhancements if volume grows past ~50 expirations per cron tick:
-
-- Per-batch retry on transient 429 rate-limit errors (exponential backoff)
-- Batched `profiles` + comic lookups via a single `IN (...)` query instead of per-auction prep
-- Move email send entirely off the critical cron path via a queue (e.g., Inngest, Resend scheduled sends)
-
----
-
-### Auction Ending Soon Reminder for Active Bidders
-**Priority:** Medium (Pre-Launch — bidder engagement + trust)
-**Status:** Pending
-**Added:** Apr 23, 2026 (Session 40 close-up)
-
-Losing / non-winning bidders currently get nothing before an auction ends. They receive outbid notifications while bidding is live, and a `bid_auction_lost` in-app notification the moment the auction ends, but no warning in between. That's a meaningful gap — bidders routinely forget about auctions they were outbid on 3 days ago, miss the close, and we lose the "re-engage at the last moment" behavior that drives most auction revenue on eBay-style marketplaces.
-
-**Who should get reminded:**
-- Active bidders who placed a bid but are not currently winning (primary audience — highest intent).
-- Watchlist users who have not bid (secondary — wire up the already-defined `watchlist_auction_ending` type).
-
-**When to fire:**
-- Default: T-1 hour before `end_time`. Could tune to T-30min after launch if data says engagement is better there.
-- Keep the window tight — a T-24h reminder for a 7-day auction is noise.
-
-**Existing scaffolding already in the codebase:**
-- `notificationPreferences.ts` already maps `watchlist_auction_ending` to the `"marketplace"` category — but the type is not in the `NotificationType` union in `src/types/auction.ts` and is never created anywhere. Half-built feature worth finishing.
-- `bid_auction_lost` notification type exists and has in-app copy in `auctionDb.ts:1711,1749` but no email template in `email.ts` — worth adding one at the same time for consistency with the new pre-end reminder.
-
-**Implementation sketch:**
-1. Add new notification types to `src/types/auction.ts`: `auction_ending_soon_bidder` and (to finish the scaffolded one) `watchlist_auction_ending`. Wire both into `notificationPreferences.ts` under `"marketplace"`.
-2. New cron pass in `process-auctions/route.ts` that runs every ~15 minutes: select auctions with `end_time` between now and now+60min that have not already fired the reminder (needs a `reminder_sent_at` column on `auctions` to prevent duplicates).
-3. For each selected auction: select distinct `bidder_id` from `bids` where `bidder_id != current winning bidder` and `!= seller`; also select distinct watchers who are not in that bidder set. Fire in-app notifications + batch emails via Resend.
-4. New email template in `src/lib/email.ts`: "Auction ending in 1 hour" with current bid, recipient's own max bid if they're a bidder, and a bid-now CTA.
-5. Add `bid_auction_lost` email template at the same time so losing bidders also get a post-close email (currently in-app only).
-
-**Low implementation cost:** one cron pass, one schema migration for `reminder_sent_at`, two new email templates, two new notification types. Probably one focused session with tests.
-
-**Not a blocker for beta** but it's the single highest-leverage engagement feature we're missing for auctions, so land it before public launch.
 
 ---
 
@@ -810,42 +694,9 @@ Should ship before public launch since it degrades trust for key-issue collector
 
 ---
 
-### Audit `cover_image_url` Source — Stop Persisting Long URLs / data: URIs
-**Priority:** Low (Post-Launch)
-**Status:** Defensive guards in place — root cause not yet fixed
-**Added:** Apr 23, 2026 (Session 40)
-
-Session 40 Buy Now 500 in prod traced to Stripe rejecting `line_items[0].product_data.images[0]` because the URL exceeded 2048 chars. Root cause: `cover_image_url` sometimes carries a very long Supabase signed URL (JWT query params) or a base64 `data:` URI.
-
-Two call sites already defensively strip problematic values (`csvExport.ts` filters `data:` prefix; `api/checkout/route.ts` as of Session 40 filters non-http or >2048 chars), but future code will hit the same trap. Fix at the persistence layer:
-
-- Audit every path that writes `cover_image_url` (scan/upload/batch-import/harvest) — should always persist a short, public http(s) URL.
-- If a signed URL is the only available form, store the object key and build the signed URL on read instead of persisting the signed URL.
-- One-time migration to normalize existing rows (strip `data:` URIs; re-derive URLs from storage keys where possible).
-
----
-
-### Notification CHECK Constraint — Audit Pre-Existing Drift
-**Priority:** Low (Post-Launch)
-**Status:** Pending investigation
-**Added:** Apr 23, 2026
-
-During Session 39, the Second Chance Offer agent discovered the `valid_notification_type` CHECK constraint on `notifications` table was missing 4 types that were already being inserted in code (`auction_payment_expired`, `auction_payment_expired_seller`, `bid_auction_lost`, `new_bid_received`). The constraint was updated to include them. Question worth a post-launch investigation: did any notification inserts silently fail in production before the fix, and if so, how many users had missing notifications? Query the notifications table + server logs around the date range when those types were first inserted.
-
----
-
-### hCaptcha Siteverify — Add Retry on Transient Failures
-**Priority:** Low (Post-Launch)
-**Status:** Pending
-**Added:** Apr 23, 2026
-
-Today's session wired a 5-second AbortSignal timeout on the hCaptcha siteverify fetch to fail-fast during outages. Future enhancement: add 1-2 retries with short backoff for transient network errors before returning `network_error` to the user. Current behavior is fail-closed, which is correct, but retries would improve UX during brief connectivity blips.
-
----
-
 ### Per-Profile Timezone Preference for Email Deadlines
 **Priority:** Low (Post-Launch)
-**Status:** Pending
+**Status:** Pending. **Decision May 6, 2026: inline in account settings page** near email preferences (one less route to maintain).
 **Added:** Apr 27, 2026 (Session 42)
 
 Session 42 hardcoded `America/New_York` + explicit "EDT"/"EST" abbreviation in transactional email deadline rendering (`formatDeadlineForEmail` in `src/lib/auctionDb.ts`). This is the right call for the US-focused beta — recipients now see "April 26, 2026 at 10:20 AM EDT" instead of an unlabeled UTC time.
@@ -862,7 +713,7 @@ Deadline display is the only user-facing timestamp that matters today (auction c
 
 ### Customizable Initial Message
 **Priority:** Low
-**Status:** Pending
+**Status:** Pending. **Decision May 6, 2026: free-text input** (max 200 chars). No template picker — keep it simple; users type whatever they want.
 **Added:** Jan 29, 2026
 
 Allow users to customize the initial message when starting a conversation via the "Message Seller" button. Currently auto-sends "Hi! I'm interested in your listing." without user input.
@@ -883,7 +734,7 @@ Allow users to customize the initial message when starting a conversation via th
 **Priority:** Low
 **Status:** Pending (Blocked)
 **Added:** Feb 4, 2026
-**Blocked:** Requires a barcode database to be set up first before this feature can proceed.
+**Blocked:** Requires a barcode database to be set up first before this feature can proceed. **Strategy decision blocked on "Research: How CLZ + CovrPrice Implement Barcode Scanning" entry above** (May 5, 2026) — the research may inform whether the curated-database approach is the right path or if a third-party API / public dataset / on-device ML approach is more viable.
 
 Re-enable dedicated barcode scanning feature once the crowd-sourced barcode catalog has sufficient data to provide reliable lookups.
 
@@ -940,7 +791,7 @@ Code implementation is complete (8 commits, 370 tests passing). Deployment and a
 
 ### Add "Professor" Persona Throughout Site
 **Priority:** Medium
-**Status:** Pending
+**Status:** Pending. **Decision May 6, 2026: match existing AskProfessor voice** (same friendly-explainer tone already used in the FAQ modal — consistent across the app).
 
 Create a consistent "Professor" character/persona that provides tips, guidance, and commentary throughout the application. This persona adds personality and makes the app more engaging.
 
@@ -1122,7 +973,7 @@ When converting to native mobile apps (iOS/Android), the cover image search feat
 
 ### Evaluate Clerk Billing as Stripe Alternative
 **Priority:** Low
-**Status:** Pending
+**Status:** Pending. **Decision May 6, 2026: analysis-only doc** — produce comparison (cost, feature parity, migration effort, risks). No code changes; user reads and decides later. Output: `docs/CLERK_BILLING_EVALUATION.md`.
 **Added:** April 2, 2026
 
 Clerk offers subscription/billing services. Investigate whether Clerk Billing could replace or simplify the current Stripe integration for subscription management. Note: Stripe is still likely needed for marketplace payments (seller payouts via Connect), but Clerk might handle the subscription tier management more simply.
@@ -1148,7 +999,7 @@ Clerk has a pending "Client Trust Status" update that adds `needs_client_trust` 
 
 ### Custom Sign-Up Form (Replace Clerk's Default)
 **Priority:** Medium
-**Status:** Pending
+**Status:** Pending. **Decision May 6, 2026: rebrand to Lichtenstein** — pop-art card with bold black borders, comic typography, matches the rest of the app aesthetic.
 **Added:** Apr 6, 2026
 
 Replace Clerk's default `<SignUp />` component with a custom form using Clerk's `useSignUp()` hook. This gives full control over field order, styling, and layout — allowing us to match our Lichtenstein design language and control field order (email → username → password). Currently the browser autofills the email into Clerk's username field, and we cannot reorder fields with the default component.
@@ -1168,15 +1019,6 @@ Replace Clerk's default `<SignUp />` component with a custom form using Clerk's 
 **Added:** Mar 13, 2026
 
 Write "Our Story" origin narrative and "Meet the Team" bios for the About page. Placeholder text is currently highlighted in red. Also complete the "Get in Touch" contact section.
-
----
-
-### Flip Claude/Gemini Provider Order
-**Priority:** Medium
-**Status:** Pending
-**Added:** Mar 18, 2026
-
-Evaluate whether Gemini should be the primary scanner provider instead of Claude, based on production accuracy comparison data. Currently Claude is primary with Gemini as fallback.
 
 ---
 
@@ -1227,30 +1069,40 @@ After Beta has scan volume, build the `npm run keys:gaps` tooling described in t
 
 ---
 
-### Remove Open Library from Cover Pipeline
-**Priority:** Low
-**Status:** Pending
-**Added:** Mar 19, 2026
+### Audit Curated Key DB for AI-vs-DB Title-Format Drift (telemetry-driven follow-ups)
+**Priority:** Medium (Post-Launch — additional aliases gated on production telemetry)
+**Status:** Partially complete — alias mechanism + initial 6 aliases + drift telemetry shipped May 6, 2026 (Session 45). Remaining work is data-driven, not speculative.
+**Added:** May 6, 2026
+**Updated:** May 6, 2026
 
-Open Library has low accuracy for single-issue comics and burns Gemini quota on validation attempts. Consider removing entirely in favor of community covers + eBay image harvesting only.
+**What shipped Session 45 (May 6, 2026):**
+- **`aliases?: string[]` field on `KeyComic` interface** (first-class alias support in `keyComicsDatabase.ts`) — map-build registers each entry under canonical AND each alias's normalized title, with dedup so multiple punctuation variants don't create phantom multi-entry ambiguity in `resolveEntry`.
+- **6 entries given aliases** — Ultimate Fallout #4 (Miles Morales, PROD-confirmed drift), Tales of Suspense #39 (Iron Man), Journey Into Mystery #83 (Thor), Marvel Premiere #15 (Iron Fist), Marvel Spotlight #5 (Ghost Rider), Strange Tales #110 (Doctor Strange). Pattern: anthology covers where feature-character logo dominates the masthead.
+- **`[keyinfo-drift]` telemetry breadcrumb** in `con-mode-lookup/route.ts` — fires `console.warn` when curated DB misses but AI fallback returns key info. Surfaces real drift candidates from production logs (Sentry / Netlify build logs) without storing user data.
+- **Audit complete (1,053 entries)** — surfaced 57 colon-subtitled entries, 99 4+ word titles, **82 token-prefix collision pairs**. Conclusion: a fuzzy/token-prefix fallback is unsafe at this scale (Batman alone has 16 collisions; false-positive keyInfo on a $X book is worse than silent miss). Aliases-as-data is the right approach long-term.
+
+**Why fuzzy matching was rejected:** The 82 collision pairs surfaced by the audit (Batman → Batman: White Knight / Batman: Damned / Batman/Catwoman / Batman: Three Jokers; Star Wars → Star Wars: Darth Vader / Doctor Aphra / Bounty Hunters; etc.) make naive "input contains all tokens of canonical" matching dangerous. Wrong keyInfo is more harmful than missing keyInfo for a buying-decision tool.
+
+**Remaining work (post-launch, telemetry-driven):**
+1. **Grep production logs weekly for `[keyinfo-drift]` lines** — these are the real drift candidates surfaced by actual scans. Each line includes normalized title + issue + AI's keyInfo response.
+2. **For each repeating drift candidate:** verify whether (a) the canonical entry already exists in `keyComicsDatabase.ts` and just needs an alias, or (b) the entry is missing entirely and should be added (different BACKLOG item — "Expand Curated Key Info DB").
+3. **Speculative aliases to NOT pre-add without telemetry confirmation:** Hulk #181 → "Wolverine" (collision with Wolverine series #181 if it exists); Saga of the Swamp Thing → "Swamp Thing" (existing duplicate entries already cover the case at #21/#37); first-appearance issues for famous characters (Action #1 → "Superman", Detective #27 → "Batman" — too risky without confirmation that AI actually returns these forms).
+4. **Build `npm run keys:audit` tooling later** if telemetry-grep becomes too noisy. Current breadcrumb approach is sufficient at Beta scan volume.
+
+**Why not a synchronous AI canonicalization step:** The `con-mode-lookup` route is in the convention-floor critical path; we cannot afford an extra AI call per scan. Aliases remain zero-cost at lookup time.
+
+**Effort estimate:** ~30 min/quarter for telemetry triage + alias additions. No tooling investment needed at current scale.
+
+**Related:** "Expand Curated Key Info DB" (sibling — adds *new* entries; this entry adds *aliases* to existing entries).
 
 ---
 
 ### Batch Re-Validation for CSV Imports
 **Priority:** Low
-**Status:** Pending
+**Status:** Pending. **Decision May 6, 2026: auto-on-import (background)** — after CSV import, automatically queue cover validation for missing-cover rows. Fire-and-forget; user gets a notification when done. No manual button needed.
 **Added:** Mar 20, 2026
 
 Build a batch re-validation endpoint for CSV-imported comics with missing covers. Allows users to trigger cover validation for entire import batches without requiring individual scans, respecting Gemini rate limits.
-
----
-
-### Periodic HEAD Check for Cached eBay URLs
-**Priority:** Low
-**Status:** Pending
-**Added:** Mar 20, 2026
-
-Implement a 30-day cycle periodic HEAD check for cached eBay image URLs to detect dead links early. Prevents showing broken images to users and triggers re-harvesting if needed.
 
 ---
 
@@ -1265,16 +1117,8 @@ Store eBay pricing results in Supabase with a timestamp. Before hitting the eBay
 
 ### User-Configurable Default Collection Sort
 **Priority:** Low
-**Status:** Pending
+**Status:** Pending. **Decision May 6, 2026: per-list preference** — each list (Want List, For Sale, etc.) remembers its own default sort.
 **Added:** Apr 5, 2026
 
 Let users choose their preferred default sort method for the collection page (date added, title, issue, grade, value). Save preference in user settings. Currently defaults to date added (most recent first).
 
----
-
-### IPv6 Private Address Checks in URL Validation
-**Priority:** Low
-**Status:** Pending
-**Added:** Mar 20, 2026
-
-Add IPv6 private address range checks (fd00::/8, fe80::/10, ::1) to URL validation. Currently only validates IPv4 loopback and private ranges; should expand for complete private/loopback detection.

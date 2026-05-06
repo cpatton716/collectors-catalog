@@ -142,7 +142,7 @@ export async function GET(request: NextRequest) {
       }
 
       case "bids": {
-        // Active bids — most recent bid per auction where the user bid,
+        // Active bids - most recent bid per auction where the user bid,
         // and the auction is still active (or recently ended awaiting payment).
         const { data, error } = await supabase
           .from("bids")

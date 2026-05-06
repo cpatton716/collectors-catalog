@@ -28,7 +28,7 @@ export function NotificationBell({ className = "" }: NotificationBellProps) {
 
   const handleNotificationClick = (notification: Notification) => {
     // System-only notifications (no auction_id) render as non-clickable in
-    // the bell — the dimmed style + the "View all →" footer steer the
+    // the bell - the dimmed style + the "View all →" footer steer the
     // user to the inbox page where the message can be read in full.
     if (!isNotificationClickableInBell(notification)) return;
     if (!notification.isRead) {

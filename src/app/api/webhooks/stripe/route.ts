@@ -166,7 +166,7 @@ async function handleScanPackPurchase(profileId: string) {
   }
 }
 
-// Handle a completed marketplace checkout session — both Buy Now and auction
+// Handle a completed marketplace checkout session - both Buy Now and auction
 // winner payments follow this path. Race safety: for Buy Now, if the listing
 // has already been sold to a different buyer between session creation and
 // completion, refund this session so we don't double-sell.
@@ -180,7 +180,7 @@ async function handleMarketplacePayment(
   const listingType = metadata.listingType === "buy_now" ? "buy_now" : "auction";
   const isBuyNow = listingType === "buy_now";
 
-  // Fetch listing with comic data. Use supabaseAdmin — webhooks have no
+  // Fetch listing with comic data. Use supabaseAdmin - webhooks have no
   // user-auth context, so RLS would block (or worse, silently fail on writes).
   const { data: listingData, error: fetchError } = await supabaseAdmin
     .from("auctions")
@@ -239,7 +239,7 @@ async function handleMarketplacePayment(
     return;
   }
 
-  // Audit trail — fire-and-forget so a failure here never causes Stripe to
+  // Audit trail - fire-and-forget so a failure here never causes Stripe to
   // retry the webhook. No PII: only IDs + amounts + session ID.
   void logAuctionAuditEvent({
     auctionId,
@@ -258,10 +258,10 @@ async function handleMarketplacePayment(
 
   // NOTE: Comic ownership transfer deliberately deferred to the seller's
   // "Mark as Shipped" action (see /api/auctions/[id]/mark-shipped). The buyer
-  // doesn't get the cloned comic in their collection on payment — only after
+  // doesn't get the cloned comic in their collection on payment - only after
   // the seller confirms shipment. This is Option A of the Shipping Tracking
   // design: self-reported tracking now, carrier-validated tracking later
-  // (BACKLOG "Shipping Tracking for Sold Items — Pre-Launch Full Launch Blocker").
+  // (BACKLOG "Shipping Tracking for Sold Items - Pre-Launch Full Launch Blocker").
   const comic = listingData.comics as Record<string, unknown> | null;
   const salePrice =
     (listingData.winning_bid as number | null) ||
@@ -287,11 +287,11 @@ async function handleMarketplacePayment(
 
     if (saleError) {
       console.error("[handleMarketplacePayment] Error recording sale:", saleError);
-      // Non-fatal — sale record is secondary to buyer ownership transfer
+      // Non-fatal - sale record is secondary to buyer ownership transfer
     }
   }
 
-  // Notifications — Buy Now purchases get fixed-price copy; auctions keep
+  // Notifications - Buy Now purchases get fixed-price copy; auctions keep
   // the default auction-flavored messages (bug #3 fix).
   if (isBuyNow) {
     await createNotification(sellerId, "payment_received", auctionId, undefined, {
@@ -304,7 +304,7 @@ async function handleMarketplacePayment(
     });
   } else {
     await createNotification(sellerId, "payment_received", auctionId);
-    // Auction winners already received a "won" notification at auction end —
+    // Auction winners already received a "won" notification at auction end -
     // no need to duplicate here.
   }
 
@@ -489,7 +489,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
 // ============================================
 
 async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
-  if (invoice.amount_paid === 0) return; // Skip $0 trial invoices. Note: also skips 100% discount coupon invoices — refine if coupons are ever added.
+  if (invoice.amount_paid === 0) return; // Skip $0 trial invoices. Note: also skips 100% discount coupon invoices - refine if coupons are ever added.
 
   // Only process subscription invoices
   const subscriptionId = (invoice as unknown as { subscription?: string | null }).subscription;
@@ -523,5 +523,43 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
   // Mark subscription as past_due
   await updateSubscriptionStatus(profile.id, "past_due");
 
-  // TODO: Send email notification about failed payment via Resend
+  // Notify the user so they can update their payment method before Stripe's
+  // smart-retry exhausts and the subscription lapses to canceled. We use a
+  // Stripe Customer Portal billing-management link as the CTA — that's the
+  // canonical place for users to update their payment method.
+  const profileForEmail = await getProfileForEmail(profile.id);
+  if (profileForEmail?.email) {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://collectors-chest.com";
+    const manageBillingUrl = `${appUrl}/settings/billing`;
+
+    // Stripe surfaces the next auto-retry timestamp on the invoice when one
+    // is scheduled. Format as a human date when present.
+    const invoiceWithRetry = invoice as unknown as { next_payment_attempt?: number | null };
+    const nextRetryAt = invoiceWithRetry.next_payment_attempt
+      ? new Date(invoiceWithRetry.next_payment_attempt * 1000).toLocaleDateString("en-US", {
+          weekday: "long",
+          month: "long",
+          day: "numeric",
+        })
+      : undefined;
+
+    // Stripe puts the latest charge's outcome reason in
+    // `last_finalization_error` or on the underlying charge. Sanitize by
+    // accepting only short, free-of-PII reasons.
+    const finalizationError = (invoice as unknown as { last_finalization_error?: { message?: string } | null })
+      .last_finalization_error;
+    const rawReason = finalizationError?.message;
+    const failureReason = rawReason && rawReason.length < 120 ? rawReason : undefined;
+
+    try {
+      await sendNotificationEmail({
+        to: profileForEmail.email,
+        type: "subscription_payment_failed",
+        data: { manageBillingUrl, nextRetryAt, failureReason },
+        profileId: profile.id,
+      });
+    } catch (err) {
+      console.error("[handleInvoicePaymentFailed] email send failed:", err);
+    }
+  }
 }

@@ -155,7 +155,7 @@ export async function POST(request: NextRequest) {
 
     // Stripe rejects product image URLs over 2048 chars (long Supabase signed
     // URLs can exceed this). The image is purely cosmetic on the Checkout
-    // page — drop it rather than fail the session.
+    // page - drop it rather than fail the session.
     const coverUrl = listing.comic?.coverImageUrl;
     const stripeImages =
       coverUrl && coverUrl.length <= 2048 && /^https?:\/\//.test(coverUrl)

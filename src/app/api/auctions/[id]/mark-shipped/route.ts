@@ -20,7 +20,7 @@ const markShippedBodySchema = z
 
 // POST /api/auctions/[id]/mark-shipped
 // Seller marks a sold+paid listing as shipped. Accepts an optional tracking
-// number + carrier (self-reported, not validated — Option A per BACKLOG).
+// number + carrier (self-reported, not validated - Option A per BACKLOG).
 // On success: records shipped_at, triggers the comic ownership transfer to
 // the buyer, and notifies the buyer that the shipment is on its way.
 export async function POST(
@@ -133,7 +133,7 @@ export async function POST(
 
     // Notify buyer their item is on the way. Dedicated `shipped` type so
     // the bell renders a delivery-truck icon (was overloading `ended` which
-    // showed a Clock — semantic mismatch fixed Apr 27, 2026).
+    // showed a Clock - semantic mismatch fixed Apr 27, 2026).
     await createNotification(auction.winner_id, "shipped", auctionId, undefined, {
       message: trackingNumber
         ? `Tracking: ${trackingCarrier ? trackingCarrier + " " : ""}${trackingNumber}. The comic has been added to your collection.`

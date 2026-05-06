@@ -59,7 +59,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       );
     }
 
-    // Bid restriction gate — set by the payment-miss strike system when a
+    // Bid restriction gate - set by the payment-miss strike system when a
     // user has missed 2+ payment deadlines inside the rolling 90-day window.
     const { data: bidder } = await supabaseAdmin
       .from("profiles")

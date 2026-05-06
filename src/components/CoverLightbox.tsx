@@ -20,7 +20,7 @@ interface CoverLightboxProps {
  *
  * Tap backdrop or × to close. Escape closes on desktop.
  *
- * Pinch-zoom is intentionally not wired here — site-level viewport sets
+ * Pinch-zoom is intentionally not wired here - site-level viewport sets
  * maximumScale=1, so browser-native zoom is disabled. If pinch-zoom becomes
  * a need, drop in `react-zoom-pan-pinch` around the <Image> and lift the
  * viewport restriction inside this overlay.

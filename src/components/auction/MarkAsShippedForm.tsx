@@ -6,7 +6,7 @@ import { AlertCircle, Loader2, Package } from "lucide-react";
 
 /**
  * Inline form for a seller to mark a sold+paid listing as shipped.
- * Option A — tracking number + carrier are both optional and not validated.
+ * Option A - tracking number + carrier are both optional and not validated.
  * Submitting triggers the comic ownership transfer to the buyer and unlocks
  * feedback eligibility for both parties.
  *

@@ -36,7 +36,7 @@ export function FollowButton({
           }
         }
       } catch {
-        // Silently fail — button defaults to "Follow"
+        // Silently fail - button defaults to "Follow"
       } finally {
         setIsChecking(false);
       }

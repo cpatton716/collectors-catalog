@@ -8,7 +8,7 @@ import { checkRateLimit, getRateLimitIdentifier, rateLimiters } from "@/lib/rate
 import { supabaseAdmin } from "@/lib/supabase";
 import { validateBody } from "@/lib/validation";
 
-// Honeypot field is validated as optional string — if present it triggers the
+// Honeypot field is validated as optional string - if present it triggers the
 // silent-success bot trap, so we don't reject here.
 const emailCaptureSchema = z.object({
   email: z.string().min(1, "Email is required").max(320, "Email is too long"),

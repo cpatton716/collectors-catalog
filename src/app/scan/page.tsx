@@ -386,7 +386,7 @@ export default function ScanPage() {
         <BonusVerificationHandler addBonusScans={addBonusScans} showToast={showToast} />
       </Suspense>
 
-      {/* Invisible hCaptcha — only mounted for guests who may need it (scans 4-5).
+      {/* Invisible hCaptcha - only mounted for guests who may need it (scans 4-5).
           Renders a floating badge; challenge is triggered via captchaRef.execute(). */}
       {isGuest && !isSignedIn && (
         <GuestCaptcha

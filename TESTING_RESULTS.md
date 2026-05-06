@@ -353,3 +353,21 @@ This document tracks testing sessions with platform and account context.
 - **Account Type:** Free, Premium
 - **Device(s):** iPhone, Android, Mac Chrome
 - **Focus:** TBD (lead candidates: validate live Second-Chance flow + payment-deadline anchor fix + 27 inbox TEST_CASES)
+
+## May 6, 2026 - Session 45 Start
+- **Platform:** Both (Mobile + Web)
+- **Account Type:** Free, Premium
+- **Device(s):** iPhone, Android, Mac Chrome
+- **Sounds:** Yes
+- **Focus:** PROD verification of Session 44 deploy + CovrPrice partner-reply doc reframe + Ultimate Fallout #4 keyInfo regression fix.
+
+### PROD Verification (Session 44 deploy)
+- ✅ **Cover lightbox tap-to-zoom on Key Hunt** — confirmed working on iPhone
+- ❌ **Ultimate Fallout #4 → Miles Morales keyInfo chip** — NOT rendered despite curated DB entry. Root cause: AI returns title as `"Ultimate Fallout: Spider-Man"` (cover prominently displays SPIDER-MAN logo above series title) but DB stores it as `"Ultimate Fallout"` — strict-normalize lookup misses. Fixed in Session 45 with alias entry; deploy pending.
+- ✅ **Second Chance RLS-anon read fix (Giant-Size X-Men #1)** — confirmed working in PROD; modal correctly shows "didn't respond in 48 hours" copy instead of stale "Offer to Runner-up" button
+- ✅ **`/admin/clz-comparison` tablet page** — confirmed accessible
+
+### Findings
+- 1 regression caught + fixed: Ultimate Fallout #4 keyInfo title-format drift (alias added; 10 new tests in `keyComicsDatabase.test.ts`)
+- Class-of-bug logged to BACKLOG (Audit Curated Key DB for AI-vs-DB Title-Format Drift)
+- CovrPrice partner reply (May 6) reframed across docs/CLZ_COMPARISON_BRIEF.md + admin tablet page (no longer "active conversations"; now "queued as beta tester / API on 2027 roadmap")

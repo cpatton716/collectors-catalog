@@ -131,4 +131,64 @@ describe("verifyCaptchaToken", () => {
     expect(init).toHaveProperty("signal");
     expect(init.signal).toBeInstanceOf(AbortSignal);
   });
+
+  it("retries on transient network error then succeeds", async () => {
+    const fetchMock = jest
+      .fn()
+      .mockRejectedValueOnce(new Error("ECONNRESET"))
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true }),
+      });
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    const result = await verifyCaptchaToken("fake-token");
+    expect(result).toEqual({ valid: true });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("retries on 5xx then succeeds", async () => {
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValueOnce({ ok: false, status: 503, json: async () => ({}) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ success: true }) });
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    const result = await verifyCaptchaToken("fake-token");
+    expect(result).toEqual({ valid: true });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("does NOT retry on 4xx (caller-side error) — fails fast", async () => {
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValue({ ok: false, status: 400, json: async () => ({}) });
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    const result = await verifyCaptchaToken("fake-token");
+    expect(result).toEqual({ valid: false, reason: "siteverify_http_400" });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("does NOT retry on authoritative 'success: false' verification responses", async () => {
+    const fetchMock = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: false, "error-codes": ["invalid-input-response"] }),
+    });
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    const result = await verifyCaptchaToken("fake-token");
+    expect(result).toEqual({ valid: false, reason: "invalid-input-response" });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns the last failure reason after exhausting retry budget", async () => {
+    // 3 total attempts (1 initial + 2 retries), all fail with network error
+    const fetchMock = jest.fn().mockRejectedValue(new Error("persistent network failure"));
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    const result = await verifyCaptchaToken("fake-token");
+    expect(result).toEqual({ valid: false, reason: "network_error" });
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
 });

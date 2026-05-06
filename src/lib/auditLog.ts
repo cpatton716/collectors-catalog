@@ -58,7 +58,7 @@ export function buildAuditLogRow(event: AuditEventInput): {
 }
 
 /**
- * Log a single auction audit event. Never throws — audit failures must never
+ * Log a single auction audit event. Never throws - audit failures must never
  * cascade into user-facing errors. Fire-and-forget: caller should use
  * `void logAuctionAuditEvent(...)` in hot paths to make intent explicit.
  */

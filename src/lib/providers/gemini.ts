@@ -1,5 +1,5 @@
 // src/lib/providers/gemini.ts
-// Google Gemini provider — reuses prompts from the Anthropic provider
+// Google Gemini provider - reuses prompts from the Anthropic provider
 // so both providers ask the same questions in the same format.
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -117,7 +117,7 @@ export class GeminiProvider implements AIProvider {
     return this.parseJsonResponse(text) as VerificationResult;
   }
 
-  // ── Slab Detection & Detail Extraction (stubs — implemented in Task 3) ──
+  // ── Slab Detection & Detail Extraction (stubs - implemented in Task 3) ──
 
   async detectSlab(
     req: ImageAnalysisRequest,

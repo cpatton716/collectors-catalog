@@ -485,7 +485,7 @@ export function ComicDetailsForm({
     }
   };
 
-  // Handle "Set Cover" from pasted URL — sets cover and submits to community cover DB
+  // Handle "Set Cover" from pasted URL - sets cover and submits to community cover DB
   const handleSetCover = () => {
     if (!coverUrlInput || !onCoverImageChange) return;
 
@@ -509,11 +509,11 @@ export function ComicDetailsForm({
             candidateCount: 2,
           }),
         }).catch(() => {
-          // Silently ignore — community submission is best-effort
+          // Silently ignore - community submission is best-effort
         });
       }
     } catch {
-      // Silently ignore — community submission is best-effort
+      // Silently ignore - community submission is best-effort
     }
   };
 

@@ -6,6 +6,7 @@ import { AlertCircle, CheckCircle, DollarSign, Gavel } from "lucide-react";
 
 import { calculateMinimumBid, formatPrice, getBidIncrement } from "@/types/auction";
 import { isAgeVerificationError } from "@/lib/ageVerification";
+import { hapticError, hapticSuccess } from "@/lib/haptics";
 
 import AgeVerificationModal from "@/components/AgeVerificationModal";
 
@@ -97,6 +98,7 @@ export function BidForm({
       const data = await response.json();
 
       if (response.ok && data.success) {
+        hapticSuccess();
         setSuccess(data.message);
         onBidPlaced?.(data);
         // Update minimum bid for next bid
@@ -109,9 +111,11 @@ export function BidForm({
           setShowAgeGate(true);
           return;
         }
+        hapticError();
         setError(data.error || data.message || "Failed to place bid");
       }
     } catch (err) {
+      hapticError();
       setError("Failed to place bid. Please try again.");
     } finally {
       setIsLoading(false);
@@ -270,7 +274,7 @@ export function BidForm({
         </button>
       </form>
 
-      {/* Buy It Now Option — hidden once bidding exceeds the Buy It Now price */}
+      {/* Buy It Now Option - hidden once bidding exceeds the Buy It Now price */}
       {buyItNowPrice && (currentBid ?? 0) < buyItNowPrice && (
         <div className="pt-3 border-t">
           <button

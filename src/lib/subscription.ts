@@ -136,7 +136,7 @@ export async function canUserScan(profileId: string): Promise<boolean> {
  * where rapid scans all pass the check before any increment runs.
  *
  * Flow:
- * 1. Check tier/trial — premium/trialing get unlimited scans
+ * 1. Check tier/trial - premium/trialing get unlimited scans
  * 2. If scan_month_start is stale (previous month), reset count to 0 and set to 1 atomically
  * 3. Otherwise, conditional UPDATE: increment only if scans_used_this_month < limit
  * 4. If monthly quota exhausted, try purchased scans (also conditional)
@@ -154,7 +154,7 @@ export async function reserveScanSlot(
     return { success: false, remaining: 0, message: "User not found" };
   }
 
-  // Premium and trialing users have unlimited scans — no reservation needed
+  // Premium and trialing users have unlimited scans - no reservation needed
   if (status.tier === "premium" || status.isTrialing) {
     await logScanUsage(profileId, source);
     return { success: true, remaining: 999999 };
@@ -181,7 +181,7 @@ export async function reserveScanSlot(
   const needsReset = dbMonthStart < currentMonthStart;
 
   if (needsReset) {
-    // Month is stale — reset count to 0 and immediately reserve 1 slot.
+    // Month is stale - reset count to 0 and immediately reserve 1 slot.
     // Conditional: only reset if scan_month_start is still stale (guards against concurrent reset).
     const { data, error } = await supabaseAdmin
       .from("profiles")
@@ -205,7 +205,7 @@ export async function reserveScanSlot(
       return { success: true, remaining };
     }
 
-    // Another request already reset the month — fall through to normal path
+    // Another request already reset the month - fall through to normal path
     // Re-read the current count since it was just reset by the other request
     const { data: freshProfile } = await supabaseAdmin
       .from("profiles")
@@ -220,7 +220,7 @@ export async function reserveScanSlot(
   }
 
   // Normal path: atomically increment only if below the limit.
-  // The .lt() condition makes this atomic — concurrent requests that both read count=9
+  // The .lt() condition makes this atomic - concurrent requests that both read count=9
   // will both try UPDATE ... SET count=count+1 WHERE count < 10, but Postgres row-level
   // locking means only one sees count=9; the other sees count=10 and gets 0 rows.
   //
@@ -250,7 +250,7 @@ export async function reserveScanSlot(
     return { success: true, remaining };
   }
 
-  // Monthly quota exhausted — try purchased scans with conditional decrement
+  // Monthly quota exhausted - try purchased scans with conditional decrement
   const purchasedScans = rawProfile.purchased_scans || 0;
   if (purchasedScans > 0) {
     const { data: purchaseData, error: purchaseError } = await supabaseAdmin

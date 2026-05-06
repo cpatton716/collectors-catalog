@@ -8,7 +8,7 @@ export default function SignUpPage() {
   return (
     <div className="min-h-[70vh] flex items-center justify-center p-4 py-12">
       <div className="flex flex-col lg:flex-row gap-10 max-w-4xl w-full items-center lg:items-start">
-        {/* Left side — branding + benefits */}
+        {/* Left side - branding + benefits */}
         <div className="w-full lg:w-[380px] shrink-0">
           {/* Header */}
           <div className="flex items-center gap-3 mb-4">
@@ -70,7 +70,7 @@ export default function SignUpPage() {
           </div>
         </div>
 
-        {/* Right side — Clerk sign-up */}
+        {/* Right side - Clerk sign-up */}
         <div className="flex justify-center w-full lg:w-auto">
           <SignUp />
         </div>

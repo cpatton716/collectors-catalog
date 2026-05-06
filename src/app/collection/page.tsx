@@ -198,7 +198,7 @@ function CollectionPageContent() {
     new Set(collection.map((item) => item.gradingCompany).filter((g): g is string => Boolean(g)))
   ).sort();
 
-  // The "My Collection" primary list is the union view — items present in
+  // The "My Collection" primary list is the union view - items present in
   // the collection don't tag themselves with its id. Other auto-seeded
   // lists (Want List, For Sale, Slabbed, Passed-on) ALSO carry
   // isDefault=true but ARE member-tagged like custom lists. Detect the
@@ -209,7 +209,7 @@ function CollectionPageContent() {
     selectedList === "collection" ||
     isPrimaryList(lists.find((l) => l.id === selectedList));
 
-  // Count of active *filters* (excludes search, sort, list — those have
+  // Count of active *filters* (excludes search, sort, list - those have
   // their own visible controls). Drives the "Filters (N)" badge on mobile
   // and decides whether to render the active-chips bar.
   const activeFilterCount = [
@@ -223,7 +223,7 @@ function CollectionPageContent() {
   // Filter and sort collection
   const filteredCollection = collection
     .filter((item) => {
-      // Filter by list — skip filtering when "My Collection" is selected
+      // Filter by list - skip filtering when "My Collection" is selected
       if (!isDefaultListSelected) {
         if (!item.listIds.includes(selectedList)) return false;
       }
@@ -798,7 +798,7 @@ function CollectionPageContent() {
       {/* Filters Bar - Pop Art Style */}
       <div className="bg-pop-white border-3 border-pop-black p-4 shadow-[4px_4px_0px_#000] mb-6">
         <div className="flex flex-col gap-3">
-          {/* Row 1 — Search + View Toggle + Select (Select desktop-only;
+          {/* Row 1 - Search + View Toggle + Select (Select desktop-only;
               mobile gets it next to the Viewing dropdown to free space) */}
           <div className="flex items-center gap-3">
             <div className="flex-1 relative">
@@ -846,7 +846,7 @@ function CollectionPageContent() {
             </button>
           </div>
 
-          {/* Row 2 — Viewing (list switcher with counts) */}
+          {/* Row 2 - Viewing (list switcher with counts) */}
           <div className="flex items-center gap-2 flex-wrap">
             <label className="text-sm font-comic font-bold text-pop-black/70 flex-shrink-0">
               Viewing:
@@ -879,7 +879,7 @@ function CollectionPageContent() {
             </button>
           </div>
 
-          {/* Row 3 (mobile) — Filters drawer trigger + inline Sort.
+          {/* Row 3 (mobile) - Filters drawer trigger + inline Sort.
               Sort stays out of the drawer because users change it often. */}
           <div className="flex md:hidden items-center gap-2">
             <button
@@ -912,7 +912,7 @@ function CollectionPageContent() {
             </div>
           </div>
 
-          {/* Row 3 (desktop) — Filters inline + Sort + Clear */}
+          {/* Row 3 (desktop) - Filters inline + Sort + Clear */}
           <div className="hidden md:flex flex-wrap items-center gap-2">
             <button
               onClick={() => setShowStarredOnly(!showStarredOnly)}
@@ -1026,7 +1026,7 @@ function CollectionPageContent() {
             )}
           </div>
 
-          {/* Row 4 (mobile only) — Active filter chips with one-tap remove.
+          {/* Row 4 (mobile only) - Active filter chips with one-tap remove.
               Mirrors the desktop inline filter row so users can see/clear
               what's active without re-opening the drawer. */}
           {activeFilterCount > 0 && (
@@ -1389,7 +1389,7 @@ function CollectionPageContent() {
         />
       )}
 
-      {/* Mobile Filters Drawer — bottom-sheet pattern. Hidden on md+ where
+      {/* Mobile Filters Drawer - bottom-sheet pattern. Hidden on md+ where
           the inline filter row is visible directly. */}
       {showFiltersDrawer && (
         <div className="md:hidden fixed inset-0 z-50">

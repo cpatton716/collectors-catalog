@@ -9,7 +9,7 @@
  * This is a defense-in-depth guard on top of the prompt instructions in
  * `src/lib/providers/anthropic.ts` / `gemini.ts`. It rejects nonsensical
  * coordinates before they can pollute the community cover cache, but it does
- * NOT block the rest of the scan response — the scan still succeeds, we just
+ * NOT block the rest of the scan response - the scan still succeeds, we just
  * don't harvest a cover for this image.
  */
 
@@ -18,8 +18,8 @@
 // rejecting real covers. Values outside this range are extremely unlikely to
 // be a comic cover and almost always represent a mis-crop (grade label only,
 // full slab region including the label, square logo area, etc.).
-export const COMIC_ASPECT_RATIO_MIN = 0.55; // w/h — narrowest acceptable (tall, skinny)
-export const COMIC_ASPECT_RATIO_MAX = 0.85; // w/h — widest acceptable (still comic-like)
+export const COMIC_ASPECT_RATIO_MIN = 0.55; // w/h - narrowest acceptable (tall, skinny)
+export const COMIC_ASPECT_RATIO_MAX = 0.85; // w/h - widest acceptable (still comic-like)
 
 export interface CropCoordinates {
   x: number;
@@ -39,7 +39,7 @@ export interface CropValidationResult {
  * expected comic cover window (~0.55 to ~0.85 w/h).
  *
  * This is a shape-only check. It does NOT verify that coordinates fit within
- * the source image bounds — that's `validateCropCoordinates` in coverHarvest.ts.
+ * the source image bounds - that's `validateCropCoordinates` in coverHarvest.ts.
  */
 export function validateCoverCrop(
   coords: CropCoordinates
@@ -67,7 +67,7 @@ export function validateCoverCrop(
   if (aspectRatio < COMIC_ASPECT_RATIO_MIN) {
     return {
       valid: false,
-      reason: `Aspect ratio ${aspectRatio.toFixed(2)} too narrow (min ${COMIC_ASPECT_RATIO_MIN}) — likely includes full slab or non-cover region`,
+      reason: `Aspect ratio ${aspectRatio.toFixed(2)} too narrow (min ${COMIC_ASPECT_RATIO_MIN}) - likely includes full slab or non-cover region`,
       aspectRatio,
     };
   }
@@ -75,7 +75,7 @@ export function validateCoverCrop(
   if (aspectRatio > COMIC_ASPECT_RATIO_MAX) {
     return {
       valid: false,
-      reason: `Aspect ratio ${aspectRatio.toFixed(2)} too wide (max ${COMIC_ASPECT_RATIO_MAX}) — likely cropped only the grading label`,
+      reason: `Aspect ratio ${aspectRatio.toFixed(2)} too wide (max ${COMIC_ASPECT_RATIO_MAX}) - likely cropped only the grading label`,
       aspectRatio,
     };
   }

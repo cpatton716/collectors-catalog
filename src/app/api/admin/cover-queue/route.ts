@@ -20,7 +20,7 @@ const coverActionSchema = z.object({
   action: z.enum(["approve", "reject"]),
 });
 
-// GET — fetch pending covers for admin review
+// GET - fetch pending covers for admin review
 export async function GET(request: NextRequest) {
   const adminProfile = await getAdminProfile();
   if (!adminProfile) {
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// PATCH — approve or reject a cover
+// PATCH - approve or reject a cover
 export async function PATCH(request: NextRequest) {
   const adminProfile = await getAdminProfile();
   if (!adminProfile) {

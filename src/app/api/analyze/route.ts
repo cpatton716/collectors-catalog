@@ -109,7 +109,7 @@ interface ComicDetails {
   coverImageUrl?: string | null; // Cover image URL (e.g. from the cover pipeline)
   coverSource?: string | null; // Where the cover came from (community, ebay, openlibrary, etc.)
   coverValidated?: boolean; // Whether the cover has been validated
-  // Cover harvesting fields (internal — stripped before sending to client)
+  // Cover harvesting fields (internal - stripped before sending to client)
   coverHarvestable?: boolean;
   coverCropCoordinates?: { x: number; y: number; width: number; height: number };
 }
@@ -169,7 +169,7 @@ export async function POST(request: NextRequest) {
   let metadataCacheHit = false;
   let aiCallsMade = 0;
   let ebayLookupMade = false;
-  let p1: string = "anthropic"; // Primary provider used — default for catch block
+  let p1: string = "anthropic"; // Primary provider used - default for catch block
 
   try {
     // Rate limit check - protect expensive AI endpoint
@@ -248,7 +248,7 @@ export async function POST(request: NextRequest) {
     const rawBody = await request.json().catch(() => null);
     const validated = validateBody(analyzeSchema, rawBody);
     if (!validated.success) {
-      // Release the reserved scan slot — the request is invalid, don't charge the user
+      // Release the reserved scan slot - the request is invalid, don't charge the user
       if (profileId && scanSlotReserved) {
         releaseScanSlot(profileId, scanSlotUsedPurchased).catch((err) => {
           console.error("Failed to release scan slot:", err);
@@ -263,7 +263,7 @@ export async function POST(request: NextRequest) {
     // hCaptcha Verification (Guest Scans 4-5 Only)
     // ============================================
     // Registered users are rate-limited by plan tier and never see CAPTCHA.
-    // Guests on scans 1-3 also skip — keeps onboarding friction minimal.
+    // Guests on scans 1-3 also skip - keeps onboarding friction minimal.
     // On scans 4 and 5, a client-side hCaptcha token is required; we verify
     // with hCaptcha siteverify and fail closed on any verification failure.
     if (!userId) {
@@ -294,7 +294,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Enforce max decoded image size (10MB). Fast-reject the base64 string
-    // before decoding if it can't possibly fit — base64 encoding inflates
+    // before decoding if it can't possibly fit - base64 encoding inflates
     // payloads by ~4/3, so a decoded 10MB image is ~13.34MB as base64.
     const base64StringUpperBound = Math.ceil((MAX_IMAGE_UPLOAD_BYTES * 4) / 3) + 64;
     if (
@@ -302,7 +302,7 @@ export async function POST(request: NextRequest) {
       image.length > base64StringUpperBound ||
       base64DecodedByteLength(image) > MAX_IMAGE_UPLOAD_BYTES
     ) {
-      // Release the reserved scan slot — the user never got a scan
+      // Release the reserved scan slot - the user never got a scan
       if (profileId && scanSlotReserved) {
         releaseScanSlot(profileId, scanSlotUsedPurchased).catch((err) => {
           console.error("Failed to release scan slot:", err);
@@ -514,13 +514,13 @@ export async function POST(request: NextRequest) {
               }
             }
 
-            // Phase 5 / 5.5: Cache gate — decide if we need AI detail extraction
+            // Phase 5 / 5.5: Cache gate - decide if we need AI detail extraction
             const slabDataComplete = hasCompleteSlabData(comicDetails);
             // Propagate to outer scope for analytics
             metadataCacheHit = certMetadataCacheHit;
 
             if (slabDataComplete && certMetadataCacheHit) {
-              // Phase 5: Cache hit — skip detail extraction entirely
+              // Phase 5: Cache hit - skip detail extraction entirely
               scanPath = "cert-first-cached";
               console.info("[scan] Cert-first cached path: all data from cert + cache");
             } else {
@@ -599,7 +599,7 @@ export async function POST(request: NextRequest) {
 
             comicDetails.dataSource = "barcode"; // cert-first uses structured data, not AI vision
           } else {
-            // Cert lookup failed — fall through to full pipeline
+            // Cert lookup failed - fall through to full pipeline
             console.info(`[scan] Cert lookup failed for ${normalizedCompany} #${slabResult.certificationNumber}, falling back to full pipeline`);
             scanPath = "cert-first-fallback";
           }
@@ -796,7 +796,7 @@ export async function POST(request: NextRequest) {
           // Priority 1: Check our own barcode_catalog (crowd-sourced, verified)
           const catalogResult = await lookupBarcodeCatalog(cleanBarcode);
           if (catalogResult && catalogResult.title) {
-            // Our catalog is trusted — use it to fill in or override
+            // Our catalog is trusted - use it to fill in or override
             const gradingInfo = {
               isSlabbed: comicDetails.isSlabbed,
               gradingCompany: comicDetails.gradingCompany,
@@ -824,7 +824,7 @@ export async function POST(request: NextRequest) {
 
           // Priority 2: Check Redis barcode cache (may contain Comic Vine data)
           // Skip if our catalog already provided data
-          // Comic Vine barcode lookups REMOVED — unreliable UPC data
+          // Comic Vine barcode lookups REMOVED - unreliable UPC data
           // (see docs/BARCODE_SCANNER_SPEC.md for history)
           // Our barcode_catalog (crowd-sourced from verified scans) is the only trusted source
         }
@@ -840,7 +840,7 @@ export async function POST(request: NextRequest) {
     }
 
     // If this is a slabbed comic with a certification number, look up from grading company
-    // Skip on cert-first path — already done during the cert-first branch
+    // Skip on cert-first path - already done during the cert-first branch
     if (!certFirstPath && comicDetails.isSlabbed && comicDetails.certificationNumber && comicDetails.gradingCompany) {
       try {
         const certResult = await lookupCertification(
@@ -963,7 +963,7 @@ export async function POST(request: NextRequest) {
     const missingBasicInfoAfterCache = !comicDetails.publisher || !comicDetails.releaseYear;
 
     // Only call AI if we STILL need to fill in missing information after cache
-    // Skip on cert-first path — creators were handled by extractSlabDetails
+    // Skip on cert-first path - creators were handled by extractSlabDetails
     const needsKeyInfoFromAI = !comicDetails.keyInfo || comicDetails.keyInfo.length === 0;
     const needsAIVerification =
       !certFirstPath &&
@@ -1011,7 +1011,7 @@ export async function POST(request: NextRequest) {
           verificationMeta = meta;
           aiCallsMade++;
 
-          // Merge verification results — only fill missing fields
+          // Merge verification results - only fill missing fields
           if (!comicDetails.writer && verifyResult.writer) comicDetails.writer = verifyResult.writer;
           if (!comicDetails.coverArtist && verifyResult.coverArtist) comicDetails.coverArtist = verifyResult.coverArtist;
           if (!comicDetails.interiorArtist && verifyResult.interiorArtist) comicDetails.interiorArtist = verifyResult.interiorArtist;
@@ -1024,7 +1024,7 @@ export async function POST(request: NextRequest) {
             comicDetails.keyInfoSource = "ai";
           }
         } catch {
-          // Continue with partial data — image analysis result is still valid
+          // Continue with partial data - image analysis result is still valid
           console.warn("[scan] Verification failed on all providers, continuing with partial data");
         }
       }
@@ -1059,7 +1059,7 @@ export async function POST(request: NextRequest) {
               };
               priceDataFound = true;
           } else if (cachedResult === null || (cachedResult !== null && !("noData" in cachedResult) && (cachedResult as PriceData).priceSource !== "ebay")) {
-            // Cache miss or stale AI price — fetch from eBay Browse API
+            // Cache miss or stale AI price - fetch from eBay Browse API
             ebayPriceData = await searchActiveListings(
               comicDetails.title,
               comicDetails.issueNumber,
@@ -1219,7 +1219,7 @@ export async function POST(request: NextRequest) {
     };
 
     // Cover image harvesting from graded book scans
-    // Runs pre-response with 2s timeout — see spec for rationale
+    // Runs pre-response with 2s timeout - see spec for rationale
     if (comicDetails.isSlabbed && comicDetails.coverHarvestable) {
       const harvestPromise = harvestCoverFromScan({
         base64Image: base64Data,

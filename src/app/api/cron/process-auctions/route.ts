@@ -7,8 +7,10 @@ import {
   expireUnpaidAuctions,
   processEndedAuctions,
   pruneOldNotifications,
+  sendAuctionEndingSoonReminders,
   sendPaymentReminders,
 } from "@/lib/auctionDb";
+import { checkCoverImageHeadStatus } from "@/lib/coverHeadCheck";
 
 // POST - Process ended auctions and expirations (called by cron)
 export async function POST(request: NextRequest) {
@@ -29,6 +31,11 @@ export async function POST(request: NextRequest) {
     // the window get a final ping before their auction is cancelled.
     const reminderResult = await sendPaymentReminders();
 
+    // Auction ending-soon reminder for losing bidders (T-1h window). Runs
+    // alongside the payment-reminder pass — different audiences, idempotent
+    // via auctions.reminder_sent_at column.
+    const endingSoonResult = await sendAuctionEndingSoonReminders();
+
     // Expire unpaid auctions (ended → cancelled when payment_deadline passes)
     const paymentExpiryResult = await expireUnpaidAuctions();
 
@@ -41,12 +48,22 @@ export async function POST(request: NextRequest) {
     // Expire old listings (30 day expiration)
     const listingResult = await expireListings();
 
-    // Prune old notifications (read >30d, unread >90d). Idempotent —
+    // Prune old notifications (read >30d, unread >90d). Idempotent -
     // returns counts so we can log how much was deleted per tick.
     const pruneResult = await pruneOldNotifications();
     if (pruneResult.deletedRead || pruneResult.deletedUnread) {
       console.warn(
         `[prune] notifications: deletedRead=${pruneResult.deletedRead}, deletedUnread=${pruneResult.deletedUnread}`
+      );
+    }
+
+    // HEAD-check a batch of cached cover URLs on a 30-day cycle. Picks
+    // never-checked or stale rows; marks 4xx/5xx as rejected. Bounded so
+    // it can't blow the cron time budget.
+    const headCheckResult = await checkCoverImageHeadStatus();
+    if (headCheckResult.dead > 0 || headCheckResult.errors > 0) {
+      console.warn(
+        `[cover-head-check] checked=${headCheckResult.checked} alive=${headCheckResult.alive} dead=${headCheckResult.dead} errors=${headCheckResult.errors}`,
       );
     }
 
@@ -59,6 +76,11 @@ export async function POST(request: NextRequest) {
       paymentReminders: {
         reminded: reminderResult.reminded,
         errors: reminderResult.errors,
+      },
+      auctionEndingSoonReminders: {
+        reminded: endingSoonResult.reminded,
+        notified: endingSoonResult.notified,
+        errors: endingSoonResult.errors,
       },
       unpaidAuctions: {
         expired: paymentExpiryResult.expired,
@@ -81,6 +103,7 @@ export async function POST(request: NextRequest) {
         deletedRead: pruneResult.deletedRead,
         deletedUnread: pruneResult.deletedUnread,
       },
+      coverHeadCheck: headCheckResult,
     });
   } catch (error) {
     console.error("Error processing cron job:", error);
@@ -98,11 +121,13 @@ export async function GET(request: NextRequest) {
   try {
     const auctionResult = await processEndedAuctions();
     const reminderResult = await sendPaymentReminders();
+    const endingSoonResult = await sendAuctionEndingSoonReminders();
     const paymentExpiryResult = await expireUnpaidAuctions();
     const offerResult = await expireOffers();
     const secondChanceExpiryResult = await expireSecondChanceOffers();
     const listingResult = await expireListings();
     const pruneResult = await pruneOldNotifications();
+    const headCheckResult = await checkCoverImageHeadStatus();
 
     return NextResponse.json({
       success: true,
@@ -113,6 +138,11 @@ export async function GET(request: NextRequest) {
       paymentReminders: {
         reminded: reminderResult.reminded,
         errors: reminderResult.errors,
+      },
+      auctionEndingSoonReminders: {
+        reminded: endingSoonResult.reminded,
+        notified: endingSoonResult.notified,
+        errors: endingSoonResult.errors,
       },
       unpaidAuctions: {
         expired: paymentExpiryResult.expired,
@@ -135,6 +165,7 @@ export async function GET(request: NextRequest) {
         deletedRead: pruneResult.deletedRead,
         deletedUnread: pruneResult.deletedUnread,
       },
+      coverHeadCheck: headCheckResult,
     });
   } catch (error) {
     console.error("Error processing cron job:", error);

@@ -34,13 +34,13 @@ const setUsernameSchema = z.object({
 /**
  * Sync the username to Clerk after a successful Supabase write.
  *
- * Supabase is the source of truth for Collectors Chest. Clerk is secondary —
+ * Supabase is the source of truth for Collectors Chest. Clerk is secondary -
  * if this call fails (rate limit, Clerk-side validation rejection, etc.) we
  * log and swallow the error so the user's save still appears successful.
  *
  * Pass `null` to clear Clerk's username (mirrors DELETE behavior). Clerk's
  * typed SDK declares `username` as `string | undefined`, but the underlying
- * BAPI accepts `null` to clear the field — we cast accordingly.
+ * BAPI accepts `null` to clear the field - we cast accordingly.
  */
 async function syncUsernameToClerk(clerkUserId: string, username: string | null): Promise<void> {
   try {
@@ -200,7 +200,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Mirror the username to Clerk so the UserButton popover stays in sync.
-    // Errors here are logged but do not fail the request — Supabase is source of truth.
+    // Errors here are logged but do not fail the request - Supabase is source of truth.
     await syncUsernameToClerk(userId, normalized);
 
     return NextResponse.json({

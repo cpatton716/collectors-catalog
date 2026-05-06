@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
 
     const effectivePriceType = promoTrial ? "monthly" : priceType;
 
-    // Promo trial takes precedence — ignore withTrial if promoTrial is set
+    // Promo trial takes precedence - ignore withTrial if promoTrial is set
     const effectiveWithTrial = promoTrial ? false : withTrial;
 
     const priceId = PRICES[effectivePriceType];

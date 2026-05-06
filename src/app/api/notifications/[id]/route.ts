@@ -22,8 +22,8 @@ const paramsSchema = z.object({ id: schemas.uuid });
 // GET /api/notifications/[id]
 //
 // Used by the inbox `?focus=<id>` deep-link to surface a "Notification not
-// found — it may have been cleared" toast when the row has been pruned or
-// belongs to another user. Returns 404 on miss (NOT 403 — don't leak
+// found - it may have been cleared" toast when the row has been pruned or
+// belongs to another user. Returns 404 on miss (NOT 403 - don't leak
 // existence).
 export async function GET(
   _request: NextRequest,

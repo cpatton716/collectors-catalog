@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import {
+  AlertTriangle,
   Check,
   CloudOff,
   Database,
@@ -14,6 +15,8 @@ import {
   Target,
   X,
 } from "lucide-react";
+
+import { hapticSuccess, hapticTap } from "@/lib/haptics";
 
 import { ComicImage } from "./ComicImage";
 import { CoverLightbox } from "./CoverLightbox";
@@ -50,6 +53,16 @@ interface KeyHuntPriceResultProps {
   totalListings?: number;
   ebaySearchQuery?: string;
   keyInfo?: string[];
+  /**
+   * Confidence metadata for the curated keyInfo lookup. Drives the volume
+   * verification advisory shown beneath the KEY ISSUE chips. Absent for
+   * non-curated key info (AI fallback) and for non-key books.
+   */
+  keyInfoMeta?: {
+    matchType: "exact" | "year-resolved";
+    matchedYear?: number;
+    totalCandidates: number;
+  };
 }
 
 export function KeyHuntPriceResult({
@@ -72,6 +85,7 @@ export function KeyHuntPriceResult({
   totalListings,
   ebaySearchQuery,
   keyInfo,
+  keyInfoMeta,
 }: KeyHuntPriceResultProps) {
   const [showSlabbed, setShowSlabbed] = useState(false);
   const [isAddingToHunt, setIsAddingToHunt] = useState(false);
@@ -163,7 +177,7 @@ export function KeyHuntPriceResult({
 
           {/* Content with cover thumbnail */}
           <div className="absolute inset-0 flex items-center px-4 gap-4">
-            {/* Cover thumbnail — tap to enlarge for verification */}
+            {/* Cover thumbnail - tap to enlarge for verification */}
             <button
               onClick={() => coverImageUrl && setShowLightbox(true)}
               className="flex-shrink-0 w-20 h-28 rounded-lg overflow-hidden shadow-lg ring-2 ring-white/20 hover:ring-white/60 transition-all active:scale-95"
@@ -222,6 +236,28 @@ export function KeyHuntPriceResult({
                   </span>
                 ))}
               </div>
+
+              {/* Volume context - passive verification cue for everyone with a year match */}
+              {keyInfoMeta?.matchedYear && keyInfoMeta.matchType === "exact" && (
+                <p className="mt-2 text-center text-[11px] text-gray-500">
+                  Volume started {keyInfoMeta.matchedYear}
+                  {keyInfoMeta.totalCandidates > 1 &&
+                    ` · ${keyInfoMeta.totalCandidates} volumes exist`}
+                </p>
+              )}
+
+              {/* Active warning - multi-volume judgment-call disambiguation */}
+              {keyInfoMeta?.matchType === "year-resolved" && (
+                <div className="mt-2 mx-auto max-w-xs flex items-start gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-[11px] text-amber-800 leading-snug text-left">
+                    <strong>Verify volume.</strong> {keyInfoMeta.totalCandidates} volumes of this
+                    title exist. We matched this to the
+                    {keyInfoMeta.matchedYear ? ` ${keyInfoMeta.matchedYear} volume` : " closest available volume"}
+                    {" "}based on the cover year - double-check the indicia if you&apos;re unsure.
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
@@ -321,11 +357,13 @@ export function KeyHuntPriceResult({
             <button
               onClick={async () => {
                 if (addedToHunt || isAddingToHunt) return;
+                hapticTap();
                 setIsAddingToHunt(true);
                 setHuntError(null);
                 const result = await onAddToHuntList();
                 setIsAddingToHunt(false);
                 if (result.success) {
+                  hapticSuccess();
                   setAddedToHunt(true);
                 } else {
                   setHuntError(result.error || "Failed to add");
@@ -367,7 +405,10 @@ export function KeyHuntPriceResult({
           {/* Action Buttons */}
           <div className="flex gap-3">
             <button
-              onClick={onAddToCollection}
+              onClick={() => {
+                hapticSuccess();
+                onAddToCollection();
+              }}
               className="flex-1 py-3 px-4 bg-primary-600 text-white rounded-xl font-medium hover:bg-primary-700 transition-colors flex items-center justify-center gap-2"
             >
               <Plus className="w-5 h-5" />

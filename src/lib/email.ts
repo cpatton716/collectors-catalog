@@ -63,6 +63,31 @@ interface TrialExpiringEmailData {
   trialEndsAt: string;
 }
 
+interface AuctionEndingSoonEmailData {
+  recipientName: string;
+  comicTitle: string;
+  issueNumber: string;
+  currentBid: number;
+  /** The recipient's own max bid on this auction (proxy bid). */
+  yourMaxBid: number;
+  /** ISO 8601 — auction's end_time. */
+  endTime: string;
+  /** Pre-formatted minutes-remaining label, e.g., "in about an hour". */
+  timeRemainingLabel: string;
+  listingUrl: string;
+}
+
+interface SubscriptionPaymentFailedEmailData {
+  /** URL to the Stripe Customer Portal so the user can update their payment method */
+  manageBillingUrl: string;
+  /** Optional: when Stripe will auto-retry (ISO 8601). When omitted, message
+   *  emphasizes manual update without a specific deadline. */
+  nextRetryAt?: string;
+  /** Optional human-readable reason from Stripe (e.g., "Card declined").
+   *  Sanitized at the call site — never raw error strings in the email. */
+  failureReason?: string;
+}
+
 interface MarketplaceTransactionEmailData {
   buyerName: string;
   sellerName: string;
@@ -74,7 +99,7 @@ interface MarketplaceTransactionEmailData {
   total: number;
   transactionType: "buy_now" | "auction";
   listingUrl: string;
-  // Shipping address not yet surfaced (needs Shipping Tracking feature — BACKLOG).
+  // Shipping address not yet surfaced (needs Shipping Tracking feature - BACKLOG).
   // For now these emails tell both parties a sale is complete; shipping details
   // will be added once the tracking flow ships.
 }
@@ -163,6 +188,8 @@ export const EMAIL_SOUND_EFFECTS: Record<NotificationEmailType, string> = {
   second_chance_expired: "TIME'S UP!",
   payment_missed_warning: "HEADS UP!",
   payment_missed_flagged: "WHOA!",
+  subscription_payment_failed: "CARD ISSUE!",
+  auction_ending_soon_bidder: "FINAL HOUR!",
 };
 
 export function emailHeader(_soundEffect: string): string {
@@ -833,7 +860,9 @@ export type NotificationEmailType =
   | "second_chance_declined"
   | "second_chance_expired"
   | "payment_missed_warning"
-  | "payment_missed_flagged";
+  | "payment_missed_flagged"
+  | "subscription_payment_failed"
+  | "auction_ending_soon_bidder";
 
 interface SendNotificationEmailParams {
   to: string;
@@ -856,7 +885,9 @@ interface SendNotificationEmailParams {
     | SecondChanceRunnerUpEmailData
     | SecondChanceSellerResultEmailData
     | PaymentMissedWarningEmailData
-    | PaymentMissedFlaggedEmailData;
+    | PaymentMissedFlaggedEmailData
+    | SubscriptionPaymentFailedEmailData
+    | AuctionEndingSoonEmailData;
   /**
    * Optional profile ID for preference gating. When omitted, we look up
    * the profile by email. Pass explicitly in hot paths to avoid the extra
@@ -869,7 +900,7 @@ interface SendNotificationEmailParams {
  * Look up a profile's ID by email. Used when callers don't have the ID
  * handy but we still want to gate on the recipient's preferences.
  * Returns null when the email isn't tied to a known profile (e.g., guest
- * or unsubscribed legacy account) — in which case gating is skipped.
+ * or unsubscribed legacy account) - in which case gating is skipped.
  */
 async function resolveProfileIdByEmail(email: string): Promise<string | null> {
   try {
@@ -943,7 +974,7 @@ function resolveNotificationTemplate(
       return auctionPaymentExpiredSellerTemplate(
         data as PaymentExpiredSellerEmailData
       );
-    // Second Chance Offer + Strike System — see section at bottom of file.
+    // Second Chance Offer + Strike System - see section at bottom of file.
     case "second_chance_available":
       return secondChanceAvailableTemplate(
         data as SecondChanceSellerAvailableEmailData
@@ -972,6 +1003,14 @@ function resolveNotificationTemplate(
       return paymentMissedFlaggedTemplate(
         data as PaymentMissedFlaggedEmailData
       );
+    case "subscription_payment_failed":
+      return subscriptionPaymentFailedTemplate(
+        data as SubscriptionPaymentFailedEmailData
+      );
+    case "auction_ending_soon_bidder":
+      return auctionEndingSoonBidderTemplate(
+        data as AuctionEndingSoonEmailData
+      );
     default:
       return null;
   }
@@ -988,7 +1027,7 @@ export async function sendNotificationEmail({
     return { success: true };
   }
 
-  // Preference gating — skip if the recipient has opted out of this category.
+  // Preference gating - skip if the recipient has opted out of this category.
   // Transactional types and unknown profiles always pass through (handled
   // inside `shouldSendEmailForUser`).
   try {
@@ -1003,11 +1042,11 @@ export async function sendNotificationEmail({
     const allowed = await shouldSendEmailForUser(resolvedProfileId, type, supabaseAdmin);
     if (!allowed) {
       const category = getNotificationCategory(type);
-      console.log(`[email] skipped — user opted out of ${category} (${type} to ${to})`);
+      console.log(`[email] skipped - user opted out of ${category} (${type} to ${to})`);
       return { success: true, skipped: true };
     }
   } catch (err) {
-    // Preference check failing should never block a send — log and continue.
+    // Preference check failing should never block a send - log and continue.
     console.error("[email] preference check failed, sending anyway:", err);
   }
 
@@ -1072,7 +1111,7 @@ export async function sendNotificationEmailsBatch(
     return { sent: emails.length, batches: 0, errors };
   }
 
-  // Preference gating — drop opted-out recipients before building payloads.
+  // Preference gating - drop opted-out recipients before building payloads.
   // Transactional types and no-profile-context entries pass through.
   let filteredEmails = emails;
   let skippedCount = 0;
@@ -1131,21 +1170,65 @@ export async function sendNotificationEmailsBatch(
   let sent = 0;
 
   for (const batch of batches) {
-    try {
-      const { error } = await resend.batch.send(batch);
-      if (error) {
-        errors.push(`Resend batch error: ${error.message}`);
-        console.error("[Email] batch.send error:", error);
-        continue;
-      }
+    const result = await sendBatchWithRetry(batch);
+    if (result.ok) {
       sent += batch.length;
-    } catch (err) {
-      errors.push(`Resend batch threw: ${String(err)}`);
-      console.error("[Email] batch.send threw:", err);
+    } else if (result.errorMsg) {
+      errors.push(result.errorMsg);
     }
   }
 
   return { sent, batches: batches.length, errors, skipped: skippedCount };
+}
+
+// Per-batch retry budget. Resend's edge can return 429 (rate limit) or 5xx
+// during traffic spikes. Total worst-case wait: 500ms + 1000ms + 2000ms = 3.5s
+// per failing batch, comfortably inside the 30s cron function cap.
+const RESEND_RETRY_ATTEMPTS = 2; // 1 initial + 2 retries = 3 total
+const RESEND_RETRY_BASE_MS = 500;
+
+async function sendBatchWithRetry(
+  batch: Array<{ from: string; to: string; subject: string; html: string; text: string }>,
+): Promise<{ ok: boolean; errorMsg?: string }> {
+  for (let attempt = 0; attempt <= RESEND_RETRY_ATTEMPTS; attempt++) {
+    try {
+      const { error } = await resend.batch.send(batch);
+      if (!error) return { ok: true };
+
+      // Resend SDK errors carry statusCode + name. 429 = rate limit (transient),
+      // 5xx = server-side issue (transient). 4xx other than 429 = permanent
+      // (malformed payload, auth failure) — don't retry.
+      const errAny = error as { statusCode?: number; name?: string; message?: string };
+      const isTransient =
+        errAny.statusCode === 429 ||
+        (typeof errAny.statusCode === "number" && errAny.statusCode >= 500);
+
+      if (isTransient && attempt < RESEND_RETRY_ATTEMPTS) {
+        const delay = RESEND_RETRY_BASE_MS * Math.pow(2, attempt); // 500, 1000, 2000
+        console.warn(
+          `[email] batch retry ${attempt + 1}/${RESEND_RETRY_ATTEMPTS} after ${delay}ms (status=${errAny.statusCode}): ${errAny.message}`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        continue;
+      }
+
+      console.error("[Email] batch.send error (no retry):", error);
+      return { ok: false, errorMsg: `Resend batch error: ${error.message}` };
+    } catch (err) {
+      // fetch-level throw (network blip, DNS fail, etc.) — treat as transient.
+      if (attempt < RESEND_RETRY_ATTEMPTS) {
+        const delay = RESEND_RETRY_BASE_MS * Math.pow(2, attempt);
+        console.warn(
+          `[email] batch retry ${attempt + 1}/${RESEND_RETRY_ATTEMPTS} after ${delay}ms (threw): ${String(err)}`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        continue;
+      }
+      console.error("[Email] batch.send threw (retry budget exhausted):", err);
+      return { ok: false, errorMsg: `Resend batch threw: ${String(err)}` };
+    }
+  }
+  return { ok: false, errorMsg: "Resend batch retry budget exhausted" };
 }
 
 export type {
@@ -1381,5 +1464,88 @@ function paymentMissedFlaggedTemplate(
       </div>
     `,
     text: `Bidding restricted.\n\nWe've temporarily restricted new bids on your account. Our system flagged ${data.strikeCount} missed payment deadline(s) within the last ${data.windowDays} days. Reason: ${data.reason}.\n\nYou can still browse, buy-it-now, and sell. If you'd like to appeal, contact support.\n\nSupport: ${data.supportUrl}\n\nScan comics. Track value. Collect smarter.\nTwisted Jester LLC · collectors-chest.com`,
+  };
+}
+
+// ============================================================================
+// Subscription Payment Failed
+// ----------------------------------------------------------------------------
+// Fires from the Stripe webhook handler on `invoice.payment_failed` for a
+// subscription invoice. Stripe will auto-retry on its smart-retry schedule
+// (typically 3 attempts over ~14 days) and dunning emails are NOT sent by
+// Stripe by default — this template is our manual notification so the user
+// can update their payment method before the subscription lapses to
+// `unpaid`/`canceled`.
+// ============================================================================
+
+function subscriptionPaymentFailedTemplate(
+  data: SubscriptionPaymentFailedEmailData
+): EmailTemplate {
+  const reasonLine = data.failureReason
+    ? `<p style="font-size: 14px; color: #555; line-height: 1.6; margin: 0 0 12px;">Reason on file: <em>${data.failureReason}</em>.</p>`
+    : "";
+  const retryLine = data.nextRetryAt
+    ? `<p style="font-size: 14px; color: #555; line-height: 1.6; margin: 0 0 12px;">We'll automatically retry the charge on <strong>${data.nextRetryAt}</strong>. Update your payment method before then to keep Premium uninterrupted.</p>`
+    : `<p style="font-size: 14px; color: #555; line-height: 1.6; margin: 0 0 12px;">Update your payment method to avoid losing your Premium features.</p>`;
+
+  return {
+    subject: "Action needed: your Premium payment didn't go through",
+    html: `
+      <div style="max-width: 600px; margin: 0 auto; font-family: 'Segoe UI', Arial, sans-serif; background: #ffffff;">
+        ${emailHeader(EMAIL_SOUND_EFFECTS.subscription_payment_failed)}
+        <div style="padding: 32px 24px;">
+          <h2 style="font-size: 22px; font-weight: 900; color: #000; margin: 0 0 16px;">Payment didn't go through</h2>
+          <p style="font-size: 16px; color: #333; line-height: 1.6; margin: 0 0 12px;">Your latest Collectors Chest Premium charge couldn't be completed.</p>
+          ${reasonLine}
+          ${retryLine}
+          <div style="text-align: center; margin: 24px 0;">
+            <a href="${data.manageBillingUrl}" style="display: inline-block; background: #0066FF; color: #ffffff; font-weight: 900; padding: 14px 36px; border: 3px solid #000; border-radius: 8px; text-decoration: none; text-transform: uppercase; letter-spacing: 1px; box-shadow: 4px 4px 0 #000;">UPDATE PAYMENT METHOD →</a>
+          </div>
+          <p style="font-size: 13px; color: #6b7280; line-height: 1.6; margin: 0;">If this is a temporary card issue (travel, fraud hold), check with your bank and we'll retry on schedule. If you'd like to cancel, you can do that from the same billing portal.</p>
+        </div>
+        ${emailFooter()}
+      </div>
+    `,
+    text: `Your Premium payment didn't go through.\n\n${data.failureReason ? `Reason: ${data.failureReason}.\n\n` : ""}${data.nextRetryAt ? `We'll automatically retry on ${data.nextRetryAt}. ` : ""}Update your payment method to keep Premium uninterrupted.\n\nManage billing: ${data.manageBillingUrl}\n\nIf this is a temporary card issue, check with your bank and we'll retry on schedule.\n\nScan comics. Track value. Collect smarter.\nTwisted Jester LLC · collectors-chest.com`,
+  };
+}
+
+// ============================================================================
+// Auction Ending Soon Reminder (T-1h to losing bidders)
+// ----------------------------------------------------------------------------
+// Fires once per auction from the cron pass at T-1h before end_time. Targets
+// active bidders who placed a bid but are not currently winning — primary
+// re-engagement audience. See BACKLOG "Auction Ending Soon Reminder for
+// Active Bidders" (Apr 23, 2026 / closed Session 45).
+// ============================================================================
+
+function auctionEndingSoonBidderTemplate(
+  data: AuctionEndingSoonEmailData,
+): EmailTemplate {
+  const subject = `Ending ${data.timeRemainingLabel}: ${data.comicTitle} #${data.issueNumber}`;
+  return {
+    subject,
+    html: `
+      <div style="max-width: 600px; margin: 0 auto; font-family: 'Segoe UI', Arial, sans-serif; background: #ffffff;">
+        ${emailHeader(EMAIL_SOUND_EFFECTS.auction_ending_soon_bidder)}
+        <div style="padding: 32px 24px;">
+          <h2 style="font-size: 22px; font-weight: 900; color: #000; margin: 0 0 16px;">Auction ending ${data.timeRemainingLabel}</h2>
+          <p style="font-size: 16px; color: #333; line-height: 1.6; margin: 0 0 12px;">Hi ${data.recipientName}, ${data.comicTitle} #${data.issueNumber} closes soon and you've been outbid.</p>
+          <div style="background: #FFF8E7; border: 3px solid #000; border-radius: 8px; padding: 16px 20px; margin: 0 0 24px;">
+            <table cellpadding="0" cellspacing="0" border="0" style="width: 100%; font-size: 14px;">
+              <tr><td style="padding: 4px 0; color: #555;">Current bid</td><td style="padding: 4px 0; text-align: right; font-weight: bold; color: #000;">${formatPrice(data.currentBid)}</td></tr>
+              <tr><td style="padding: 4px 0; color: #555;">Your max bid</td><td style="padding: 4px 0; text-align: right; color: #555;">${formatPrice(data.yourMaxBid)}</td></tr>
+            </table>
+          </div>
+          <p style="font-size: 14px; color: #555; line-height: 1.6; margin: 0 0 24px;">Want this one? Raise your max before the auction closes.</p>
+          <div style="text-align: center; margin: 24px 0;">
+            <a href="${data.listingUrl}" style="display: inline-block; background: #0066FF; color: #ffffff; font-weight: 900; padding: 14px 36px; border: 3px solid #000; border-radius: 8px; text-decoration: none; text-transform: uppercase; letter-spacing: 1px; box-shadow: 4px 4px 0 #000;">PLACE A BID →</a>
+          </div>
+          <p style="font-size: 13px; color: #6b7280; line-height: 1.6; margin: 0;">You're receiving this because you bid on this auction. Manage email preferences in your account settings.</p>
+        </div>
+        ${emailFooter()}
+      </div>
+    `,
+    text: `Auction ending ${data.timeRemainingLabel}.\n\n${data.comicTitle} #${data.issueNumber}\nCurrent bid: ${formatPrice(data.currentBid)}\nYour max bid: ${formatPrice(data.yourMaxBid)}\n\nWant this one? Raise your max before the auction closes.\n\nPLACE A BID: ${data.listingUrl}\n\nScan comics. Track value. Collect smarter.\nTwisted Jester LLC · collectors-chest.com`,
   };
 }

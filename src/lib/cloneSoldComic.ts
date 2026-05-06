@@ -49,9 +49,9 @@ export interface SellerComicRow {
  * purchase_price = what they paid, no personal notes, no custom key info, no
  * list membership).
  *
- * Explicitly does NOT set `id` — Supabase assigns a new UUID on insert.
+ * Explicitly does NOT set `id` - Supabase assigns a new UUID on insert.
  * Explicitly does NOT set `sold_at` / `sold_to_profile_id` / `sold_via_auction_id`
- * — those mark the *seller's* row, and the buyer's fresh copy must be fully
+ * - those mark the *seller's* row, and the buyer's fresh copy must be fully
  * editable.
  */
 export function buildBuyerComicClone(

@@ -25,7 +25,7 @@ const wins: FeatureRow[] = [
 ];
 
 const losses: FeatureRow[] = [
-  { feature: "Barcode scanning accuracy", cc: "partial", clz: "win", ccNote: "Basic; AI cover scan is the moat for vintage", clzNote: "99% — their hero feature, 15+ yrs of DB" },
+  { feature: "Barcode scanning accuracy", cc: "partial", clz: "win", ccNote: "Basic; AI cover scan is the moat for vintage", clzNote: "99% - their hero feature, 15+ yrs of DB" },
   { feature: "Native desktop app (macOS/Windows)", cc: "loss", clz: "win", ccNote: "Web-first; Mac Chrome works fine", clzNote: "CLZ Comics Web $39.95/yr" },
   { feature: "Custom fields per comic", cc: "loss", clz: "win", ccNote: "Fixed schema today", clzNote: "Users define metadata fields" },
   { feature: "Storage box location field", cc: "partial", clz: "win", ccNote: "Notes field today", clzNote: "Dedicated field" },
@@ -61,7 +61,7 @@ const talkingPoints = [
     title: "Cost (the apples-to-apples reframe)",
     headline: "Roughly half the price for the same outcome.",
     pitch:
-      "They're cheaper if you only want a list of titles. The second you want to know what your books are actually worth, you're paying CovrPrice on top — and that's where they get more expensive than us.",
+      "They're cheaper if you only want a list of titles. The second you want to know what your books are actually worth, you're paying CovrPrice on top - and that's where they get more expensive than us.",
     warning:
       "Don't say 'we're cheaper than CLZ' without context. A savvy collector will check $1.99 vs $4.99 and walk. Lead with the apples-to-apples reframe.",
     color: "green",
@@ -95,23 +95,23 @@ const talkingPoints = [
 const objections = [
   {
     q: "CLZ has 99% barcode scan accuracy, you don't have that yet.",
-    a: "True — they've spent 15+ years on a barcode database, and we're not there yet on barcode-only. But we don't need to be: our cover-recognition AI scans the FRONT of the book, which means we work on every comic ever printed — including the silver/bronze keys CLZ's barcode lookup misses entirely because barcodes didn't exist before 1973. If you're scanning new books only, CLZ wins. If you're scanning a vintage collection, we win.",
+    a: "True - they've spent 15+ years on a barcode database, and we're not there yet on barcode-only. But we don't need to be: our cover-recognition AI scans the FRONT of the book, which means we work on every comic ever printed - including the silver/bronze keys CLZ's barcode lookup misses entirely because barcodes didn't exist before 1973. If you're scanning new books only, CLZ wins. If you're scanning a vintage collection, we win.",
   },
   {
     q: "I already paid for CLZ. Why switch?",
-    a: "Don't switch — try us alongside it. Our free tier gives you 10 scans a month at no cost. Test our cover recognition on a book CLZ misses. If we save you time, the switch will make sense on its own. If not, you've lost nothing.",
+    a: "Don't switch - try us alongside it. Our free tier gives you 10 scans a month at no cost. Test our cover recognition on a book CLZ misses. If we save you time, the switch will make sense on its own. If not, you've lost nothing.",
   },
   {
     q: "I need a desktop app, not just mobile.",
-    a: "We're web-first — runs on any browser, including desktop Chrome. We don't have a native macOS/Windows app today. CLZ has that and it's their best feature for power users. We're betting most collectors will catalog from the phone they already have. If you live at a desk, CLZ's desktop tool may be a better fit right now — but we're getting to native apps soon.",
+    a: "We're web-first - runs on any browser, including desktop Chrome. We don't have a native macOS/Windows app today. CLZ has that and it's their best feature for power users. We're betting most collectors will catalog from the phone they already have. If you live at a desk, CLZ's desktop tool may be a better fit right now - but we're getting to native apps soon.",
   },
   {
     q: "Aren't you new? What if you go out of business?",
-    a: "Fair question. Two answers: (1) CSV export in three clicks — your data is portable, never locked in. (2) We're not a side project: live in beta, real revenue, full marketplace shipped. We're not going anywhere — but if we did, your collection data leaves with you in the same format you'd import to any competitor.",
+    a: "Fair question. Two answers: (1) CSV export in three clicks - your data is portable, never locked in. (2) We're not a side project: live in beta, real revenue, full marketplace shipped. We're not going anywhere - but if we did, your collection data leaves with you in the same format you'd import to any competitor.",
   },
   {
     q: "Why don't you have CGC slab pricing?",
-    a: "We do — graded books are auto-detected by our scanner reading the slab label, and our pricing engine pulls grade-aware comps from eBay's actual sales data. CLZ's CovrPrice add-on does graded values too, but you're paying $8.95/mo extra for it. Ours is included in the $4.99 Premium.",
+    a: "We do - graded books are auto-detected by our scanner reading the slab label, and our pricing engine pulls grade-aware comps from eBay's actual sales data. CLZ's CovrPrice add-on does graded values too, but you're paying $8.95/mo extra for it. Ours is included in the $4.99 Premium.",
   },
   {
     q: "Does it work offline at conventions?",
@@ -137,17 +137,17 @@ const colorClasses: Record<string, { bg: string; border: string; ring: string; t
 export default function CLZComparisonPage() {
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 space-y-8">
-      {/* Hero — 30-second pitch */}
+      {/* Hero - 30-second pitch */}
       <section className="rounded-2xl border-4 border-black bg-yellow-50 p-6 md:p-8 shadow-[6px_6px_0_0_rgba(0,0,0,1)]">
         <div className="flex items-center gap-2 mb-3">
           <Sparkles className="w-6 h-6 text-yellow-600" />
           <h1 className="text-2xl md:text-3xl font-bold" style={{ fontFamily: "var(--font-bangers)" }}>
-            Collectors Chest vs CLZ — The Pitch
+            Collectors Chest vs CLZ - The Pitch
           </h1>
         </div>
         <p className="text-base md:text-lg leading-relaxed text-gray-900">
           <em>
-            &ldquo;CLZ has been around forever and they&apos;re the legacy choice — but they were
+            &ldquo;CLZ has been around forever and they&apos;re the legacy choice - but they were
             built before AI, before mobile-first PWAs, and before collectors expected to scan a
             cover and get a real-time eBay value back in three seconds. We built Collectors Chest
             from the ground up for what collectors actually want now: scan the cover (not the
@@ -157,7 +157,7 @@ export default function CLZComparisonPage() {
           </em>{" "}
           <strong>
             We&apos;re cheaper, we&apos;re faster, and your collection actually looks like YOUR
-            collection — your real covers, your real books — not stock photos.&rdquo;
+            collection - your real covers, your real books - not stock photos.&rdquo;
           </strong>
         </p>
       </section>
@@ -165,11 +165,11 @@ export default function CLZComparisonPage() {
       {/* Pricing comparison */}
       <section>
         <h2 className="text-xl md:text-2xl font-bold mb-4" style={{ fontFamily: "var(--font-bangers)" }}>
-          Pricing — Apples-to-Apples
+          Pricing - Apples-to-Apples
         </h2>
         <div className="grid md:grid-cols-2 gap-4">
           <div className="rounded-xl border-4 border-red-300 bg-red-50 p-5">
-            <h3 className="text-lg font-bold mb-2 text-red-900">CLZ — Catalog + Pricing</h3>
+            <h3 className="text-lg font-bold mb-2 text-red-900">CLZ - Catalog + Pricing</h3>
             <ul className="space-y-1.5 text-sm text-gray-800">
               <li>CLZ Comics Mobile: <strong>$1.99/mo</strong> (catalog only)</li>
               <li>+ CovrPrice Premium: <strong>+$8.95/mo</strong> (required to see comic values)</li>
@@ -183,9 +183,9 @@ export default function CLZComparisonPage() {
             <h3 className="text-lg font-bold mb-2 text-green-900">Collectors Chest Premium</h3>
             <ul className="space-y-1.5 text-sm text-gray-800">
               <li>Premium (everything included): <strong>$4.99/mo</strong></li>
-              <li>Pricing data — included</li>
-              <li>Marketplace selling — included</li>
-              <li>Unlimited scans — included</li>
+              <li>Pricing data - included</li>
+              <li>Marketplace selling - included</li>
+              <li>Unlimited scans - included</li>
               <li className="pt-2 border-t border-green-200 mt-2 text-base">
                 Total: <strong className="text-green-700 text-xl">$4.99/mo</strong>
               </li>
@@ -342,23 +342,25 @@ export default function CLZComparisonPage() {
           <div className="rounded-xl border-2 border-indigo-300 bg-indigo-50 p-4 md:p-5">
             <div className="flex items-center gap-2 mb-3">
               <MessageCircle className="w-5 h-5 text-indigo-700" />
-              <h3 className="text-base font-bold text-indigo-900">What We&apos;re Doing — Actively</h3>
+              <h3 className="text-base font-bold text-indigo-900">What We&apos;re Doing - Actively</h3>
             </div>
             <div className="space-y-3 text-sm text-gray-800">
               <div>
-                <p className="font-semibold">CovrPrice — pricing data API</p>
+                <p className="font-semibold">CovrPrice - early in their partner pipeline (API targets 2027)</p>
                 <p className="text-xs text-gray-700 mt-1">
-                  In active conversations to bring CovrPrice&apos;s data <em>inside</em> our app.
-                  Same data CLZ users pay <strong>+$8.95/mo</strong> for — would be included in
-                  our $4.99 Premium if we land it.
+                  CovrPrice confirmed their public API is on the <strong>2027 roadmap</strong>.
+                  We&apos;re queued as an early beta tester and have surfaced our users&apos; #1 ask
+                  (accurate sales pricing data). Same data CLZ users pay <strong>+$8.95/mo</strong> for
+                  - would be included in our $4.99 Premium if we land it post-2027.
                 </p>
-                <p className="text-xs text-gray-500 italic mt-1">No deal signed. Conversations in progress.</p>
+                <p className="text-xs text-gray-500 italic mt-1">Nothing signed; nothing imminent. On their radar.</p>
               </div>
               <div className="pt-3 border-t border-indigo-200">
-                <p className="font-semibold">CovrPrice — key issue / first-appearance details</p>
+                <p className="font-semibold">CovrPrice - key issue / first-appearance details (same pipeline)</p>
                 <p className="text-xs text-gray-700 mt-1">
-                  Separate stream: layering their 15+ years of curated key data on top of our
-                  1,130-entry hand-curated DB. Expands niche/variant coverage we haven&apos;t reached yet.
+                  The same future API would expose 15+ years of curated key-issue data. Layering
+                  on top of our 1,130-entry hand-curated DB would expand niche/variant coverage.
+                  Same 2027 timing.
                 </p>
               </div>
             </div>
@@ -372,14 +374,14 @@ export default function CLZComparisonPage() {
             </div>
             <div className="space-y-3 text-sm text-gray-800">
               <div>
-                <p className="font-semibold">GoCollect API — shut down (Feb 2026)</p>
+                <p className="font-semibold">GoCollect API - shut down (Feb 2026)</p>
                 <p className="text-xs text-gray-700 mt-1">
                   Ran a Pro-tier API (100 calls/day, FMV pricing, Hot 50 lists). Closed the program
-                  to new partners — including us. Affects every tracker that depended on it.
+                  to new partners - including us. Affects every tracker that depended on it.
                 </p>
               </div>
               <div className="pt-3 border-t border-amber-200">
-                <p className="font-semibold">Marvel Developer API — deprecated (Feb 2026)</p>
+                <p className="font-semibold">Marvel Developer API - deprecated (Feb 2026)</p>
                 <p className="text-xs text-gray-700 mt-1">
                   Free tier (3K calls/day for covers + metadata) officially deprecated same window.
                   Apps relying on Marvel&apos;s API are scrambling.
@@ -397,12 +399,13 @@ export default function CLZComparisonPage() {
           <p className="text-sm md:text-base text-gray-900 leading-relaxed italic">
             &ldquo;The whole comics-data industry is consolidating right now. Marvel pulled their
             API. GoCollect shut their API program down. CLZ depends entirely on their CovrPrice
-            partnership — that&apos;s currently the only one of those still working for them.{" "}
+            partnership - that&apos;s currently the only one of those still working for them.
+            CovrPrice told us their public API is on their 2027 roadmap, and we&apos;ve been
+            positioned as an early beta tester for when it launches.{" "}
             <strong className="not-italic">
-              We&apos;re in active conversations with CovrPrice ourselves, but the bigger story is
-              we built our own AI scanning, pricing, and curated key-info pipeline from day one.
-              We&apos;re not dependent on any one data source. That&apos;s why we&apos;ll still be
-              here in five years.&rdquo;
+              But the bigger story is we built our own AI scanning, pricing, and curated key-info
+              pipeline from day one. We&apos;re not dependent on any one data source. That&apos;s
+              why we&apos;ll still be here in five years.&rdquo;
             </strong>
           </p>
         </div>
@@ -415,10 +418,10 @@ export default function CLZComparisonPage() {
               Safe to say
             </h4>
             <ul className="space-y-1.5 text-xs md:text-sm text-gray-800 list-disc pl-4">
-              <li>&ldquo;We&apos;re in active conversations with CovrPrice about bringing their pricing data into our app.&rdquo;</li>
-              <li>&ldquo;GoCollect closed their API program in February — that affects everyone in this space.&rdquo;</li>
+              <li>&ldquo;CovrPrice told us their public API is on their 2027 roadmap, and we&apos;ve been positioned as an early beta tester for when it launches.&rdquo;</li>
+              <li>&ldquo;GoCollect closed their API program in February - that affects everyone in this space.&rdquo;</li>
               <li>&ldquo;We built our own AI scanning and pricing pipeline so we&apos;re not dependent on any single data provider.&rdquo;</li>
-              <li>&ldquo;Whatever happens with partnerships, your scans still work, your collection still syncs, and your data is still exportable.&rdquo;</li>
+              <li>&ldquo;Whatever happens with future partnerships, your scans still work, your collection still syncs, and your data is still exportable.&rdquo;</li>
             </ul>
           </div>
           <div className="rounded-lg border-2 border-red-300 bg-red-50 p-4">
@@ -427,10 +430,11 @@ export default function CLZComparisonPage() {
               Don&apos;t say
             </h4>
             <ul className="space-y-1.5 text-xs md:text-sm text-gray-800 list-disc pl-4">
-              <li>Don&apos;t claim a CovrPrice deal is <strong>signed</strong>. It&apos;s not. Say &ldquo;active conversations&rdquo; or &ldquo;in discussions.&rdquo;</li>
-              <li>Don&apos;t disparage GoCollect — state facts neutrally.</li>
-              <li>Don&apos;t promise integration timelines. Conversations ≠ engineering.</li>
-              <li>Don&apos;t share negotiation terms, pricing, or specifics.</li>
+              <li>Don&apos;t say &ldquo;active conversations&rdquo; or &ldquo;in discussions.&rdquo; The honest line is &ldquo;on their 2027 roadmap; we&apos;re queued as a beta tester.&rdquo;</li>
+              <li>Don&apos;t claim a CovrPrice deal is <strong>signed or imminent</strong>. No public API exists yet.</li>
+              <li>Don&apos;t disparage GoCollect - state facts neutrally.</li>
+              <li>Don&apos;t promise integration timelines beyond their 2027 target.</li>
+              <li>Don&apos;t share email contents, contact names, or partner correspondence specifics.</li>
             </ul>
           </div>
         </div>
@@ -468,7 +472,7 @@ export default function CLZComparisonPage() {
         </h2>
         <div className="rounded-xl border-4 border-black bg-white p-5 font-mono text-xs md:text-sm leading-relaxed shadow-[4px_4px_0_0_rgba(0,0,0,1)]">
           <div className="font-bold text-base mb-3" style={{ fontFamily: "var(--font-bangers)" }}>
-            COLLECTORS CHEST vs CLZ — CON-FLOOR TALKING POINTS
+            COLLECTORS CHEST vs CLZ - CON-FLOOR TALKING POINTS
           </div>
           <div className="space-y-2 text-gray-800">
             <p>
@@ -499,7 +503,7 @@ export default function CLZComparisonPage() {
       {/* Footer */}
       <section className="text-xs text-gray-500 text-center pt-4 pb-8">
         <p>
-          Pricing verified May 5, 2026 from clz.com. Re-verify before any external publication —
+          Pricing verified May 5, 2026 from clz.com. Re-verify before any external publication -
           competitor pricing changes without notice. Internal-use only.
         </p>
       </section>

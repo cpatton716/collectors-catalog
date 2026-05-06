@@ -4,6 +4,207 @@ This log tracks session-by-session progress on Collectors Chest.
 
 ---
 
+## May 6, 2026 (Wednesday) - Session 45: CovrPrice partner reply doc reframe + Ultimate Fallout #4 keyInfo alias fix
+
+### Summary
+Mid-session: post-Aponte-meeting follow-up + show-floor PROD verification of yesterday's Session 44 deploy. Three buckets:
+1. **CovrPrice partner status update** — Matt Day (Director of Operations) replied to API/B2B outreach: no public API today, **targeting 2027** for a public API offering, not taking calls on the feature yet but accepting input. Patton replied requesting beta-tester status and surfaced our users' #1 ask (accurate sales pricing data). All Session 44 partner-facing materials reframed to match reality.
+2. **PROD verification of Session 44 deploy** — User confirmed on iPhone (collectors-chest.com): cover lightbox tap-to-zoom on Key Hunt ✅ working, Second Chance "Offer to Runner-up" RLS-anon read fix ✅ working (panel now shows correct expired-offer copy), `/admin/clz-comparison` tablet page ✅ accessible. **Found regression:** Ultimate Fallout #4 (Miles Morales first appearance) scanned but did NOT show key-issue chip despite being in curated DB.
+3. **Ultimate Fallout #4 fix** — class-of-bug diagnosed and fixed.
+
+### Features Shipped
+
+#### 1. CovrPrice Partner Reply — Doc Reframe 📄
+
+**Background:** Session 44 (May 5) shipped `docs/CLZ_COMPARISON_BRIEF.md` + `/admin/clz-comparison` framing CovrPrice as "active conversations / in discussions." On May 6, Matt Day replied confirming no public API today, **2027 target**, not taking calls yet. Original framing now overstates relationship state.
+
+**Reframe applied across both materials:**
+- "Active conversations" → "early in their partner pipeline (API targeting 2027); we've been positioned as an early beta tester"
+- Resilience-pitch quote updated to mention 2027 roadmap explicitly + beta-tester position
+- Safe-to-say bullets updated: drop "we're in active conversations," add "their public API is on 2027 roadmap; we're queued as a beta tester"
+- Don't-say bullets updated: explicitly forbid "active conversations" / "in discussions" (no longer accurate); forbid sharing email contents or contact names
+
+**Strategic pitch unchanged:** still upside-only optionality (we're early in their pipeline) + the resilience story (we don't depend on them either way).
+
+**Files changed:**
+- `docs/CLZ_COMPARISON_BRIEF.md` (partnerships section heading, "What we're doing — actively" subsection, resilience-pitch quote, what-NOT-to-say + safe-to-say cheat sheets)
+- `src/app/admin/clz-comparison/page.tsx` (indigo "What We're Doing — Actively" card, resilience-pitch box, safe-to-say + don't-say cards)
+
+#### 2. Ultimate Fallout #4 keyInfo Fix + Class-of-Bug Hardening 🔑
+
+**Reported:** Show-floor PROD test on May 6 — scanning Ultimate Fallout #4 (first appearance of Miles Morales as Spider-Man) returned a clean cover ID and grade picker but **no KEY ISSUE chip**. Curated DB has the entry (line 555-560 of `keyComicsDatabase.ts`); the data path is wired in (`con-mode-lookup/route.ts` consults `lookupKeyInfo` at all three result paths since Session 44).
+
+**Root cause — title-format drift:**
+- Cover prominently displays "SPIDER-MAN" above the series title
+- AI recognition pipeline returns title as `"Ultimate Fallout: Spider-Man"` (or `"Ultimate Fallout - Spider-Man"`, `"Ultimate Fallout Spider-Man"`)
+- `lookupKeyInfo()` strict-normalizer strips all non-alphanumerics + lowercases → `"ultimatefalloutspiderman"`
+- Curated entry stored as just `"Ultimate Fallout"` → normalizes to `"ultimatefallout"`
+- Map lookup misses; resolver returns null; chip never renders
+
+**Audit (1,053 entries scanned):** Surfaced 57 entries with `:` subtitles, 99 entries with 4+ word titles, **82 token-prefix collision pairs** that would create false positives under naive fuzzy matching (Batman alone has 16 collisions). Conclusion: a fuzzy/token-prefix fallback is unsafe at this scale — false-positive keyInfo on a $X book is worse than silent miss. Aliases-as-data is the right approach.
+
+**Fix architecture — `aliases` field on `KeyComic` interface:**
+
+Refactored `keyComicsDatabase.ts` to support an optional `aliases?: string[]` on each entry. Map-build registers each entry under canonical normalized title AND each alias's normalized title, with dedup so multiple author-supplied variants that normalize to the same key (e.g., `"Foo: Bar"` + `"Foo - Bar"` + `"Foo Bar"` → all normalize to `"foobar"`) don't create phantom multi-entry ambiguity in `resolveEntry`.
+
+**Aliases added this session (6 total):**
+1. **Ultimate Fallout #4** → `["Ultimate Fallout: Spider-Man", "Ultimate Fallout - Spider-Man", "Ultimate Fallout Spider-Man"]` (PROD-confirmed drift)
+2. **Tales of Suspense #39** (first Iron Man) → `["Tales of Suspense: Iron Man"]`
+3. **Journey Into Mystery #83** (first Thor) → `["Journey Into Mystery: Thor"]`
+4. **Marvel Premiere #15** (first Iron Fist) → `["Marvel Premiere: Iron Fist"]`
+5. **Marvel Spotlight #5** (first Ghost Rider) → `["Marvel Spotlight: Ghost Rider"]`
+6. **Strange Tales #110** (first Doctor Strange) → `["Strange Tales: Doctor Strange"]`
+
+Pattern: Silver/Bronze Age anthology covers where the feature character logo dominates the masthead — same drift risk as Ultimate Fallout #4. Each alias was verified against the audit's 82 collision pairs to confirm zero ambiguity (no other entry has the same issue+year combination at the same normalized alias key).
+
+**Drift telemetry breadcrumb:** Added `console.warn("[keyinfo-drift] ...")` in `con-mode-lookup/route.ts` when the curated DB misses but the AI fallback returns key info. This surfaces real drift candidates from production logs (Sentry / Netlify build logs) so future alias additions are grounded in scan data rather than speculation. Zero PII captured — only normalized title + issue + AI's keyInfo response.
+
+**Test coverage added:** New `src/lib/__tests__/keyComicsDatabase.test.ts` with 17 tests:
+- 5 tests covering the Ultimate Fallout #4 variant scenarios (canonical title + 3 AI variants + `isKeyComic` boolean)
+- 3 tests covering normalization invariants (case-insensitive, leading "The" stripping, leading-zero issue numbers)
+- 2 tests covering negative cases (unknown title, unknown issue of known title)
+- 7 tests covering the alias mechanism: 5 anthology aliases verified, 1 issue-isolation test (alias must not pollute lookups at the wrong issue number), 1 dedup correctness test (multiple variant aliases that normalize-equal mustn't create phantom multi-entry ambiguity).
+
+**Why fuzzy matching was rejected:** The audit identified 82 token-prefix collision pairs (Batman → Batman: White Knight / Batman: Damned / Batman/Catwoman / Batman: Three Jokers, Star Wars → Star Wars: Darth Vader / Doctor Aphra / Bounty Hunters, etc.). A "input contains all tokens of canonical" fallback would falsely attribute Batman #1 keyInfo to dozens of unrelated #1s. False-positive keyInfo is worse than silent miss for a buying-decision tool.
+
+**Files changed:**
+- `src/lib/keyComicsDatabase.ts` (KeyComic interface gains `aliases?: string[]`; map-build extracted to `registerEntry()` helper; 6 entries gain alias arrays)
+- `src/lib/__tests__/keyComicsDatabase.test.ts` (new file, 17 tests)
+- `src/app/api/con-mode-lookup/route.ts` (drift-telemetry breadcrumb on curated miss + AI hit)
+
+#### 3. Volume Verification Safety Net for Multi-Volume Comics ⚠️
+
+**Why:** Key Hunt is a top-priority feature; users make buying decisions on it. The audit surfaced multi-volume #1 collisions in the curated DB (Star Wars 1977 + 2015; Thor 2014 Jane Foster + Cates run; Hulk 1962/1999/2008; etc.). When AI returns a year that doesn't *exactly* match any curated volume's series-start year, the resolver picks the closest preceding volume — a judgment call. If AI's year reading is off by enough to push across a volume boundary, the user could see *wrong* keyInfo on a $X book. False-positive keyInfo is materially worse than silent miss for a buying tool.
+
+**Confidence model (precise):** The resolver's behavior maps to four buckets:
+| Resolution path | Risk | Behavior |
+|---|---|---|
+| Single entry exists at title+issue (~80% of DB) | None | Returns the only candidate — strict match |
+| Multi-entry, exact-year match | None | Disambiguator hit the bullseye |
+| Multi-entry, no year provided | None | Resolver returns null — refuses to guess; falls back to AI |
+| Multi-entry, no exact year — closest preceding series-start year | **REAL RISK** | Judgment call. If AI year is wrong, attribution is wrong |
+
+Only the fourth bucket needs a UX safety net.
+
+**Architecture:**
+- New `lookupKeyInfoWithMeta()` returns `{ keyInfo, matchType: 'exact' | 'year-resolved', matchedYear, totalCandidates }`. Existing `lookupKeyInfo()` is now a thin backwards-compat wrapper.
+- `con-mode-lookup/route.ts` uses the meta variant at all three result paths (DB-cache early-return, eBay+AI path, no-data fallback) and threads `keyInfoMeta` through the API response payload.
+- `KeyHuntPriceResult.tsx` renders two new affordances under the KEY ISSUE chips:
+  - **Passive cue (everyone with curated metadata):** small grey subtext "Volume started YYYY" — also shows total volume count when >1. Provides verification context without alarming users on the safe path.
+  - **Active warning (only when `matchType === 'year-resolved'`):** amber bordered advisory with `<AlertTriangle>` icon — "Verify volume. N volumes of this title exist. We matched this to the YYYY volume based on the cover year — double-check the indicia if you're unsure." Fires on the actually-ambiguous ~5% of lookups, avoiding alert fatigue.
+- `key-hunt/page.tsx` `LookupResult` interface extended with optional `keyInfoMeta`.
+
+**Why two-tier (passive + active) instead of warning everyone:** Most curated lookups (~80%) are single-entry comics — there's nothing to verify, a warning would be noise. A subtle "Vol started 1963" subtext is informational without being alarming. The amber advisory is reserved for the cases where the resolver actually had to make a judgment call, signaling "we're moderately confident; please verify."
+
+**Test coverage added (7 more tests, 17 → 24 total in `keyComicsDatabase.test.ts`):**
+- 3 `matchType: 'exact'` cases — single curated entry, multi-entry with exact year (Star Wars #1 2015), multi-entry with the canonical (Star Wars #1 1977)
+- 1 `matchType: 'year-resolved'` case — Star Wars #1 with year 2010 (between volumes) → resolves to 1977 with the warning flag
+- 2 null-fallback cases — multi-entry without releaseYear (refuses to guess), pre-volume year (predates every volume)
+- 1 backwards-compat invariant — `lookupKeyInfo()` and `lookupKeyInfoWithMeta()` return identical keyInfo for the same input
+
+**Files changed (cumulative for Session 45 across both keyInfo work streams):**
+- `src/lib/keyComicsDatabase.ts` — `KeyInfoLookupResult` exported type, `resolveEntryWithMeta()` function, `lookupKeyInfoWithMeta()` exported function, `lookupKeyInfo()` re-implemented as backwards-compat wrapper
+- `src/app/api/con-mode-lookup/route.ts` — `keyInfoMeta` field on `ConModeLookupResult`; all 3 result paths use the meta variant; unused `lookupKeyInfo` import removed
+- `src/components/KeyHuntPriceResult.tsx` — `keyInfoMeta` prop; passive year context + active amber advisory beneath KEY ISSUE chips; `AlertTriangle` icon import
+- `src/app/key-hunt/page.tsx` — `LookupResult` interface extended; `keyInfoMeta` propagated from API response into result + passed to `<KeyHuntPriceResult>`
+- `src/lib/__tests__/keyComicsDatabase.test.ts` — 7 new confidence-metadata tests
+
+### PROD verification (May 6 show-floor test)
+
+| Test | Status |
+|------|--------|
+| Cover lightbox tap-to-zoom on Key Hunt result (iPhone) | ✅ Working |
+| Ultimate Fallout #4 → Miles Morales keyInfo chip | ❌ FAILED — fixed by alias entry above (deploy pending) |
+| Second Chance "Offer to Runner-up" RLS-anon read fix (Giant-Size X-Men #1) | ✅ Working — panel shows "didn't respond in 48 hours" copy |
+| `/admin/clz-comparison` tablet page accessible | ✅ Working |
+
+### Tests
+
+**797/797 tests pass across 51 suites** (was 773/773 across 50 — +1 new suite, +24 new tests across alias mechanism + confidence-metadata work).
+
+### Files Modified / Created
+
+**Created:**
+- `src/lib/__tests__/keyComicsDatabase.test.ts` (alias-mechanism + variant-title + normalization tests, 17 cases)
+
+**Modified:**
+- `src/lib/keyComicsDatabase.ts` (KeyComic interface `aliases` field; `registerEntry` helper with dedup; 6 entries gain alias arrays — Ultimate Fallout #4 + 5 anthology covers)
+- `src/app/api/con-mode-lookup/route.ts` (drift-telemetry `[keyinfo-drift]` breadcrumb)
+- `docs/CLZ_COMPARISON_BRIEF.md` (CovrPrice reframe — partnerships section, resilience pitch, cheat sheets)
+- `src/app/admin/clz-comparison/page.tsx` (CovrPrice reframe — admin tablet page)
+- `BACKLOG.md` (⭐ priority list updated — Second Chance verified closed; "Audit Curated Key DB for Title-Format Drift" entry now Partially Complete with telemetry-driven next round)
+- `TEST_CASES.md` (new variant-title alias case under Session 44 key-info section; Second Chance RLS-fix marked ✅ Verified May 6)
+- `TESTING_RESULTS.md` (Session 45 start entry + findings)
+
+### Migrations Applied to Supabase Before Deploy
+
+None — pure code + content changes.
+
+### Issues Encountered
+
+- **AI title-format drift class-of-bug surfaced** — Session 44 wired the curated DB lookup correctly, but the surface area of "AI returns a different title than what's stored" is broader than initially scoped. Mitigated for Ultimate Fallout #4; broader audit deferred to post-launch tooling (BACKLOG entry added).
+- **CovrPrice framing required quick correction before next Aponte conversation** — Session 44 talking points were drafted while outreach was still in-flight. Direct partner reply on May 6 required immediate doc updates so the cheat sheet doesn't lead to false statements at the booth.
+
+### BACKLOG follow-ups
+- 1 entry updated: ⭐ Next Session priority list (item #1 Validate Second Chance flow live → ✅ verified, closed)
+- 1 entry added then partially closed in same session: "Audit Curated Key DB for AI-vs-DB Title-Format Drift" — alias mechanism shipped + 6 aliases + telemetry hook in place; remaining work (additional aliases) is now telemetry-driven rather than speculative.
+
+### Memory updates this session
+- Added `project_covrprice_partnership.md` capturing Matt Day's reply, our beta-tester ask, and the rule for partner-facing materials (no more "active conversations" framing). Indexed in `MEMORY.md`.
+
+### Where We Left Off
+Awaiting deploy of Session 45 fix to PROD (Ultimate Fallout #4 alias + CovrPrice reframe). Once deployed, expect:
+- Re-scan of Ultimate Fallout #4 to show Miles Morales chip
+- `/admin/clz-comparison` reflects 2027 / beta-tester framing in the indigo card + cheat sheets
+- `docs/CLZ_COMPARISON_BRIEF.md` reflects same reframe for partner sharing
+
+### Changes Since Last Deploy
+
+Session 45 (May 6, 2026) — pending deploy:
+- CovrPrice partnership reframe across `docs/CLZ_COMPARISON_BRIEF.md` + `/admin/clz-comparison` (no longer "active conversations"; now "queued as beta tester / API on 2027 roadmap")
+- `KeyComic.aliases` field — first-class alias support in the curated DB (replaces the duplicate-entry workaround). Dedup-safe registration ensures multiple punctuation variants of the same alias don't create phantom multi-entry ambiguity.
+- 6 entries gain aliases: Ultimate Fallout #4 (Miles Morales — PROD-confirmed drift), Tales of Suspense #39 (Iron Man), Journey Into Mystery #83 (Thor), Marvel Premiere #15 (Iron Fist), Marvel Spotlight #5 (Ghost Rider), Strange Tales #110 (Doctor Strange) — all anthology covers where the feature character logo dominates the masthead.
+- `[keyinfo-drift]` telemetry breadcrumb in `con-mode-lookup` to surface future drift candidates from production scan logs.
+- **Volume-verification safety net** — `lookupKeyInfoWithMeta()` returns `matchType: 'exact' | 'year-resolved'`. KeyHunt result modal now renders a passive "Volume started YYYY · N volumes exist" subtext under the KEY ISSUE chips, plus an amber ⚠️ advisory only when the resolver had to make a year-judgment call between multi-volume candidates.
+- **`/notifications` inbox initial-render flash regression FIXED** — cache banner no longer toggles on/off during the brief cache-then-fresh-fetch window on every load. Renamed `hydratedFromCache` to `showCacheBanner` with new semantics: only true when fresh fetch actually fails AND we're showing stale cached data. Normal loads now render once, no flash.
+- **`/notifications?focus=<id>` deep-link FIXED** — added defensive UUID format validation (skips silently on malformed params), wrapped `scrollIntoView` in `requestAnimationFrame` to guarantee the row's ref is attached before scrolling, extended highlight duration from 1.5s to 2.5s for better visibility, and bumped the ring from `ring-2` to `ring-4 + bg-blue-100` for stronger visual anchor.
+- **Em dash sweep** — 77 source files + `docs/CLZ_COMPARISON_BRIEF.md` had `—` replaced with `-`. User-facing copy across components, API responses, and admin pages now hyphen-only. Test fixtures and internal docs untouched per "in the application" scope.
+- **PWA splash screen rolled out** — Figma source (`Splash Screen (figma).png`) ingested via new `scripts/generate-splash-assets.ts` (Sharp-based). Generated 14 derived assets: app icons (192/512, any + maskable), 180px Apple touch icon, and 5 iPhone-sized `apple-touch-startup-image` bitmaps (1284x2778 / 1170x2532 / 1125x2436 / 828x1792 / 750x1334). Manifest `background_color` updated to `#0066FF` (pop-blue) so Android Chrome's install splash matches the brand. iOS PWA users now see the brand splash on Add-to-Home-Screen launch instead of a blank screen. Native iOS/Android Capacitor splash work captured as a separate Pre-Launch BACKLOG entry (gated on the native shell initiatives; will need a higher-res Figma re-export before kicking off).
+- **Autonomous knock-out batch** — closed 7 BACKLOG entries in one pass:
+  1. Flip Claude/Gemini Provider Order — already done in prior session, removed stale entry
+  2. Hydration Mismatch on "Ask the Professor" Button — added `hasMounted` flag in Navigation.tsx so the auth-dependent visibility class only applies post-hydration, eliminating SSR/CSR diff
+  3. hCaptcha Siteverify Retry — added 429-aware exponential-backoff retry (500/1000/2000ms × 3 attempts max) with discriminated handling for transient (429/5xx/throw) vs authoritative (4xx/success-false) responses. 5 new tests in `hcaptcha.test.ts`
+  4. IPv6 Private Address Checks — new `isPrivateIPv6()` helper covering loopback (::1), unspecified (::), link-local (fe80::/10), unique-local (fc00::/7), and IPv4-mapped IPv6 forms. Wired into `validateImageUrl`. 11 new test assertions
+  5. Stripe Webhook Failed-Payment Email — new `subscription_payment_failed` email type + template + dispatch. Webhook handler now sends a Resend email with manage-billing CTA, sanitized failure reason, and Stripe's `next_payment_attempt` formatted as a human date when present
+  6. Cover Harvest Aspect-Ratio Guard Wired In — the existing `validateCoverCrop` helper had zero non-test callers; wired into `harvestCoverFromScan` between bounds-check and inset-padding steps. `[crop-rejected]` console.warn breadcrumb logs rejection rate for production audit
+  7. Payment-Expiry Cron Resend Retry — extracted `sendBatchWithRetry` helper in `email.ts`. Resend `batch.send` now retries on 429/5xx with exponential backoff (500/1000/2000ms), bails on 4xx/auth errors. Worst-case 3.5s per failing batch fits inside the 30s cron cap
+- **Periodic HEAD Check for Cached eBay URLs** — new `coverHeadCheck.ts` library + `checkCoverImageHeadStatus()` wired into the cron sweep. Picks 50 approved cover_images per tick (NULL-first ordering on `last_head_checked_at`, then oldest-checked), HEAD-checks with 5s timeout + concurrency 5. Marks 4xx/5xx URLs as `status='rejected'`; updates timestamp on alive URLs. **Requires migration `20260506_cover_head_check.sql` (adds `last_head_checked_at` column + filtered index) — MUST BE APPLIED in Supabase BEFORE deploy.**
+
+Items 6 (Second Chance cascade-to-3rd) and 10 (CSV batch re-validation) from the planned batch were skipped after re-reading their BACKLOG entries: cascade explicitly defers until post-launch data justifies cascade complexity (avoids spam risk); CSV re-validation is a user-facing feature requiring UI design, not a backend-only fix. Both BACKLOG entries left in place.
+
+- **Second autonomous knock-out batch (items 11-19)** — closed 7 more BACKLOG entries:
+  11. **Notification CHECK constraint drift audit** — verified current alignment (30 TS types ↔ 30 DB constraint types). New `notificationTypeDrift.test.ts` fails CI on any future divergence. Historical insert-failure forensics not retroactively recoverable.
+  12. **Cover_image_url sanitizer** — new `sanitizeCoverImageUrl()` rejects data: URIs, non-http(s), >2048 chars, and >800-char query strings (signed-URL JWT signal). Wired into all 4 db.ts write boundaries; 12 unit tests.
+  13. **Open Library removed from cover pipeline** — `tryOpenLibrary` deleted; `coverSource: 'openlibrary'` dropped from union; `covers.openlibrary.org` dropped from ALLOWED_EXACT_HOSTS; cover-search route's unused OL response stripped. 4 cover-validation tests rewritten to assert null-fallback in absence of OL.
+  15. **Haptic feedback Option A (Web Vibration API)** — new `src/lib/haptics.ts` with semantic helpers (Tap/Success/Win/Warning/Error). Wired into KeyHunt add-to-collection, hunt-list add, and BidForm bid placement (success + error paths). Progressive enhancement — no-ops on iOS Safari + desktop.
+  16. **Auction sniping protection** — migration `20260506_auction_sniping_protection.sql` adds `original_end_time`. New `snipingProtection.ts` helper with 5-min window / 5-min extension / 6h cap. `placeBid` extends `end_time` and stamps `original_end_time` on first extension. `PlaceBidResult.extendedTo` returned for UI. 7 unit tests cover boundary + clamp + cap behavior.
+  17. **Auction ending-soon reminder cron (bidder side)** — migration `20260506_auction_ending_soon_reminder.sql` adds `reminder_sent_at` + extends notification CHECK constraint with `auction_ending_soon_bidder`. New `sendAuctionEndingSoonReminders()` cron pass fires at T-1h to losing bidders (in-app + Resend batch email). Watchlist-user secondary audience + `bid_auction_lost` retro email deferred to follow-up.
+  19. **Barcode strategy research** — new `docs/BARCODE_RESEARCH.md` synthesizes publicly-known CLZ + CovrPrice barcode flows. Recommends a hybrid approach (crowd-source UPC → comic mapping from successful AI cover scans) rather than competing on catalog completeness against CLZ's 20-year head start. Live network capture (Charles Proxy on real device) still pending — questions enumerated in doc §6.
+
+Items 14 (Sales history → listing modal: 1-2 day effort, miscategorized) and 18 (FMV graceful fallback: real-money pricing change, deserves careful design) were skipped on second-look — both are legitimately bigger than knock-out scope. BACKLOG entries left in place.
+
+**Migrations needing application before deploy (3 in this session):**
+1. `20260506_cover_head_check.sql` — adds `last_head_checked_at` column + filtered index on cover_images
+2. `20260506_auction_sniping_protection.sql` — adds `original_end_time` column to auctions
+3. `20260506_auction_ending_soon_reminder.sql` — adds `reminder_sent_at` to auctions + extends notifications CHECK constraint
+
+**Tests:** 825/825 passing across 54 suites (was 803 before this batch — +22 from sniping + drift + sanitizer + Ultimate Fallout + IPv6).
+- 1 new test suite (`keyComicsDatabase.test.ts`) — 24 tests guarding alias mechanism + confidence metadata + normalization invariants.
+
+Sessions count since last deploy: 1 (Session 45). Deploy readiness: **Ready** — typecheck + lint clean, 797/797 tests passing. Manual UI verification recommended for the inbox fixes before deploy: (a) refresh `/notifications` to confirm no flash, (b) visit `/notifications?focus=<real-uuid>` to confirm scroll + highlight, (c) Star Wars #1 with year 2010 to see amber advisory.
+
+---
+
 ## May 5, 2026 (Tuesday) - Session 44: Show-Floor Feedback Bundle + Curated Key DB Expansion + CLZ Sales Brief (Deployed May 5, 2026)
 
 ### Summary

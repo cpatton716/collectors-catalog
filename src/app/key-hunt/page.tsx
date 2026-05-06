@@ -70,6 +70,11 @@ interface LookupResult {
   recentSale: { price: number; date: string } | null;
   coverImageUrl?: string | null;
   keyInfo?: string[];
+  keyInfoMeta?: {
+    matchType: "exact" | "year-resolved";
+    matchedYear?: number;
+    totalCandidates: number;
+  };
   gradeEstimates?: GradeEstimate[];
   fromCache?: boolean;
   source?: "database" | "ebay";
@@ -290,6 +295,7 @@ export default function KeyHuntPage() {
         recentSale: data.recentSale,
         coverImageUrl: pendingComic?.coverImageUrl || data.coverImageUrl,
         keyInfo: data.keyInfo,
+        keyInfoMeta: data.keyInfoMeta,
         gradeEstimates: data.gradeEstimates,
         fromCache: false,
         source: data.source,
@@ -909,6 +915,7 @@ export default function KeyHuntPage() {
             totalListings={result.totalListings}
             ebaySearchQuery={result.ebaySearchQuery}
             keyInfo={result.keyInfo}
+            keyInfoMeta={result.keyInfoMeta}
           />
         )}
 

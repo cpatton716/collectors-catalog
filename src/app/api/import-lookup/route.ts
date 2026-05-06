@@ -44,7 +44,7 @@ export async function POST(request: Request) {
     try {
       const dbResult = await getComicMetadata(normalizedTitle, normalizedIssue);
       if (dbResult) {
-        // Return in the format expected by CSV import (no AI pricing — eBay Browse API handles pricing)
+        // Return in the format expected by CSV import (no AI pricing - eBay Browse API handles pricing)
         return NextResponse.json({
           priceData: null,
           keyInfo: dbResult.keyInfo || [],

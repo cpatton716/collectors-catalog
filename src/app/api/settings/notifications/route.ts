@@ -55,7 +55,7 @@ export async function GET() {
       emailPrefMarketplace: data.email_pref_marketplace ?? true,
       emailPrefSocial: data.email_pref_social ?? true,
       emailPrefMarketing: data.email_pref_marketing ?? true,
-      // Transactional is always-on — surfaced for UI clarity.
+      // Transactional is always-on - surfaced for UI clarity.
       emailPrefTransactional: true,
     });
   } catch (error) {

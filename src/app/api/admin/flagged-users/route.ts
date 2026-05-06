@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
 
     // For each flagged user, look up actual strikes inside the rolling
     // window from the audit log (source of truth for "was this offense
-    // recent?"). Keep the work bounded — up to `limit` users per page.
+    // recent?"). Keep the work bounded - up to `limit` users per page.
     const windowStart = new Date(
       Date.now() - PAYMENT_MISS_WINDOW_DAYS * 24 * 60 * 60 * 1000
     ).toISOString();

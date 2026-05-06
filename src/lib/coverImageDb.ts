@@ -116,7 +116,7 @@ export async function getPendingCovers(
 }
 
 /**
- * Admin approves a cover — sets status to approved, records approver.
+ * Admin approves a cover - sets status to approved, records approver.
  */
 export async function approveCover(
   coverId: string,
@@ -152,7 +152,7 @@ export async function approveCover(
 }
 
 /**
- * Admin rejects a cover — stays private to submitter.
+ * Admin rejects a cover - stays private to submitter.
  */
 export async function rejectCover(coverId: string): Promise<void> {
   const { error } = await supabaseAdmin

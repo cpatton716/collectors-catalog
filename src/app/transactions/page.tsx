@@ -61,7 +61,7 @@ function TransactionsPageContent() {
     }
   }, [tabFromUrl, activeTab]);
 
-  // Load pending second-chance offers (runner-up) once per mount — they
+  // Load pending second-chance offers (runner-up) once per mount - they
   // live above the Wins tab regardless of which tab is active on load.
   useEffect(() => {
     if (!isSignedIn) return;
@@ -153,7 +153,7 @@ function TransactionsPageContent() {
         })}
       </div>
 
-      {/* Second Chance Offer inbox — visible on the Wins tab whenever the
+      {/* Second Chance Offer inbox - visible on the Wins tab whenever the
           user has pending offers as the runner-up. */}
       {activeTab === "wins" && secondChanceOffers.length > 0 && (
         <div className="mb-6 space-y-3">

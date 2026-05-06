@@ -46,7 +46,7 @@ export async function PATCH(
 
     if (!matched) {
       // Match doesn't exist OR isn't owned by this user. Return 404 either
-      // way — never 403 — so we don't leak existence of others' rows.
+      // way - never 403 - so we don't leak existence of others' rows.
       return NextResponse.json({ error: "Match not found" }, { status: 404 });
     }
 

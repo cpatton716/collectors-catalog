@@ -1,5 +1,5 @@
 // src/lib/providers/anthropic.ts
-// Anthropic AI provider — extracts Claude-specific prompts and API calls
+// Anthropic AI provider - extracts Claude-specific prompts and API calls
 // from the analyze route into a reusable, testable provider class.
 
 import Anthropic from "@anthropic-ai/sdk";
@@ -63,7 +63,7 @@ VARIANT DETECTION - Carefully check for ANY variant indicators:
 - If multiple variant indicators apply, combine them (e.g., "Cover B Virgin Variant", "1:25 Foil Variant")
 
 UPC BARCODE DETECTION - Look for the comic's UPC barcode on the COVER:
-- For SLABBED/GRADED comics: There are TWO barcodes — the cert label barcode (on the grading label) and the comic's UPC barcode (on the cover artwork visible through the slab). Extract BOTH. The UPC is typically in the bottom-left or bottom-right area of the cover art inside the slab. It may be partially obscured by the slab frame but is often still readable.
+- For SLABBED/GRADED comics: There are TWO barcodes - the cert label barcode (on the grading label) and the comic's UPC barcode (on the cover artwork visible through the slab). Extract BOTH. The UPC is typically in the bottom-left or bottom-right area of the cover art inside the slab. It may be partially obscured by the slab frame but is often still readable.
 - For RAW comics: The UPC barcode is typically on the front cover, bottom-left area.
 - Read ALL digits carefully (typically 12 digits for UPC-A, plus optional 5-digit add-on = 17 total)
 - The main UPC is 12 digits; if there's a smaller 5-digit add-on code to the right, include those too
@@ -103,8 +103,8 @@ Return your findings as a JSON object with this exact structure:
     "raw": "all barcode digits as a single string (12-17 digits)",
     "confidence": "high" | "medium" | "low"
   } or null if no barcode visible,
-  "coverHarvestable": true or false — for GRADED/SLABBED books only: is the cover artwork clearly visible through the slab? Omit this field entirely for unslabbed books.,
-  "coverCropCoordinates": {"x": number, "y": number, "width": number, "height": number} — pixel coordinates of ONLY the comic book cover artwork visible through the clear slab case BELOW the grading label. The cover artwork is the illustrated comic book art (title logo, characters, scene) visible through the clear plastic window — it is NOT the grading label at the top. Do NOT include the grade label, cert number, title text strip, or barcode area in the crop coordinates. The grading label is a colored strip (blue, yellow, purple, green, or red) across the TOP of the slab containing the grade number (e.g. 9.8), the book title in text, the certification number, and a small barcode — exclude it entirely from the crop. Also exclude the plastic case borders and any reflections. The crop should start at the TOP EDGE of the illustrated comic cover art (immediately below the grading label), not at the top of the slab case. Only include when coverHarvestable is true.
+  "coverHarvestable": true or false - for GRADED/SLABBED books only: is the cover artwork clearly visible through the slab? Omit this field entirely for unslabbed books.,
+  "coverCropCoordinates": {"x": number, "y": number, "width": number, "height": number} - pixel coordinates of ONLY the comic book cover artwork visible through the clear slab case BELOW the grading label. The cover artwork is the illustrated comic book art (title logo, characters, scene) visible through the clear plastic window - it is NOT the grading label at the top. Do NOT include the grade label, cert number, title text strip, or barcode area in the crop coordinates. The grading label is a colored strip (blue, yellow, purple, green, or red) across the TOP of the slab containing the grade number (e.g. 9.8), the book title in text, the certification number, and a small barcode - exclude it entirely from the crop. Also exclude the plastic case borders and any reflections. The crop should start at the TOP EDGE of the illustrated comic cover art (immediately below the grading label), not at the top of the slab case. Only include when coverHarvestable is true.
 }
 
 Important:
@@ -114,13 +114,13 @@ Important:
 - For publisher, use the full name (e.g., "Marvel Comics" not just "Marvel")
 - Pay special attention to the grading label if present - it contains valuable info
 - The CGC/CBCS label typically shows: grade, title, issue, date, and signature info
-- **VARIANT DETECTION**: Look carefully for ANY variant indicators on the cover — text, logos, special finishes, or cover art that differs from the standard edition. Variant information is critical for accurate pricing. When in doubt, describe what you see (e.g., "possible variant - different cover art from standard")
+- **VARIANT DETECTION**: Look carefully for ANY variant indicators on the cover - text, logos, special finishes, or cover art that differs from the standard edition. Variant information is critical for accurate pricing. When in doubt, describe what you see (e.g., "possible variant - different cover art from standard")
 - **BARCODE PRIORITY**: If you can see a UPC barcode, read EVERY digit carefully - this enables faster database lookup
 - **BARCODE CONFIDENCE**: Report "high" only if you can clearly read all digits; "medium" if some digits are unclear; "low" if barcode is partially obscured
 
 For GRADED/SLABBED books only, also include:
-- "coverHarvestable": true/false — Is the cover artwork clearly visible through the slab? Return true ONLY when: the cover is sharp, well-lit, minimal glare/reflections on plastic, accurate colors, and the full cover is visible (not cut off). If ANY of these conditions fail, return false.
-- "coverCropCoordinates": {"x": number, "y": number, "width": number, "height": number} — Pixel coordinates of ONLY the illustrated comic book cover art visible through the clear slab case BELOW the grading label. A graded comic slab has two distinct stacked regions: (1) the GRADING LABEL — a colored strip (blue, yellow, purple, green, or red) across the TOP of the slab containing the grade number (e.g. 9.8), book title in text, certification number, and a small barcode — and (2) the COMIC BOOK COVER ART below it — the illustrated cover (title logo, character art, scene artwork) visible through the clear plastic window. Your coordinates must capture ONLY region (2) — the illustrated cover artwork. The crop MUST start at the TOP EDGE of the illustrated cover art (immediately below the grading label strip), NOT at the top of the slab case. Do NOT include the grade label, cert number, title text strip, or barcode area in the crop. Returning coordinates that include the grading label is INCORRECT. The coordinates are relative to the image you received. Only include this field when coverHarvestable is true.`;
+- "coverHarvestable": true/false - Is the cover artwork clearly visible through the slab? Return true ONLY when: the cover is sharp, well-lit, minimal glare/reflections on plastic, accurate colors, and the full cover is visible (not cut off). If ANY of these conditions fail, return false.
+- "coverCropCoordinates": {"x": number, "y": number, "width": number, "height": number} - Pixel coordinates of ONLY the illustrated comic book cover art visible through the clear slab case BELOW the grading label. A graded comic slab has two distinct stacked regions: (1) the GRADING LABEL - a colored strip (blue, yellow, purple, green, or red) across the TOP of the slab containing the grade number (e.g. 9.8), book title in text, certification number, and a small barcode - and (2) the COMIC BOOK COVER ART below it - the illustrated cover (title logo, character art, scene artwork) visible through the clear plastic window. Your coordinates must capture ONLY region (2) - the illustrated cover artwork. The crop MUST start at the TOP EDGE of the illustrated cover art (immediately below the grading label strip), NOT at the top of the slab case. Do NOT include the grade label, cert number, title text strip, or barcode area in the crop. Returning coordinates that include the grading label is INCORRECT. The coordinates are relative to the image you received. Only include this field when coverHarvestable is true.`;
 
 export const SLAB_DETECTION_PROMPT = `You are examining a photo of a comic book. Determine ONLY whether this is a professionally graded (slabbed) comic in a hard plastic case.
 
@@ -138,9 +138,9 @@ Return ONLY this JSON object, no other text:
 
 export const SLAB_DETAIL_EXTRACTION_PROMPT = `You are examining a photo of a professionally graded (slabbed) comic book. The comic's identity has already been determined. Your job is to extract additional details from the COVER ARTWORK visible through the slab case.
 
-CRITICAL — A graded comic slab has two distinct stacked regions, and you must crop ONLY the second:
-- TOP (EXCLUDE): The GRADING LABEL — a colored strip (blue, yellow, purple, green, or red) across the top of the slab containing the grade number (e.g., 9.8), book title in text, certification number, and a small barcode. This is NOT the comic cover. Do NOT crop this region. Cropping this region is INCORRECT.
-- BOTTOM (CROP THIS): The COMIC BOOK COVER ART — the illustrated comic book cover (title logo, character art, scene artwork) visible through the clear plastic window BELOW the grading label. THIS is what you must crop.
+CRITICAL - A graded comic slab has two distinct stacked regions, and you must crop ONLY the second:
+- TOP (EXCLUDE): The GRADING LABEL - a colored strip (blue, yellow, purple, green, or red) across the top of the slab containing the grade number (e.g., 9.8), book title in text, certification number, and a small barcode. This is NOT the comic cover. Do NOT crop this region. Cropping this region is INCORRECT.
+- BOTTOM (CROP THIS): The COMIC BOOK COVER ART - the illustrated comic book cover (title logo, character art, scene artwork) visible through the clear plastic window BELOW the grading label. THIS is what you must crop.
 
 TASKS:
 1. UPC BARCODE: Look for the comic's UPC barcode on the cover artwork (NOT the cert label barcode on the grading label). It's typically in the bottom-left or bottom-right of the cover art. Read ALL digits (12-17 digits). Report confidence based on clarity.
@@ -159,9 +159,9 @@ Return ONLY this JSON object, no other text:
 
 export const SLAB_COVER_HARVEST_ONLY_PROMPT = `You are examining a photo of a professionally graded (slabbed) comic book. Your ONLY job is to determine if the cover artwork is suitable for harvesting and provide crop coordinates.
 
-CRITICAL — A graded comic slab has two distinct stacked regions, and you must crop ONLY the second:
-- TOP (EXCLUDE): The GRADING LABEL — a colored strip (blue, yellow, purple, green, or red) across the top of the slab containing the grade number (e.g., 9.8), book title in text, certification number, and a small barcode. This is NOT the comic cover. Do NOT crop this region. Returning coordinates that include the grading label is INCORRECT and the output will be rejected.
-- BOTTOM (CROP THIS): The COMIC BOOK COVER ART — the illustrated comic book cover (title logo, character art, scene artwork) visible through the clear plastic window BELOW the grading label. THIS is what you must crop.
+CRITICAL - A graded comic slab has two distinct stacked regions, and you must crop ONLY the second:
+- TOP (EXCLUDE): The GRADING LABEL - a colored strip (blue, yellow, purple, green, or red) across the top of the slab containing the grade number (e.g., 9.8), book title in text, certification number, and a small barcode. This is NOT the comic cover. Do NOT crop this region. Returning coordinates that include the grading label is INCORRECT and the output will be rejected.
+- BOTTOM (CROP THIS): The COMIC BOOK COVER ART - the illustrated comic book cover (title logo, character art, scene artwork) visible through the clear plastic window BELOW the grading label. THIS is what you must crop.
 
 Your coordinates must capture ONLY the illustrated comic book cover art BELOW the grading label. The crop MUST start at the TOP EDGE of the illustrated cover art (immediately below the grading label strip), NOT at the top of the slab case. End at the bottom of the visible cover. EXCLUDE the grading label, grade number, cert number, title text strip, grading-label barcode, plastic case borders, and reflections. If your crop includes the grade number or cert number, it is wrong. Provide coordinates as pixel values relative to the input image dimensions.
 

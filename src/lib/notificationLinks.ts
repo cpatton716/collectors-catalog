@@ -6,14 +6,14 @@ import type { Notification, NotificationType } from "@/types/auction";
  * or safety context (audit trail equivalents) that users could use to
  * conceal a history of issues from support.
  *
- * The strike-system notifications are the obvious examples — a hostile
+ * The strike-system notifications are the obvious examples - a hostile
  * user shouldn't be able to delete the warning they got before contacting
  * support claiming "I never saw the warning." auction_payment_expired*
  * also belong to the implicit dispute log.
  *
  * The underlying strike record / audit row lives elsewhere (e.g.,
  * `payment_miss_tracking`, `auction_audit_log`) so deletion of the
- * notification doesn't erase the actual evidence — it would only erase
+ * notification doesn't erase the actual evidence - it would only erase
  * the user-visible receipt. We block it anyway for clarity.
  */
 export const NON_DELETABLE_NOTIFICATION_TYPES: ReadonlySet<NotificationType> =
@@ -38,7 +38,7 @@ export function isNonDeletableNotification(type: NotificationType): boolean {
  *   like payment_missed_warning), fall back to the inbox with
  *   `?focus=<id>` so the inbox can scroll the row into view + flash-
  *   highlight it. This is the contract iOS APNs payloads will use once
- *   Capacitor ships — picking the format now means we don't have to
+ *   Capacitor ships - picking the format now means we don't have to
  *   re-version it after install.
  */
 export function getNotificationDeepLink(notification: Notification): string {

@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ count });
     }
 
-    // Inbox mode — cursor or explicit limit means the caller wants
+    // Inbox mode - cursor or explicit limit means the caller wants
     // pagination. Bell mode (no cursor, no limit) keeps its existing shape.
     const isPaginated = rawCursor !== undefined || rawLimit !== undefined;
 
@@ -131,7 +131,7 @@ export async function PATCH(request: NextRequest) {
 
     if (markAll) {
       // Pass asOf so notifications that arrive mid-flight are not silently
-      // swept. Client-supplied or now() — either way, only existing rows
+      // swept. Client-supplied or now() - either way, only existing rows
       // get marked.
       await markAllNotificationsRead(profile.id, new Date());
     } else if (notificationId) {

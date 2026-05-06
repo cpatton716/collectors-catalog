@@ -1,4 +1,5 @@
 import sharp from "sharp";
+import { validateCoverCrop } from "./coverCropValidator";
 import { supabaseAdmin } from "./supabase";
 import { submitCoverImage, getCommunityCovers } from "./coverImageDb";
 
@@ -151,10 +152,23 @@ export async function harvestCoverFromScan(params: HarvestParams): Promise<boole
   const imageWidth = metadata.width || 0;
   const imageHeight = metadata.height || 0;
 
-  // 4. Validate coordinates
+  // 4. Validate coordinates against image bounds
   const coordValidation = validateCropCoordinates(coverCropCoordinates, imageWidth, imageHeight);
   if (!coordValidation.valid) {
-    console.log(`[harvest] skipped: bad coordinates — ${coordValidation.reason}`);
+    console.log(`[harvest] skipped: bad coordinates - ${coordValidation.reason}`);
+    return false;
+  }
+
+  // 4b. Validate crop SHAPE — reject crops whose w/h aspect ratio is far from
+  // a comic cover's ~0.66 (e.g. label-only strips, full slab including label).
+  // Defense-in-depth on top of AI prompt instructions. A `[crop-rejected]`
+  // breadcrumb is logged so we can grep production logs for rejection rate;
+  // sustained high rate signals the AI prompt needs further refinement.
+  const aspectValidation = validateCoverCrop(coverCropCoordinates);
+  if (!aspectValidation.valid) {
+    console.warn(
+      `[crop-rejected] aspect_ratio_guard title="${title}" issue="${issueNumber}" ratio=${aspectValidation.aspectRatio.toFixed(3)} reason="${aspectValidation.reason}"`,
+    );
     return false;
   }
 

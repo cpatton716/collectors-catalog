@@ -539,7 +539,7 @@ export function ComicDetailModal({
               </div>
               {(comic.keyInfo && comic.keyInfo.length > 0) || (item.customKeyInfo && item.customKeyInfo.length > 0) ? (
                 <div className="flex flex-wrap gap-2">
-                  {/* Key info — show source badge */}
+                  {/* Key info - show source badge */}
                   {comic.keyInfo?.map((info, idx) => {
                     const isVerified = comic.keyInfoSource === "database" || comic.keyInfoSource === "cgc";
                     return (
@@ -666,7 +666,7 @@ export function ComicDetailModal({
               </div>
             )}
 
-            {/* No Market Value — Look Up Button */}
+            {/* No Market Value - Look Up Button */}
             {!effectivePriceData?.estimatedValue && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-center">
                 <p className="text-sm text-gray-700 mb-3">No market value on file for this book yet.</p>

@@ -43,6 +43,7 @@ import {
   getListingComicData,
 } from "./email";
 import { mapWithConcurrency } from "./concurrency";
+import { computeSnipingExtension } from "./snipingProtection";
 import {
   AuditEventInput,
   logAuctionAuditEvent,
@@ -177,7 +178,7 @@ export async function createAuction(sellerId: string, input: CreateAuctionInput)
     ).catch((err) => console.error("[auctionDb] Failed to notify followers:", err));
   }
 
-  // Audit trail — fire-and-forget, never blocks the creation path.
+  // Audit trail - fire-and-forget, never blocks the creation path.
   void logAuctionAuditEvent({
     auctionId: data.id,
     actorProfileId: sellerId,
@@ -270,7 +271,7 @@ export async function createFixedPriceListing(
     ).catch((err) => console.error("[auctionDb] Failed to notify followers:", err));
   }
 
-  // Audit trail — fire-and-forget.
+  // Audit trail - fire-and-forget.
   void logAuctionAuditEvent({
     auctionId: data.id,
     actorProfileId: sellerId,
@@ -659,7 +660,7 @@ export async function cancelAuction(
     return { success: false, error: error.message };
   }
 
-  // Audit trail — fire-and-forget.
+  // Audit trail - fire-and-forget.
   void logAuctionAuditEvent({
     auctionId,
     actorProfileId: sellerId,
@@ -831,7 +832,7 @@ export async function placeBid(
       .update({ max_bid: maxBid, updated_at: new Date().toISOString() })
       .eq("id", currentWinningBid.id);
 
-    // Audit trail — fire-and-forget. Proxy max increased without a new bid row.
+    // Audit trail - fire-and-forget. Proxy max increased without a new bid row.
     void logAuctionAuditEvent({
       auctionId,
       actorProfileId: bidderId,
@@ -883,7 +884,7 @@ export async function placeBid(
   }
 
   // For a losing bid, bid_amount must equal the bidder's own max (not the
-  // auto-incremented display amount `newCurrentBid`) — otherwise the DB
+  // auto-incremented display amount `newCurrentBid`) - otherwise the DB
   // `valid_max_bid` check constraint (max_bid >= bid_amount) rejects the
   // insert, since newCurrentBid = maxBid + increment > maxBid. The auction's
   // current_bid column still tracks the display amount separately.
@@ -917,12 +918,29 @@ export async function placeBid(
     return { success: false, message: friendly };
   }
 
+  // Sniping protection: if this bid landed inside the final SNIPING_WINDOW_MS
+  // of the auction, extend `end_time` by SNIPING_EXTENSION_MS to give other
+  // bidders a chance to respond. Caps at MAX_EXTENSION_MS past the original
+  // end so a sustained back-and-forth can't run an auction indefinitely.
+  // First extension stamps `original_end_time` so UI / audit can show both.
+  let extendedTo: string | undefined;
+  const newEndTime = computeSnipingExtension(auction);
+  if (newEndTime) {
+    extendedTo = newEndTime;
+  }
+
   // Update auction
   await supabaseAdmin
     .from("auctions")
     .update({
       current_bid: newCurrentBid,
       bid_count: auction.bid_count + 1,
+      ...(extendedTo && {
+        end_time: extendedTo,
+        // Stamp original_end_time on first extension only — subsequent
+        // extensions preserve the original.
+        ...(auction.original_end_time == null && { original_end_time: auction.end_time }),
+      }),
     })
     .eq("id", auctionId);
 
@@ -936,9 +954,9 @@ export async function placeBid(
         getListingComicData(auctionId),
       ]);
       if (!outbidProfile?.email) {
-        console.warn(`[Email] outbid skipped — no email on profile ${outbidUserId}`);
+        console.warn(`[Email] outbid skipped - no email on profile ${outbidUserId}`);
       } else if (!comicData) {
-        console.warn(`[Email] outbid skipped — no comic data for auction ${auctionId}`);
+        console.warn(`[Email] outbid skipped - no comic data for auction ${auctionId}`);
       } else {
         const result = await sendNotificationEmail({
           to: outbidProfile.email,
@@ -962,12 +980,12 @@ export async function placeBid(
   }
 
   // Notify seller of new bid activity (in-app only; no email).
-  // No throttle yet — file as follow-up if volume becomes a nuisance.
+  // No throttle yet - file as follow-up if volume becomes a nuisance.
   if (auction.seller_id !== bidderId) {
     await createNotification(auction.seller_id, "new_bid_received", auctionId);
   }
 
-  // Audit trail — fire-and-forget. Records amount and whether this was a
+  // Audit trail - fire-and-forget. Records amount and whether this was a
   // proxy bid (maxBid != displayed bid) so admins can reconstruct auction
   // history during disputes.
   void logAuctionAuditEvent({
@@ -992,6 +1010,7 @@ export async function placeBid(
     currentBid: newCurrentBid,
     isHighBidder,
     outbidAmount: isHighBidder ? undefined : minimumBid,
+    extendedTo,
   };
 }
 
@@ -1083,7 +1102,7 @@ export async function executeBuyItNow(
   // Create feedback reminders for both parties
   await createFeedbackReminders("auction", auctionId, buyerId, auction.seller_id);
 
-  // Audit trail — Buy It Now ends the listing and designates a winner.
+  // Audit trail - Buy It Now ends the listing and designates a winner.
   // Log auction_ended + bid_won as a compact pair.
   void logAuctionAuditEvents([
     {
@@ -1123,7 +1142,7 @@ export async function executeBuyItNow(
  * Transfer ownership of a sold comic: insert a new row for the buyer and
  * mark the seller's original row as sold (read-only in their sold history).
  *
- * Uses supabaseAdmin throughout — writes span two users' rows, RLS would
+ * Uses supabaseAdmin throughout - writes span two users' rows, RLS would
  * reject partial operations. Safe to use in webhook / cron context where the
  * caller is already authenticated at the API boundary.
  *
@@ -1149,7 +1168,7 @@ export async function cloneSoldComicToBuyer(params: {
     return { success: false, error: `Seller's comic row not found: ${fetchError?.message}` };
   }
 
-  // Idempotency: if already sold, webhook is repeating — skip.
+  // Idempotency: if already sold, webhook is repeating - skip.
   if (seller.sold_at) {
     return { success: true, skipped: true };
   }
@@ -1178,7 +1197,7 @@ export async function cloneSoldComicToBuyer(params: {
     .eq("id", sellerComicId);
 
   if (markError) {
-    // Clone succeeded but seller-row mark failed. Log, don't roll back —
+    // Clone succeeded but seller-row mark failed. Log, don't roll back -
     // buyer has their comic, worst case seller's row is editable until next
     // reconciliation. Better than denying the buyer their purchase.
     console.error("[cloneSoldComicToBuyer] Clone succeeded but failed to mark seller row sold:", markError);
@@ -1358,7 +1377,7 @@ export async function createOffer(
     }
   })();
 
-  // Audit trail — fire-and-forget.
+  // Audit trail - fire-and-forget.
   void logAuctionAuditEvent({
     auctionId: input.listingId,
     offerId: data.id,
@@ -1450,7 +1469,7 @@ export async function respondToOffer(
     // Create feedback reminders for both parties (offer acceptance is a "sale")
     await createFeedbackReminders("sale", offer.listing_id, offer.buyer_id, sellerId);
 
-    // Audit trail — fire-and-forget.
+    // Audit trail - fire-and-forget.
     void logAuctionAuditEvent({
       auctionId: offer.listing_id,
       offerId: input.offerId,
@@ -1498,7 +1517,7 @@ export async function respondToOffer(
       }
     })();
 
-    // Audit trail — fire-and-forget.
+    // Audit trail - fire-and-forget.
     void logAuctionAuditEvent({
       auctionId: offer.listing_id,
       offerId: input.offerId,
@@ -1571,7 +1590,7 @@ export async function respondToOffer(
       }
     })();
 
-    // Audit trail — fire-and-forget.
+    // Audit trail - fire-and-forget.
     void logAuctionAuditEvent({
       auctionId: offer.listing_id,
       offerId: input.offerId,
@@ -1665,7 +1684,7 @@ export async function respondToCounterOffer(
     // Create feedback reminders for both parties (counter-offer acceptance is a "sale")
     await createFeedbackReminders("sale", offer.listing_id, buyerId, offer.seller_id);
 
-    // Audit trail — fire-and-forget.
+    // Audit trail - fire-and-forget.
     void logAuctionAuditEvent({
       auctionId: offer.listing_id,
       offerId,
@@ -1714,7 +1733,7 @@ export async function respondToCounterOffer(
       }
     })();
 
-    // Audit trail — fire-and-forget.
+    // Audit trail - fire-and-forget.
     void logAuctionAuditEvent({
       auctionId: offer.listing_id,
       offerId,
@@ -1805,6 +1824,7 @@ export async function createNotification(
     ended: "Auction ended",
     bid_auction_lost: "Auction ended, you didn't win",
     new_bid_received: "New bid on your auction",
+    auction_ending_soon_bidder: "Auction ending soon",
     payment_reminder: "Payment reminder",
     auction_payment_expired: "Auction cancelled: payment window expired",
     auction_payment_expired_seller: "Buyer did not pay in time",
@@ -1844,6 +1864,7 @@ export async function createNotification(
     ended: "An auction you were watching has ended.",
     bid_auction_lost: "An auction you bid on has ended with another winner.",
     new_bid_received: "A bidder placed a new bid on one of your auctions.",
+    auction_ending_soon_bidder: "An auction you're bidding on closes within the hour. Place a bid to stay in the running.",
     payment_reminder: "Payment is due soon for your won auction.",
     auction_payment_expired: "Your payment window has expired. The auction has been cancelled.",
     auction_payment_expired_seller: "The winning bidder did not pay within the 48-hour window. The auction has been cancelled and you may re-list the comic.",
@@ -2083,9 +2104,9 @@ export async function getUserNotificationsPaginated(
 /**
  * Fetch a single notification by id, scoped to the requesting user. Used
  * by the inbox `?focus=<id>` deep-link to surface a "Notification not
- * found — it may have been cleared" toast when the row has been pruned.
+ * found - it may have been cleared" toast when the row has been pruned.
  *
- * Returns null on miss (treat as 404 — don't leak existence).
+ * Returns null on miss (treat as 404 - don't leak existence).
  */
 export async function getNotificationByIdForUser(
   notificationId: string,
@@ -2127,7 +2148,7 @@ export async function deleteNotificationForUser(
  *   user has clearly never engaged).
  *
  * Returns counts so the cron route can log how many rows were pruned.
- * Idempotent — calling repeatedly is safe; subsequent runs return zero.
+ * Idempotent - calling repeatedly is safe; subsequent runs return zero.
  */
 export async function pruneOldNotifications(): Promise<{
   deletedRead: number;
@@ -2158,7 +2179,7 @@ export async function pruneOldNotifications(): Promise<{
 /**
  * Mark a single notification as read.
  *
- * Owner-scoped — caller must pass the profile.id of the requesting user so
+ * Owner-scoped - caller must pass the profile.id of the requesting user so
  * the UPDATE can never affect rows owned by anyone else. supabaseAdmin
  * bypasses RLS, so the .eq("user_id", userId) clause is the actual gate.
  *
@@ -2179,12 +2200,12 @@ export async function markNotificationRead(
  * Mark all unread notifications for a user as read.
  *
  * Optional `asOf` clamps the UPDATE to notifications that existed at or
- * before that timestamp — prevents silently sweeping a notification that
+ * before that timestamp - prevents silently sweeping a notification that
  * was inserted between the user clicking "Mark all read" and the request
  * landing.
  *
  * Sets read_at = NOW() and narrows the UPDATE to only rows where read_at
- * is still NULL (idempotent — re-runs are no-ops).
+ * is still NULL (idempotent - re-runs are no-ops).
  */
 export async function markAllNotificationsRead(
   userId: string,
@@ -2265,9 +2286,9 @@ export async function submitSellerRating(
     return { success: false, error: error.message };
   }
 
-  // Audit trail — buyer feedback marks the auction transaction as complete
+  // Audit trail - buyer feedback marks the auction transaction as complete
   // from an audit standpoint (separate from the 7-day auto-complete sweep
-  // which is not yet implemented — will be added under auction_completed
+  // which is not yet implemented - will be added under auction_completed
   // when that cron is built).
   void logAuctionAuditEvent({
     auctionId: input.auctionId,
@@ -2386,7 +2407,7 @@ export async function processEndedAuctions(): Promise<{
 
       if (winningBid) {
         // Anchor the 48h payment window to auction.end_time, not the cron run
-        // time — cron lag (5-10 min typical, but observed up to ~3h42m on
+        // time - cron lag (5-10 min typical, but observed up to ~3h42m on
         // Apr 24, 2026) would otherwise stretch the marketed "48h from
         // auction close" window proportionally.
         const paymentDeadline = calculatePaymentDeadline(
@@ -2395,7 +2416,7 @@ export async function processEndedAuctions(): Promise<{
 
         // Idempotent guard: only transition from 'active' to 'ended'. If the
         // row is already in a finalized state (ended/sold/cancelled) because
-        // this cron job already ran — or the auction row was tampered with —
+        // this cron job already ran - or the auction row was tampered with -
         // skip notifications + emails. The extra `.eq("status", "active")`
         // makes the UPDATE a no-op when the row has already moved on, and
         // `.select()` lets us detect that via row count.
@@ -2415,7 +2436,7 @@ export async function processEndedAuctions(): Promise<{
           .select("id");
 
         if (!updatedRows || updatedRows.length === 0) {
-          // Another concurrent run already ended this auction — don't re-notify.
+          // Another concurrent run already ended this auction - don't re-notify.
           console.warn(`[processEndedAuctions] Skipping ${auction.id}: already finalized.`);
           continue;
         }
@@ -2472,7 +2493,7 @@ export async function processEndedAuctions(): Promise<{
         })();
 
         // Notify losing bidders (distinct bidders excluding the winner).
-        // Do this BEFORE the watcher loop so we can de-dupe — a bidder who
+        // Do this BEFORE the watcher loop so we can de-dupe - a bidder who
         // also watchlisted the auction gets the more specific
         // `bid_auction_lost` notification, not the generic `ended`.
         const alreadyNotified = new Set<string>();
@@ -2517,7 +2538,7 @@ export async function processEndedAuctions(): Promise<{
         // Create feedback reminders for both parties
         await createFeedbackReminders("auction", auction.id, winnerId, auction.seller_id);
 
-        // Audit trail — queue auction_ended + bid_won, flushed at end.
+        // Audit trail - queue auction_ended + bid_won, flushed at end.
         auditEvents.push({
           auctionId: auction.id,
           actorProfileId: null,
@@ -2541,7 +2562,7 @@ export async function processEndedAuctions(): Promise<{
         // No bids, just end it (admin: cron has no user context)
         await supabaseAdmin.from("auctions").update({ status: "ended" }).eq("id", auction.id);
 
-        // Audit trail — no-bid auction expires as listing_expired.
+        // Audit trail - no-bid auction expires as listing_expired.
         auditEvents.push({
           auctionId: auction.id,
           actorProfileId: null,
@@ -2559,7 +2580,7 @@ export async function processEndedAuctions(): Promise<{
     }
   }
 
-  // Fire-and-forget batch audit flush — never blocks cron completion.
+  // Fire-and-forget batch audit flush - never blocks cron completion.
   void logAuctionAuditEvents(auditEvents);
 
   return { processed, errors };
@@ -2766,7 +2787,7 @@ export async function expireOffers(): Promise<{ expired: number; errors: string[
     return { expired: 0, errors };
   }
 
-  // Audit trail — batch all offer_expired events.
+  // Audit trail - batch all offer_expired events.
   void logAuctionAuditEvents(
     expiredOffers.map((offer) => ({
       auctionId: offer.listing_id,
@@ -2909,7 +2930,7 @@ export async function expireListings(): Promise<{
     return { expired: 0, expiring: expiringCount, errors };
   }
 
-  // Audit trail — batch listing_expired events for fixed-price listings
+  // Audit trail - batch listing_expired events for fixed-price listings
   // that timed out after 30 days.
   void logAuctionAuditEvents(
     expiredListings.map((listing) => ({
@@ -3204,6 +3225,217 @@ export async function sendPaymentReminders(): Promise<{
   }
 }
 
+// ===========================================================================
+// Auction Ending Soon Reminder (T-1h to losing bidders)
+// ---------------------------------------------------------------------------
+// Cron-fired pass that nudges active bidders who placed a bid but are not
+// currently winning. Primary re-engagement audience for auctions — most
+// auction revenue happens in the final hour. Watchlist users (secondary)
+// are NOT yet wired in; deferred to a follow-up.
+//
+// Idempotency: each auction's `reminder_sent_at` is conditionally stamped
+// before fan-out. Duplicate cron runs cannot double-send.
+// ===========================================================================
+
+const ENDING_SOON_WINDOW_MINUTES = 60;
+
+function formatTimeRemainingLabel(minutes: number): string {
+  if (minutes <= 5) return "in just a few minutes";
+  if (minutes <= 15) return "in about 15 minutes";
+  if (minutes <= 30) return "in about half an hour";
+  if (minutes <= 50) return "in about 45 minutes";
+  return "in about an hour";
+}
+
+export async function sendAuctionEndingSoonReminders(): Promise<{
+  reminded: number;
+  notified: number;
+  errors: string[];
+}> {
+  const errors: string[] = [];
+  let reminded = 0;
+  let notified = 0;
+
+  try {
+    const now = new Date();
+    const windowEnd = new Date(now.getTime() + ENDING_SOON_WINDOW_MINUTES * 60 * 1000);
+
+    const { data: candidates, error: fetchError } = await supabaseAdmin
+      .from("auctions")
+      .select("id, seller_id, current_bid, end_time")
+      .eq("status", "active")
+      .gt("end_time", now.toISOString())
+      .lte("end_time", windowEnd.toISOString())
+      .is("reminder_sent_at", null);
+
+    if (fetchError) {
+      errors.push(`Failed to fetch ending-soon candidates: ${fetchError.message}`);
+      return { reminded: 0, notified: 0, errors };
+    }
+    if (!candidates || candidates.length === 0) {
+      return { reminded: 0, notified: 0, errors };
+    }
+
+    // Phase 1: claim each auction atomically.
+    const claimed: Array<{
+      id: string;
+      seller_id: string;
+      current_bid: number | null;
+      end_time: string;
+    }> = [];
+
+    for (const auction of candidates) {
+      try {
+        const { data: claimedRows, error: claimError } = await supabaseAdmin
+          .from("auctions")
+          .update({ reminder_sent_at: new Date().toISOString() })
+          .eq("id", auction.id)
+          .is("reminder_sent_at", null)
+          .select("id");
+
+        if (claimError) {
+          errors.push(`Auction ${auction.id}: claim error ${claimError.message}`);
+          continue;
+        }
+        if (!claimedRows || claimedRows.length === 0) continue;
+
+        claimed.push({
+          id: auction.id,
+          seller_id: auction.seller_id,
+          current_bid: auction.current_bid != null ? Number(auction.current_bid) : null,
+          end_time: auction.end_time,
+        });
+        reminded++;
+      } catch (loopErr) {
+        errors.push(
+          `Auction ${auction.id}: ${loopErr instanceof Error ? loopErr.message : String(loopErr)}`,
+        );
+      }
+    }
+
+    if (claimed.length === 0) return { reminded, notified, errors };
+
+    // Phase 2: per-claimed-auction, find losing bidders. We need each
+    // bidder's max_bid for the email. Bids table has one winning row per
+    // auction (is_winning=true) plus losing rows; we want the latter,
+    // grouped by bidder_id with their highest max_bid.
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://collectors-chest.com";
+
+    // Aggregate work per auction — bounded concurrency so we don't fan out
+    // hundreds of DB round-trips at once.
+    const perAuctionWork = await mapWithConcurrency(
+      claimed,
+      EMAIL_PREP_CONCURRENCY,
+      async (a) => {
+        try {
+          const { data: bidders } = await supabaseAdmin
+            .from("bids")
+            .select("bidder_id, max_bid")
+            .eq("auction_id", a.id)
+            .eq("is_winning", false);
+
+          if (!bidders || bidders.length === 0) return null;
+
+          // Dedupe by bidder_id taking max max_bid (handles multiple losing bids per user)
+          const byBidder = new Map<string, number>();
+          for (const b of bidders) {
+            if (b.bidder_id === a.seller_id) continue; // never email seller
+            const prev = byBidder.get(b.bidder_id);
+            const next = Number(b.max_bid);
+            if (prev == null || next > prev) byBidder.set(b.bidder_id, next);
+          }
+          if (byBidder.size === 0) return null;
+
+          const comicData = await getListingComicData(a.id);
+          if (!comicData) return null;
+
+          const minutesRemaining = Math.max(
+            1,
+            Math.round((new Date(a.end_time).getTime() - Date.now()) / 60000),
+          );
+          const timeLabel = formatTimeRemainingLabel(minutesRemaining);
+
+          // In-app notification rows + email param prep — built together to
+          // avoid re-iterating bidders.
+          const notificationRows: Array<{
+            user_id: string;
+            type: "auction_ending_soon_bidder";
+            title: string;
+            message: string;
+            auction_id: string;
+            offer_id: null;
+          }> = [];
+          const emailParams: Array<Parameters<typeof sendNotificationEmailsBatch>[0][number]> = [];
+
+          for (const [bidderId, maxBid] of byBidder) {
+            notificationRows.push({
+              user_id: bidderId,
+              type: "auction_ending_soon_bidder",
+              title: "Auction ending soon",
+              message: `${comicData.comicTitle} #${comicData.issueNumber} closes ${timeLabel}. You've been outbid.`,
+              auction_id: a.id,
+              offer_id: null,
+            });
+
+            const profile = await getProfileForEmail(bidderId);
+            if (profile?.email) {
+              emailParams.push({
+                to: profile.email,
+                type: "auction_ending_soon_bidder",
+                data: {
+                  recipientName: profile.displayName ?? "there",
+                  comicTitle: comicData.comicTitle,
+                  issueNumber: comicData.issueNumber,
+                  currentBid: a.current_bid != null ? a.current_bid : comicData.price,
+                  yourMaxBid: maxBid,
+                  endTime: a.end_time,
+                  timeRemainingLabel: timeLabel,
+                  listingUrl: `${baseUrl}/shop?listing=${a.id}`,
+                },
+                profileId: bidderId,
+              });
+            }
+          }
+
+          return { notificationRows, emailParams };
+        } catch (err) {
+          errors.push(`Auction ${a.id}: ending-soon prep failed ${String(err)}`);
+          return null;
+        }
+      },
+    );
+
+    const allNotificationRows = perAuctionWork.flatMap((w) => (w ? w.notificationRows : []));
+    const allEmailParams = perAuctionWork.flatMap((w) => (w ? w.emailParams : []));
+
+    // Phase 3: batch insert notifications.
+    if (allNotificationRows.length > 0) {
+      const { error: notifError } = await supabaseAdmin
+        .from("notifications")
+        .insert(allNotificationRows);
+      if (notifError) {
+        errors.push(`Batch notification insert failed: ${notifError.message}`);
+      } else {
+        notified = allNotificationRows.length;
+      }
+    }
+
+    // Phase 4: batch send emails.
+    if (allEmailParams.length > 0) {
+      const result = await sendNotificationEmailsBatch(allEmailParams);
+      for (const e of result.errors) errors.push(e);
+    }
+
+    console.warn(
+      `[sendAuctionEndingSoonReminders] reminded=${reminded} notified=${notified} emails=${allEmailParams.length} errors=${errors.length}`,
+    );
+    return { reminded, notified, errors };
+  } catch (topLevelErr) {
+    errors.push(`sendAuctionEndingSoonReminders top-level failure: ${String(topLevelErr)}`);
+    return { reminded, notified, errors };
+  }
+}
+
 /**
  * Expire auctions whose 48-hour payment window has passed.
  *
@@ -3215,7 +3447,7 @@ export async function sendPaymentReminders(): Promise<{
  * invocation got there first, the UPDATE returns 0 rows and we skip all
  * side effects.
  *
- * Does NOT promote a second-highest bidder — that's out of scope (see
+ * Does NOT promote a second-highest bidder - that's out of scope (see
  * BACKLOG).
  */
 export async function expireUnpaidAuctions(): Promise<{
@@ -3305,7 +3537,7 @@ export async function expireUnpaidAuctions(): Promise<{
       }
     }
 
-    // Audit trail — batch auction_payment_expired events for all claimed
+    // Audit trail - batch auction_payment_expired events for all claimed
     // auctions. Fire-and-forget so it never blocks the cron's user-visible
     // notifications/emails.
     if (claimed.length > 0) {
@@ -3328,7 +3560,7 @@ export async function expireUnpaidAuctions(): Promise<{
     // second_chance_available email fired in Phase 4. After the runner-up
     // flow has completed (offer accepted/declined/expired), a second_chance_
     // offers row exists and a subsequent expiry sends the cancellation
-    // normally — covering the case where the runner-up accepted but didn't
+    // normally - covering the case where the runner-up accepted but didn't
     // pay within their own 48h window.
     //
     // Failure mode is "fail open": on error, we send the cancellation email.
@@ -3490,7 +3722,7 @@ export async function expireUnpaidAuctions(): Promise<{
       }
     }
 
-    // Phase 4: Per-claimed-auction side effects — runner-up discovery +
+    // Phase 4: Per-claimed-auction side effects - runner-up discovery +
     // payment-miss strike handling. Best-effort: side-effect failures must
     // never roll back the auction cancellation itself.
     if (claimed.length > 0) {
@@ -3540,15 +3772,15 @@ export async function expireUnpaidAuctions(): Promise<{
 // ----------------------------------------------------------------------------
 // Added April 23, 2026. These helpers run after expireUnpaidAuctions flips
 // an auction to "cancelled":
-//   1. handleRunnerUpForExpiredAuction — finds runner-up, notifies seller
+//   1. handleRunnerUpForExpiredAuction - finds runner-up, notifies seller
 //      that they can trigger a Second Chance Offer.
-//   2. recordPaymentMissStrike — increments the missed-payment counter on
+//   2. recordPaymentMissStrike - increments the missed-payment counter on
 //      the no-pay winner, warns on first offense, flags on second within
 //      the rolling 90-day window.
-//   3. createSecondChanceOffer — seller calls this to re-offer to the
+//   3. createSecondChanceOffer - seller calls this to re-offer to the
 //      runner-up at their last actual bid price. 48-hour window.
-//   4. respondToSecondChanceOffer — runner-up accepts or declines.
-//   5. expireSecondChanceOffers — cron pass that flips unanswered
+//   4. respondToSecondChanceOffer - runner-up accepts or declines.
+//   5. expireSecondChanceOffers - cron pass that flips unanswered
 //      second-chance offers to "expired" and notifies the seller.
 // ============================================================================
 
@@ -3729,7 +3961,7 @@ async function recordPaymentMissStrike(
 
   // Look up prior auction_payment_expired audit events for this bidder
   // within the rolling window. The current expireUnpaidAuctions pass logs
-  // its event fire-and-forget — depending on timing, that row may or may
+  // its event fire-and-forget - depending on timing, that row may or may
   // not be visible yet, so we count it explicitly via `+1` below and only
   // treat rows with an older timestamp as "prior" here.
   const windowStart = new Date(
@@ -3769,7 +4001,7 @@ async function recordPaymentMissStrike(
     return;
   }
 
-  // Threshold reached — flag the user. Idempotent: only apply if not already
+  // Threshold reached - flag the user. Idempotent: only apply if not already
   // restricted.
   if (!(current?.bid_restricted_at as string | null)) {
     const reason = `Missed ${totalStrikesInWindow} payment deadlines in the last ${PAYMENT_MISS_WINDOW_DAYS} days`;
@@ -3843,12 +4075,12 @@ async function recordPaymentMissStrike(
     }
 
     // Reputation hit: insert a system-generated negative rating. Uses a
-    // null-safe path — if seller_ratings insert fails (e.g., unique buyer+auction
+    // null-safe path - if seller_ratings insert fails (e.g., unique buyer+auction
     // constraint from an earlier run), we swallow the error.
     try {
       await supabaseAdmin.from("seller_ratings").insert({
         seller_id: bidderId, // flag the bidder's reputation specifically
-        buyer_id: bidderId, // system self-rating: using same id is intentional — see COMMENT
+        buyer_id: bidderId, // system self-rating: using same id is intentional - see COMMENT
         auction_id: auctionId,
         rating_type: "negative",
         comment: `System flag: ${reason}.`,
@@ -4046,7 +4278,7 @@ export async function respondToSecondChanceOffer(
   if (action === "accept") {
     const paymentDeadline = calculatePaymentDeadline(new Date()).toISOString();
 
-    // Conditional UPDATE — bail cleanly if another request already moved it.
+    // Conditional UPDATE - bail cleanly if another request already moved it.
     const { data: updated, error: updateError } = await supabaseAdmin
       .from("second_chance_offers")
       .update({
@@ -4085,7 +4317,7 @@ export async function respondToSecondChanceOffer(
         "[respondToSecondChanceOffer] auction re-open failed:",
         auctionError
       );
-      // We've already accepted the offer — return success but surface the
+      // We've already accepted the offer - return success but surface the
       // warning in logs. This keeps the offer consistent; admin can fix up.
     }
 
@@ -4207,7 +4439,7 @@ export async function respondToSecondChanceOffer(
 }
 
 /**
- * Cron pass — expire any Second Chance Offer whose 48-hour window has
+ * Cron pass - expire any Second Chance Offer whose 48-hour window has
  * elapsed without a response. Notifies the seller so they know they can
  * re-list.
  *
@@ -4321,7 +4553,7 @@ export async function expireSecondChanceOffers(): Promise<{
 }
 
 /**
- * Read a pending Second Chance Offer for a runner-up (if any exists) —
+ * Read a pending Second Chance Offer for a runner-up (if any exists) -
  * used by the /transactions UI to render the inbox card.
  */
 export async function getPendingSecondChanceOffersForRunnerUp(

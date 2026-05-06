@@ -52,7 +52,7 @@ export default function ChoosePlanPage() {
   useEffect(() => {
     if (!hasPromoFlag || isLoading || promoCheckoutStarted.current) return;
 
-    // Check if user just returned from Stripe cancel — prevent infinite loop
+    // Check if user just returned from Stripe cancel - prevent infinite loop
     const params = new URLSearchParams(window.location.search);
     if (params.get("billing") === "cancelled") {
       clearPromoTrialFlag();
@@ -165,7 +165,7 @@ export default function ChoosePlanPage() {
           </p>
         </div>
 
-        {/* Premium Card — Emphasized */}
+        {/* Premium Card - Emphasized */}
         <div className="bg-pop-blue text-white border-4 border-pop-black p-6 mb-4 relative"
              style={{ boxShadow: "6px 6px 0px #000" }}>
           <div className="absolute -top-3 left-1/2 -translate-x-1/2">

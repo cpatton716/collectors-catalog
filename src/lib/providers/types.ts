@@ -114,7 +114,7 @@ export type ErrorReason =
   | "content_policy"
   | "unknown";
 
-/** Errors that should NOT trigger fallback — same input will fail on any provider */
+/** Errors that should NOT trigger fallback - same input will fail on any provider */
 export const NON_RETRYABLE_ERRORS: ErrorReason[] = ["bad_request", "content_policy"];
 
 // ── Provider Interface ──

@@ -541,7 +541,7 @@ async function checkSaleFeedbackEligibility(
 ): Promise<FeedbackEligibility> {
   // Buy Now sales live in the `auctions` table with listing_type='fixed_price'.
   // The legacy implementation queried a phantom `listings` table that never
-  // existed — always returned "Listing not found" → feedback button never rendered.
+  // existed - always returned "Listing not found" → feedback button never rendered.
   const { data: listing, error } = await supabaseAdmin
     .from("auctions")
     .select("seller_id, winner_id, status, shipped_at, completed_at, end_time")

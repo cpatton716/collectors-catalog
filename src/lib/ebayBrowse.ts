@@ -166,7 +166,7 @@ export function filterIrrelevantListings(
   // Normalize: "The Spider-Man" → "spiderman"
   const normalizedSearch = searchTitle.toLowerCase().replace(/^the\s+/i, "").replace(/[-\s]/g, "");
 
-  // Build grade filter regex if slabbed — only keep listings matching this exact grade
+  // Build grade filter regex if slabbed - only keep listings matching this exact grade
   let gradeRegex: RegExp | null = null;
   if (isSlabbed && grade) {
     const g = grade.replace(".", "\\.");
@@ -180,7 +180,7 @@ export function filterIrrelevantListings(
     // Exclude signed/signature series copies
     if (SIGNED_PATTERNS.test(lt)) return false;
 
-    // Exclude newsstand variants — different pricing tier
+    // Exclude newsstand variants - different pricing tier
     if (NEWSSTAND_PATTERNS.test(lt)) return false;
 
     // Must contain the search title (hyphen/space normalized)
@@ -256,7 +256,7 @@ export function filterOutliersAndCalculateMedian(prices: number[]): {
     };
   }
 
-  // Use lower quartile (Q1) — better approximates actual sale prices
+  // Use lower quartile (Q1) - better approximates actual sale prices
   // since active listing ask prices consistently overshoot sold prices
   const q1Index = Math.floor(filtered.length / 4);
   const medianPrice = filtered[q1Index];
@@ -316,7 +316,7 @@ export function convertBrowseToPriceData(
   }
   const gradeEstimates = generateGradeEstimates(basePrice);
 
-  // The estimated value is the median directly — no additional multiplier needed
+  // The estimated value is the median directly - no additional multiplier needed
   const estimatedValue = result.medianPrice;
 
   return {
@@ -362,7 +362,7 @@ export async function searchActiveListings(
   year?: string
 ): Promise<BrowsePriceResult | null> {
   if (!isBrowseApiConfigured()) {
-    console.error("[ebay-browse] API not configured — missing env vars");
+    console.error("[ebay-browse] API not configured - missing env vars");
     return null;
   }
 

@@ -25,14 +25,27 @@ export interface CaptchaVerificationResult {
 // request until Netlify's function timeout (~30s).
 export const SITEVERIFY_TIMEOUT_MS = 5000;
 
+// Retry budget for transient network failures. Two extra attempts on top of
+// the initial fetch covers most blip scenarios (TCP reset, connection refused,
+// 5xx from hCaptcha edge) without inflating the worst-case wait beyond
+// SITEVERIFY_TIMEOUT_MS * (1 + RETRY_ATTEMPTS) + RETRY_BACKOFF_MS * RETRY_ATTEMPTS
+// = 5000ms * 3 + 200ms * 2 = ~15.4s, comfortably inside the 30s function cap.
+//
+// Non-transient errors (4xx including 400 invalid input, valid-but-failed
+// verification responses) skip retries — they will not change on retry.
+export const RETRY_ATTEMPTS = 2;
+export const RETRY_BACKOFF_MS = 200;
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 /**
  * Verify a client-side hCaptcha token against hCaptcha's siteverify endpoint.
  * Returns { valid: true } on success, or { valid: false, reason } on failure.
- * Never throws — caller decides how to respond to failure.
+ * Never throws - caller decides how to respond to failure.
  *
  * Fails closed: if siteverify is slow, unreachable, or misconfigured, we reject
  * the request rather than letting the scan proceed. A 5s abort timeout bounds
- * the wait — on hCaptcha outage, users see a retry prompt within seconds
+ * the wait - on hCaptcha outage, users see a retry prompt within seconds
  * instead of the full Netlify function timeout.
  */
 export async function verifyCaptchaToken(
@@ -46,36 +59,57 @@ export async function verifyCaptchaToken(
     return { valid: false, reason: "not_configured" };
   }
 
-  try {
-    const params = new URLSearchParams();
-    params.set("secret", HCAPTCHA_SECRET);
-    params.set("response", token);
-    if (clientIp) params.set("remoteip", clientIp);
-    params.set("sitekey", HCAPTCHA_SITE_KEY);
+  const params = new URLSearchParams();
+  params.set("secret", HCAPTCHA_SECRET);
+  params.set("response", token);
+  if (clientIp) params.set("remoteip", clientIp);
+  params.set("sitekey", HCAPTCHA_SITE_KEY);
+  const body = params.toString();
 
-    const res = await fetch("https://api.hcaptcha.com/siteverify", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: params.toString(),
-      signal: AbortSignal.timeout(SITEVERIFY_TIMEOUT_MS),
-    });
+  let lastResult: CaptchaVerificationResult = { valid: false, reason: "network_error" };
+  for (let attempt = 0; attempt <= RETRY_ATTEMPTS; attempt++) {
+    try {
+      const res = await fetch("https://api.hcaptcha.com/siteverify", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body,
+        signal: AbortSignal.timeout(SITEVERIFY_TIMEOUT_MS),
+      });
 
-    if (!res.ok) {
-      return { valid: false, reason: `siteverify_http_${res.status}` };
-    }
+      if (!res.ok) {
+        // 5xx is transient (hCaptcha edge issue) — retry. 4xx is our fault
+        // (bad secret, malformed body) — return immediately, retrying won't help.
+        const reason = `siteverify_http_${res.status}`;
+        lastResult = { valid: false, reason };
+        if (res.status >= 500 && attempt < RETRY_ATTEMPTS) {
+          await sleep(RETRY_BACKOFF_MS);
+          continue;
+        }
+        return lastResult;
+      }
 
-    const body = (await res.json()) as HCaptchaVerifyResponse;
-    if (body.success) {
-      return { valid: true };
+      const json = (await res.json()) as HCaptchaVerifyResponse;
+      if (json.success) {
+        return { valid: true };
+      }
+      // Verification responses are authoritative — don't retry a "success: false".
+      const code = json["error-codes"]?.[0] ?? "unknown";
+      return { valid: false, reason: code };
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "TimeoutError") {
+        // Timeout — treat as transient and retry within budget.
+        lastResult = { valid: false, reason: "siteverify_timeout" };
+      } else {
+        // Network error (DNS, connection refused, TCP reset) — retry.
+        lastResult = { valid: false, reason: "network_error" };
+      }
+      if (attempt < RETRY_ATTEMPTS) {
+        await sleep(RETRY_BACKOFF_MS);
+        continue;
+      }
     }
-    const code = body["error-codes"]?.[0] ?? "unknown";
-    return { valid: false, reason: code };
-  } catch (err) {
-    if (err instanceof DOMException && err.name === "TimeoutError") {
-      return { valid: false, reason: "siteverify_timeout" };
-    }
-    return { valid: false, reason: "network_error" };
   }
+  return lastResult;
 }
 
 /**

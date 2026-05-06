@@ -30,7 +30,7 @@ export interface ScanEventProperties {
 
 /**
  * Track a scan event server-side with cost and performance data.
- * Fire-and-forget — never blocks the response.
+ * Fire-and-forget - never blocks the response.
  */
 export async function trackScanServer(
   distinctId: string,

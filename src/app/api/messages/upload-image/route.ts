@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "File must be an image" }, { status: 400 });
     }
 
-    // Validate file size (max 10MB — shared limit with scan endpoint)
+    // Validate file size (max 10MB - shared limit with scan endpoint)
     if (file.size > MAX_IMAGE_UPLOAD_BYTES) {
       return NextResponse.json(
         { error: `Image must be under ${MAX_IMAGE_UPLOAD_LABEL}` },

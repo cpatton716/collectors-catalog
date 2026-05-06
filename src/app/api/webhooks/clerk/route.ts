@@ -30,7 +30,7 @@ function buildDisplayName(first?: string | null, last?: string | null): string |
 
 // Supabase profiles.username has a CHECK constraint: ^[a-z0-9_]{3,20}$.
 // Clerk allows characters Supabase rejects (e.g., dashes). Only forward the
-// username if it satisfies our constraint — otherwise leaving it NULL lets
+// username if it satisfies our constraint - otherwise leaving it NULL lets
 // the rest of the upsert (email, name) land and the user can set a valid
 // username later via the app's profile settings.
 const USERNAME_REGEX = /^[a-z0-9_]{3,20}$/;
@@ -77,9 +77,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
-  // Handle the user.created event — upsert profile + send welcome email.
+  // Handle the user.created event - upsert profile + send welcome email.
   // Upserting here (rather than relying on lazy getOrCreateProfile) guarantees
-  // every new user — including social sign-ins — gets their email synced into
+  // every new user - including social sign-ins - gets their email synced into
   // profiles.email from day one. Without this, social-OAuth users could hit a
   // server route that calls getOrCreateProfile(userId) before any client-side
   // component passes the email, creating a profile with email=null.
@@ -114,7 +114,7 @@ export async function POST(req: Request) {
     if (primaryEmail) {
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://collectors-chest.com";
 
-      // Fire and forget — don't block webhook response
+      // Fire and forget - don't block webhook response
       sendNotificationEmail({
         to: primaryEmail,
         type: "welcome",
@@ -127,7 +127,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ received: true });
   }
 
-  // Handle user.updated — sync email changes back to profiles.email so older
+  // Handle user.updated - sync email changes back to profiles.email so older
   // profiles created without email, or users who add a primary email later,
   // stay in sync.
   if (event.type === "user.updated") {
