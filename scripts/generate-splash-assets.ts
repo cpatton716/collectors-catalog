@@ -1,9 +1,14 @@
-// Generates iPhone PWA splash images from the Figma source.
+// Generates iPhone PWA splash images from the canonical brand source.
 //
-// Source: ./Splash Screen (figma).png — full splash design with the logo
-// already positioned + sized as designed. We use it AS-IS (no trim, no crop)
-// and fit it onto each device-specific canvas with brand-blue letterboxing
-// where aspect ratios don't match.
+// Source: ./Collectors Chest Splash.png — 2732 × 2732 square (Capacitor
+// `capacitor-assets` standard). Logo + branding centered inside a generous
+// safe zone so center-cropping to portrait device dimensions doesn't clip
+// the logo.
+//
+// Approach: center-crop (Sharp's `fit: "cover"`) the square source into each
+// portrait device's exact viewport dimensions. iOS expects apple-touch-startup-
+// image bitmaps at exact device dimensions; the safe-zone padding in the
+// source means the cropped strips are blue-only and the logo stays intact.
 //
 // Outputs (only iPhone apple-touch-startup-image variants — no app icons):
 //   - apple-splash-1284-2778.png  (iPhone 12/13/14 Pro Max)
@@ -12,71 +17,51 @@
 //   - apple-splash-1125-2436.png  (iPhone X/XS/11 Pro)
 //   - apple-splash-750-1334.png   (iPhone 6/7/8)
 //
-// Run: npx tsx scripts/generate-splash-assets.ts
+// IMPORTANT: This script does NOT touch app icons. The source is for the
+// SPLASH SCREEN only. Icons under public/icons/icon-* remain untouched.
 //
-// IMPORTANT: This script does NOT touch app icons. The Figma source is for
-// the SPLASH SCREEN only. Icons under public/icons/ remain untouched.
+// Native iOS / Android handoff: when Capacitor ships, point
+// `capacitor-assets` at the same 2732 × 2732 source — that tooling generates
+// all native-shell variants (multi-density Android buckets, iOS @2x/@3x).
+//
+// Run: npx tsx scripts/generate-splash-assets.ts
 
 import path from "node:path";
 import sharp from "sharp";
 
-const SOURCE = path.resolve("Splash Screen (figma).png");
+const SOURCE = path.resolve("Collectors Chest Splash.png");
 const OUT_DIR = path.resolve("public/icons");
 
-// Brand splash background — pop-blue from tailwind.config.ts. Used to letterbox
-// where the source aspect ratio doesn't match the target device.
-const BG = { r: 0, g: 102, b: 255, alpha: 1 };
-
 async function makeAppleSplash(width: number, height: number, filename: string) {
-  // Use the source image AS-IS — preserve the Figma-designed logo size and
-  // position. Sharp's `fit: "inside"` scales the source to fit within the
-  // target dimensions while preserving aspect ratio; the canvas's blue
-  // background fills the letterbox.
-  const fitted = await sharp(SOURCE)
+  // `fit: "cover"` scales the source so it fills both target dimensions, then
+  // crops the overflow. With a square source + portrait target, the height
+  // becomes the binding constraint and equal margins are cropped from the
+  // left/right of the source. Logo (centered with safe-zone padding) stays
+  // intact.
+  await sharp(SOURCE)
     .resize(width, height, {
-      fit: "inside",
-      background: BG,
+      fit: "cover",
+      position: "center",
     })
-    .toBuffer();
-  const meta = await sharp(fitted).metadata();
-
-  // After fit:inside the buffer dimensions are <= target. Composite onto a
-  // brand-blue canvas at the target size, centered, so the final file is
-  // exactly width × height (which iOS expects for an apple-touch-startup-image).
-  await sharp({
-    create: {
-      width,
-      height,
-      channels: 4,
-      background: BG,
-    },
-  })
-    .composite([
-      {
-        input: fitted,
-        gravity: "center",
-      },
-    ])
     .png()
     .toFile(path.join(OUT_DIR, filename));
 
-  console.log(`  ✓ ${filename} (${width}x${height}, fitted source ${meta.width}x${meta.height})`);
+  console.log(`  ✓ ${filename} (${width}x${height}, center-cropped from 2732×2732)`);
 }
 
 async function main() {
-  console.log("Generating iPhone splash assets from source AS-IS...\n");
+  console.log("Generating iPhone splash assets from Collectors Chest Splash.png...\n");
 
-  // Major iPhone form factors (portrait orientation). The source's logo
-  // size + position are preserved at the Figma proportions; brand-blue
-  // letterboxing fills any aspect-ratio gap.
+  // Major iPhone form factors (portrait orientation).
   await makeAppleSplash(1284, 2778, "apple-splash-1284-2778.png"); // iPhone 12/13/14 Pro Max
   await makeAppleSplash(1170, 2532, "apple-splash-1170-2532.png"); // iPhone 12/13/14 standard
   await makeAppleSplash(828, 1792, "apple-splash-828-1792.png");   // iPhone XR/11
   await makeAppleSplash(1125, 2436, "apple-splash-1125-2436.png"); // iPhone X/XS/11 Pro
   await makeAppleSplash(750, 1334, "apple-splash-750-1334.png");   // iPhone 6/7/8
 
-  console.log("\n✓ Done. Source preserved as-is; brand-blue letterbox where needed.");
+  console.log("\n✓ Done. Source used as-is via center-crop.");
   console.log("  App icons NOT touched (those live under public/icons/icon-*).");
+  console.log("  Native iOS/Android: same source feeds capacitor-assets when shipping.");
 }
 
 main().catch((err) => {
