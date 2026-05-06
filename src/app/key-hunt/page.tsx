@@ -19,6 +19,7 @@ import {
   getCachedLookup,
   getKeyHuntHistoryCount,
 } from "@/lib/offlineCache";
+import { sanitizeCoverImageUrl } from "@/lib/coverImageUrlSanitizer";
 import { storage } from "@/lib/storage";
 
 import { useKeyHunt } from "@/hooks/useKeyHunt";
@@ -887,12 +888,20 @@ export default function KeyHuntPage() {
             onAddToHuntList={
               isSignedIn
                 ? async () => {
+                    // Sanitize coverImageUrl before sending — a fresh
+                    // cover-scan stores the local file preview as a base64
+                    // `data:` URI in result.coverImageUrl, which the Zod
+                    // schema on /api/key-hunt rejects via z.string().url().
+                    // The sanitizer returns null for data: URIs, non-http(s),
+                    // >2048 chars, or signed-URL JWT-stuffed query strings —
+                    // all of which the schema also wouldn't accept.
+                    const sanitizedCoverUrl = sanitizeCoverImageUrl(result.coverImageUrl) ?? undefined;
                     return addToKeyHunt({
                       title: result.title,
                       issueNumber: result.issueNumber,
                       publisher: result.publisher || undefined,
                       releaseYear: result.releaseYear || undefined,
-                      coverImageUrl: result.coverImageUrl || undefined,
+                      coverImageUrl: sanitizedCoverUrl,
                       keyInfo: result.keyInfo,
                       currentPriceMid: result.averagePrice || undefined,
                       addedFrom: "key_hunt",
