@@ -2,7 +2,18 @@
 
 import { useState } from "react";
 
-import { Clock, Gauge, Minus, Plus, RotateCcw, TrendingDown, TrendingUp, X } from "lucide-react";
+import {
+  AlertTriangle,
+  Clock,
+  Gauge,
+  KeyRound,
+  Minus,
+  Plus,
+  RotateCcw,
+  TrendingDown,
+  TrendingUp,
+  X,
+} from "lucide-react";
 
 import { KeyHuntHistoryEntry } from "@/lib/offlineCache";
 
@@ -154,6 +165,38 @@ export function KeyHuntHistoryDetail({
                 </span>
               )}
             </div>
+
+            {/* Key Issue chip — render before price so it shows even when
+                price data is missing (mirrors the live-result layout). */}
+            {entry.keyInfo && entry.keyInfo.length > 0 && (
+              <div className="mb-5 flex flex-col items-center gap-1.5">
+                <span className="flex items-center gap-1 text-xs font-bold uppercase tracking-wide text-amber-700">
+                  <KeyRound className="w-3 h-3" />
+                  Key Issue
+                </span>
+                <div className="flex flex-wrap justify-center gap-1.5">
+                  {entry.keyInfo.map((info, i) => (
+                    <span
+                      key={i}
+                      className="px-3 py-1 bg-amber-50 border border-amber-200 rounded-full text-xs text-amber-900"
+                    >
+                      {info}
+                    </span>
+                  ))}
+                </div>
+                {entry.keyInfoMeta?.matchedYear && (
+                  <p className="text-[11px] text-gray-500">
+                    Volume started {entry.keyInfoMeta.matchedYear}
+                  </p>
+                )}
+                {entry.keyInfoMeta?.matchType === "year-resolved" && (
+                  <p className="flex items-center gap-1 text-[11px] text-amber-700">
+                    <AlertTriangle className="w-3 h-3" />
+                    Verify volume — multiple matches
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Average Price */}
             <div className="text-center mb-6">

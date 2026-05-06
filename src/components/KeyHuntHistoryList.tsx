@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { AlertCircle, ChevronRight, Clock, DollarSign, Trash2, X } from "lucide-react";
+import { AlertCircle, ChevronRight, Clock, DollarSign, KeyRound, Trash2, X } from "lucide-react";
 
 import { KeyHuntHistoryEntry, clearKeyHuntHistory, getKeyHuntHistory } from "@/lib/offlineCache";
 
@@ -174,13 +174,22 @@ export function KeyHuntHistoryList({ onSelectEntry, onClose }: KeyHuntHistoryLis
                     #{entry.issueNumber}
                     {entry.variant && <span className="text-gray-500"> - {entry.variant}</span>}
                   </p>
-                  <div className="flex items-center gap-3 mt-1.5">
+                  <div className="flex items-center gap-2 mt-1.5">
                     <span className="px-2 py-0.5 bg-gray-700 rounded text-xs text-gray-300">
                       {formatGrade(entry.grade)}
                     </span>
                     {entry.isSlabbed && (
                       <span className="px-2 py-0.5 bg-amber-500/20 rounded text-xs text-amber-400">
                         Slabbed
+                      </span>
+                    )}
+                    {entry.keyInfo && entry.keyInfo.length > 0 && (
+                      <span
+                        className="flex items-center gap-1 px-2 py-0.5 bg-amber-500/20 rounded text-xs text-amber-400"
+                        title={entry.keyInfo.join(", ")}
+                      >
+                        <KeyRound className="w-3 h-3" />
+                        Key
                       </span>
                     )}
                     <span className="flex items-center gap-1 text-xs text-gray-500">

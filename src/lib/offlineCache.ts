@@ -292,6 +292,16 @@ export interface KeyHuntHistoryEntry {
     recentSale?: { price: number; date: string };
   };
   coverImageUrl?: string;
+  // Key collector facts (e.g., "First appearance of Miles Morales") so the
+  // KEY ISSUE chip renders consistently in the history detail view, not just
+  // on the live result. Persisted into localStorage; missing on legacy entries
+  // (treat as undefined / no chip).
+  keyInfo?: string[];
+  keyInfoMeta?: {
+    matchType: "exact" | "year-resolved";
+    matchedYear: number | null;
+    totalCandidates: number;
+  };
   timestamp: number;
 }
 

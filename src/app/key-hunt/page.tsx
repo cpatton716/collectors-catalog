@@ -73,7 +73,7 @@ interface LookupResult {
   keyInfo?: string[];
   keyInfoMeta?: {
     matchType: "exact" | "year-resolved";
-    matchedYear?: number;
+    matchedYear: number | null;
     totalCandidates: number;
   };
   gradeEstimates?: GradeEstimate[];
@@ -332,6 +332,8 @@ export default function KeyHuntPage() {
           recentSale: lookupResult.recentSale || undefined,
         },
         coverImageUrl: lookupResult.coverImageUrl || undefined,
+        keyInfo: lookupResult.keyInfo,
+        keyInfoMeta: lookupResult.keyInfoMeta,
       });
 
       setResult(lookupResult);
@@ -467,9 +469,13 @@ export default function KeyHuntPage() {
     setFlow("history-detail");
   };
 
-  // Handle re-lookup from history (fresh API call)
+  // Handle re-lookup from history (fresh API call). Preserve the original
+  // cover image — eBay rarely returns a usable cover URL, so without this
+  // the user sees the placeholder "?" image after Refresh / New Grade even
+  // though the history entry had a cover.
   const handleHistoryLookupAgain = (title: string, issueNumber: string, grade: number) => {
-    setPendingComic({ title, issueNumber });
+    const previousCover = selectedHistoryEntry?.coverImageUrl;
+    setPendingComic({ title, issueNumber, coverImageUrl: previousCover });
     setSelectedHistoryEntry(null);
     performLookup(title, issueNumber, grade);
   };
@@ -489,6 +495,7 @@ export default function KeyHuntPage() {
             averagePrice: entry.priceResult.rawPrice,
             recentSale: entry.priceResult.recentSale || null,
             coverImageUrl: entry.coverImageUrl,
+            keyInfo: entry.keyInfo,
           },
         });
 
@@ -515,7 +522,7 @@ export default function KeyHuntPage() {
           grade: null,
           isSignatureSeries: false,
           signedBy: null,
-          keyInfo: [],
+          keyInfo: entry.keyInfo || [],
           certificationNumber: null,
           labelType: null,
           pageQuality: null,

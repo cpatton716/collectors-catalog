@@ -60,7 +60,7 @@ interface KeyHuntPriceResultProps {
    */
   keyInfoMeta?: {
     matchType: "exact" | "year-resolved";
-    matchedYear?: number;
+    matchedYear: number | null;
     totalCandidates: number;
   };
 }
