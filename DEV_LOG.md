@@ -4,7 +4,7 @@ This log tracks session-by-session progress on Collectors Chest.
 
 ---
 
-## May 6, 2026 (Wednesday) - Session 45b: PWA Splash Iteration + Hunt List Fix + Notifications Settings 500 + Live Key-Info Coordinated Fixes + Data-Partner Research (Pending Deploy)
+## May 6, 2026 (Wednesday) - Session 45b: PWA Splash Iteration + Hunt List Fix + Notifications Settings 500 + Live Key-Info Coordinated Fixes + Data-Partner Research (Deployed May 6, 2026 — through commit `69c186b`)
 
 ### Summary
 Post-deploy continuation of Session 45 (deployed at `acb598b` earlier today). Surface area:
@@ -182,20 +182,20 @@ So the rule was already enforced, but not previously articulated. Saved as durab
 
 ### Where We Left Off
 
-Three commits queued for deploy: `63fc386` (con-mode-lookup AI keyInfo fallback), `6f6aefe` (history keyInfo persistence + cover preservation), `69c186b` (Comic Vine dead-code removal). User to:
-1. Run catch-up SQL in Supabase SQL Editor for the `msg_push_enabled` + `msg_email_enabled` columns (clipboard-loaded).
-2. Trigger deploy after close-up-shop completes.
-
-### Changes Since Last Deploy
-
-Three commits accumulated since `acb598b` (Session 45 deploy earlier today):
+Deployed May 6, 2026 — Netlify auto-deployed each fix commit on push:
+- `4fe71cd` — Hunt List `data:` URI cover sanitize before Add-to-Hunt-List
+- `12c5fa9` / `64a9331` / `ce9578d` — PWA splash + maskable icon iteration (final approved by user)
 - `63fc386` — `/api/con-mode-lookup` no-data path AI keyInfo fallback + drift breadcrumb
 - `6f6aefe` — `KeyHuntHistoryEntry` keyInfo persistence + cover preservation on Refresh/New Grade + history-add keyInfo threading
 - `69c186b` — Comic Vine dead-code removal (`/api/quick-lookup` route + manifest shortcut + sw.js cache entry + coverSource union)
 
-Plus PWA splash + maskable icon binaries (`12c5fa9`, `64a9331`, `ce9578d`) and Hunt List `data:` sanitize fix (`4fe71cd`).
+PROD migration catch-up: user ran `msg_push_enabled` + `msg_email_enabled` column adds in Supabase SQL Editor mid-session, restoring `/settings/notifications`.
 
-**Status:** Ready to deploy (pending PROD migration catch-up SQL run by user).
+Doc commit `d297c89` (close-up-shop) intentionally NOT pushed — bundles with next session per the "avoid extra Netlify build for docs" convention.
+
+### Changes Since Last Deploy
+
+_None — Session 45b fully deployed. Next deploy will start from `69c186b` (with `d297c89` doc commit riding along when next session pushes)._
 
 ---
 
