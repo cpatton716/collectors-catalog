@@ -10,8 +10,7 @@ const STATIC_ASSETS = [
 
 // API routes to cache responses from
 const CACHEABLE_API_ROUTES = [
-  '/api/con-mode-lookup', // Still uses same API endpoint
-  '/api/quick-lookup',
+  '/api/con-mode-lookup',
 ];
 
 // Install event - cache static assets

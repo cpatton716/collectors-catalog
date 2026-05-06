@@ -42,13 +42,6 @@
       "description": "View your comic collection",
       "url": "/collection",
       "icons": [{ "src": "/icons/shortcut-collection.png", "sizes": "96x96" }]
-    },
-    {
-      "name": "Quick Lookup",
-      "short_name": "Lookup",
-      "description": "Look up comic values",
-      "url": "/quick-lookup",
-      "icons": [{ "src": "/icons/shortcut-lookup.png", "sizes": "96x96" }]
     }
   ]
 }

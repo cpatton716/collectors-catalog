@@ -19,7 +19,6 @@ export interface CoverPipelineResult {
   coverSource:
     | "community"
     | "ebay"
-    | "comicvine"
     | null;
   validated: boolean;
 }
