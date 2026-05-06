@@ -4,7 +4,7 @@ This log tracks session-by-session progress on Collectors Chest.
 
 ---
 
-## May 6, 2026 (Wednesday) - Session 45: CovrPrice partner reply doc reframe + Ultimate Fallout #4 keyInfo alias fix
+## May 6, 2026 (Wednesday) - Session 45: alias mechanism + sniping protection + ending-soon reminders + PWA splash + 14 BACKLOG closures (Deployed May 6, 2026 — commit `acb598b`)
 
 ### Summary
 Mid-session: post-Aponte-meeting follow-up + show-floor PROD verification of yesterday's Session 44 deploy. Three buckets:
@@ -160,48 +160,7 @@ Awaiting deploy of Session 45 fix to PROD (Ultimate Fallout #4 alias + CovrPrice
 
 ### Changes Since Last Deploy
 
-Session 45 (May 6, 2026) — pending deploy:
-- CovrPrice partnership reframe across `docs/CLZ_COMPARISON_BRIEF.md` + `/admin/clz-comparison` (no longer "active conversations"; now "queued as beta tester / API on 2027 roadmap")
-- `KeyComic.aliases` field — first-class alias support in the curated DB (replaces the duplicate-entry workaround). Dedup-safe registration ensures multiple punctuation variants of the same alias don't create phantom multi-entry ambiguity.
-- 6 entries gain aliases: Ultimate Fallout #4 (Miles Morales — PROD-confirmed drift), Tales of Suspense #39 (Iron Man), Journey Into Mystery #83 (Thor), Marvel Premiere #15 (Iron Fist), Marvel Spotlight #5 (Ghost Rider), Strange Tales #110 (Doctor Strange) — all anthology covers where the feature character logo dominates the masthead.
-- `[keyinfo-drift]` telemetry breadcrumb in `con-mode-lookup` to surface future drift candidates from production scan logs.
-- **Volume-verification safety net** — `lookupKeyInfoWithMeta()` returns `matchType: 'exact' | 'year-resolved'`. KeyHunt result modal now renders a passive "Volume started YYYY · N volumes exist" subtext under the KEY ISSUE chips, plus an amber ⚠️ advisory only when the resolver had to make a year-judgment call between multi-volume candidates.
-- **`/notifications` inbox initial-render flash regression FIXED** — cache banner no longer toggles on/off during the brief cache-then-fresh-fetch window on every load. Renamed `hydratedFromCache` to `showCacheBanner` with new semantics: only true when fresh fetch actually fails AND we're showing stale cached data. Normal loads now render once, no flash.
-- **`/notifications?focus=<id>` deep-link FIXED** — added defensive UUID format validation (skips silently on malformed params), wrapped `scrollIntoView` in `requestAnimationFrame` to guarantee the row's ref is attached before scrolling, extended highlight duration from 1.5s to 2.5s for better visibility, and bumped the ring from `ring-2` to `ring-4 + bg-blue-100` for stronger visual anchor.
-- **Em dash sweep** — 77 source files + `docs/CLZ_COMPARISON_BRIEF.md` had `—` replaced with `-`. User-facing copy across components, API responses, and admin pages now hyphen-only. Test fixtures and internal docs untouched per "in the application" scope.
-- **PWA splash screen rolled out** — Figma source (`Splash Screen (figma).png`) ingested via new `scripts/generate-splash-assets.ts` (Sharp-based). Generated 14 derived assets: app icons (192/512, any + maskable), 180px Apple touch icon, and 5 iPhone-sized `apple-touch-startup-image` bitmaps (1284x2778 / 1170x2532 / 1125x2436 / 828x1792 / 750x1334). Manifest `background_color` updated to `#0066FF` (pop-blue) so Android Chrome's install splash matches the brand. iOS PWA users now see the brand splash on Add-to-Home-Screen launch instead of a blank screen. Native iOS/Android Capacitor splash work captured as a separate Pre-Launch BACKLOG entry (gated on the native shell initiatives; will need a higher-res Figma re-export before kicking off).
-- **Autonomous knock-out batch** — closed 7 BACKLOG entries in one pass:
-  1. Flip Claude/Gemini Provider Order — already done in prior session, removed stale entry
-  2. Hydration Mismatch on "Ask the Professor" Button — added `hasMounted` flag in Navigation.tsx so the auth-dependent visibility class only applies post-hydration, eliminating SSR/CSR diff
-  3. hCaptcha Siteverify Retry — added 429-aware exponential-backoff retry (500/1000/2000ms × 3 attempts max) with discriminated handling for transient (429/5xx/throw) vs authoritative (4xx/success-false) responses. 5 new tests in `hcaptcha.test.ts`
-  4. IPv6 Private Address Checks — new `isPrivateIPv6()` helper covering loopback (::1), unspecified (::), link-local (fe80::/10), unique-local (fc00::/7), and IPv4-mapped IPv6 forms. Wired into `validateImageUrl`. 11 new test assertions
-  5. Stripe Webhook Failed-Payment Email — new `subscription_payment_failed` email type + template + dispatch. Webhook handler now sends a Resend email with manage-billing CTA, sanitized failure reason, and Stripe's `next_payment_attempt` formatted as a human date when present
-  6. Cover Harvest Aspect-Ratio Guard Wired In — the existing `validateCoverCrop` helper had zero non-test callers; wired into `harvestCoverFromScan` between bounds-check and inset-padding steps. `[crop-rejected]` console.warn breadcrumb logs rejection rate for production audit
-  7. Payment-Expiry Cron Resend Retry — extracted `sendBatchWithRetry` helper in `email.ts`. Resend `batch.send` now retries on 429/5xx with exponential backoff (500/1000/2000ms), bails on 4xx/auth errors. Worst-case 3.5s per failing batch fits inside the 30s cron cap
-- **Periodic HEAD Check for Cached eBay URLs** — new `coverHeadCheck.ts` library + `checkCoverImageHeadStatus()` wired into the cron sweep. Picks 50 approved cover_images per tick (NULL-first ordering on `last_head_checked_at`, then oldest-checked), HEAD-checks with 5s timeout + concurrency 5. Marks 4xx/5xx URLs as `status='rejected'`; updates timestamp on alive URLs. **Requires migration `20260506_cover_head_check.sql` (adds `last_head_checked_at` column + filtered index) — MUST BE APPLIED in Supabase BEFORE deploy.**
-
-Items 6 (Second Chance cascade-to-3rd) and 10 (CSV batch re-validation) from the planned batch were skipped after re-reading their BACKLOG entries: cascade explicitly defers until post-launch data justifies cascade complexity (avoids spam risk); CSV re-validation is a user-facing feature requiring UI design, not a backend-only fix. Both BACKLOG entries left in place.
-
-- **Second autonomous knock-out batch (items 11-19)** — closed 7 more BACKLOG entries:
-  11. **Notification CHECK constraint drift audit** — verified current alignment (30 TS types ↔ 30 DB constraint types). New `notificationTypeDrift.test.ts` fails CI on any future divergence. Historical insert-failure forensics not retroactively recoverable.
-  12. **Cover_image_url sanitizer** — new `sanitizeCoverImageUrl()` rejects data: URIs, non-http(s), >2048 chars, and >800-char query strings (signed-URL JWT signal). Wired into all 4 db.ts write boundaries; 12 unit tests.
-  13. **Open Library removed from cover pipeline** — `tryOpenLibrary` deleted; `coverSource: 'openlibrary'` dropped from union; `covers.openlibrary.org` dropped from ALLOWED_EXACT_HOSTS; cover-search route's unused OL response stripped. 4 cover-validation tests rewritten to assert null-fallback in absence of OL.
-  15. **Haptic feedback Option A (Web Vibration API)** — new `src/lib/haptics.ts` with semantic helpers (Tap/Success/Win/Warning/Error). Wired into KeyHunt add-to-collection, hunt-list add, and BidForm bid placement (success + error paths). Progressive enhancement — no-ops on iOS Safari + desktop.
-  16. **Auction sniping protection** — migration `20260506_auction_sniping_protection.sql` adds `original_end_time`. New `snipingProtection.ts` helper with 5-min window / 5-min extension / 6h cap. `placeBid` extends `end_time` and stamps `original_end_time` on first extension. `PlaceBidResult.extendedTo` returned for UI. 7 unit tests cover boundary + clamp + cap behavior.
-  17. **Auction ending-soon reminder cron (bidder side)** — migration `20260506_auction_ending_soon_reminder.sql` adds `reminder_sent_at` + extends notification CHECK constraint with `auction_ending_soon_bidder`. New `sendAuctionEndingSoonReminders()` cron pass fires at T-1h to losing bidders (in-app + Resend batch email). Watchlist-user secondary audience + `bid_auction_lost` retro email deferred to follow-up.
-  19. **Barcode strategy research** — new `docs/BARCODE_RESEARCH.md` synthesizes publicly-known CLZ + CovrPrice barcode flows. Recommends a hybrid approach (crowd-source UPC → comic mapping from successful AI cover scans) rather than competing on catalog completeness against CLZ's 20-year head start. Live network capture (Charles Proxy on real device) still pending — questions enumerated in doc §6.
-
-Items 14 (Sales history → listing modal: 1-2 day effort, miscategorized) and 18 (FMV graceful fallback: real-money pricing change, deserves careful design) were skipped on second-look — both are legitimately bigger than knock-out scope. BACKLOG entries left in place.
-
-**Migrations needing application before deploy (3 in this session):**
-1. `20260506_cover_head_check.sql` — adds `last_head_checked_at` column + filtered index on cover_images
-2. `20260506_auction_sniping_protection.sql` — adds `original_end_time` column to auctions
-3. `20260506_auction_ending_soon_reminder.sql` — adds `reminder_sent_at` to auctions + extends notifications CHECK constraint
-
-**Tests:** 825/825 passing across 54 suites (was 803 before this batch — +22 from sniping + drift + sanitizer + Ultimate Fallout + IPv6).
-- 1 new test suite (`keyComicsDatabase.test.ts`) — 24 tests guarding alias mechanism + confidence metadata + normalization invariants.
-
-Sessions count since last deploy: 1 (Session 45). Deploy readiness: **Ready** — typecheck + lint clean, 797/797 tests passing. Manual UI verification recommended for the inbox fixes before deploy: (a) refresh `/notifications` to confirm no flash, (b) visit `/notifications?focus=<real-uuid>` to confirm scroll + highlight, (c) Star Wars #1 with year 2010 to see amber advisory.
+*(empty - Session 45 deployed May 6, 2026 - commit `acb598b`. Three Supabase migrations applied beforehand. 117 files / 3,019 insertions / 913 deletions.)*
 
 ---
 
