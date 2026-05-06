@@ -4,6 +4,201 @@ This log tracks session-by-session progress on Collectors Chest.
 
 ---
 
+## May 6, 2026 (Wednesday) - Session 45b: PWA Splash Iteration + Hunt List Fix + Notifications Settings 500 + Live Key-Info Coordinated Fixes + Data-Partner Research (Pending Deploy)
+
+### Summary
+Post-deploy continuation of Session 45 (deployed at `acb598b` earlier today). Surface area:
+1. **PWA splash + maskable icon** — three rounds resolving "splash too small" then Android maskable mismatch. Final architecture: single `Collectors Chest Splash.png` 2732×2732 brand source feeds iPhone splash (cover crop into 5 device sizes) + maskable icons (192/512 straight resize). iOS apple-touch-icon untouched per user feedback.
+2. **Hunt List 400** — Add-to-Hunt-List rejected requests because data: URIs failed Zod `.url()` validation. Added `sanitizeCoverImageUrl` before request.
+3. **Notifications Settings 500 diagnosis** — `/settings/notifications` returning 500 due to PROD-missing columns from a Jan 27 migration that never ran. Catch-up SQL placed in clipboard for user to run.
+4. **Comic data partner research** — `docs/DATA_PARTNERS.md` (~360 lines), `docs/PRICECHARTING_PROPOSAL.md` (Aponte-shareable, ~110 lines, $499/yr Legendary tier brief), `docs/BARCODE_RESEARCH.md` (hybrid UPC mapping recommendation).
+5. **Live key-info bug — three coordinated fixes** across `con-mode-lookup` AI fallback, history persistence + cover preservation, and Comic Vine dead-code removal.
+6. **Cover-image preservation product rule** established and audited as a durable feedback memory.
+7. **27 Notifications Inbox manual tests walked through** earlier in the session — most passed; flash regression fixed; ?focus= deep-link fixed; em-dash purge across 77 source files + `docs/CLZ_COMPARISON_BRIEF.md`.
+
+Three deploys queued (`63fc386`, `6f6aefe`, `69c186b`) — to be triggered after close-up-shop completes.
+
+### Features Shipped
+
+#### 1. PWA Splash + Maskable Icon Iteration 📱
+
+**Three commits across the round:**
+- `12c5fa9` — first cut: regenerated splash from a logo source. User feedback: "splash too small."
+- `64a9331` — second cut: introduced 2732×2732 brand-blue source with logo + safe zone, but Android still showed black/maskable mismatch.
+- `ce9578d` — final: single `Collectors Chest Splash.png` (2732×2732 brand-blue, logo + safe zone) feeds:
+  - **iPhone splash** via `fit: cover` center-crop into 5 device sizes (`apple-splash-*.png`)
+  - **Maskable icons** (192/512) via straight resize from the same source
+  - **iOS apple-touch-icon and other PWA icons left untouched** per user feedback ("you also changed the icon — I did not ask for that")
+
+Final result confirmed by user: "THIS IS PERFECT! App icon changed but for the better. Splash screen, also PERFECT!"
+
+Pattern saved as durable feedback memory `project_pwa_splash_pattern.md` so future splash regenerations don't drift the apple-touch-icon.
+
+#### 2. Hunt List 400 — data: URI Sanitize Before Request 🐛
+
+**Reported:** Add-to-Hunt-List was rejecting requests with a 400.
+
+**Root cause:** Zod validator on the request body used `.url()` on `coverImageUrl`. The Key Hunt result page sometimes carries a data: URI (compressed scan thumbnail) which `.url()` accepts but the downstream Supabase write rejects, OR Zod's `.url()` rejects long data: URIs depending on length. Either way: data: URIs aren't valid for the Hunt List storage path.
+
+**Fix:** Imported `sanitizeCoverImageUrl` from the shared cover-URL helper and applied it to the cover URL before building the request body. Strips data: URIs, returns the cleaned http(s) URL when one exists, else null.
+
+**Diagnostic script kept:** `scripts/debug-key-hunt-flow.ts` — tests 13 AI title variants for UF#4. 10/13 hit, 3 miss (e.g. inline-issue, extra-suffix). Useful for future drift audits.
+
+**Commit:** `4fe71cd`
+
+#### 3. Notifications Settings 500 — PROD Migration Catch-Up 🔧
+
+**Reported:** `/settings/notifications` returned 500 in PROD.
+
+**Diagnosis:** Wrote `scripts/debug-notification-prefs.ts` for per-column existence check against the `profiles` table. Found that `msg_push_enabled` and `msg_email_enabled` columns are missing from PROD — the Jan 27, 2026 messaging Phase 4 migration `20260127_messaging_phase4.sql` never ran on PROD. Local schema has them; PROD doesn't; settings-page query trips on the missing columns and returns 500.
+
+**Resolution:** Catch-up SQL copied to clipboard for user to run in Supabase SQL Editor before the next deploy. No code change needed — this is a migration-not-applied issue, not a code bug.
+
+#### 4. Comic Data Partner Research — Three Docs (Doc-Only) 📚
+
+**No code commits — research docs only.** Created in response to GoCollect (Feb 2026) and Marvel Developer (Feb 2026) API discontinuations leaving us thin on pricing + metadata sources beyond eBay Browse.
+
+**Created:**
+- `docs/DATA_PARTNERS.md` (~360 lines) — landscape map: eBay Browse, CovrPrice (2027 roadmap), GoCollect (discontinued), Marvel (deprecated), ZenRows (deferred post-launch), Ximilar, PriceCharting, Apify GoCollect Scraper. Each entry: status, cost, fit, risk, decision.
+- `docs/PRICECHARTING_PROPOSAL.md` (~110 lines, Aponte-shareable) — decision brief on the $499/yr Legendary tier. Year-1 ramp ~180 scans/day fits within the tier's quota.
+- `docs/BARCODE_RESEARCH.md` — hybrid UPC mapping recommendation (UPC database lookup + curated mapping fallback for older books without UPCs).
+
+**ROI framing course-corrected mid-session.** Initial draft of PriceCharting brief said "breaks even at 90 scans" by comparing to Anthropic AI per-scan cost. User pushed back: that's an apples-to-oranges comparison (PriceCharting replaces sales-data lookups, not cover-recognition AI). Reframed honestly: **"$499 is a quality investment in better pricing data, not cost-savings."** Saved as a lesson for future ROI comparisons.
+
+#### 5. Live Key-Info Bug — Three Coordinated Fixes 🔑
+
+##### 5a. `/api/con-mode-lookup` no-data path — AI keyInfo fallback (commit `63fc386`)
+
+**Root cause:** The eBay-found path called `fetchKeyInfoFromAI()` on a curated DB miss. The no-data path didn't. So slabbed scans of unaliased titles (e.g. "Ultimate Fallout: Spider-Man No More" coming back from a CGC cert as the indicia title) silently dropped the KEY ISSUE chip — the curated DB missed (no alias for that exact spelling) AND the no-data branch had no AI rescue.
+
+**Fix:**
+- Mirrored the `fetchKeyInfoFromAI()` rescue from the eBay-found path into the no-data branch
+- Bumped `ai_calls_made` so cost tracking stays honest
+- Added `[keyinfo-drift]` breadcrumb log when curated misses but AI rescues (mirrors the Session 45 telemetry pattern, now fires in all three result paths instead of two)
+
+##### 5b. `KeyHuntHistoryEntry` keyInfo persistence + cover preservation (commit `6f6aefe`)
+
+**Three problems bundled into one commit:**
+
+(a) **History entries never stored keyInfo.** Tapping a recent scan in the history drawer dropped the KEY ISSUE chip — even when the live result had shown it. The history record was lossy.
+
+(b) **Refresh / New Grade wiped cover image.** Re-lookup on refresh/regrade didn't carry `pendingComic.coverImageUrl` through, so the cover briefly disappeared and could be replaced by an AI-derived URL.
+
+(c) **`handleAddFromHistory` had `keyInfo: []` hardcoded.** When the user added a comic to their collection from a history entry, keyInfo was silently dropped even when present in the source row.
+
+**Fixes:**
+- Added `keyInfo` + `keyInfoMeta` to the `KeyHuntHistoryEntry` interface
+- Persisted them at the `addToKeyHuntHistory` call site
+- Rendered the chip in `KeyHuntHistoryDetail` (mirrors live result styling)
+- Added a small "Key" badge in `KeyHuntHistoryList` rows for at-a-glance scan-back
+- Preserved `coverImageUrl` on Refresh/New Grade by passing `previousCover` through `setPendingComic`
+- Threaded `keyInfo` through Add to Collection from history (`handleAddFromHistory` no longer hardcodes `[]`)
+- Aligned `keyInfoMeta.matchedYear` to `number | null` end-to-end across `LookupResult` / `KeyHuntPriceResult` / `KeyHuntHistoryEntry` (was inconsistent; some sites had `number | undefined`)
+
+##### 5c. Comic Vine dead-code removal (commit `69c186b`)
+
+**Audit findings:**
+- `/api/quick-lookup` route had no callers anywhere in the codebase
+- `COMIC_VINE_API_KEY` env var was never set in any environment
+- PWA "Quick Lookup" shortcut in `manifest.json` pointed to a non-existent `/quick-lookup` page (would 404 if a user tapped the home-screen shortcut)
+- Service worker pre-cached the dead `/api/quick-lookup` endpoint
+
+**Removed:**
+- `src/app/api/quick-lookup/route.ts` (~250 lines)
+- `"comicvine"` from the `CoverPipelineResult.coverSource` union
+- Dead PWA shortcut from `manifest.json`
+- `/api/quick-lookup` from `sw.js` `CACHEABLE_API_ROUTES`
+
+Historical design docs in `docs/plans` and `docs/engineering-specs` left in place for archival.
+
+#### 6. Cover-Image Preservation Product Rule 🖼️
+
+**User stated:** "We should never replace the image of the user's uploaded book unless they manually do it via the book edit details."
+
+**Audit confirmed the rule already holds at the data layer:**
+- Only `updateComic` (in `db.ts:235`) writes the user's `comics.cover_image_url`
+- That call is reachable only from the collection-edit flow (book details form)
+- "Risky" API paths (`quick-lookup` — now removed; `con-mode-lookup`) write to `comic_metadata` (the shared catalog cache), NOT the user's per-instance row
+
+So the rule was already enforced, but not previously articulated. Saved as durable feedback memory so future API-path changes don't accidentally cross the line.
+
+#### 7. Notifications Inbox Manual Test Pass (27 cases) + Em-Dash Purge ✅
+
+**Walked through the 27 manual test cases** added during Session 42d for the Notifications Inbox v1. Most passed on first walk-through. Two regressions surfaced and were fixed:
+- **Flash regression on cache banner.** `showCacheBanner` semantics were too loose — it fired on any cache-hit even when the live fetch succeeded. Tightened to only `true` when a fresh fetch fails AND cached data exists.
+- **`?focus=` deep-link not highlighting.** UUID gate + `requestAnimationFrame` + `ring-4` + `bg-blue-100` + 2.5s highlight added. Was previously instant-on-instant-off due to scroll-into-view firing before the row paint.
+
+**Em-dash purge across 77 source files + `docs/CLZ_COMPARISON_BRIEF.md`.** Replaced em-dashes (—) and en-dashes (–) with appropriate hyphens or "to" depending on context. Style consistency pass — em-dashes had crept in over the last few sessions.
+
+### Files Modified / Created
+
+**Created:**
+- `docs/DATA_PARTNERS.md`
+- `docs/PRICECHARTING_PROPOSAL.md`
+- `docs/BARCODE_RESEARCH.md`
+- `scripts/debug-key-hunt-flow.ts`
+- `scripts/debug-notification-prefs.ts`
+- `Collectors Chest Splash.png` (2732×2732 brand source)
+- 5 × `apple-splash-*.png` device-size variants
+- 192px + 512px maskable icon variants
+
+**Modified:**
+- `src/app/api/con-mode-lookup/route.ts` — AI keyInfo fallback in no-data branch + `[keyinfo-drift]` breadcrumb across all three paths
+- `src/app/key-hunt/page.tsx` — `LookupResult.keyInfoMeta.matchedYear` aligned to `number | null`; `handleAddFromHistory` keyInfo threading; cover preservation on Refresh/New Grade
+- `src/components/KeyHuntPriceResult.tsx` — `keyInfoMeta.matchedYear` type alignment
+- `src/components/KeyHuntHistoryDetail.tsx` — KEY ISSUE chip render
+- `src/components/KeyHuntHistoryList.tsx` — small "Key" badge in row
+- `src/types/keyHunt.ts` (or equivalent) — `KeyHuntHistoryEntry` interface gains `keyInfo` + `keyInfoMeta`
+- `src/lib/keyHuntHistory.ts` (or equivalent) — `addToKeyHuntHistory` persists keyInfo + keyInfoMeta
+- `src/components/HuntListAddButton.tsx` (or equivalent caller) — `sanitizeCoverImageUrl` applied before request
+- `public/manifest.json` — Quick Lookup shortcut removed; maskable icons updated
+- `public/sw.js` — `/api/quick-lookup` removed from `CACHEABLE_API_ROUTES`
+- `src/types/coverPipeline.ts` (or equivalent) — `coverSource` union drops `"comicvine"`
+- `src/components/notifications/NotificationsInbox.tsx` — `showCacheBanner` semantics tightened; `?focus=` highlight via UUID gate + RAF + ring-4 + bg-blue-100 + 2.5s
+- 77 source files — em-dash → hyphen/word style pass
+- `docs/CLZ_COMPARISON_BRIEF.md` — em-dash purge
+
+**Deleted:**
+- `src/app/api/quick-lookup/route.ts` (~250 lines)
+
+### Migrations Applied to Supabase Before Deploy
+
+**Outstanding (user must run before deploy):** Catch-up for `20260127_messaging_phase4.sql` to add `msg_push_enabled` + `msg_email_enabled` columns to PROD `profiles` table. Catch-up SQL placed in clipboard.
+
+### Issues Encountered & Resolved
+
+- **Splash regen accidentally changed apple-touch-icon.** Round 1 regenerated all icons from a logo source, including the iOS home-screen icon — user only asked for splash. Resolved in round 3 by isolating the source: brand-blue 2732×2732 feeds splash + maskable, iOS apple-touch-icon left untouched. Memory captured.
+- **PriceCharting ROI miscalculation.** Initial draft compared $499/yr to Anthropic AI per-scan cost ("breaks even at 90 scans"). User pushed back — the comparison is bogus because PriceCharting and AI cover-recognition are separate cost lines. Reframed honestly to "quality investment, not cost-savings."
+- **PROD-missing migration columns surfaced via 500.** `/settings/notifications` 500 was a non-obvious migration-not-applied issue. Resolved by per-column existence diagnostic script + clipboard catch-up SQL. No code change.
+- **Em-dashes had quietly crept into 77 files** over the last several sessions. Style pass before close-up-shop.
+
+### BACKLOG follow-ups
+- 1 entry implicit: future PriceCharting integration if Aponte agrees to fund the $499/yr (post-meeting decision).
+- Catch-up SQL run on PROD must be confirmed before deploy of 6f6aefe / 69c186b (the deploys themselves are independent of the migration, but the Notifications Settings 500 won't clear until the SQL runs).
+
+### Memory updates this session
+- `project_pwa_splash_pattern.md` — single 2732×2732 brand source for splash + maskable; apple-touch-icon untouched.
+- Cover-image preservation rule — only collection-edit flow writes `comics.cover_image_url`; API paths write `comic_metadata` (shared cache) only.
+
+### Where We Left Off
+
+Three commits queued for deploy: `63fc386` (con-mode-lookup AI keyInfo fallback), `6f6aefe` (history keyInfo persistence + cover preservation), `69c186b` (Comic Vine dead-code removal). User to:
+1. Run catch-up SQL in Supabase SQL Editor for the `msg_push_enabled` + `msg_email_enabled` columns (clipboard-loaded).
+2. Trigger deploy after close-up-shop completes.
+
+### Changes Since Last Deploy
+
+Three commits accumulated since `acb598b` (Session 45 deploy earlier today):
+- `63fc386` — `/api/con-mode-lookup` no-data path AI keyInfo fallback + drift breadcrumb
+- `6f6aefe` — `KeyHuntHistoryEntry` keyInfo persistence + cover preservation on Refresh/New Grade + history-add keyInfo threading
+- `69c186b` — Comic Vine dead-code removal (`/api/quick-lookup` route + manifest shortcut + sw.js cache entry + coverSource union)
+
+Plus PWA splash + maskable icon binaries (`12c5fa9`, `64a9331`, `ce9578d`) and Hunt List `data:` sanitize fix (`4fe71cd`).
+
+**Status:** Ready to deploy (pending PROD migration catch-up SQL run by user).
+
+---
+
 ## May 6, 2026 (Wednesday) - Session 45: alias mechanism + sniping protection + ending-soon reminders + PWA splash + 14 BACKLOG closures (Deployed May 6, 2026 — commit `acb598b`)
 
 ### Summary

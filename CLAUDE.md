@@ -286,9 +286,7 @@ When I say **"revert technopathy"**, revert ALL of the following changes back to
 - CURRENT: `disclaimer = "Technopathic estimate - actual prices may vary.";`
 - REVERT TO: `disclaimer = "AI estimate - actual prices may vary.";`
 
-**12. `/src/app/api/quick-lookup/route.ts` (line ~207)**
-- CURRENT: `disclaimer: "Technopathic estimates based on market knowledge."`
-- REVERT TO: `disclaimer: "AI-estimated values based on market knowledge."`
+_(Item 12 — `/src/app/api/quick-lookup/route.ts` — removed in Session 45b. The orphan Comic Vine route was deleted along with its disclaimer string.)_
 
 ### Revert Process:
 1. Read each file listed above

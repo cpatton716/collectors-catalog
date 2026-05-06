@@ -5,6 +5,8 @@
 **Backlog Items:** #7 (Cover Validation: Test Coverage for Error Paths), #8 (Cover Validation: Distinguish "No Cover" from "Unavailable")
 
 > **Apr 23, 2026 update:** Metron verification was fully removed from the scan flow this session. The `"metron"` value in the `coverSource` union type below is retained only to keep legacy cached rows valid — no new rows are written with that source. The `validated` field semantics below are unchanged.
+>
+> **May 6, 2026 update (Session 45b):** Comic Vine integration was retired in commit `69c186b`. The `"comicvine"` value was removed from the `coverSource` union type entirely. The orphan `/api/quick-lookup` route, dead PWA shortcut, and stale service-worker cache entry were all deleted alongside it. Sections of this spec referencing Comic Vine as a cover source are historical and no longer reflect the live pipeline.
 
 ---
 

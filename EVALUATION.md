@@ -2,7 +2,7 @@
 
 > Launch readiness scorecard. See `BACKLOG.md` for open work items and `DEV_LOG.md` for session history.
 
-*Last Updated: May 6, 2026*
+*Last Updated: May 6, 2026 (Session 45b)*
 
 ---
 
@@ -10,7 +10,7 @@
 
 Collectors Chest is a comic book collection tracking app with AI-powered cover recognition and a new auction marketplace feature. The app is currently in **Private Beta** with public registration disabled.
 
-**Overall Score: 9.6/10** (up from 9.5/10 — Session 44 (May 5, 2026) closed a production-affecting Second Chance "Offer to Runner-up" RLS-anon-read bug in `getAuctionSecondChanceState` (anon `supabase` client → `supabaseAdmin`), fixed Key Hunt missing key-issue chips on scanned books across both UI wiring and a new three-tier data resolver (curated DB → cache → eBay+AI), expanded the curated `keyComicsDatabase.ts` from 404 → 1,130 entries (+726 net-new canonical keys, years normalized to series-start), added a reusable `CoverLightbox` full-screen viewer wired into Key Hunt, and shipped an admin-only tablet "slide" page at `/admin/clz-comparison` for convention-floor competitive talking points. Authored partner-shareable `docs/CLZ_COMPARISON_BRIEF.md` (verified CLZ pricing, feature comparison, data-partnership talking points). Clerk dashboard username rules tightened. 773/773 tests passing throughout.)
+**Overall Score: 9.6/10** (Session 45b (May 6, 2026) closed the remaining keyInfo gap — `/api/con-mode-lookup` no-data path now calls AI for keyInfo on curated DB miss (mirrors eBay-found path), so slabbed CGC scans of unaliased titles like "Ultimate Fallout: Spider-Man No More" no longer silently drop the KEY ISSUE chip. `KeyHuntHistoryEntry` now persists `keyInfo` + `keyInfoMeta` so tapping a recent scan keeps the chip; Refresh / New Grade preserves the user's cover image instead of letting eBay's null overwrite. ~297 lines of dead Comic Vine code removed (orphan `/api/quick-lookup` route, dead PWA shortcut, stale service-worker cache entry, "comicvine" from `CoverPipelineResult` union). Cover-image preservation product rule established and audited end-to-end: `comics.cover_image_url` is only mutated by manual edit. 825/825 tests passing. Session 45 (earlier May 6) had previously closed the Second Chance RLS-anon bug and shipped the alias mechanism + sniping protection + ending-soon reminders + PWA splash.)
 
 **Current Status: PRIVATE BETA**
 - Site is live at collectors-chest.com
@@ -51,7 +51,7 @@ _(No open Medium items. Hottest Books was removed from scope Apr 22, 2026 — se
 
 ## 1. Code Quality & Technical Debt
 
-**Score: 9.4/10** (up from 9.3/10 — Session 44 surfaced a recurring RLS-anon-read pattern via the Second Chance bug fix in `auctionDb.ts` (`getAuctionSecondChanceState` switched from anon `supabase` to `supabaseAdmin`), reinforcing the "Clerk-authed reads of RLS-protected tables must use admin client" pattern across the data layer. Also added: reusable `CoverLightbox.tsx` component, three-tier Key Hunt resolver (curated DB → cache → eBay+AI) consolidating logic in `con-mode-lookup/route.ts`, +726 curated key comic entries with normalized series-start year convention. 773/773 tests passing across 50 suites.)
+**Score: 9.5/10** (up from 9.4/10 — Session 45b removed ~297 lines of dead Comic Vine code (orphan `/api/quick-lookup` route + PWA shortcut + service-worker entry + `"comicvine"` literal in `CoverPipelineResult` union); aligned `keyInfoMeta.matchedYear` to `number | null` end-to-end across `LookupResult`, `KeyHuntPriceResult`, `KeyHuntHistoryEntry`; symmetrized AI keyInfo fallback across `con-mode-lookup` paths so the no-data branch matches the eBay-found branch. 825/825 tests passing across 54 suites.)
 
 ### Issues Status
 
@@ -146,7 +146,7 @@ See BACKLOG.md for open auction/marketplace work.
 
 ## 4. User Experience & Onboarding
 
-**Score: 8.4/10** (up from 8.2/10 — Session 44 Key Hunt now surfaces canonical KEY ISSUE chips on scanned books (yellow chips rendered via `KeyHuntPriceResult.tsx` driven by curated `keyComicsDatabase.ts`, now 1,130 entries). Cover lightbox component (`CoverLightbox.tsx`) wired into Key Hunt result lets users tap-to-zoom on grainy convention-floor scans. Both materially improve the convention-floor decision-making UX.)
+**Score: 8.5/10** (up from 8.4/10 — Session 45b made the KEY ISSUE chip stick: persisted into `KeyHuntHistoryEntry` so it survives history-tap; small "Key" badge in history list rows; live no-data scans now also rescue keyInfo via AI when curated DB misses, closing the slabbed-cover hole. Refresh / New Grade now preserves the user's photo instead of replacing it with the eBay placeholder ("?" image). New product rule: user-uploaded `comics.cover_image_url` is only mutated by manual edit — durable across all future cover-touching code paths.)
 
 ### Guest Experience Flow
 1. Land on home page → see features & "How It Works"
@@ -270,7 +270,7 @@ See BACKLOG.md for open auction/marketplace work.
 
 ## 8. Feature Completeness
 
-**Score: 9.6/10** (up from 9.5/10 — Session 44: Key Hunt now surfaces canonical KEY ISSUE chips backed by an expanded curated database (404 → 1,130 entries, +726 net-new keys, years normalized to series-start), three-tier resolver (curated → cache → eBay+AI) ensures stale cache rows can no longer hide key-issue context. Reusable cover lightbox added. Admin-only `/clz-comparison` tablet "slide" page shipped for convention-floor competitive talking points.)
+**Score: 9.7/10** (up from 9.6/10 — Session 45b closed the last keyInfo asymmetry: both branches of `/api/con-mode-lookup` (eBay-found AND no-data) now call AI on curated miss, so slabbed CGC scans of unaliased titles consistently surface the chip. Key Hunt history persists keyInfo + keyInfoMeta. Cover preservation rule documented and enforced.)
 
 | Feature | Status |
 |---------|--------|

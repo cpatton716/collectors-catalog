@@ -2,6 +2,8 @@
 
 > **Apr 23, 2026 update:** Metron was fully removed from the scan flow this session. The `"metron"` literal in the `coverSource` union below is kept only to keep legacy cached rows valid — no new rows are written with that source. Task list below is otherwise unchanged.
 
+> **May 6, 2026 update (Session 45b):** Comic Vine was likewise removed (commit `69c186b`). `"comicvine"` was dropped from the `coverSource` union entirely (no legacy rows used it). Any Comic Vine references below are historical only.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Add `validated` boolean to `CoverPipelineResult` so callers can distinguish "no cover found" (definitive) from "Gemini unavailable" (transient), and add comprehensive error path tests.

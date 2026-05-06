@@ -2,7 +2,7 @@
 
 > Reference document for spec doc creation. Each feature below should get its own detailed spec document through individual review sessions.
 >
-> **Last Updated:** April 23, 2026 — Sessions 38 + 39 + 40 (a–e)
+> **Last Updated:** May 6, 2026 — Session 45b
 
 ---
 
@@ -43,6 +43,21 @@ Four-source waterfall for finding covers: Community covers → eBay listing imag
 **Session 39 addition — Aspect-ratio guard:** `src/lib/coverCropValidator.ts` rejects AI-returned crop coordinates outside the comic-book aspect range (0.55-0.85 w/h). Runs at the top of `harvestCoverFromScan` so out-of-range crops don't pollute the cover cache. 16 unit tests.
 
 **Key files:** `src/lib/coverValidation.ts`, `src/lib/coverImageDb.ts`, `src/lib/coverHarvest.ts`, `src/lib/coverCropValidator.ts`, `src/app/api/cover-images/route.ts`
+
+---
+
+## 3b. Cover-Image Preservation Rule (durable invariant)
+
+A small but load-bearing rule, codified in Session 45b after a Key Hunt regression where a user-snapped cover was being silently replaced by an eBay placeholder during Refresh / New Grade.
+
+- **The user's per-instance cover lives in `comics.cover_image_url`.** It is the photo they took (or the cover they curated) for *their* copy of the book and is treated as user content.
+- **Only `updateComic()` in `src/lib/db.ts` writes that column,** and it is only called from the collection-edit flow. No scan, no lookup, no cron, no admin tool writes `comics.cover_image_url` outside that one path.
+- **API routes that fetch external covers** (eBay listing images, the cover harvest pipeline, slab cover-only harvest, etc.) write to `comic_metadata.cover_image_url` — the shared catalog cache — never the user's `comics` row.
+- **Refresh / New Grade flows in Key Hunt** thread the existing `coverImageUrl` through the lookup so a fresh call that returns no listings (and therefore no eBay image) doesn't cause the UI to fall back to a placeholder.
+
+**This rule is durable.** Any new code path that touches `coverImageUrl` — new scan modes, sync jobs, repair tools, future native-app flows — must respect the boundary: scrape/harvest results land in `comic_metadata`, the user's photo stays put in `comics`.
+
+**Key files:** `src/lib/db.ts` (`updateComic()` — sole writer of `comics.cover_image_url`), `src/app/key-hunt/page.tsx` (`setPendingComic` cover passthrough), `src/lib/coverImageDb.ts` (`comic_metadata` writers).
 
 ---
 
@@ -95,6 +110,8 @@ HTML scraping of grading company websites → structured data extraction (grade,
 ## 8. Barcode Detection & Catalog System
 AI extracts 12-17 digit UPC → parsed into prefix/item/check/addon components → variant extracted from digits 16-17 → crowd-sourced `barcode_catalog` lookup → low-confidence entries queued for admin review in `admin_barcode_reviews`.
 
+**Session 45b (May 6, 2026) — Comic Vine integration retired.** The `/api/quick-lookup` route (Comic Vine barcode-fallback), the `COMIC_VINE_API_KEY` env var, the "Quick Lookup" PWA shortcut in `manifest.json`, and the service-worker cache entry for `/api/quick-lookup` were all removed in commit `69c186b` (~250 lines deleted). Comic Vine's API was unreliable for new releases and the curated key DB + crowd-sourced `barcode_catalog` cover the same gap with better data quality. Crowd-sourced barcode catalog is now the only post-AI fallback path.
+
 **Key files:** `src/app/api/analyze/route.ts`, `src/lib/db.ts` (barcode catalog functions)
 
 ---
@@ -127,7 +144,7 @@ Dedicated scan pipeline for slabbed/graded comics that bypasses standard cover r
 
 ## 10. Key Hunt (Convention Mode)
 
-Mobile-first quick-lookup designed for the convention floor: scan a cover, get title + grade-aware price + key-issue context in 2-3 seconds, with graceful degradation when WiFi is unreliable. Updated extensively in Session 44 (May 5, 2026).
+Mobile-first quick-lookup designed for the convention floor: scan a cover, get title + grade-aware price + key-issue context in 2-3 seconds, with graceful degradation when WiFi is unreliable. Updated extensively in Session 44 (May 5, 2026) and again in Session 45b (May 6, 2026 — history persistence + cover preservation).
 
 ### End-to-end flow
 
@@ -164,7 +181,7 @@ Mobile-first quick-lookup designed for the convention floor: scan a cover, get t
   - `saveComicMetadata` persists the full result back to Supabase for next time
   - Return to client
 
-  **3c. No eBay data → graceful fallback.** Returns `priceData: null` + `totalListings` + `ebaySearchQuery` so the client can render "X active listings on eBay" link instead of a price. **Curated key info still surfaces** (Session 44 — `lookupKeyInfo` consulted on this path too).
+  **3c. No eBay data → graceful fallback.** Returns `priceData: null` + `totalListings` + `ebaySearchQuery` so the client can render "X active listings on eBay" link instead of a price. **Curated key info still surfaces** (Session 44 — `lookupKeyInfo` consulted on this path too). **Session 45b — AI rescues curated misses on this path:** if `lookupKeyInfo()` returns nothing, the no-data branch now calls `fetchKeyInfoFromAI()` (mirroring 3b's behavior) so slabbed scans whose CGC cert title doesn't match a curated alias (e.g. "Ultimate Fallout: Spider-Man No More") still get the KEY ISSUE chip when there are zero eBay listings. Logged with the `[keyinfo-drift]` breadcrumb so the gap can be backfilled into `keyComicsDatabase.ts`.
 
 **Step 4 — Client receives result, caches, renders.**
 - `page.tsx:283` builds `LookupResult { title, issue, grade, price, keyInfo, coverImageUrl, source, ... }`
@@ -207,6 +224,14 @@ Mobile-first quick-lookup designed for the convention floor: scan a cover, get t
 
 **Expansion path.** Curated DB is consulted by both `/api/analyze` (regular collection scans) and `/api/con-mode-lookup` (Key Hunt). Future entries will come from scan-data-driven gap mining (`npm run keys:gaps` tooling, planned post-launch — see BACKLOG "Expand Curated Key Info DB"). The DB also feeds the planned ETL for "Pre-populate Top Comics Cache" so seeded `comic_metadata` rows get correct `key_info` from day one.
 
+### Session 45b (May 6, 2026) — History persistence + cover preservation
+
+**Key info now persists in scan history.** The `KeyHuntHistoryEntry` interface in `src/lib/offlineCache.ts` was extended with `keyInfo` + `keyInfoMeta`, so curated key facts survive across the localStorage history (30-day TTL). Renders as a "Key" badge in `KeyHuntHistoryList` (one-line preview) and as full chips in `KeyHuntHistoryDetail`. Entries written before the May 6, 2026 deploy lack the field — natural attrition handles them as the 30-day TTL expires.
+
+**Refresh / New Grade preserves the user's cover image.** When the user re-runs a lookup at a different grade or refreshes pricing on an existing result, the prior `coverImageUrl` is now threaded through `setPendingComic` so the lookup pipeline doesn't fall back to an eBay null/placeholder when the new query has no fresh listings. Fixes the visual regression where a user-photographed cover would suddenly switch to a generic image after Refresh.
+
+**Add to Collection from history now passes `keyInfo`.** Previously the history → collection hand-off hardcoded `keyInfo: []`, dropping the curated facts. Now the persisted `keyInfo`/`keyInfoMeta` flow into the collection-entry form so the new `comics` row inherits the correct key context.
+
 ### Wishlist (Hunt List)
 
 Premium feature. `key_hunt_lists` table tracks comics the user is hunting. Add-to-list button on result modal. Future enhancement: price-drop notifications when a hunted issue's eBay listing data hits a target.
@@ -218,8 +243,9 @@ Premium feature. `key_hunt_lists` table tracks comics the user is hunting. Add-t
 - `src/app/api/con-mode-lookup/route.ts` — three-tier price + key-info resolver (cache → eBay+curated/AI → fallback)
 - `src/lib/keyComicsDatabase.ts` — 945-entry curated key-issue DB + `lookupKeyInfo()` + `resolveEntry()`
 - `src/components/KeyHuntPriceResult.tsx` — result modal, KEY ISSUE chips, lightbox trigger
+- `src/components/KeyHuntHistoryList.tsx` / `KeyHuntHistoryDetail.tsx` — recent-scans list + drill-down (Session 45b: render `keyInfo` badge + chips, pass `keyInfo` into Add-to-Collection)
 - `src/components/CoverLightbox.tsx` — full-screen cover viewer (Session 44)
-- `src/lib/offlineCache.ts` / `useOffline.ts` — localStorage cache and history helpers
+- `src/lib/offlineCache.ts` / `useOffline.ts` — localStorage cache and history helpers (Session 45b: `KeyHuntHistoryEntry` extended with `keyInfo` + `keyInfoMeta`)
 - `src/lib/coverValidation.ts` + `coverCropValidator.ts` — aspect-ratio guard for AI-returned crops
 
 ---
@@ -468,7 +494,7 @@ Complete state-transition log for every auction/offer/payment/shipment event. En
 
 ## 24. Input Validation Layer — Zod (Session 39)
 
-All 82 API routes validate input via a shared helper before any business logic runs.
+All API routes (~81 as of Session 45b, after `quick-lookup` was retired alongside Comic Vine) validate input via a shared helper before any business logic runs.
 
 - **Helper:** `src/lib/validation.ts` — `validateBody(request, schema)`, `validateQuery(request, schema)`, `validateParams(params, schema)`, plus reusable field schemas (`schemas.uuid` / `email` / `url` / `trimmedString` / `positiveInt` / `nonNegativeNumber`)
 - **Standardized error:** HTTP 400 with `{error: "Validation failed", details: [{field, issue}]}`
@@ -476,10 +502,10 @@ All 82 API routes validate input via a shared helper before any business logic r
 - **Scope:**
   - Marketplace + money (31 routes): auctions, offers, listings, checkout, billing, connect, trades, transactions, feedback, reputation
   - User + social + admin (32 routes): username, users, sellers, follows, messages, notifications, settings, age-verification, waitlist, email-capture, watchlist, sharing, location, admin/*
-  - Content + scan + lookup (19 routes): analyze, barcode-lookup, cert-lookup, comic-lookup, quick-lookup, import-lookup, con-mode-lookup, key-hunt, cover-*, comics, ebay-prices, titles
+  - Content + scan + lookup: analyze, barcode-lookup, cert-lookup, comic-lookup, import-lookup, con-mode-lookup, key-hunt, cover-*, comics, ebay-prices, titles (`quick-lookup` removed in Session 45b — see Section 8 / Comic Vine retirement)
 - **Dependency:** adds `zod` as a runtime dep
 
-**Key files:** `src/lib/validation.ts`, `package.json` (zod), `src/app/api/**/*.ts` (82 routes instrumented)
+**Key files:** `src/lib/validation.ts`, `package.json` (zod), `src/app/api/**/*.ts` (~81 routes instrumented after Session 45b's `quick-lookup` removal)
 
 ---
 

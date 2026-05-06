@@ -2,7 +2,9 @@
 
 > **Comprehensive map of pages, features, and service dependencies**
 
-*Last Updated: May 5, 2026 — Session 44 (Second Chance "Offer to Runner-up" RLS-anon-read bug closed in `getAuctionSecondChanceState`; Key Hunt key-issue chips wired UI-side + curated DB lookup integrated into `/api/con-mode-lookup` at all 3 result paths; new reusable `CoverLightbox` component for full-screen cover verification on Key Hunt; admin-only `/admin/clz-comparison` tablet "slide" page for convention-floor competitive talking points; `keyComicsDatabase.ts` curated DB expanded 404 → 1,130 entries (+726 net-new across 3 rounds, years normalized to series-start convention); Clerk dashboard username rules tightened (length 4-20, extended chars disabled — residual gap mitigated by webhook sanitizer); `docs/CLZ_COMPARISON_BRIEF.md` partner sales brief with verified pricing + feature comparison + data-partnership talking points authored. Session 43 + earlier context preserved below.)*
+*Last Updated: May 6, 2026 — Session 45b (Removed orphan `/api/quick-lookup` route + Comic Vine integration entirely; `KeyHuntHistoryEntry` localStorage shape gained `keyInfo` + `keyInfoMeta` fields so curated-DB key data persists across sessions; `/api/con-mode-lookup` no-data branch now calls AI for keyInfo on curated-DB miss, making both eBay-found and no-data paths symmetrical; PWA `manifest.json` "Quick Lookup" shortcut and `sw.js` precache entry removed; cover-image preservation product rule documented — user-uploaded `comics.cover_image_url` is mutated only via the manual edit flow. Session 44 + earlier context preserved below.)*
+
+*Earlier Session 44 (May 5, 2026): Second Chance "Offer to Runner-up" RLS-anon-read bug closed in `getAuctionSecondChanceState`; Key Hunt key-issue chips wired UI-side + curated DB lookup integrated into `/api/con-mode-lookup` at all 3 result paths; new reusable `CoverLightbox` component for full-screen cover verification on Key Hunt; admin-only `/admin/clz-comparison` tablet "slide" page for convention-floor competitive talking points; `keyComicsDatabase.ts` curated DB expanded 404 → 1,130 entries (+726 net-new across 3 rounds, years normalized to series-start convention); Clerk dashboard username rules tightened (length 4-20, extended chars disabled — residual gap mitigated by webhook sanitizer); `docs/CLZ_COMPARISON_BRIEF.md` partner sales brief with verified pricing + feature comparison + data-partnership talking points authored. Session 43 + earlier context preserved below.*
 
 *Earlier sessions: Apr 28, 2026 (deployed May 1) — Sessions 38 + 39 + 40 + 42d + 43 (Payment deadline enforcement, Second Chance Offers, Payment-Miss Strike System, Auction Audit Log, Zod validation across 82 routes, Email Notification Preferences, hCaptcha guest-scan protection, Cover crop validator, Clerk ↔ Supabase username sync-on-write, Metron + Hottest Books removed, seller onboarding help page, 10MB upload cap; Session 40: manual FMV refresh endpoint for owned comics, feedback rating-request moved from payment to ship, `/api/checkout` image URL guard against Supabase signed URLs + base64 data URIs, partial pricing-gate on `/sales` page (Cost + Profit columns + summary cards behind `fullStats`), outbid email now surfaces recipient's max bid, Active Bids tab column-name fix, site-wide em dash removal, mobile auction/buy-now modal image caps, Ask the Professor FAQ scroll-lock; Sessions 42d + 43: notifications + trade_matches IDOR closures with cross-cutting service-role write-scoping pattern)*
 
@@ -108,6 +110,7 @@
 | Add to Hunt List | 🗄️ 🔐 | From scan results or cover scan |
 | **Key Issue Chips (Session 44)** | 🗄️ 🤖 | Yellow KEY ISSUE tags rendered between grade and price; pulled from curated `keyComicsDatabase.ts` (1,130 entries) first, AI fallback for non-curated. Wins over stale `comic_metadata.key_info: []` rows. |
 | **Cover Lightbox (Session 44)** | 💾 | Tap thumbnail → full-screen `CoverLightbox` for variant verification; iPhone safe-area aware; Escape/backdrop tap to close. Reusable component. |
+| **History Persistence (Session 45b)** | 💾 | localStorage `KeyHuntHistoryEntry` shape gained `keyInfo?: string[]` and `keyInfoMeta?: { matchType: "exact" \| "year-resolved"; matchedYear: number \| null; totalCandidates: number }` so curated-DB key data + match provenance survive across sessions and don't have to re-query AI on history view. |
 
 ---
 
@@ -447,9 +450,8 @@ All other routes are public (unauthenticated access allowed). Individual API rou
 | Route | Method | Purpose | Services |
 |-------|--------|---------|----------|
 | `/api/analyze` | POST | Cover image analysis (multi-provider with fallback) + cover validation. Gates guest scans 4 & 5 on hCaptcha siteverify; 10MB upload cap; scan-slot reservation released on all error branches | 🤖 🤖² 🗄️ 🔴 🏷️ |
-| `/api/quick-lookup` | POST | Fast barcode + pricing | 🗄️ 🤖 |
 | `/api/comic-lookup` | POST | Title/issue lookup | 🤖 🗄️ 🔴 |
-| `/api/con-mode-lookup` | POST | Key Hunt pricing | 🏷️ 🤖 🗄️ |
+| `/api/con-mode-lookup` | POST | Key Hunt pricing. Both eBay-found and no-data branches symmetrically attach keyInfo: curated `keyComicsDatabase.ts` first, AI fallback on miss (Session 45b — previously only the eBay-found branch ran the AI fallback). | 🏷️ 🤖 🗄️ |
 | `/api/import-lookup` | POST | CSV enrichment | 🤖 🗄️ |
 | `/api/titles/suggest` | POST | Title autocomplete with abbreviation guidance | 🤖 |
 | `/api/titles/popular` | POST | Top 20 most-searched titles (cached 1hr in Redis) | 🗄️ 🔴 |
@@ -1132,6 +1134,10 @@ Seller's Stripe Express Dashboard shows incoming transfer on 2-5 day payout sche
 | `cover-images` | Auto-harvested cover images from scan results (uploaded by `coverHarvest.ts`) | Public read, service-role write |
 | `message-images` | User-uploaded message attachments | Authenticated |
 
+### Cover-Image Preservation Rule (Session 45b)
+
+User-uploaded `comics.cover_image_url` is **only** mutated via the manual edit flow (`updateComic` in `db.ts`). API responses, cover-pipeline jobs, and refresh actions write to the shared catalog cache `comic_metadata.cover_image_url` instead. The user's per-instance photo is never silently swapped — display layers fall back to the catalog cover only when the per-comic field is empty.
+
 ---
 
 ## Key npm Dependencies (Non-obvious)
@@ -1176,9 +1182,9 @@ Seller's Stripe Express Dashboard shows incoming transfer on 2-5 day payout sche
 - `NEXT_PUBLIC_POSTHOG_KEY`
 
 ### External APIs
-- `COMIC_VINE_API_KEY` (legacy - used in barcode fallback)
 - `EBAY_APP_ID`
 - `EBAY_CERT_ID`
+- ~~`COMIC_VINE_API_KEY`~~ (removed Session 45b — Comic Vine integration decommissioned alongside orphan `/api/quick-lookup` route; .env.local entry can be deleted)
 - ~~`METRON_USERNAME` / `METRON_PASSWORD`~~ (removed Session 39 — Metron integration decommissioned; .env.local entries can be deleted)
 
 ### Guest Scan Protection
@@ -1213,7 +1219,6 @@ Seller's Stripe Express Dashboard shows incoming transfer on 2-5 day payout sche
 | PostHog | Free | $0 | 1M events/mo |
 | Sentry | Free | $0 | 5K errors/mo |
 | eBay API | Free | $0 | Rate limited |
-| Comic Vine | Free | $0 | Barcode fallback in analyze, quick-lookup, con-mode-lookup |
 
 ---
 
@@ -1587,6 +1592,8 @@ Session 40 shipped as five sub-sessions (40a–40e) focused on PROD marketplace 
 | Camera Access | Live preview + capture |
 | Bottom Navigation | Auto-hide on scroll |
 | Safe Areas | iOS notch handling |
+
+**Session 45b PWA cleanup:** `public/manifest.json` no longer ships the "Quick Lookup" app shortcut, and `public/sw.js` no longer pre-caches `/api/quick-lookup` — both removed alongside the orphan route.
 
 ---
 

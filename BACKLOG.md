@@ -1,17 +1,62 @@
 # Collectors Chest Backlog
 
-## ⭐ Next Session — Main Priority (updated May 6, 2026)
+## ⭐ Next Session — Main Priority (updated May 6, 2026 post Session 45b)
 
 Lead with these when the next session opens.
 
-1. ~~**Validate Second Chance offer flow live**~~ ✅ Verified May 6, 2026 (PROD): listing modal correctly renders "didn't respond in 48 hours" copy on Giant-Size X-Men #1 — the RLS-anon read fix (Session 44) is working in production. Closed.
-2. **Validate Notifications Inbox manual TEST_CASES** (27 added Apr 27). Most are quick — tap-X-dismisses-row, mark-all-read button hidden when 0 unread, infinite scroll, focus-on-mount, NON_DELETABLE types reject delete, suspended-user DELETE returns 403. Defer the Capacitor-specific ones (push-tap deep-link, iOS safe-area) until iOS native ships. Note: Phase 1 + Phase 2 of the My Collection filter refactor (Session 43) also added new test cases — see TEST_CASES.md.
+1. **PriceCharting subscription decision** — `docs/PRICECHARTING_PROPOSAL.md` shipped Session 45b. Awaiting Aponte yes/no on $499/yr Legendary subscription before integration kicks off. See "PriceCharting Integration" entry below (status: Blocked on stakeholder).
+2. **Validate Notifications Inbox remaining manual TEST_CASES.** Defer the Capacitor-specific ones (push-tap deep-link, iOS safe-area) until iOS native ships. The 27 cases added Apr 27 were walked through in Session 45 — confirm any still-open ones land in the next testing pass.
 
-After those: pick from the standing pre-launch list below (Auction Ending Soon Reminder, FMV graceful fallback, `account.updated` webhook validation, iOS native, Apple Developer enrollment).
+After those: pick from the standing pre-launch list below (FMV graceful fallback, `account.updated` webhook validation, iOS native, Apple Developer enrollment).
 
 ---
 
 ## Pre-Launch — Critical / High Priority
+
+### PriceCharting Integration — Sold-Listing Pricing as Primary Source
+**Priority:** High (Pre-Launch — closes the active-vs-sold pricing gap before beta users see prices)
+**Status:** **Blocked on stakeholder** — `docs/PRICECHARTING_PROPOSAL.md` shipped Session 45b (May 6, 2026). Awaiting Aponte yes/no on $499/yr Legendary subscription before implementation. Vendor verified May 6 via Patton's account walkthrough.
+**Added:** May 6, 2026
+**Updated:** May 6, 2026 (Session 45b — proposal doc shipped, awaiting subscription decision)
+
+**Why this matters:** Today our pricing layer aggregates eBay Browse *active listings* (asking prices) and applies a Q1 multiplier to approximate sold prices. PriceCharting gives us *sold-listing-derived* pricing across the full CGC grade range — same data class as CovrPrice + GoCollect, available NOW, no partner gating. This is the gap users notice when comparing our prices to actual market values.
+
+**What we get with the Legendary Sub:**
+- API: 1 call/sec, token auth (`?t=<token>`)
+- CSV: full catalog daily, 1 download per 10 minutes
+- Comic grade fields: Ungraded, 4.0/4.5, 6.0/6.5, 8.0/8.5, 9.2, **9.4**, 9.8, 10.0
+- `sales-volume` (yearly units sold), `release-date`, `upc`, `epid` (eBay cross-reference)
+- Multi-publisher (Marvel, DC, Image, Indie)
+
+**Architecture (recommended):**
+
+1. **Daily CSV cron** — download full catalog at a fixed UTC time, populate our `comic_metadata.price_data` cache with PriceCharting fields. Replaces eBay-Browse-as-primary-source for cached scans. UI shows "Updated today" timestamp for transparency.
+2. **Per-scan API for cache misses** — single `/api/product` call (1/sec rate limit, plenty of headroom at any realistic scan volume). Cache the result for next time.
+3. **Keep eBay Browse as a secondary signal** — the active-listing data is still useful as "currently for sale at X" when users want to know recency, separate from FMV.
+
+**This integration solves three open BACKLOG entries simultaneously:**
+- ✅ "FMV Lookup — Graceful Fallback for Rare / Key Issues at Exact Grade" (sold-derived data doesn't suffer from thin-listing-count problems)
+- ✅ "Durable eBay Price Cache in Supabase" (replaced by PriceCharting cache — same cache concept, materially better data source)
+- ✅ "Sales Trend Graphs" prerequisite (yearly `sales-volume` + daily snapshots = time series for free)
+
+**Open verification questions (low-priority, post-subscription):**
+1. Cover image URLs in CSV?
+2. Golden Age / vintage coverage depth (test: Action Comics #1, Amazing Fantasy #15)?
+3. Daily CSV refresh time-of-day (affects when we schedule our cron)?
+
+**Cost calibration:**
+- $499/yr = $41.58/mo equivalent
+- ~70% cheaper than CovrPrice consumer add-on ($107.40/yr) which CLZ users pay
+- Materially cheaper than every other "real partner" option (Ximilar Business 100K $64/mo for recognition-only; CovrPrice 2027 API at unknown B2B pricing; GoCollect closed)
+- vs. our current $0.015/scan AI cost: $499/yr breaks even at ~33,000 scans/yr ≈ 90/day. Well below Beta projections.
+
+**Effort estimate:** 2-3 days. New `src/lib/pricecharting.ts` (API client + CSV parser), daily cron in `process-auctions/route.ts`, schema migration for new price-source provenance field, scan pipeline cache-then-API fallback, env var `PRICECHARTING_API_TOKEN` (add to `.env.local` + Netlify before deploy).
+
+**Related:**
+- `docs/DATA_PARTNERS.md` — full vendor analysis
+- BACKLOG entries this would close: FMV Lookup graceful fallback, Durable eBay Price Cache, Sales Trend Graphs (partial)
+
+---
 
 ### Native App Splash Screen — iOS + Android Capacitor Wiring
 **Priority:** High (Pre-Launch — first impression on native app launch)
@@ -1121,4 +1166,82 @@ Store eBay pricing results in Supabase with a timestamp. Before hitting the eBay
 **Added:** Apr 5, 2026
 
 Let users choose their preferred default sort method for the collection page (date added, title, issue, grade, value). Save preference in user settings. Currently defaults to date added (most recent first).
+
+---
+
+### Diagnostic Scripts Cleanup (Move or Document)
+**Priority:** Low (post-launch hygiene)
+**Status:** Pending
+**Added:** May 6, 2026 (Session 45b)
+
+Three Session 45b diagnostic scripts are committed at the top level of `scripts/` but are one-off / debugging tools, not part of any cron or build pipeline:
+- `scripts/inspect-ultimate-fallout-cache.ts`
+- `scripts/debug-key-hunt-flow.ts`
+- `scripts/debug-notification-prefs.ts`
+
+Two clean-up options:
+1. Move them to `scripts/diagnostics/` so the top-level `scripts/` directory only contains scripts referenced from `package.json` or active cron jobs.
+2. Add a "Diagnostic / one-off scripts" section to `CLAUDE.md` listing them with a one-line purpose each, so future sessions know they're non-production.
+
+Either approach is fine. Trivial cleanup, no user impact.
+
+---
+
+### Stale Key Hunt History Entries Pre-May-6 Deploy (No keyInfo Chip)
+**Priority:** Low (natural attrition over 30-day TTL)
+**Status:** Pending
+**Added:** May 6, 2026 (Session 45b)
+
+Key Hunt history entries saved before the Session 45b May 6 deploy were stored without `keyInfo` (the field wasn't being persisted). Those rows will continue to render without a key chip until they fall off via the 30-day TTL.
+
+Two options if user feedback materializes:
+1. **Backfill migration script** — re-run `lookupKeyInfo()` for each pre-May-6 history row and patch the chip in.
+2. **One-time banner** — "Recent scans without key info — clear & re-scan to refresh" displayed once on Key Hunt history.
+
+Recommended: do nothing. Natural attrition over 30 days resolves it without any work. Revisit only if multiple users complain.
+
+---
+
+### PWA iOS Splash Screen Verification (Post-Session-46 Deploy)
+**Priority:** Low (verification, not implementation)
+**Status:** Pending
+**Added:** May 6, 2026 (Session 45b)
+
+Session 45b shipped `apple-touch-startup-image` link tags in `src/app/layout.tsx` for 5 iPhone form factors. User noted the iOS splash loads too fast to see during testing. Confirm the splash actually renders post-deploy:
+- Add to Home Screen on a physical iPhone after deploy
+- Cold-launch the PWA from the home screen icon
+- Confirm the pop-blue (`#0066FF`) splash with logo appears between launch and first paint
+
+If the splash doesn't render, debug the `media` query selectors (resolution + orientation match) and verify the asset files actually deployed to `/icons/`. ~15 min verification once deploy lands.
+
+**Related:** Native App Splash Screen (separate entry — covers the Capacitor wiring for native shells).
+
+---
+
+### Apify GoCollect Scraper — Deferred Evaluation
+**Priority:** Low (Future — fallback if PriceCharting doesn't pan out)
+**Status:** Pending — only evaluate if PriceCharting subscription is rejected or proves insufficient
+**Added:** May 6, 2026 (Session 45b)
+
+Listed in `docs/DATA_PARTNERS.md` as a possible alternative pricing data source. Apify's GoCollect actor scrapes GoCollect public pages for FMV data — could fill the sold-listing-pricing gap if PriceCharting falls through.
+
+**Why deferred:**
+- PriceCharting is the preferred path (verified vendor, official API, no scraping legality questions, documented in `docs/PRICECHARTING_PROPOSAL.md`).
+- Apify scraping carries TOS risk + reliability risk (GoCollect may break the scrape at any time).
+- Only evaluate if Aponte rejects the PriceCharting subscription OR PriceCharting data quality proves inadequate post-integration.
+
+**Related:** PriceCharting Integration (Pre-Launch entry above — primary path); `docs/DATA_PARTNERS.md`.
+
+---
+
+### `comic_metadata` Write Path — Defensive Comment in db.ts:235
+**Priority:** Low (documentation only, no behavior change)
+**Status:** Pending
+**Added:** May 6, 2026 (Session 45b)
+
+Currently SAFE: writes to the shared `comic_metadata` cache table do NOT touch a user's `comics` row, so user-uploaded collection covers are never overwritten by a metadata cache update. Session 45b audit confirmed this.
+
+However, the rule isn't documented in code. Add a short comment block at `src/lib/db.ts:235` (the `comic_metadata` write site) explaining: "This table is the SHARED cache layer. User-collection-photo writes go to `comics.cover_image` — never touch that field from this code path." Prevents a future contributor from accidentally bridging the two write paths.
+
+Tiny task. ~5 minutes.
 

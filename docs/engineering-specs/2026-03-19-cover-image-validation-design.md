@@ -5,6 +5,8 @@
 **Author:** Claude + Chris Patton
 
 > **Apr 23, 2026 update:** Metron verification was fully removed from the scan pipeline this session. All references below to Metron (as a candidate source, `cover_source: 'metron'`, `metronResult.cover_image`, "no Metron cover available" fallback logic, etc.) describe historical behavior only and no longer reflect production code. The current candidate chain is: Community DB → eBay images → Open Library. `'metron'` is preserved as a legal `coverSource` enum value only for already-cached rows from before the removal — no new rows are written with that source.
+>
+> **May 6, 2026 update (Session 45b):** Comic Vine was likewise removed (commit `69c186b`). The `"comicvine"` value was dropped from the `coverSource` union, and the orphan `/api/quick-lookup` route along with its PWA + service-worker companions were deleted. Any Comic Vine references below are historical only.
 
 ## Problem
 
