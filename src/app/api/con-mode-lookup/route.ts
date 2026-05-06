@@ -329,6 +329,25 @@ export async function POST(request: NextRequest) {
       normalizedIssue,
       seriesYears?.match(/\d{4}/)?.[0] ? parseInt(seriesYears.match(/\d{4}/)![0]) : null,
     );
+    let noDataKeyInfo: string[] = noDataMatch?.keyInfo || [];
+    let noDataAiCalls = 0;
+    // Mirror the eBay-found path: when curated DB misses, ask AI directly
+    // so unaliased title variants (esp. CGC slab titles) still surface key
+    // collector facts. Without this fallback, "Ultimate Fallout: Spider-Man
+    // No More" and similar AI-supplied variants strip keyInfo silently.
+    if (noDataKeyInfo.length === 0) {
+      try {
+        noDataKeyInfo = await fetchKeyInfoFromAI(normalizedTitle, normalizedIssue);
+        if (noDataKeyInfo.length > 0) {
+          noDataAiCalls = 1;
+          console.warn(
+            `[keyinfo-drift] no-data path curated miss, AI rescued: title="${normalizedTitle}" issue="${normalizedIssue}" aiKeyInfo=${JSON.stringify(noDataKeyInfo)}`,
+          );
+        }
+      } catch {
+        // Ignore — leave keyInfo empty if AI fails.
+      }
+    }
     const result: ConModeLookupResult = {
       title: normalizedTitle,
       issueNumber: normalizedIssue,
@@ -338,7 +357,7 @@ export async function POST(request: NextRequest) {
       averagePrice: null,
       recentSale: null,
       gradeEstimates: [],
-      keyInfo: noDataMatch?.keyInfo || [],
+      keyInfo: noDataKeyInfo,
       keyInfoMeta:
         noDataMatch && noDataMatch.keyInfo.length > 0
           ? {
@@ -355,12 +374,12 @@ export async function POST(request: NextRequest) {
     };
 
     // Record scan analytics (fire-and-forget)
-    const noCostCents = estimateScanCostCents({ metadataCacheHit: false, aiCallsMade: 0, ebayLookup: true });
+    const noCostCents = estimateScanCostCents({ metadataCacheHit: false, aiCallsMade: noDataAiCalls, ebayLookup: true });
     recordScanAnalytics({
       profile_id: null,
       scan_method: "con-mode-lookup",
       estimated_cost_cents: noCostCents,
-      ai_calls_made: 0,
+      ai_calls_made: noDataAiCalls,
       metadata_cache_hit: false,
       ebay_lookup: true,
       duration_ms: Date.now() - startTime,
