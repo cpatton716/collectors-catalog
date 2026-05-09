@@ -1,6 +1,5 @@
 import {
   deriveVariantFromAddon,
-  isRichVariantName,
   isVariantAddon,
   resolveVariant,
   type CatalogLookup,
@@ -21,34 +20,12 @@ function makeParsedBarcode(overrides: Partial<NonNullable<BarcodeData["parsed"]>
 }
 
 describe("variantResolver helpers", () => {
-  describe("isRichVariantName", () => {
-    it("accepts canonical variant phrases", () => {
-      expect(isRichVariantName("Greg Capullo Variant Cover")).toBe(true);
-      expect(isRichVariantName("1:25 Ratio Variant")).toBe(true);
-      expect(isRichVariantName("Foil Cover")).toBe(true);
-      expect(isRichVariantName("Newsstand Edition")).toBe(true);
-      expect(isRichVariantName("Holofoil Edition")).toBe(true);
-    });
-
-    it("rejects bare letter labels and empty strings", () => {
-      expect(isRichVariantName("Cover B")).toBe(false);
-      expect(isRichVariantName("B")).toBe(false);
-      expect(isRichVariantName("")).toBe(false);
-      expect(isRichVariantName(null)).toBe(false);
-      expect(isRichVariantName(undefined)).toBe(false);
-    });
-
-    it("treats 3+ word names as rich (likely artist-driven)", () => {
-      expect(isRichVariantName("Jim Lee Cover")).toBe(true);
-      expect(isRichVariantName("Coipel Connecting Cover")).toBe(true);
-    });
-  });
-
   describe("isVariantAddon", () => {
     it("flags non-base addons as variants", () => {
       expect(isVariantAddon("21")).toBe(true);
       expect(isVariantAddon("31")).toBe(true);
       expect(isVariantAddon("12")).toBe(true);
+      expect(isVariantAddon("71")).toBe(true);
     });
 
     it("treats 00/01/11 as base Cover A 1st-print non-variants", () => {
@@ -67,6 +44,7 @@ describe("variantResolver helpers", () => {
     it("maps first digit 2-9 to Cover B-I", () => {
       expect(deriveVariantFromAddon("21")).toBe("Cover B");
       expect(deriveVariantFromAddon("31")).toBe("Cover C");
+      expect(deriveVariantFromAddon("71")).toBe("Cover G");
       expect(deriveVariantFromAddon("91")).toBe("Cover I");
     });
 
@@ -139,43 +117,53 @@ describe("resolveVariant", () => {
     expect(enricher).not.toHaveBeenCalled();
   });
 
-  it("keeps rich AI hint when catalog misses, skipping enrichment", async () => {
-    const enricher = jest.fn();
+  it("BARCODE TRUMPS RICH AI HINT: enriches even when AI returned a rich-looking name", async () => {
+    // The resolver must not short-circuit on AI's cover-derived hint --
+    // two physically different books can share identical cover art (e.g.,
+    // a 1st-print Capullo cover vs a 7th-printing reprint of the same art).
+    // The barcode disambiguates; trust it.
+    const enricher = jest.fn().mockResolvedValue("7th Printing");
     const deps = mockDeps({ enricher });
 
     const result = await resolveVariant(
-      { ...baseInput, aiVariantHint: "Greg Capullo Variant Cover" },
+      {
+        ...baseInput,
+        parsedBarcode: makeParsedBarcode({ addonVariant: "71" }),
+        aiVariantHint: "Greg Capullo Cover", // would have short-circuited under old logic
+      },
       deps
     );
 
-    expect(result).toEqual({ variantName: "Greg Capullo Variant Cover", source: "ai" });
-    expect(enricher).not.toHaveBeenCalled();
+    expect(result).toEqual({ variantName: "7th Printing", source: "ai" });
+    expect(enricher).toHaveBeenCalledTimes(1);
   });
 
-  it("Tier 2: enriches via AI when catalog misses + AI hint is generic", async () => {
-    const enricher = jest.fn().mockResolvedValue("Jim Lee Variant Cover");
+  it("Tier 2: enricher receives the derivedLabel computed from the addon", async () => {
+    const enricher = jest.fn().mockResolvedValue("Midnight Release Variant");
     const deps = mockDeps({ enricher });
 
-    const result = await resolveVariant({ ...baseInput, aiVariantHint: "Cover B" }, deps);
+    await resolveVariant(
+      { ...baseInput, parsedBarcode: makeParsedBarcode({ addonVariant: "71" }) },
+      deps
+    );
 
-    expect(result).toEqual({ variantName: "Jim Lee Variant Cover", source: "ai" });
     expect(enricher).toHaveBeenCalledWith({
       title: "Dark Knights Metal",
       issueNumber: "1",
       releaseYear: "2017",
       publisher: "DC Comics",
-      addonVariant: "21",
+      addonVariant: "71",
+      derivedLabel: "Cover G",
     });
   });
 
-  it("Tier 2: enriches when AI hint is null and addon implies variant", async () => {
+  it("Tier 2: returns enriched name when AI provides one", async () => {
     const enricher = jest.fn().mockResolvedValue("Andy Kubert Variant");
     const deps = mockDeps({ enricher });
 
     const result = await resolveVariant(baseInput, deps);
 
     expect(result).toEqual({ variantName: "Andy Kubert Variant", source: "ai" });
-    expect(enricher).toHaveBeenCalled();
   });
 
   it("Tier 2 skipped when addon is base (e.g. '01') -- not a variant", async () => {
@@ -195,17 +183,22 @@ describe("resolveVariant", () => {
     expect(enricher).not.toHaveBeenCalled();
   });
 
-  it("Tier 3: derives Cover-letter when catalog and AI both miss", async () => {
+  it("Tier 3: derives Cover G when catalog and AI both miss", async () => {
     const enricher = jest.fn().mockResolvedValue(null);
     const deps = mockDeps({ enricher });
 
-    const result = await resolveVariant(baseInput, deps);
+    const result = await resolveVariant(
+      { ...baseInput, parsedBarcode: makeParsedBarcode({ addonVariant: "71" }) },
+      deps
+    );
 
-    expect(result).toEqual({ variantName: "Cover B", source: "derived" });
+    expect(result).toEqual({ variantName: "Cover G", source: "derived" });
     expect(enricher).toHaveBeenCalled();
   });
 
-  it("falls back to AI hint when all tiers miss", async () => {
+  it("falls back to AI hint when no derived letter and addon is base", async () => {
+    // Addon "01" -> no derived letter, isVariantAddon=false, no enrichment.
+    // AI's hint is the only signal we have.
     const deps = mockDeps();
     const result = await resolveVariant(
       {
@@ -218,7 +211,7 @@ describe("resolveVariant", () => {
     expect(result).toEqual({ variantName: "Cover A", source: "ai" });
   });
 
-  it("survives catalog throw and continues to AI tier", async () => {
+  it("survives catalog throw and continues to derive + AI tier", async () => {
     const catalogLookup = jest.fn().mockRejectedValue(new Error("db down"));
     const enricher = jest.fn().mockResolvedValue("Mattina Variant");
     const deps = mockDeps({ catalogLookup, enricher });
@@ -233,9 +226,12 @@ describe("resolveVariant", () => {
     const enricher = jest.fn().mockRejectedValue(new Error("rate limited"));
     const deps = mockDeps({ enricher });
 
-    const result = await resolveVariant(baseInput, deps);
+    const result = await resolveVariant(
+      { ...baseInput, parsedBarcode: makeParsedBarcode({ addonVariant: "71" }) },
+      deps
+    );
 
-    expect(result).toEqual({ variantName: "Cover B", source: "derived" });
+    expect(result).toEqual({ variantName: "Cover G", source: "derived" });
   });
 
   it("does not call catalog lookup if upcPrefix is missing", async () => {

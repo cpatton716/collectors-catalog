@@ -4,22 +4,29 @@
  * `comicDetails.variant` and tags the source so the review form can surface
  * a "Detected from barcode" hint.
  *
+ * Design principle: the BARCODE is more authoritative than the AI's cover-
+ * derived hint. Two physically different books (e.g., a standard
+ * Cover A vs a 7th-printing reprint by the same artist) can share identical
+ * cover artwork but have different addon codes -- if we trust AI's cover
+ * read over the barcode, we'd label them identically. So when a parsed
+ * addon is present, the barcode-derived path always runs.
+ *
  * Tier 1 (catalog): instant + free. Looks up
  *   (upc_prefix, addon_issue, addon_variant) in barcode_catalog and returns
- *   the admin-approved variant name. As the catalog grows, most scans get
- *   here and never spend AI credits.
+ *   the admin-approved variant name. Compounds as admins approve entries.
  *
  * Tier 2 (AI enrichment): focused text-only call (~$0.0008 with Haiku).
- *   Fires only on Tier-1 miss when (a) the addon clearly indicates a variant
- *   and (b) AI's first-pass cover-derived hint is generic ("Cover B") or null.
- *   Asks the model for the canonical variant name given title + issue + year.
+ *   Fires on Tier-1 miss when the addon clearly indicates a variant.
+ *   Receives the deterministically-derived cover letter (e.g., "Cover G")
+ *   so Haiku searches its training data with a concrete query rather than
+ *   trying to decode raw addon digits.
  *
- * Tier 3 (derived): the legacy "addon[0] > 1 -> Cover A/B/C/..." mapping.
- *   Last-resort fallback when both catalog and AI come up empty.
+ * Tier 3 (derived): the addon[0] > 1 -> "Cover A/B/C/..." mapping.
+ *   Always-available fallback when catalog and AI both come up empty.
  *
- * The resolver also respects "rich" cover-derived AI hints -- if AI saw an
- * artist credit or "Variant Cover" text on the front and returned something
- * like "Greg Capullo Variant", we keep that and skip enrichment.
+ * Note: AI's first-pass cover-derived hint is only used as a final fallback
+ * when there's no parsed barcode. With a barcode present, the barcode path
+ * wins -- user can override on the review screen if they disagree.
  */
 
 import Anthropic from "@anthropic-ai/sdk";
@@ -65,25 +72,14 @@ export type VariantEnricher = (input: {
   releaseYear: string | null;
   publisher: string | null;
   addonVariant: string;
+  /** Cover letter deterministically derived from addonVariant[0] (e.g., "Cover G"). */
+  derivedLabel: string;
 }) => Promise<string | null>;
 
 // ── Heuristics ──
 
 const COVER_LETTERS = ["", "A", "B", "C", "D", "E", "F", "G", "H", "I"];
 const NON_VARIANT_ADDONS = new Set(["00", "01", "11"]);
-const RICH_NAME_PATTERN = /\b(variant|incentive|edition|foil|sketch|virgin|holofoil|newsstand|direct)\b/i;
-const RATIO_PATTERN = /\d+:\d+/;
-
-/** True when the AI hint reads like a canonical variant name (artist + variant, ratio, etc.) */
-export function isRichVariantName(name: string | null | undefined): boolean {
-  if (!name) return false;
-  if (RICH_NAME_PATTERN.test(name)) return true;
-  if (RATIO_PATTERN.test(name)) return true;
-  // Multi-word name with capitalized tokens looks artist-driven
-  const words = name.trim().split(/\s+/);
-  if (words.length >= 3) return true;
-  return false;
-}
 
 /** True when the addon-variant code suggests this isn't a base Cover A 1st print. */
 export function isVariantAddon(addonVariant: string | undefined): boolean {
@@ -91,7 +87,7 @@ export function isVariantAddon(addonVariant: string | undefined): boolean {
   return !NON_VARIANT_ADDONS.has(addonVariant);
 }
 
-/** Fallback: map the first addon digit to a generic cover letter ("Cover B"). */
+/** Map the first addon digit to a generic cover letter ("Cover G" for "71"). */
 export function deriveVariantFromAddon(addonVariant: string | undefined): string | null {
   if (!addonVariant || addonVariant.length === 0) return null;
   const firstDigit = parseInt(addonVariant[0], 10);
@@ -117,7 +113,8 @@ export async function resolveVariant(
 
   const addonVariant = parsed.addonVariant;
 
-  // Tier 1: catalog lookup (fast + free)
+  // Tier 1: catalog lookup (fast + free) -- admin-approved community names
+  // are the most authoritative source.
   try {
     const fromCatalog = await deps.catalogLookup({
       upcPrefix: parsed.upcPrefix,
@@ -132,13 +129,17 @@ export async function resolveVariant(
     // fall through
   }
 
-  // If AI already returned a rich, canonical-looking name, keep it.
-  if (isRichVariantName(input.aiVariantHint)) {
-    return { variantName: input.aiVariantHint, source: "ai" };
-  }
+  // Deterministically derive the cover letter from the addon. Used as both
+  // (a) input to the AI enricher (gives Haiku a concrete search query) and
+  // (b) the final-fallback label.
+  const derived = deriveVariantFromAddon(addonVariant);
 
-  // Tier 2: AI enrichment (only when the addon implies a real variant)
-  if (isVariantAddon(addonVariant)) {
+  // Tier 2: AI enrichment with the derived label as a hint. Fires when the
+  // addon implies a variant AND we have a derived letter to search by.
+  // We deliberately ignore aiVariantHint here -- the barcode is more
+  // authoritative, and the same cover artwork can appear on multiple
+  // printings/variants with different addon codes.
+  if (derived && isVariantAddon(addonVariant)) {
     try {
       const enriched = await deps.enricher({
         title: input.title,
@@ -146,6 +147,7 @@ export async function resolveVariant(
         releaseYear: input.releaseYear,
         publisher: input.publisher,
         addonVariant,
+        derivedLabel: derived,
       });
       if (enriched) {
         return { variantName: enriched, source: "ai" };
@@ -156,13 +158,13 @@ export async function resolveVariant(
     }
   }
 
-  // Tier 3: addon-derived generic name ("Cover B")
-  const derived = deriveVariantFromAddon(addonVariant);
+  // Tier 3: addon-derived generic name ("Cover G" for "71")
   if (derived) {
     return { variantName: derived, source: "derived" };
   }
 
-  // Final: keep AI hint if any (generic better than nothing); else null.
+  // Final: keep AI hint if any (e.g., "11" addon = no derived letter, but
+  // AI may have read "Variant Cover" text from the cover); else null.
   return {
     variantName: input.aiVariantHint,
     source: input.aiVariantHint ? "ai" : null,
@@ -229,6 +231,7 @@ export const enrichVariantNameFromAI: VariantEnricher = async ({
   releaseYear,
   publisher,
   addonVariant,
+  derivedLabel,
 }) => {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return null;
@@ -237,23 +240,28 @@ export const enrichVariantNameFromAI: VariantEnricher = async ({
   const yearPart = releaseYear ? ` (${releaseYear})` : "";
   const publisherPart = publisher ? `, published by ${publisher}` : "";
 
-  const prompt = `You are a comic book variant catalog. Identify the canonical variant name for the following book.
+  const prompt = `You are a comic book variant catalog. The user scanned a comic and we have decoded its UPC supplement to identify the variant slot.
 
 Book: ${title} #${issueNumber}${yearPart}${publisherPart}
-UPC supplement variant code: ${addonVariant}
+Variant slot from barcode: ${derivedLabel} (decoded from UPC supplement code "${addonVariant}")
 
-The 5-digit UPC supplement on Marvel/DC/Image books encodes issue + variant + printing. The variant code's last 2 digits typically indicate cover variant and printing (e.g., "21" = Cover B 1st print, "12" = Cover A 2nd print). For this book and code, what is the canonical variant name commonly used in collector databases?
+What is the canonical/official name for this specific variant in collector databases (CovrPrice, GoCollect, GCD, CGC census, etc.)?
 
-Common formats:
-- "[Artist Name] Variant Cover" (most common, e.g., "Greg Capullo Variant Cover")
-- "Cover B" / "Cover C" / etc. (when artist is unknown)
-- "1:25 Ratio Variant", "1:50 Incentive" (incentive variants)
-- "Foil Cover", "Holofoil Edition", "Sketch Variant" (special editions)
-- "Newsstand Edition", "Direct Edition" (distribution variants)
+Common formats you might return:
+- "[Artist Name] Variant Cover" (most common — e.g., "Greg Capullo Variant Cover", "Andy Kubert Variant", "Jim Lee Cover")
+- "1:25 Ratio Variant", "1:50 Incentive", "1:100 Incentive"
+- "Foil Cover", "Holofoil Edition", "Virgin Variant", "Sketch Variant", "B&W Variant"
+- "Newsstand Edition", "Direct Edition"
+- "Midnight Release Variant", "Convention Exclusive", "[Retailer] Exclusive"
+- "[N]th Printing" -- if the addon code maps to a reprint rather than a cover variant for this publisher
 
-Return ONLY a JSON object: {"variantName": "string"} or {"variantName": null}.
+Rules:
+1. Return the canonical name if you know this specific variant for THIS book.
+2. If you cannot identify it, return null -- do NOT fabricate or guess artist names.
+3. If "${derivedLabel}" is the only thing you can confidently say, return null (the resolver will fall back to "${derivedLabel}" on its own).
+4. Do not include reasoning or explanation -- only the JSON.
 
-Be conservative: if you cannot identify a specific variant for this exact issue, return null. Do not fabricate names. Do not include reasoning, just the JSON.`;
+Return ONLY a JSON object: {"variantName": "string"} or {"variantName": null}.`;
 
   try {
     const response = await client.messages.create({
