@@ -4,7 +4,7 @@ This log tracks session-by-session progress on Collectors Chest.
 
 ---
 
-## May 9, 2026 (Saturday) — Session 46: Scan Cover Persistence + 3-Tier Variant Resolver
+## May 9, 2026 (Saturday) — Session 46: Scan Cover Persistence + 3-Tier Variant Resolver (Deployed May 9, 2026 — through commit `300bef4`)
 
 ### Summary
 Two production bugs reported during the user's testing session got fixed end-to-end and shipped together:
@@ -115,10 +115,7 @@ Deploying May 9, 2026 — both fixes bundled into 3 commits (cover persistence, 
 
 ### Changes Since Last Deploy
 
-- Scan cover persistence: `comic-covers` bucket migration + `/api/comics/upload-cover` endpoint + `uploadCoverImage` helper + scan-page wire-in (signed-in users only)
-- 3-tier variant name resolver (catalog → AI → derived) + catalog guard migration + analyze-route wire-in + catalog writer extension + UI hint on review screen
-- BACKLOG entry: Admin UI for Community Variant-Name Approval Queue
-- DEV_LOG session 46 entry; TESTING_RESULTS session-start entry
+_None — Session 46 deployed May 9, 2026 (commits `aaa3fac`, `8d6cdda`, `300bef4`). Next deploy starts from `300bef4`._
 
 ---
 
