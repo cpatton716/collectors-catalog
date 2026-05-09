@@ -25,6 +25,11 @@ import { isBrowseApiConfigured, searchActiveListings, convertBrowseToPriceData, 
 import { ComicMetadata, mergeMetadataIntoDetails, buildMetadataSavePayload } from "@/lib/metadataCache";
 import { runCoverPipeline } from "@/lib/coverValidation";
 import { lookupKeyInfo } from "@/lib/keyComicsDatabase";
+import {
+  enrichVariantNameFromAI,
+  lookupApprovedVariantName,
+  resolveVariant,
+} from "@/lib/variantResolver";
 import { estimateScanCostCents, trackScanServer, recordScanAnalytics } from "@/lib/analyticsServer";
 import { harvestCoverFromScan } from "@/lib/coverHarvest";
 import { supabaseAdmin } from "@/lib/supabase";
@@ -86,6 +91,7 @@ interface ComicDetails {
   publisher: string | null;
   releaseYear: string | null;
   variant: string | null;
+  variantSource?: "catalog" | "ai" | "derived" | null;
   writer: string | null;
   coverArtist: string | null;
   interiorArtist: string | null;
@@ -722,22 +728,38 @@ export async function POST(request: NextRequest) {
           comicDetails.barcode.parsed = parsed;
 
           console.info(`[scan] Barcode parsed: raw="${comicDetails.barcode.raw}" addonIssue="${parsed.addonIssue}" addonVariant="${parsed.addonVariant}" digits=${comicDetails.barcode.raw.length}`);
-
-          // Map barcode variant code to variant field if AI didn't detect one
-          // UPC add-on digits 16-17 encode cover variant + printing info
-          // Common schemes vary by publisher:
-          //   Scheme A: 01=Cover A, 02=Cover B, 03=Cover C...
-          //   Scheme B: 11=Cover A 1st print, 12=Cover A 2nd print, 21=Cover B 1st print...
-          // We use the FIRST digit as the cover letter (1=A, 2=B, 3=C...)
-          // and only flag as variant if cover > A (first digit > 1)
-          if (parsed.addonVariant && !comicDetails.variant) {
-            const firstDigit = parseInt(parsed.addonVariant[0], 10);
-            if (firstDigit > 1 && firstDigit <= 9) {
-              const variantLetters = ["", "A", "B", "C", "D", "E", "F", "G", "H", "I"];
-              comicDetails.variant = `Cover ${variantLetters[firstDigit]}`;
-            }
-          }
         }
+      }
+
+      // Resolve the variant name via the 3-tier resolver (catalog -> AI -> derived).
+      // Runs whenever a parsed barcode is present, even if AI returned a variant --
+      // the catalog may already have a canonical community-approved name that beats
+      // AI's cover-derived guess, and rich AI hints are preserved inside the resolver.
+      if (comicDetails.barcode?.parsed?.addonVariant && comicDetails.title && comicDetails.issueNumber) {
+        const resolved = await resolveVariant(
+          {
+            title: comicDetails.title,
+            issueNumber: comicDetails.issueNumber,
+            releaseYear: comicDetails.releaseYear,
+            publisher: comicDetails.publisher,
+            parsedBarcode: comicDetails.barcode.parsed,
+            aiVariantHint: comicDetails.variant,
+          },
+          {
+            catalogLookup: lookupApprovedVariantName,
+            enricher: enrichVariantNameFromAI,
+          }
+        );
+        if (resolved.variantName !== comicDetails.variant || resolved.source) {
+          console.info(
+            `[scan] Variant resolved: "${resolved.variantName}" (source=${resolved.source}, addon=${comicDetails.barcode.parsed.addonVariant})`
+          );
+        }
+        comicDetails.variant = resolved.variantName;
+        comicDetails.variantSource = resolved.source;
+      } else if (comicDetails.variant) {
+        // No barcode signal but AI returned something -- mark it accordingly
+        comicDetails.variantSource = "ai";
       }
 
       // Ensure backward compatibility: populate barcodeNumber from barcode.raw if needed
@@ -754,6 +776,7 @@ export async function POST(request: NextRequest) {
           publisher: comicDetails.publisher,
           releaseYear: comicDetails.releaseYear,
           variant: comicDetails.variant,
+          variantSource: comicDetails.variantSource,
           writer: comicDetails.writer,
           coverArtist: comicDetails.coverArtist,
           interiorArtist: comicDetails.interiorArtist,

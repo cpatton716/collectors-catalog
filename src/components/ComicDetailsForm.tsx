@@ -719,6 +719,16 @@ export function ComicDetailsForm({
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white text-gray-900"
             placeholder="e.g., Cover B, 1:25 Ratio"
           />
+          {comic.variantSource && comic.variant && (
+            <p className="mt-1 text-xs text-blue-700 flex items-center gap-1">
+              <span aria-hidden>🔍</span>
+              {comic.variantSource === "catalog"
+                ? "Detected from community barcode catalog"
+                : comic.variantSource === "ai"
+                  ? "Detected from barcode + AI lookup — please confirm or edit"
+                  : "Derived from barcode digits — confirm or replace with the artist/variant name"}
+            </p>
+          )}
         </div>
       </div>
 

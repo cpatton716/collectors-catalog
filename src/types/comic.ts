@@ -41,6 +41,10 @@ export interface ComicDetails {
   keyInfoSource?: "database" | "cgc" | "ai" | "cache";
   // Barcode data (detected during cover scan)
   barcode?: BarcodeData | null;
+  // Where the `variant` value came from -- drives the "Detected from barcode"
+  // hint in the review form. Null when unset (no barcode, or AI returned a
+  // variant name from cover-only signals without resolver involvement).
+  variantSource?: "catalog" | "ai" | "derived" | null;
   // Cerebro-assisted scan (Gemini low-confidence fallback was used)
   cerebro_assisted?: boolean;
 }

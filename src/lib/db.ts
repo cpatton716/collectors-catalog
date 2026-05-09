@@ -137,7 +137,10 @@ export async function addComic(profileId: string, item: CollectionItem) {
     await supabase.from("comic_lists").insert(listInserts);
   }
 
-  // Catalog barcode if detected during scan (async, non-blocking)
+  // Catalog barcode if detected during scan (async, non-blocking).
+  // Includes the (post-edit) variant name + its source so the variantResolver
+  // can surface admin-approved community names on future scans of the same
+  // book. Variant submissions land as 'pending' -- see catalogBarcode().
   if (item.comic.barcode?.raw) {
     catalogBarcode({
       comicId: data.id,
@@ -148,6 +151,10 @@ export async function addComic(profileId: string, item: CollectionItem) {
       coverImageUrl: item.coverImageUrl,
       comicTitle: item.comic.title || undefined,
       comicIssue: item.comic.issueNumber || undefined,
+      variantName: item.comic.variant,
+      // If the resolver hint is missing the variant came from user input
+      // (manual typing on review screen with no AI/catalog fill-in).
+      variantSource: item.comic.variantSource ?? (item.comic.variant ? "user" : null),
     }).catch((err) => {
       console.error("[addComic] Barcode cataloging failed:", err);
     });
@@ -1081,16 +1088,34 @@ interface BarcodeCatalogEntry {
   coverImageUrl: string;
   comicTitle?: string;
   comicIssue?: string;
+  /** User-confirmed variant name (post-edit) to contribute to the community
+   *  variant catalog. Stored with status='pending' regardless of barcode
+   *  confidence -- variant names always require admin approval before they
+   *  surface in Tier-1 lookups. Pass undefined to skip variant contribution
+   *  (e.g., when source was 'catalog' -- already known). */
+  variantName?: string | null;
+  variantSource?: "user" | "ai" | "derived" | "catalog" | null;
 }
 
 /**
  * Catalog a barcode after user saves a comic to their collection.
- * High confidence barcodes are auto-approved.
+ * High confidence barcodes are auto-approved (barcode->comic mapping).
  * Low/medium confidence barcodes are flagged for admin review.
+ *
+ * Variant names are ALWAYS pending regardless of barcode confidence -- they
+ * carry user-typed text that needs admin sanity-check before community use.
  */
 export async function catalogBarcode(entry: BarcodeCatalogEntry): Promise<void> {
   try {
     const status = entry.confidence === "high" ? "auto_approved" : "pending_review";
+
+    // Skip variant_name write entirely when the resolver already pulled the
+    // name from the (admin-approved) catalog -- no need to re-submit it as
+    // pending and pollute the admin queue.
+    const includeVariantName =
+      entry.variantName != null &&
+      entry.variantName.trim().length > 0 &&
+      entry.variantSource !== "catalog";
 
     // Insert into barcode_catalog
     const { data: catalogEntry, error: catalogError } = await supabaseAdmin
@@ -1106,6 +1131,13 @@ export async function catalogBarcode(entry: BarcodeCatalogEntry): Promise<void> 
         confidence: entry.confidence,
         status,
         submitted_by: entry.submittedBy,
+        ...(includeVariantName
+          ? {
+              variant_name: entry.variantName!.trim(),
+              variant_name_source: entry.variantSource ?? "user",
+              variant_name_status: "pending",
+            }
+          : {}),
       })
       .select()
       .single();
