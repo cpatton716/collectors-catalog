@@ -4,6 +4,124 @@ This log tracks session-by-session progress on Collectors Chest.
 
 ---
 
+## May 9, 2026 (Saturday) — Session 46: Scan Cover Persistence + 3-Tier Variant Resolver
+
+### Summary
+Two production bugs reported during the user's testing session got fixed end-to-end and shipped together:
+
+1. **Scan covers were silently dropped on save.** Every signed-in user's FAB-scan saved to the collection with a `?` placeholder instead of their photo. Root cause: the data: URI from `ImageUpload` flowed straight into `cover_image_url`, where the defensive sanitizer at `db.ts:720` (correctly) rejected base64 to prevent CSV/Stripe breakage — but no upload step existed to convert it to a real URL first.
+2. **Variant detection on multi-variant scans.** User scanned 4 Dark Knights Metal #1 variants; all saved with `variant=null` and rendered as identical rows. The pipeline was wired but the existing addon-digit heuristic (`firstDigit > 1 → "Cover B"`) was brittle and stopped at generic letters — no enrichment to canonical names like "Greg Capullo Variant Cover".
+
+Both fixes are additive, non-blocking on failure, and cover guests gracefully (guests use localStorage; sanitizer only fires on DB write).
+
+### Features Shipped
+
+#### 1. Scan Cover Persistence — Supabase Storage Upload Pipeline 🖼️
+
+**Bug:** signed-in users' scan photos never reached the database. Confirmed kill chain: `ImageUpload` returns `data:image/jpeg;base64,…` → `scan/page.tsx:264` sets `coverImageUrl: imagePreview` → `db.ts:720` → `sanitizeCoverImageUrl` rejects all `data:` URIs (line 41) → DB stores `null` → "?" placeholder renders.
+
+**Fix architecture:**
+- New `comic-covers` Supabase Storage bucket (public, 10MB cap, JPEG/PNG/WebP) — see migration `20260509_comic_covers_bucket.sql`
+- New `/api/comics/upload-cover` endpoint, Clerk-auth-guarded, mirrors the `/api/messages/upload-image` pattern (multipart File → bucket upload → public URL response)
+- New `src/lib/uploadCoverImage.ts` client helper: data URI → Blob → multipart POST → public URL. Pass-through for already-hosted http(s) URLs and null inputs. Returns null on failure, never throws — caller writes null to cover_image_url and the placeholder renders (graceful degradation, scan save still succeeds).
+- `scan/page.tsx` `handleSave()` awaits the upload before constructing `newItem` (signed-in users only — guests keep their data URI in localStorage, sanitizer never fires for them).
+- 7 unit tests in `uploadCoverImage.test.ts` covering null/empty input, http(s) pass-through, successful upload, non-OK response, fetch throw, missing url field, malformed data URIs.
+
+**Backfill:** existing books already saved with null covers are unrecoverable — original photos only existed as in-memory data URIs and were never persisted anywhere. User opted to delete-and-rescan affected books to get covers back (see test plan).
+
+**Edit-cover flow gap noted but not fixed:** `ComicDetailsForm.tsx` edit-cover UI is paste-URL only (no file upload button), so the only way to give existing books their photos back is re-scan. Backlog candidate: add "Take/Upload Photo" button to edit modal using the same `uploadCoverImage` helper.
+
+**Files:**
+- NEW: `supabase/migrations/20260509_comic_covers_bucket.sql`, `src/app/api/comics/upload-cover/route.ts`, `src/lib/uploadCoverImage.ts`, `src/lib/__tests__/uploadCoverImage.test.ts`
+- MODIFIED: `src/app/scan/page.tsx`
+
+#### 2. 3-Tier Variant Name Resolver — Catalog → AI → Derived 🔑
+
+**Bug:** front-cover scans of variant comics returned `variant=null` because (a) UPC barcode was often cropped/missing from front-cover-only photos, and (b) when the barcode WAS read, the existing addon-digit heuristic at `analyze/route.ts:733-739` only worked when `firstDigit > 1` (so codes "01", "11", "12" all fell through), and even when it triggered it stopped at generic "Cover A/B/C" with no artist enrichment.
+
+**Resolver architecture (`src/lib/variantResolver.ts`):**
+- **Tier 1 — Catalog lookup (free, instant):** queries `barcode_catalog` for `(upc_prefix, addon_issue, addon_variant)` where `variant_name_status='approved'`. Returns the most-frequently-approved variant_name across submissions. Empty at launch — compounds as admin approves entries.
+- **Tier 2 — Focused AI enrichment (~$0.0008 with Haiku):** text-only call asking "What's the canonical variant name for [Title] #[Issue] ([Year]), variant code [N]?" with explicit conservatism instructions ("return null rather than fabricate"). Fires only on Tier-1 miss + barcode-confirmed-variant addon (not "00"/"01"/"11") + AI's first-pass cover hint isn't already rich.
+- **Tier 3 — Addon-derived fallback:** the legacy `addon[0] → "Cover B/C/D…"` mapping, last resort.
+- **Rich AI hints preserved:** if AI's cover analysis already returned something like "Greg Capullo Variant Cover" (matches `/(variant|incentive|edition|foil|sketch|virgin|holofoil|newsstand|direct)/i` or `\d+:\d+` ratio pattern or 3+ words), the resolver keeps it and skips Tier 2. Only generic guesses get enriched.
+- All tiers wrapped in try/catch — any failure falls through to the next tier; final fallback keeps AI's hint or returns null.
+
+**Catalog write path (per requirement: user-typed names need admin approval before community use):**
+- `db.ts:catalogBarcode` extended to accept `variantName` + `variantSource`
+- All variant-name catalog writes land with `variant_name_status='pending'` regardless of barcode confidence — separates the existing barcode→comic mapping approval (which still auto-approves at high confidence) from the variant-name approval (always pending)
+- Skips re-submission when source is `'catalog'` — already approved, no need to repollute the queue
+
+**UI hint on review screen (`ComicDetailsForm.tsx`):**
+- New `🔍 Detected from…` hint under the variant field when populated by resolver
+- Source-aware copy: "Detected from community barcode catalog" / "Detected from barcode + AI lookup — please confirm or edit" / "Derived from barcode digits — confirm or replace with the artist/variant name"
+- Field stays fully editable; user override marks the entry as `variantSource='user'`
+
+**Migration `20260509_variant_name_catalog_guard.sql`:**
+- Adds `variant_name`, `variant_name_source`, `variant_name_status` columns to `barcode_catalog`
+- Two partial indexes: `idx_barcode_catalog_variant_lookup` (Tier-1 fast path) and `idx_barcode_catalog_variant_pending` (admin queue)
+- CHECK constraints on enum values; idempotent so it's safe to re-run
+
+**21 unit tests in `variantResolver.test.ts`:**
+- Helper coverage: `isRichVariantName`, `isVariantAddon`, `deriveVariantFromAddon`
+- Each tier in isolation with mocked deps
+- Integration paths: catalog hit → catalog return; rich AI hint → kept untouched; catalog miss + generic AI hint → Tier 2 enrichment; all miss → Tier 3 derived; all miss with no addon → null
+- Failure paths: catalog throw → continues to AI; AI throw → falls to derived
+
+**Files:**
+- NEW: `supabase/migrations/20260509_variant_name_catalog_guard.sql`, `src/lib/variantResolver.ts`, `src/lib/__tests__/variantResolver.test.ts`
+- MODIFIED: `src/app/api/analyze/route.ts` (replaced lines 733-739 with resolver call; extended local `ComicDetails` interface; cached `variantSource`), `src/lib/db.ts` (`catalogBarcode` + `addComic` call site), `src/types/comic.ts` (added `variantSource` field), `src/components/ComicDetailsForm.tsx` (hint UI)
+
+#### 3. BACKLOG — Admin UI for Variant-Name Approval Queue (added)
+
+Added a Pending Enhancements entry: "Admin UI for Community Variant-Name Approval Queue". Required to bootstrap Tier-1 catalog growth (otherwise every variant scan stays in AI-paid mode forever). Schema + write path are in place; UI is the missing piece. Effort estimate ~3-4 hours, follow `admin_barcode_reviews` patterns. Index `idx_barcode_catalog_variant_pending` already added so the queue stays fast.
+
+### Migrations Run on PROD Before Deploy
+
+User confirmed both ran successfully via Supabase SQL Editor mid-session:
+1. `20260509_comic_covers_bucket.sql` — creates `comic-covers` storage bucket
+2. `20260509_variant_name_catalog_guard.sql` — adds variant_name columns + indexes to `barcode_catalog`
+
+### Test Suite
+
+**853/853 passing** across 56 suites (was 832; +21 from variantResolver, no regressions).
+
+### Quality Gates Run Pre-Deploy
+
+- `npm run check:routes` — ✓ no dynamic route conflicts
+- `npm test` — ✓ 853/853
+- `npx tsc --noEmit` — ✓ clean
+- `npm run lint` — ✓ no new errors (115 pre-existing warnings, none from this session)
+- `npm run build` — ✓ compiled successfully, 111 static pages
+- `npm run smoke-test` — ✓ homepage 200
+
+### Issues Encountered & Resolved
+
+- **Local Clerk sign-in is broken**, so manual testing of either fix had to wait for production deploy. Both fixes are designed for graceful degradation (cover upload failure → placeholder; resolver failure → null variant), so worst case is no worse than the bug we already had.
+- **Local TS shadowing surprise:** `analyze/route.ts:88` declares a LOCAL `interface ComicDetails` that shadows the import from `@/types/comic`. Adding `variantSource` to the global type alone wasn't enough; needed to extend the local one too. Caught by `tsc --noEmit` before commit.
+- **Initial scope question on Bug 2 (covers):** considered backfilling existing null-cover books from some other source (community catalog, AI-fetched covers). Concluded not possible — original photos were in-memory data URIs and are gone. User opted to delete-and-rescan affected books rather than build a manual upload flow into the edit modal. Edit-modal upload button noted as a follow-up but deferred.
+
+### Cost Impact
+
+Variant resolver Tier 2 AI cost: ~$0.0008/scan with Haiku, fires only on catalog miss + barcode-confirmed variant. At launch the catalog is empty so it'll fire on most barcode scans of variant books. Estimated $0.02-$0.07/day at current scan volumes. Compounds *down* once admin approves variant_name catalog entries (Tier 1 hits are free).
+
+### Memory updates this session
+- (none — both fixes documented in DEV_LOG and BACKLOG, no durable preferences/lessons to capture beyond what's already in the existing memory files)
+
+### Where We Left Off
+
+Deploying May 9, 2026 — both fixes bundled into 3 commits (cover persistence, variant resolver, docs). Netlify auto-deploy will trigger on push. User to verify in production by:
+1. Re-scanning a comic on mobile → confirm cover persists in collection (not "?" placeholder)
+2. Re-adding the deleted Dark Knights Metal #1 variants → confirm each gets a different variant name (Tier 2 AI enrichment will fire) and the `🔍 Detected from…` hint appears on the review screen
+
+### Changes Since Last Deploy
+
+- Scan cover persistence: `comic-covers` bucket migration + `/api/comics/upload-cover` endpoint + `uploadCoverImage` helper + scan-page wire-in (signed-in users only)
+- 3-tier variant name resolver (catalog → AI → derived) + catalog guard migration + analyze-route wire-in + catalog writer extension + UI hint on review screen
+- BACKLOG entry: Admin UI for Community Variant-Name Approval Queue
+- DEV_LOG session 46 entry; TESTING_RESULTS session-start entry
+
+---
+
 ## May 6, 2026 (Wednesday) - Session 45b: PWA Splash Iteration + Hunt List Fix + Notifications Settings 500 + Live Key-Info Coordinated Fixes + Data-Partner Research (Deployed May 6, 2026 — through commit `69c186b`)
 
 ### Summary

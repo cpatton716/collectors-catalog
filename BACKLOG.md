@@ -228,6 +228,33 @@ Native iOS app via Capacitor wrapping our existing Next.js/PWA codebase. Distrib
 
 ## Pending Enhancements
 
+### Admin UI for Community Variant-Name Approval Queue
+**Priority:** Medium (Post-Launch — gates the variant resolver's catalog growth)
+**Status:** Pending — schema + write path live; review surface needed
+**Added:** May 9, 2026
+
+**Background (Session 46):** The 3-tier variant resolver (`src/lib/variantResolver.ts`) was shipped May 9, 2026 to fix front-cover scans of variant comics being saved with `variant=null` (e.g., Dark Knights Metal #1 variants all looked identical in collection). The resolver's Tier 1 looks up `(upc_prefix, addon_issue, addon_variant)` in `barcode_catalog` for an admin-approved variant name. Tier 2 falls back to a focused AI enrichment call (~$0.0008/scan with Haiku). Tier 3 derives a generic "Cover B" from the addon digits.
+
+Per product requirement, **user-typed variant names land in `barcode_catalog.variant_name` with `variant_name_status='pending'`** and never surface in Tier 1 lookups until an admin approves them. This protects the community catalog from typos/junk entries.
+
+**The gap:** there's no admin UI yet to walk through the pending queue. Until one exists, the Tier 1 catalog stays empty and every barcode-confirmed variant scan pays for a Tier 2 AI call (~$0.0008 each). Acceptable at small scale, but the catalog should compound — one approval per variant means every future scan of that book is free.
+
+**What's needed:**
+- Admin page (likely under `/admin/variants` or extend the existing `/admin` dashboard) listing rows from `barcode_catalog` where `variant_name_status='pending' AND variant_name IS NOT NULL`, ordered by `created_at DESC`
+- Per-row actions: **Approve** (sets `variant_name_status='approved'`, reviewed_by, reviewed_at), **Reject** (sets to `'rejected'` with optional reason), **Edit + Approve** (lets admin clean up "capullo cover" → "Greg Capullo Variant Cover" before approving)
+- Show context: linked comic title/issue/year, full UPC, addon variant code, source (`user`/`ai`/`derived`), submission count for the same `(upc_prefix, addon_issue, addon_variant)` (helps admin batch-approve common variants)
+- Bulk approve when multiple submissions agree on the same variant_name string
+- API endpoint: `PATCH /api/admin/variant-names/:id` with admin-auth gate
+- Unit tests for the approval logic + RLS check
+
+**Index already exists:** `idx_barcode_catalog_variant_pending` (created in `20260509_variant_name_catalog_guard.sql`) keeps the queue fast.
+
+**Effort estimate:** ~3-4 hours. Admin auth plumbing already exists (`src/lib/adminAuth.ts`); follow the patterns in `admin_barcode_reviews` workflow.
+
+**Why not blocking launch:** The resolver still works without the admin UI — it just stays in AI-paid mode. Admin can approve via SQL Editor in the meantime if they want to seed Tier 1 manually (`UPDATE barcode_catalog SET variant_name_status='approved' WHERE id = '...'`).
+
+---
+
 ### Fix CGC Cert Lookup Cloudflare 403 Errors
 **Priority:** Medium (Post-Launch)
 **Status:** Deferred post-launch pending ZenRows ROI decision
