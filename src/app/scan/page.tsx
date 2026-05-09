@@ -26,6 +26,7 @@ import {
 import { v4 as uuidv4 } from "uuid";
 
 import { StorageQuotaError, storage } from "@/lib/storage";
+import { uploadCoverImage } from "@/lib/uploadCoverImage";
 
 import { useCollection } from "@/hooks/useCollection";
 import { MilestoneType, useGuestScans } from "@/hooks/useGuestScans";
@@ -258,10 +259,19 @@ export default function ScanPage() {
       const isSlabbed = itemData.isGraded || itemData.comic?.isSlabbed || comicDetails?.isSlabbed;
       const listIds = isSlabbed ? ["collection", "slabbed"] : ["collection"];
 
+      // For signed-in users, upload the data: URI photo to Supabase Storage so
+      // the cover_image_url sanitizer (which rejects data: URIs) doesn't drop
+      // it on DB write. Guests keep the data: URI -- localStorage doesn't run
+      // through the sanitizer. On upload failure, fall back to "" so the
+      // placeholder renders instead of blocking the save.
+      const persistedCoverUrl = isSignedIn
+        ? (await uploadCoverImage(imagePreview)) ?? ""
+        : imagePreview;
+
       const newItem: CollectionItem = {
         id: uuidv4(),
         comic: itemData.comic || comicDetails!,
-        coverImageUrl: imagePreview,
+        coverImageUrl: persistedCoverUrl,
         conditionGrade: itemData.conditionGrade || null,
         conditionLabel: itemData.conditionLabel || null,
         isGraded: itemData.isGraded || false,
