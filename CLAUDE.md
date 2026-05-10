@@ -180,11 +180,12 @@ For ad-hoc use during development:
 **Variable Costs:**
 | Service | Cost | Notes |
 |---------|------|-------|
-| Anthropic API | ~$0.015/scan | Prepaid credits ($10 loaded) |
+| Anthropic API — Sonnet 4 (cover scan, vision) | ~$0.015/scan | Prepaid credits ($10 loaded) |
+| Anthropic API — Haiku 4.5 (variant resolver Tier 2 enrichment) | ~$0.0008/call | Text-only, ~150 in / ~96 out tokens. Fires only when barcode `addonVariant` present AND `barcode_catalog` has no admin-approved name AND addon implies a variant. Estimated $0.02–$0.07/day at Beta volumes; rises after the high-res barcode OCR fix lands (see BACKLOG). |
 | Stripe | 2.9% + $0.30 | Per transaction |
 
 **Free Tiers (current usage):**
-- Supabase: 500MB DB, 1GB storage
+- Supabase: 500MB DB, 1GB storage (⚠️ new `comic-covers` bucket — ~400KB/photo — will pressure the 1GB cap once cover uploads scale; see COST_PROJECTIONS.md "Cost Risks")
 - Clerk: 10K MAU
 - Upstash: 10K commands/day
 - Resend: 3K emails/mo

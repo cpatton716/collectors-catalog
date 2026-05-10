@@ -1,8 +1,10 @@
 # Spec: AI Cover Recognition & Multi-Provider Fallback
 
 > **Feature #1** from [TECHNICAL_FEATURES.md](../TECHNICAL_FEATURES.md)
-> **Last Updated:** 2026-04-07
+> **Last Updated:** 2026-05-09 (Session 46 — variant resolver + scan-time cover upload)
 > **Status:** Production
+
+> **Updated: May 9, 2026 (Session 46)** — Added 3-tier variant resolver (`src/lib/variantResolver.ts`) that runs after Phase 5 barcode parsing, the `comic-covers` Supabase Storage bucket + `uploadCoverImage` helper for scan-time cover persistence, the `/api/comics/upload-cover` auth-guarded endpoint, and the new `variantSource: "catalog" | "ai" | "derived" | null` field on `ComicDetails`. The `barcode_catalog` table gained `variant_name_*` columns to back the resolver's catalog tier.
 
 ---
 
@@ -104,6 +106,8 @@ The AI Cover Recognition system is a 13-phase pipeline that identifies comic boo
 
 ↓
 
+**Post-Pipeline Save (client, Session 46):** When the signed-in user accepts the scan and `handleSave()` runs in `src/app/scan/page.tsx`, any data-URI cover image is uploaded to the `comic-covers` Supabase Storage bucket via `uploadCoverImage()` (`src/lib/uploadCoverImage.ts`), and the persisted public URL replaces the data URI before the comic row is inserted. The upload is brokered by the auth-guarded `POST /api/comics/upload-cover` route. Guest scans skip the upload — guests have no profile_id to attribute storage to.
+
 **End-of-Route Save: Persist to issue-level cache + Record analytics + Return response**
 - Saves issue metadata (title, publisher, year, creators, keyInfo) to BOTH Redis and Supabase in parallel
 - This is how cert data (Phase 7), AI data (Phases 3/11), and all enrichment flows into the shared issue cache (Phase 9)
@@ -203,6 +207,14 @@ Digits 15-16: Variant code (addonVariant) — optional
 
 **Variant mapping:** First digit of addonVariant -> cover letter (1=A, 2=B, 3=C...). Only applied if AI didn't already detect a variant.
 
+**Variant Resolver (post-parse, Session 46):** After barcode parsing, `resolveVariant()` from `src/lib/variantResolver.ts` runs a 3-tier resolution to populate the response's `variant` and `variantSource` fields:
+
+1. **Catalog tier** — Look up `variant_name_*` columns on a matching `barcode_catalog` row (highest trust; populated by prior human verifications). Sets `variantSource: "catalog"`.
+2. **AI tier** — Use the AI-detected variant string from Phase 3 if present. Sets `variantSource: "ai"`.
+3. **Derived tier** — Fall back to the addon-digit cover-letter mapping above. Sets `variantSource: "derived"`.
+
+If no tier resolves a value, `variantSource` is `null`. The form UI surfaces this as a "Detected from..." hint under the variant field (`ComicDetailsForm.tsx`).
+
 ---
 
 ### Phase 6: Barcode Catalog Lookup
@@ -215,8 +227,9 @@ Digits 15-16: Variant code (addonVariant) — optional
 |--------|---------|
 | raw_barcode | Full UPC string |
 | upc_prefix, item_number, check_digit, addon_issue, addon_variant | Parsed components |
+| variant_name_catalog, variant_name_ai, variant_name_derived | Per-tier variant strings persisted from `catalogBarcode()` (Session 46) — backs the variant resolver's catalog tier on future scans |
 | confidence | high / medium / low |
-| status | auto_approved / pending_review / approved |
+| status | auto_approved / pending / pending_review / approved |
 | submitted_by | User who verified (via save-to-collection) |
 
 **Lookup priority:**
@@ -225,7 +238,7 @@ Digits 15-16: Variant code (addonVariant) — optional
 
 **Only queries** `auto_approved` or `approved` entries. Pending entries are invisible to lookups.
 
-**Cataloging happens at save time** (not scan time) — the user reviewing and saving acts as implicit human verification. High-confidence barcodes are auto-approved; medium/low go to admin review queue.
+**Cataloging happens at save time** (not scan time) — the user reviewing and saving acts as implicit human verification. `catalogBarcode()` accepts `variantName` and `variantSource` parameters and writes them into the appropriate `variant_name_*` column so later scans of the same barcode can resolve via the catalog tier. High-confidence barcodes are auto-approved; medium/low go to admin review queue (`status: 'pending'`).
 
 ---
 
@@ -511,6 +524,7 @@ If budget runs out, later phases are skipped gracefully — the scan returns wha
   "publisher": "Marvel Comics",
   "releaseYear": "1988",
   "variant": "Newsstand Edition",
+  "variantSource": "catalog",
   "writer": "David Michelinie",
   "coverArtist": "Todd McFarlane",
   "interiorArtist": "Todd McFarlane",
@@ -581,7 +595,10 @@ If budget runs out, later phases are skipped gracefully — the scan returns wha
 | `src/lib/coverHarvest.ts` | Cover harvesting: validation, crop, upload, submit |
 | `src/lib/keyComicsDatabase.ts` | Curated key comics local database |
 | `src/lib/cache.ts` | Redis caching layer (all TTLs and prefixes) |
-| `src/lib/db.ts` | Supabase queries (metadata, barcode catalog) |
+| `src/lib/db.ts` | Supabase queries (metadata, barcode catalog — `catalogBarcode()` accepts `variantName`/`variantSource`) |
+| `src/lib/variantResolver.ts` | 3-tier variant resolution (catalog → AI → derived) — Session 46 |
+| `src/lib/uploadCoverImage.ts` | Data URI → Supabase Storage upload helper for scan-time cover persistence — Session 46 |
+| `src/app/api/comics/upload-cover/route.ts` | Auth-guarded endpoint that brokers cover uploads to the `comic-covers` bucket — Session 46 |
 | `src/lib/subscription.ts` | Scan slot reservation/release |
 | `src/lib/rateLimit.ts` | Upstash rate limiting |
 | `src/lib/imageOptimization.ts` | Compression pipeline |

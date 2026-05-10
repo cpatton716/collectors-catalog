@@ -2,7 +2,7 @@
 
 > Reference document for spec doc creation. Each feature below should get its own detailed spec document through individual review sessions.
 >
-> **Last Updated:** May 6, 2026 — Session 45b
+> **Last Updated:** May 9, 2026 — Session 46
 
 ---
 
@@ -61,6 +61,28 @@ A small but load-bearing rule, codified in Session 45b after a Key Hunt regressi
 
 ---
 
+## 3c. Cover Image Persistence Pipeline (Session 46, May 9, 2026)
+
+User-snapped photos taken via the FAB scan flow are now uploaded to a dedicated Supabase Storage bucket and persisted as a public URL on the `comics` row instead of being embedded as a `data:` URI. Required because the existing `cover_image_url` sanitizer (`src/lib/coverImageUrlSanitizer.ts`) hard-rejects all `data:` URIs to protect downstream consumers (CSV exports, Stripe product image URL caps, marketplace listing payloads).
+
+**Pipeline:**
+- Camera capture → in-memory `data:` URI for instant preview → on save, client helper `uploadCoverImage()` converts data URI → `Blob` → multipart `POST /api/comics/upload-cover` (Clerk-authed) → returns the public Supabase URL → that URL is what gets written to `comics.cover_image_url` via the normal `addComic()` path.
+- `scan/page.tsx` `handleSave()` calls the helper before the DB write **for signed-in users only**. Guests bypass entirely (their collections live in localStorage where the data URI is fine).
+- **Graceful degradation:** if the upload fails (network, bucket misconfig, oversize), the helper resolves to `""` and the save still succeeds — the comic just renders the placeholder cover instead of blocking the user.
+
+**Storage configuration (migration `20260509_comic_covers_bucket.sql`):**
+- Bucket name: `comic-covers`
+- Public read (so URLs work in `<img>` tags, CSVs, Stripe payloads without signed URLs)
+- 10MB file size cap (matches the analyze-route image cap)
+- Allowed MIME types: `image/jpeg`, `image/png`, `image/webp`
+- RLS: authenticated users can `INSERT`; anyone can `SELECT`
+
+**Boundary respected:** This is a write to `comics.cover_image_url` — Cover-Image Preservation Rule (3b) still holds. The user's photo lands in `comics`, not in `comic_metadata`. External harvest pipelines continue to write to `comic_metadata` only.
+
+**Key files:** `src/app/api/comics/upload-cover/route.ts`, `src/lib/uploadCoverImage.ts`, `src/app/scan/page.tsx` (`handleSave()`), `supabase/migrations/20260509_comic_covers_bucket.sql`
+
+---
+
 ## 4. Multi-Layer Caching Architecture
 Redis (backend): eBay prices (12h), metadata (7d), AI analysis (30d), barcodes (6mo), certs (1yr). localStorage (frontend): offline lookups (7d, 30 items LRU), scan history, guest collection. Image hash cache prevents re-analyzing identical photos.
 
@@ -108,7 +130,7 @@ HTML scraping of grading company websites → structured data extraction (grade,
 ---
 
 ## 8. Barcode Detection & Catalog System
-AI extracts 12-17 digit UPC → parsed into prefix/item/check/addon components → variant extracted from digits 16-17 → crowd-sourced `barcode_catalog` lookup → low-confidence entries queued for admin review in `admin_barcode_reviews`.
+AI extracts 12-17 digit UPC → parsed into prefix/item/check/addon components → variant extracted from digits 16-17 → crowd-sourced `barcode_catalog` lookup → low-confidence entries queued for admin review in `admin_barcode_reviews`. Variant **name** resolution (turning the addon digits into a human-readable label like "Cover G") is delegated to the Variant Name Resolver — see Feature 8c.
 
 **Session 45b (May 6, 2026) — Comic Vine integration retired.** The `/api/quick-lookup` route (Comic Vine barcode-fallback), the `COMIC_VINE_API_KEY` env var, the "Quick Lookup" PWA shortcut in `manifest.json`, and the service-worker cache entry for `/api/quick-lookup` were all removed in commit `69c186b` (~250 lines deleted). Comic Vine's API was unreliable for new releases and the curated key DB + crowd-sourced `barcode_catalog` cover the same gap with better data quality. Crowd-sourced barcode catalog is now the only post-AI fallback path.
 
@@ -129,6 +151,32 @@ Dedicated scan pipeline for slabbed/graded comics that bypasses standard cover r
 **Migration:** `supabase/migrations/20260405_cert_first_analytics.sql` — adds `scan_path` and `barcode_extracted` columns to `scan_analytics`
 
 **Key files:** `src/app/api/analyze/route.ts` (Phases 1-5.5), `src/lib/aiProvider.ts`, `src/lib/certHelpers.ts`, `src/lib/providers/anthropic.ts`, `src/lib/providers/gemini.ts`, `src/lib/metadataCache.ts`, `src/lib/analyticsServer.ts`
+
+---
+
+## 8c. Variant Name Resolver (Session 46, May 9, 2026)
+
+Three-tier resolver that turns a parsed barcode into a human-readable variant label (e.g., "Cover G", "Virgin Variant", "1:25 Incentive"). Lives in `src/lib/variantResolver.ts` and is wired into `src/app/api/analyze/route.ts` immediately after `parseBarcode()` (~line 730).
+
+**Design principle:** The barcode signal trumps any AI cover-derived hint. Two physically different variant editions can share identical cover artwork (cover-art-equal but trade-dress-different printings) — the addon supplement digits are the only authoritative discriminator, so the resolver intentionally ignores AI cover guesses when a barcode is present.
+
+**Resolution tiers:**
+- **Tier 1 — Catalog lookup.** `lookupApprovedVariantName()` queries `barcode_catalog` for a community-approved entry matching the prefix/item/addon. Source = `'catalog'`.
+- **Tier 2 — Focused AI enrichment.** `enrichVariantNameFromAI()` makes a narrow Claude Haiku call (`MODEL_LIGHTWEIGHT`, ~$0.0008/call) using the cover image + parsed barcode to suggest a variant label. Source = `'ai'`.
+- **Tier 3 — Deterministic addon fallback.** Pure mapping from addon digits to a generic label (e.g., addon `"71"` → `"Cover G"`). Source = `'addon'`. This always returns *something* when the barcode parsed cleanly.
+
+**Dependency injection.** `resolveVariant()` takes `{ catalog: CatalogLookup, enricher: VariantEnricher }` so the route can swap in the production Supabase + Anthropic implementations while the unit tests inject in-memory fakes. 21 unit tests in `src/lib/__tests__/variantResolver.test.ts` cover tier ordering, short-circuit behavior, missing-input fallthrough, and the addon → label mapping table.
+
+**Schema additions to `barcode_catalog`:**
+- `variant_name TEXT` — the resolved label
+- `variant_name_source TEXT` — `'catalog' | 'ai' | 'addon'`
+- `variant_name_status TEXT DEFAULT 'pending'` — community-submitted variant names require admin approval before they're surfaced by Tier 1 lookups (prevents poisoning the shared catalog from a single low-confidence scan)
+
+**UI:** `ComicDetailsForm.tsx` renders a "🔍 Detected from barcode/AI/addon code…" hint above the variant field with source-aware copy so the user can see why the form pre-filled the way it did.
+
+**⚠️ Production caveat (known gap, top-priority for next session).** The resolver requires the AI to extract a full **17-digit** barcode (12-digit main UPC + 5-digit addon supplement) so the addon digits are available. In production scans the AI consistently captures only the 12-digit main UPC and misses the 5-digit add-on. Net effect: Tier 1 mostly hits only for entries seeded by other paths, and Tiers 2 + 3 don't fire at all in production today because the addon is empty. Tracked in BACKLOG as **"Variant Detection — Two-Pass High-Res Barcode OCR (Option C3)"** — a second targeted OCR pass on a high-resolution crop of the barcode region to recover the missing addon digits.
+
+**Key files:** `src/lib/variantResolver.ts`, `src/lib/__tests__/variantResolver.test.ts`, `src/app/api/analyze/route.ts` (resolver wiring after `parseBarcode`), `src/components/ComicDetailsForm.tsx` (variant hint UI), `barcode_catalog` migration adding `variant_name` / `variant_name_source` / `variant_name_status`
 
 ---
 

@@ -2,7 +2,9 @@
 
 > **Comprehensive map of pages, features, and service dependencies**
 
-*Last Updated: May 6, 2026 — Session 45b (Removed orphan `/api/quick-lookup` route + Comic Vine integration entirely; `KeyHuntHistoryEntry` localStorage shape gained `keyInfo` + `keyInfoMeta` fields so curated-DB key data persists across sessions; `/api/con-mode-lookup` no-data branch now calls AI for keyInfo on curated-DB miss, making both eBay-found and no-data paths symmetrical; PWA `manifest.json` "Quick Lookup" shortcut and `sw.js` precache entry removed; cover-image preservation product rule documented — user-uploaded `comics.cover_image_url` is mutated only via the manual edit flow. Session 44 + earlier context preserved below.)*
+*Last Updated: May 9, 2026 — Session 46 (Two scan-pipeline fixes: (1) Scan-cover persistence — new `POST /api/comics/upload-cover` route + `comic-covers` Supabase Storage bucket + `src/lib/uploadCoverImage.ts` client helper; signed-in `/scan` `handleSave()` now uploads data URI to Storage before DB write so the `cover_image_url` sanitizer at `db.ts:720` no longer drops the user's photo. (2) 3-tier variant name resolver — new `src/lib/variantResolver.ts` (`resolveVariant()` + `lookupApprovedVariantName` + `enrichVariantNameFromAI` Claude Haiku); `barcode_catalog` gained `variant_name`/`variant_name_source`/`variant_name_status` columns (admin-approval-required); `/api/analyze` calls resolver after barcode parse; `ComicDetails.variantSource` surfaces "🔍 Detected from..." hint in `ComicDetailsForm`. **Known production gap:** AI extracts only the 12-digit UPC, not the 5-digit add-on supplement, so the resolver currently lacks the variant-discriminating data it needs — tracked in BACKLOG as "Variant Detection — Two-Pass High-Res Barcode OCR (Option C3)". Session 45b + earlier context preserved below.)*
+
+*Earlier Session 45b (May 6, 2026): Removed orphan `/api/quick-lookup` route + Comic Vine integration entirely; `KeyHuntHistoryEntry` localStorage shape gained `keyInfo` + `keyInfoMeta` fields so curated-DB key data persists across sessions; `/api/con-mode-lookup` no-data branch now calls AI for keyInfo on curated-DB miss, making both eBay-found and no-data paths symmetrical; PWA `manifest.json` "Quick Lookup" shortcut and `sw.js` precache entry removed; cover-image preservation product rule documented — user-uploaded `comics.cover_image_url` is mutated only via the manual edit flow.*
 
 *Earlier Session 44 (May 5, 2026): Second Chance "Offer to Runner-up" RLS-anon-read bug closed in `getAuctionSecondChanceState`; Key Hunt key-issue chips wired UI-side + curated DB lookup integrated into `/api/con-mode-lookup` at all 3 result paths; new reusable `CoverLightbox` component for full-screen cover verification on Key Hunt; admin-only `/admin/clz-comparison` tablet "slide" page for convention-floor competitive talking points; `keyComicsDatabase.ts` curated DB expanded 404 → 1,130 entries (+726 net-new across 3 rounds, years normalized to series-start convention); Clerk dashboard username rules tightened (length 4-20, extended chars disabled — residual gap mitigated by webhook sanitizer); `docs/CLZ_COMPARISON_BRIEF.md` partner sales brief with verified pricing + feature comparison + data-partnership talking points authored. Session 43 + earlier context preserved below.*
 
@@ -46,6 +48,8 @@
 |---------|----------|-------|
 | AI Cover Recognition | 🤖 🤖² 🔴 | Multi-provider: Gemini primary, Anthropic fallback |
 | Barcode Scanning | 🤖 🗄️ | Barcode catalog lookup, AI fallback |
+| Variant Name Resolver | 🗄️ 🤖 | 3-tier resolution after barcode parse: (1) `barcode_catalog` lookup by `(upc_prefix, addon_issue, addon_variant)` for admin-approved variant names, (2) focused Claude Haiku enrichment seeded with deterministically-derived cover letter (e.g., "Cover G"), (3) deterministic addon-derived fallback. Barcode trumps AI cover-derived hint when present. Catalog writes default to `variant_name_status='pending'` (admin moderation required). See `src/lib/variantResolver.ts`. (Session 46) |
+| Cover Image Persistence | 🗄️ 🔐 | Signed-in users: `handleSave()` calls `uploadCoverImage()` → `POST /api/comics/upload-cover` → `comic-covers` Supabase Storage bucket → public URL written to `comics.cover_image_url` (works around `db.ts:720` data-URI sanitizer). Guests: keep base64 data URI in localStorage as before. (Session 46) |
 | Price Estimation | 🏷️ 🗄️ 🔴 | eBay API → Supabase cache → Redis |
 | Fallback Status | — | "Taking longer than usual" message when fallback triggers |
 | CGC/CBCS Cert Lookup | Web scrape | Verifies graded comic certification |
@@ -449,7 +453,7 @@ All other routes are public (unauthenticated access allowed). Individual API rou
 
 | Route | Method | Purpose | Services |
 |-------|--------|---------|----------|
-| `/api/analyze` | POST | Cover image analysis (multi-provider with fallback) + cover validation. Gates guest scans 4 & 5 on hCaptcha siteverify; 10MB upload cap; scan-slot reservation released on all error branches | 🤖 🤖² 🗄️ 🔴 🏷️ |
+| `/api/analyze` | POST | Cover image analysis (multi-provider with fallback) + cover validation. Gates guest scans 4 & 5 on hCaptcha siteverify; 10MB upload cap; scan-slot reservation released on all error branches. After barcode parse (~line 730), invokes `resolveVariant()` from `src/lib/variantResolver.ts` for 3-tier variant-name resolution (catalog → focused AI enrichment → deterministic addon-derived fallback). Currently bottlenecked in production: AI extracts only the 12-digit UPC, not the 5-digit add-on supplement (see "Variant Detection — Two-Pass High-Res Barcode OCR" in BACKLOG). | 🤖 🤖² 🗄️ 🔴 🏷️ |
 | `/api/comic-lookup` | POST | Title/issue lookup | 🤖 🗄️ 🔴 |
 | `/api/con-mode-lookup` | POST | Key Hunt pricing. Both eBay-found and no-data branches symmetrically attach keyInfo: curated `keyComicsDatabase.ts` first, AI fallback on miss (Session 45b — previously only the eBay-found branch ran the AI fallback). | 🏷️ 🤖 🗄️ |
 | `/api/import-lookup` | POST | CSV enrichment | 🤖 🗄️ |
@@ -595,6 +599,7 @@ All other routes are public (unauthenticated access allowed). Individual API rou
 |-------|--------|---------|----------|
 | `/api/comics/[id]` | GET/PATCH/DELETE | Comic CRUD | 🗄️ 🔐 |
 | `/api/comics/[id]/refresh-value` | POST | Manual FMV refresh for an owned comic — triggers eBay Browse lookup, persists `price_data` + `average_price` on the `comics` row; honors the shared 12h Redis cache used by `/api/ebay-prices` (Session 40b) | 🏷️ 🗄️ 🔴 🔐 |
+| `/api/comics/upload-cover` | POST | Multipart `File` upload from signed-in users; uploads to `comic-covers` Supabase Storage bucket; returns public URL. Used by `src/lib/uploadCoverImage.ts` to convert scan-page data URIs into hosted URLs before DB write so `db.ts:720` sanitizer no longer rejects the cover. (Session 46) | 🗄️ 🔐 |
 | `/api/comics/bulk-update` | PATCH | Bulk update comics | 🗄️ 🔐 |
 | `/api/comics/bulk-delete` | POST | Bulk delete comics | 🗄️ 🔐 |
 | `/api/comics/bulk-add-to-list` | POST | Bulk add comics to list | 🗄️ 🔐 |
@@ -1002,6 +1007,8 @@ Seller's Stripe Express Dashboard shows incoming transfer on 2-5 day payout sche
 | `src/lib/concurrency.ts` | `mapWithConcurrency(items, concurrency, fn)` — used by `sendPaymentReminders` + `expireUnpaidAuctions` to cap parallel email prep at 5 while feeding Resend `batch.send()` |
 | `src/lib/hcaptcha.ts` | hCaptcha siteverify helper; 5s timeout; dev/prod key swap via `HCAPTCHA_SECRET`/`NEXT_PUBLIC_HCAPTCHA_SITE_KEY`; invoked on `/api/analyze` for guest scans 4 & 5 |
 | `src/lib/uploadLimits.ts` | Shared 10MB image upload cap — `MAX_IMAGE_UPLOAD_BYTES`, `assertImageSize()`, `base64DecodedByteLength()`; wired into `/api/analyze` and `/api/messages/upload-image` |
+| `src/lib/uploadCoverImage.ts` | Client helper used by `/scan` `handleSave()` — converts data URI to Blob, multipart POSTs to `/api/comics/upload-cover`, returns Supabase Storage public URL. Pass-through for already-hosted `http(s)://` URLs; returns `null` on failure (caller decides whether to drop the cover or block save). (Session 46) |
+| `src/lib/variantResolver.ts` | Variant name resolver invoked from `/api/analyze` after barcode parse. Exports `resolveVariant()` (3-tier orchestrator), `lookupApprovedVariantName` (Supabase `barcode_catalog` query for admin-approved rows), and `enrichVariantNameFromAI` (Claude Haiku, prompted with deterministically-derived cover letter from the addon code). Tier 1 catalog → Tier 2 focused AI → Tier 3 deterministic addon-derived fallback. Design principle: barcode trumps AI cover-derived hint (two physically distinct books can share identical cover art but differ in addon code). (Session 46) |
 | `src/lib/choosePlanHelpers.ts` | Choose plan page helpers |
 | `src/lib/imageOptimization.ts` | Client-side image compression utilities |
 | `src/lib/scanAnalyticsHelpers.ts` | Scan analytics tracking helpers |
@@ -1120,6 +1127,15 @@ Seller's Stripe Express Dashboard shows incoming transfer on 2-5 day payout sche
 - `notify_social` (boolean, default true) - Social email notifications opt-in
 - `notify_marketing` (boolean, default false) - Marketing email notifications opt-in (transactional is locked always-on, not toggleable)
 
+**barcode_catalog table additions (Session 46)**
+- `variant_name` (text, nullable) - Resolved variant label (e.g., "Cover G")
+- `variant_name_source` (text, nullable) - Provenance: `catalog` / `ai` / `addon-derived`
+- `variant_name_status` (text, default `'pending'`) - Admin moderation gate; only `'approved'` rows are returned by `lookupApprovedVariantName` for community use
+- Migration: `supabase/migrations/20260509_variant_name_catalog_guard.sql`
+
+**comics field surfaces (Session 46)**
+- `ComicDetails.variantSource` (TS type only, not a DB column) - Surfaces "🔍 Detected from..." hint in `ComicDetailsForm.tsx`; populated by `/api/analyze` from `resolveVariant()` result
+
 **auctions table additions (Session 38)**
 - `payment_reminder_sent_at` (timestamp, nullable) - Idempotency marker for T-24h `sendPaymentReminders()` cron pass
 - `payment_expired_at` (timestamp, nullable) - Set by `expireUnpaidAuctions()` when auction auto-cancels past deadline
@@ -1132,6 +1148,7 @@ Seller's Stripe Express Dashboard shows incoming transfer on 2-5 day payout sche
 | Bucket | Purpose | Access |
 |--------|---------|--------|
 | `cover-images` | Auto-harvested cover images from scan results (uploaded by `coverHarvest.ts`) | Public read, service-role write |
+| `comic-covers` | User-uploaded scan cover images per `comics` row (uploaded by `/api/comics/upload-cover` via `src/lib/uploadCoverImage.ts`); 10MB cap, JPEG/PNG/WebP. Migration: `supabase/migrations/20260509_comic_covers_bucket.sql`. (Session 46) | Public read, authenticated write |
 | `message-images` | User-uploaded message attachments | Authenticated |
 
 ### Cover-Image Preservation Rule (Session 45b)

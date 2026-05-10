@@ -2,7 +2,7 @@
 
 > Launch readiness scorecard. See `BACKLOG.md` for open work items and `DEV_LOG.md` for session history.
 
-*Last Updated: May 6, 2026 (Session 45b)*
+*Last Updated: May 9, 2026 (Session 46)*
 
 ---
 
@@ -10,7 +10,7 @@
 
 Collectors Chest is a comic book collection tracking app with AI-powered cover recognition and a new auction marketplace feature. The app is currently in **Private Beta** with public registration disabled.
 
-**Overall Score: 9.6/10** (Session 45b (May 6, 2026) closed the remaining keyInfo gap — `/api/con-mode-lookup` no-data path now calls AI for keyInfo on curated DB miss (mirrors eBay-found path), so slabbed CGC scans of unaliased titles like "Ultimate Fallout: Spider-Man No More" no longer silently drop the KEY ISSUE chip. `KeyHuntHistoryEntry` now persists `keyInfo` + `keyInfoMeta` so tapping a recent scan keeps the chip; Refresh / New Grade preserves the user's cover image instead of letting eBay's null overwrite. ~297 lines of dead Comic Vine code removed (orphan `/api/quick-lookup` route, dead PWA shortcut, stale service-worker cache entry, "comicvine" from `CoverPipelineResult` union). Cover-image preservation product rule established and audited end-to-end: `comics.cover_image_url` is only mutated by manual edit. 825/825 tests passing. Session 45 (earlier May 6) had previously closed the Second Chance RLS-anon bug and shipped the alias mechanism + sniping protection + ending-soon reminders + PWA splash.)
+**Overall Score: 9.6/10** (Session 46 (May 9, 2026) shipped + deployed two fixes: (1) **Scan Cover Persistence** — signed-in users' FAB scan photos now persist via the new `comic-covers` Supabase bucket, eliminating the universal "?" placeholder regression for all signed-in users; (2) **3-Tier Variant Name Resolver** — new `src/lib/variantResolver.ts` with catalog → AI → derived tiers, wired into `/api/analyze`, with admin-approval guard for community variant names and a new schema field on `barcode_catalog`. Important production gap surfaced during testing: the resolver requires the AI to extract a full 17-digit barcode (12-digit UPC + 5-digit add-on), but production scans only capture 12 digits, so the resolver doesn't fire in prod yet — tracked in BACKLOG as "Variant Detection — Two-Pass High-Res Barcode OCR (Option C3)" and is the top priority for next session. 850/850 tests passing.)
 
 **Current Status: PRIVATE BETA**
 - Site is live at collectors-chest.com
@@ -51,13 +51,13 @@ _(No open Medium items. Hottest Books was removed from scope Apr 22, 2026 — se
 
 ## 1. Code Quality & Technical Debt
 
-**Score: 9.5/10** (up from 9.4/10 — Session 45b removed ~297 lines of dead Comic Vine code (orphan `/api/quick-lookup` route + PWA shortcut + service-worker entry + `"comicvine"` literal in `CoverPipelineResult` union); aligned `keyInfoMeta.matchedYear` to `number | null` end-to-end across `LookupResult`, `KeyHuntPriceResult`, `KeyHuntHistoryEntry`; symmetrized AI keyInfo fallback across `con-mode-lookup` paths so the no-data branch matches the eBay-found branch. 825/825 tests passing across 54 suites.)
+**Score: 9.5/10** (Session 46 added `src/lib/variantResolver.ts` (3-tier catalog → AI → derived) + signed-in cover-persistence helpers (`src/lib/uploadCoverImage.ts`, `/api/comics/upload-cover`); +21 net new tests (variantResolver). TypeScript clean, ESLint 0 errors / 116 pre-existing warnings, build clean, npm audit clean, no circular deps. Knip surfaces 14 unused exported types, 1 new this session (`VariantSource` from variantResolver — not externally consumed yet, OK to defer). 850/850 tests passing.)
 
 ### Issues Status
 
 | Issue | Severity | Status |
 |-------|----------|--------|
-| Test suite | 🟢 Good | **730 tests passing** (Apr 23, 2026) |
+| Test suite | 🟢 Good | **850 tests passing** (May 9, 2026) |
 | ESLint config | 🟢 Fixed | Working with Next.js defaults |
 | Viewport/themeColor metadata | 🟢 Fixed | Migrated to `export const viewport` |
 | Stripe webhook config export | 🟢 Fixed | Deprecated config removed |
@@ -146,7 +146,7 @@ See BACKLOG.md for open auction/marketplace work.
 
 ## 4. User Experience & Onboarding
 
-**Score: 8.5/10** (up from 8.4/10 — Session 45b made the KEY ISSUE chip stick: persisted into `KeyHuntHistoryEntry` so it survives history-tap; small "Key" badge in history list rows; live no-data scans now also rescue keyInfo via AI when curated DB misses, closing the slabbed-cover hole. Refresh / New Grade now preserves the user's photo instead of replacing it with the eBay placeholder ("?" image). New product rule: user-uploaded `comics.cover_image_url` is only mutated by manual edit — durable across all future cover-touching code paths.)
+**Score: 8.7/10** (up from 8.5/10 — Session 46 fixed the production-affecting "?" placeholder bug for ALL signed-in users: FAB scan photos now persist to the new `comic-covers` Supabase bucket via `/api/comics/upload-cover` and `src/lib/uploadCoverImage.ts`, so My Collection cards show the actual cover the user just photographed instead of a placeholder. This was a universal regression affecting every signed-in scan — major scan-UX win. Variant Name resolver also shipped (catalog → AI → derived) but blocked by a 12-vs-17-digit barcode OCR gap in production — see BACKLOG "Variant Detection — Two-Pass High-Res Barcode OCR (Option C3)".)
 
 ### Guest Experience Flow
 1. Land on home page → see features & "How It Works"
@@ -222,7 +222,7 @@ See BACKLOG.md for open auction/marketplace work.
 
 | Service | Tier | Monthly Cost | Notes |
 |---------|------|--------------|-------|
-| Anthropic API | Pay-per-use | Variable | ~$0.015 per scan (Claude Haiku) |
+| Anthropic API | Pay-per-use | Variable | ~$0.015 per scan (Claude Haiku); Session 46 added small Tier-2 AI variant-name lookup on barcode-catalog miss — incremental cost negligible (only fires on cache miss when full 17-digit barcode is present, which is rare today pending OCR fix) |
 | Supabase | Free | $0 | 500MB DB, 1GB storage |
 | Clerk | Free | $0 | Up to 10K MAU |
 | Netlify | Personal Plan | $9.54 | Hosting + domain + DNS (billed 13th) |
@@ -270,12 +270,13 @@ See BACKLOG.md for open auction/marketplace work.
 
 ## 8. Feature Completeness
 
-**Score: 9.7/10** (up from 9.6/10 — Session 45b closed the last keyInfo asymmetry: both branches of `/api/con-mode-lookup` (eBay-found AND no-data) now call AI on curated miss, so slabbed CGC scans of unaliased titles consistently surface the chip. Key Hunt history persists keyInfo + keyInfoMeta. Cover preservation rule documented and enforced.)
+**Score: 9.7/10** (Session 46 (May 9, 2026) shipped two features: Scan Cover Persistence (signed-in users — fully functional in production) and 3-Tier Variant Name Resolver (code-complete, but doesn't fire in prod yet because AI scans capture only 12-digit UPC, not the 17-digit barcode the resolver needs — see BACKLOG "Variant Detection — Two-Pass High-Res Barcode OCR (Option C3)").)
 
 | Feature | Status |
 |---------|--------|
 | Core Collection Management | ✅ Complete — filter UX refactored Apr 28, 2026 (mobile bottom-sheet drawer + active chips) |
-| AI Cover Recognition | ✅ Complete |
+| AI Cover Recognition | ✅ Complete — signed-in scan covers now persist via `comic-covers` Supabase bucket (May 9, 2026, Session 46) |
+| Variant Name Resolver (3-tier) | ⚠️ Code-complete, blocked in prod — see BACKLOG "Variant Detection — Two-Pass High-Res Barcode OCR (Option C3)" (production AI captures only 12-digit UPC, not the 17-digit barcode the resolver needs to match `barcode_catalog`) |
 | Listed Value (eBay Browse API) | ✅ Complete |
 | Grade-Aware Pricing | ✅ Complete |
 | Key Hunt (offline) | ✅ Complete — KEY ISSUE chips on scanned books + 3-tier resolver + 1,130-entry curated DB (May 5, 2026, Session 44) |
@@ -389,3 +390,5 @@ See `BACKLOG.md` for the full prioritized list of open items.
 _Deployed May 1, 2026 — Session 43 bundle (payment-deadline anchor, trade_matches IDOR fix, notifications GET rate-limit, My Collection filter UX refactor, comp Premium for co-founders)._
 
 _Session 44 changes (May 5, 2026, not yet deployed): Second Chance "Offer to Runner-up" RLS-anon-read fix, Key Hunt KEY ISSUE chips + 3-tier resolver, curated DB expansion 404 → 1,130, `CoverLightbox` component, admin-only `/clz-comparison` page, partner-shareable CLZ comparison brief, TECHNICAL_FEATURES.md Key Hunt section update, Clerk dashboard username rules tightened._
+
+_Deployed May 9, 2026 — Session 46 bundle: Scan Cover Persistence (`comic-covers` Supabase bucket + `/api/comics/upload-cover` + `src/lib/uploadCoverImage.ts` — fixes universal "?" placeholder for signed-in users), 3-Tier Variant Name Resolver (`src/lib/variantResolver.ts` wired into `/api/analyze`, with admin-approval guard for community variant names — blocked in prod by 12-vs-17-digit OCR gap, see BACKLOG)._

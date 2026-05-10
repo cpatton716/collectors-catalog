@@ -1,7 +1,7 @@
 # Collectors Chest - Operating Cost Projections
 
 > Cost estimates for running the application at various scale levels.
-> All prices in USD. Updated May 6, 2026.
+> All prices in USD. Updated May 9, 2026.
 > **Audit cadence:** reviewed at end of every session (close-up-shop). Any new service added or cost change must land here before commit.
 
 ---
@@ -10,6 +10,7 @@
 
 | Date | Change | Net Cost Impact |
 |------|--------|-----------------|
+| May 9, 2026 (Session 46 — variant resolver Tier 2 enrichment) | No new services, tiers, or integrations. New variable AI cost line: variant resolver **Tier 2 Haiku enrichment call** (`claude-haiku-4-5-20251001`, text-only, ~150 input + ~96 max output tokens, ~$0.0008/call). Fires only when (a) a barcode was extracted with `addonVariant` present, (b) `barcode_catalog` has no admin-approved name for the `(upc_prefix, addon_issue, addon_variant)` triplet, and (c) the addon implies a variant (not "00"/"01"/"11"). Catalog is empty at launch, so Tier 2 fires on most barcode-confirmed variant scans until admin approvals compound Tier 1 hits. Estimated **$0.02–$0.07/day** at current Beta scan volumes. **Caveat:** known production gap (BACKLOG: Variant Detection — Two-Pass High-Res Barcode OCR Option C3) means the AI rarely extracts the full 17-digit barcode today, so Tier 2 isn't actually firing much in production yet. Real cost materializes once the OCR fix lands. Also: new `comic-covers` Supabase Storage bucket (~400KB/photo) — see Cost Risks below. | +$0.02–$0.07/day (private beta), pending OCR fix |
 | May 6, 2026 (Session 45b — post-Session-45-deploy continuation) | No new services, tiers, or integrations. Removed ~297 lines of dead Comic Vine code (orphan `/api/quick-lookup` route, dead PWA shortcut, stale service-worker cache entry, `"comicvine"` literal in `CoverPipelineResult` union). `COMIC_VINE_API_KEY` was never set in any environment — the code path was already non-operational at runtime, so the removal has no cost impact. Added `fetchKeyInfoFromAI` call to the no-data branch of `/api/con-mode-lookup` — at most +1 Anthropic call (~$0.0003) per slabbed-cover scan that misses both eBay AND the curated key DB; negligible at private-beta volume. **PriceCharting Legendary tier ($499/yr) decision still pending Aponte review** (`docs/PRICECHARTING_PROPOSAL.md` shipped for stakeholder sign-off — not committed to spend). | $0/mo — no change |
 | May 6, 2026 (Session 45 — alias mechanism + sniping protection + ending-soon reminders + PWA splash) | No new services, tiers, or integrations. Internal-only work: alias mechanism on `keyComicsDatabase` (6 new aliases), `lookupKeyInfoWithMeta` returning year-disambiguation metadata, `snipingProtection.ts` (5-min window/extension, 6h cap), auction ending-soon T-1h cron in `auctionDb.ts` (in-app + email), 2 new email types (`subscription_payment_failed`, `auction_ending_soon_bidder`), `sendBatchWithRetry` with 429 backoff, em-dash purge across 77 files, splash + maskable icon regeneration from single 2732×2732 brand source. Migrations applied: `20260506_cover_head_check.sql`, `20260506_auction_sniping_protection.sql`, `20260506_auction_ending_soon_reminder.sql`. Resend, Supabase, Anthropic, all other services remain on documented tiers. | $0/mo — no change |
 | Apr 27, 2026 (Session 42 + 42b–d) | No new services, tiers, or integrations. Six deploys of internal logic: Second Chance flow fixes, **$0.75 platform-fee floor** (closes the sub-$6 platform-loss zone where Stripe processing fees exceeded our percent-fee — free-tier break-even was $5.88, premium $14.29), transaction-fee documentation pass, Notifications Inbox v1 (uses existing Supabase + localStorage cache), pre-existing IDOR hotfix in `markNotificationRead`, three smoke-test fixes. Migrations applied to Supabase: `20260427_add_shipped_notification_type.sql`, `20260427_notifications_inbox.sql`, `20260427_backfill_shipped_notification_type.sql`. All services remain on documented free tiers. | $0/mo — no change (and **net positive going forward**: every small sale now profitable after Stripe fees) |
@@ -96,11 +97,12 @@
 | Claude Sonnet 4 | $3/M tokens    | $15/M tokens   | ~$0.01-0.03/scan   |
 | Claude Haiku    | $0.25/M tokens | $1.25/M tokens | ~$0.002-0.005/scan |
 
-**Current: Claude Sonnet 4**
+**Current: Claude Sonnet 4** (vision) + **Claude Haiku 4.5** (`claude-haiku-4-5-20251001`, text-only enrichment)
 **Actual Cost per Action:**
 - Cover scan (vision): ~$0.02-0.05 (image + text)
 - Comic lookup (text): ~$0.01-0.02
 - Price lookup: ~$0.01
+- **Variant resolver Tier 2 enrichment (Haiku, text-only): ~$0.0008/call** — fires only when barcode `addonVariant` is present, the `barcode_catalog` has no admin-approved name for that `(upc_prefix, addon_issue, addon_variant)` triplet, and the addon implies a variant (not "00"/"01"/"11"). Self-limiting: as admins approve variant names, Tier 1 catalog hits compound and Tier 2 calls drop. Estimated **$0.02–$0.07/day** at current Beta volumes (will rise once the high-res barcode OCR fix lands — see BACKLOG "Variant Detection — Two-Pass High-Res Barcode OCR Option C3").
 
 **With Hybrid Caching (Current):**
 - First lookup: $0.01-0.03
@@ -309,6 +311,17 @@
 | hCaptcha  | $0 (free tier)    |
 | eBay API  | $0                |
 | **Total** | **$750-2,150/mo** |
+
+---
+
+## Cost Risks (Watch List)
+
+Items that are **$0 today** but could push us off a free tier or onto a paid tier as usage grows. Not yet a current cost — flagged so we don't get surprised.
+
+| Risk | Trigger | Estimated Tipping Point | Mitigation |
+|------|---------|-------------------------|------------|
+| **Supabase Storage — `comic-covers` bucket** | New bucket added Session 46 for user-uploaded book covers. Each compressed photo is ~400KB. Free tier caps at 1GB total Supabase storage. | ~100 active users × 50 books each = **~2GB** (exceeds free tier). Realistic threshold to watch: **~2,500 cover uploads** before we cross 1GB. | Supabase Pro ($25/mo) raises storage to 100GB. Alternatives: aggressive resize/compression (target <150KB), prune duplicates by hash, or move covers to a cheaper object store (R2/S3) once cover count grows. |
+| **Variant resolver Tier 2 AI calls** | Currently muted by a known production gap (AI rarely extracts the full 17-digit barcode). Once the two-pass high-res barcode OCR fix lands (BACKLOG "Variant Detection — Option C3"), Tier 2 will fire on most barcode-confirmed variant scans until the catalog fills in. | If post-fix Tier 2 fires on ~500 scans/day at $0.0008/call = **~$0.40/day = $12/mo**. Self-limits as admin approvals populate `barcode_catalog`. | Admin-approve variant names quickly to compound Tier 1 catalog hits. Cap Tier 2 retries per `(upc_prefix, addon_issue, addon_variant)` triplet so a failing AI response doesn't loop. |
 
 ---
 

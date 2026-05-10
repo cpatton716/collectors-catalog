@@ -115,7 +115,41 @@ Deploying May 9, 2026 — both fixes bundled into 3 commits (cover persistence, 
 
 ### Changes Since Last Deploy
 
-_None — Session 46 deployed May 9, 2026 (commits `aaa3fac`, `8d6cdda`, `300bef4`). Next deploy starts from `300bef4`._
+_Session 46 deployed May 9, 2026 (commits `aaa3fac`, `8d6cdda`, `300bef4`, plus follow-up `e39b4d7` for the barcode-trumps-AI fix). Local-only docs commit `c8a608a` marks deployed. Next deploy starts from `e39b4d7` (or close-up-shop docs commit, whichever is later)._
+
+### Production Testing Findings (May 9, 2026 — post-deploy)
+
+User tested the deployed Session 46 fixes. Two findings:
+
+1. **Cover persistence not yet user-validated** — Android camera-launch-from-PWA failed with "low memory" error on first attempt (Android Low-Memory-Killer reaping the Chrome PWA process while the camera app is in foreground). Workaround documented: use "Choose from Gallery" button instead. Backlogged as a separate issue: switch the FAB scan path to use the in-app `LiveCameraCapture` component (which exists but is currently dead-code-pathed) so the PWA never goes to background. Cover persistence itself was not user-tested but the code path is correct (verified by 7 unit tests + production deploy quality gate).
+
+2. **Variant resolver not firing in production — root cause confirmed.** User scanned Dark Knights Metal #1 (the same DKM #1 photo shared mid-session, addon `00171` clearly visible in the image). Cover-pass returned high confidence, most details identified. Variant field came back **empty**. Root cause: the AI extracted only the 12-digit main UPC (`761941348926`) and missed the 5-digit add-on supplement (`00171`). With no `addonVariant`, the resolver's guard at `analyze/route.ts:734` short-circuits and never runs. No Tier 1 catalog lookup, no Tier 2 AI enrichment, no Tier 3 derived "Cover G" — just null variant.
+
+   Tested mitigation A (zoom in on the barcode for a focused photo): **failed**. The AI lost the cover context entirely and identified a totally different book. So the user cannot be asked to choose between "good cover identification" and "good barcode read" — both must work from a single normal scan.
+
+   **Backlogged as top priority for next session:** "Variant Detection — Two-Pass High-Res Barcode OCR (Option C3)". Recommended approach: spike a client-side JS barcode library (zxing-js or quagga.js) at full camera resolution before any AI call. If accuracy is good, lossless extraction with zero AI cost. Fall back to server-side two-pass OCR using the original full-resolution image via the new `comic-covers` bucket. Includes complementary low-cost addition: show extracted barcode on review screen with manual-edit affordance, so when both AI passes fail the user can paste the correct barcode.
+
+### Mid-session Fix Shipped After Deploy (May 9, 2026)
+
+Mid-session feedback from the user surfaced a flaw in the resolver's logic: a "rich AI cover hint short-circuits Tier 2" rule meant the resolver would trust AI's cover-derived variant name (e.g., "Greg Capullo Cover") and skip the barcode-derived path, even though the barcode is more authoritative. Two physically different books (e.g., a 1st-print Capullo cover vs a 7th-printing reprint of the same cover art) would be labeled identically.
+
+**Fix shipped (`e39b4d7`):**
+- Removed `isRichVariantName` and the rich-hint short-circuit logic
+- Derive cover letter deterministically BEFORE Tier 2 (Cover G for "71")
+- Pass derived label into the enricher prompt so Haiku has a concrete query ("What's Cover G of Dark Knights Metal #1?" instead of decoding raw addon digits)
+- AI cover-derived hint now only used as final fallback when there's no parsed barcode at all
+
+Updated tests: removed 3 isRichVariantName tests, added 2 new ones covering "barcode trumps rich AI hint" + derivedLabel plumbing into the enricher. **18 resolver tests, all green.**
+
+### Final test counts (after all session 46 fixes + close-up-shop)
+
+- 850/850 tests passing across 56 suites (was 825 + 21 new resolver tests + 7 new uploadCoverImage tests - 3 removed isRichVariantName tests = 850)
+- TypeScript: clean
+- ESLint: 0 errors, 116 warnings (all pre-existing)
+- Production build: ✓
+- npm audit: clean
+- Circular deps: ✓ none
+- Dead code (knip): 14 unused exports, 1 from session (`VariantSource` from variantResolver.ts — exported for future external consumers, OK to keep)
 
 ---
 

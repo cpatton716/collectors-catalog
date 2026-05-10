@@ -1,17 +1,78 @@
 # Collectors Chest Backlog
 
-## ⭐ Next Session — Main Priority (updated May 6, 2026 post Session 45b)
+## ⭐ Next Session — Main Priority (updated May 9, 2026 post Session 46)
 
 Lead with these when the next session opens.
 
-1. **PriceCharting subscription decision** — `docs/PRICECHARTING_PROPOSAL.md` shipped Session 45b. Awaiting Aponte yes/no on $499/yr Legendary subscription before integration kicks off. See "PriceCharting Integration" entry below (status: Blocked on stakeholder).
-2. **Validate Notifications Inbox remaining manual TEST_CASES.** Defer the Capacitor-specific ones (push-tap deep-link, iOS safe-area) until iOS native ships. The 27 cases added Apr 27 were walked through in Session 45 — confirm any still-open ones land in the next testing pass.
+1. **Variant Detection — Two-Pass High-Res Barcode OCR (Option C3).** ⭐ Highest priority — the variant resolver shipped Session 46 only fires when the AI extracts the full 17-digit barcode (12-digit UPC + 5-digit add-on supplement). In production testing, the AI consistently captures only the 12-digit main UPC and misses the small 5-digit addon, so the resolver never runs and variant stays null. User can't work around this by zooming in on the barcode — that breaks cover identification (the AI returns a totally different book). Needs a server-side second-pass OCR using the original full-resolution image. See "Variant Detection — Two-Pass High-Res Barcode OCR" entry below for full design + acceptance criteria.
+2. **PriceCharting subscription decision** — `docs/PRICECHARTING_PROPOSAL.md` shipped Session 45b. Awaiting Aponte yes/no on $499/yr Legendary subscription before integration kicks off. See "PriceCharting Integration" entry below (status: Blocked on stakeholder).
+3. **Validate Notifications Inbox remaining manual TEST_CASES.** Defer the Capacitor-specific ones (push-tap deep-link, iOS safe-area) until iOS native ships. The 27 cases added Apr 27 were walked through in Session 45 — confirm any still-open ones land in the next testing pass.
 
 After those: pick from the standing pre-launch list below (FMV graceful fallback, `account.updated` webhook validation, iOS native, Apple Developer enrollment).
 
 ---
 
 ## Pre-Launch — Critical / High Priority
+
+### Variant Detection — Two-Pass High-Res Barcode OCR (Option C3)
+**Priority:** High (Pre-Launch — variant resolver shipped Session 46 is non-functional in production until this lands)
+**Status:** Pending — root cause confirmed in Session 46 production testing; design agreed (Option C3); implementation pending
+**Added:** May 9, 2026
+
+**Background (Session 46):** The 3-tier variant resolver (`src/lib/variantResolver.ts`) was shipped May 9, 2026. The pipeline is wired correctly end-to-end: AI extracts barcode → `parseBarcode` decomposes the 17-digit string into `(upcPrefix, itemNumber, checkDigit, addonIssue, addonVariant)` → `resolveVariant` runs Tier 1 (catalog lookup) → Tier 2 (focused AI enrichment) → Tier 3 (deterministic "Cover G" derivation from `addonVariant[0]`). Verified correct against 18 unit tests.
+
+**The breaking gap (production testing, May 9):** The resolver requires `parsedBarcode.addonVariant` to be present (guard clause at `analyze/route.ts:734`). In real scans, the AI consistently extracts only the 12-digit main UPC (e.g., `761941348926`) and misses the 5-digit addon supplement (e.g., `00171`). With no `addonVariant`, the resolver never fires. The variant field stays empty even on books where the addon was clearly visible in the photo (verified: user's Dark Knights Metal #1 photo had `00171` legibly printed but the AI returned only the 12-digit UPC).
+
+**Why "ask the user to zoom in on the barcode" doesn't work:** Tested in Session 46. When the user takes a barcode-focused photo (filling more of the frame with the bottom-left barcode area), the AI loses the cover context and identifies a *totally different book* — because the cover artwork is now cropped out. The user cannot be asked to choose between "good cover identification" (full-cover photo) and "good variant detection" (barcode close-up). Both must work from a single normal scan.
+
+**Why this is a launch-class issue:** The variant feature is the headline of Session 46, and is broken end-to-end in production. Users with multi-variant collections (the most engaged collectors — exactly our target user) will see all variants of an issue stored as identical-looking rows. Worse: they'll re-scan thinking the AI failed, get the same null result, and lose trust in scan recognition.
+
+**Recommended approach: Server-side two-pass barcode OCR (Option C3).**
+
+Architecture:
+1. **First pass (unchanged):** AI receives the user-compressed 1200px image and extracts cover details + barcode. Returns a 12-digit UPC most of the time.
+2. **Trigger condition:** if the first-pass `barcode.raw` exists but `parseBarcode(raw).addonVariant` is null/undefined (i.e., the AI got 12 digits, not 17), OR if no barcode was detected at all on a book that should have one.
+3. **Second pass:** crop the original full-resolution image to the bottom-left quadrant (~25% width × ~15% height for raw books — the typical barcode position; needs adjustment for slabbed books where the barcode is offset by the slab geometry). Send the crop to a fresh AI call with a focused barcode-only prompt: "Extract ALL digits from this UPC barcode including the small 5-digit add-on supplement to the right. Format: full digit string, no spaces."
+4. **Splice result back:** if the second-pass barcode is longer than the first-pass barcode AND it parses as a valid 17-digit UPC, replace `comicDetails.barcode.raw` with the new value and re-run `parseBarcode` and `resolveVariant`. Log the upgrade as `[scan] Barcode upgraded: 12->17 digits via second-pass OCR`.
+
+**Critical implementation requirement:** the original full-resolution image MUST be retained server-side for the duration of the analyze call — currently the `/api/analyze` endpoint receives the already-compressed 1200px image from `ImageUpload.tsx` and never sees the full-res original. Options:
+- **A. Client-side: send both versions.** `ImageUpload.tsx` sends compressed for first pass + original (or 2400px) for second pass. Doubles upload size; significant on mobile data.
+- **B. Server-side: fetch from comic-covers bucket.** After Bug 2 (Session 46), signed-in users' photos are uploaded to `comic-covers` via `/api/comics/upload-cover`. We could upload first, then point AI at the hosted full-res URL for the second pass. Keeps payload single-image but requires reordering the flow (upload-then-scan instead of scan-then-upload).
+- **C. Client-side: don't compress before scan.** Send raw camera image to `/api/analyze`. Simplest but biggest payload.
+- **D. Client-side barcode pre-extraction with a JS library** (quagga.js, zxing-js) at full camera resolution before any AI call. Lossless, instant, free. Adds a runtime dep (~50KB gzipped for zxing-js). Could be the BEST architecture if accuracy is good — extracts the full 17-digit UPC client-side, sends it as a structured field alongside the compressed image. Then AI never has to OCR digits at all. Worth a focused 30-min spike before committing to (B).
+
+**Recommendation:** spike (D) first — if a client-side barcode library reliably extracts UPC supplements from camera photos, we get lossless extraction with zero AI cost and zero added latency. If accuracy is poor on real scans, fall back to (B) — upload-first-then-scan via the new `comic-covers` bucket. Avoid (A) and (C) — both double client upload bandwidth on mobile.
+
+**Cost impact:** with (D) — zero per scan. With (B) — adds one Haiku call (~$0.0008) only when first pass missed the addon. With (A) or (C) — ~3-4x current scan cost due to larger uncompressed payload tokenization.
+
+**Acceptance criteria:**
+- [ ] Re-scanning the user's Dark Knights Metal #1 photo (the failing test case from Session 46) at normal full-cover distance returns a non-null variant and shows the `🔍 Detected from barcode...` hint
+- [ ] Books where the barcode is genuinely cropped out of the photo do NOT trigger the second pass (cost guard — only fires when first pass returned a 12-digit barcode)
+- [ ] No regression on cover identification accuracy or scan latency for books where first pass already got 17 digits
+- [ ] Both raw and slabbed comics are handled (slab cases offset the barcode position; crop coordinates need to account for cert label geometry)
+- [ ] Telemetry: log `[scan] Barcode upgraded: N->M digits` when second pass succeeds; log `[scan] Barcode second-pass failed` when it doesn't
+
+**Complementary low-cost addition (~30 min, do in same session):** show the extracted barcode on the review screen as a small text line (e.g., "Detected barcode: `76194134892600171`"), with a "Looks wrong?" link that opens a manual edit. When the AI fails on both passes, the user can paste/type the correct barcode and the resolver re-runs. This is the final-final fallback when OCR genuinely can't read the digits — and it gives users a way to fix variant-resolution failures without re-scanning. Same change exposes the barcode for transparency, which builds trust in the recognition pipeline.
+
+**Files expected:**
+- `src/lib/barcodeOcrSecondPass.ts` (new) — focused OCR helper, takes image bytes + crop coordinates, returns digit string
+- `src/lib/clientBarcodeScanner.ts` (new, if pursuing D) — wraps zxing-js or equivalent
+- `src/app/api/analyze/route.ts` — add the second-pass trigger after first-pass barcode parse, before the resolver call (around line 740)
+- `src/components/ImageUpload.tsx` — if pursuing D, integrate client-side barcode extraction + send as structured field
+- `src/components/ComicDetailsForm.tsx` — add the "Detected barcode" text + manual-edit affordance (complementary addition)
+- `src/lib/__tests__/barcodeOcrSecondPass.test.ts` — unit tests (mocked AI provider)
+
+**Effort estimate:**
+- Spike (D) client-side barcode lib accuracy: 30-45 min
+- If (D) works: implementation ~1-2 hours including the manual-edit affordance
+- If (D) fails: (B) implementation ~3-4 hours including upload-flow reordering, full-res storage handling, and the manual-edit affordance
+
+**Related:**
+- Variant resolver (Session 46) — depends on this fix to actually produce variant names
+- Cover-image preservation rule (Session 45b) — requires that the original photo isn't mutated before second-pass OCR
+- BACKLOG: "Admin UI for Community Variant-Name Approval Queue" — once this lands and variants resolve correctly, the admin queue will start accumulating real entries to review
+
+---
 
 ### PriceCharting Integration — Sold-Listing Pricing as Primary Source
 **Priority:** High (Pre-Launch — closes the active-vs-sold pricing gap before beta users see prices)
@@ -227,6 +288,27 @@ Native iOS app via Capacitor wrapping our existing Next.js/PWA codebase. Distrib
 ---
 
 ## Pending Enhancements
+
+### Cover Edit Modal — Add "Take Photo / Upload" Button
+**Priority:** Medium (Post-Launch — natural pair with Bug 2 fix from Session 46)
+**Status:** Pending
+**Added:** May 9, 2026
+
+**Background:** Session 46 fixed scan covers persisting via the new `comic-covers` Supabase Storage bucket + `uploadCoverImage` helper. But the manual cover edit flow in `ComicDetailsForm.tsx` (the "Edit Comic Details" modal on a collection card) is still **paste-URL only** — there's no way to upload a fresh photo from the device. So the only way to fix a missing or wrong cover today is:
+1. Re-scan the comic from scratch (loses notes, edits, list assignments — destructive)
+2. Find a hosted cover image online and paste the URL (clunky on mobile, often gives a generic Cover A from Google Images, not the user's actual book)
+
+**The fix:** add a "Take Photo / Upload" button to the cover edit section that calls the existing `uploadCoverImage(dataUri)` helper from Session 46, gets back a hosted URL, and writes that into `coverImageUrl`. Effort estimate ~30 minutes including a small UI tweak.
+
+**Why this matters now:** Users who scanned books before May 9 (the Session 46 deploy) all have null `cover_image_url` for their saved books. Per Session 46 conversation, the user opted to delete-and-rescan affected books rather than build this immediately — but for new users who hit OTHER cover-loss scenarios (e.g., URL paste returns 404 later, edit-cover-by-mistake), there's no graceful recovery. This button gives them one.
+
+**Files expected:**
+- `src/components/ComicDetailsForm.tsx` — add a small file picker / take-photo button next to the existing URL paste input. Reuses the existing `ImageUpload` patterns or a slimmed-down version.
+- Optional: extract a `<CoverPicker>` component shared by scan/page.tsx + ComicDetailsForm.tsx for consistency.
+
+**Related:** Cover Persistence Pipeline (Session 46) — depends on the same upload endpoint.
+
+---
 
 ### Admin UI for Community Variant-Name Approval Queue
 **Priority:** Medium (Post-Launch — gates the variant resolver's catalog growth)
