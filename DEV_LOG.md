@@ -22,8 +22,14 @@ Session 46's Supabase Storage upload pipeline (commit `aaa3fac`) confirmed end-t
 ### Quality Gates (pre-deploy)
 `check:routes` ✓ · `build` ✓ · `smoke-test` ✓ (homepage 200) · `npm test` ✓ 850/850 · lint 0 errors on changed files. No new env vars (UI/CSS + client-side event only).
 
+### Follow-up iOS Fixes (second testing round, May 27)
+A second round of new single-cover scans (same two books on both devices) confirmed Android clean; iOS surfaced two more iOS-Safari-only issues, both fixed and re-deployed:
+
+6. **Grid cover blank until selected (iOS).** A freshly-scanned cover (Batman #423) rendered as a blank cream card with only a red sliver at top, then painted fully once multi-select mode re-rendered the card. Classic iOS Safari "image loaded but not painted until a reflow" bug — the earlier `absolute inset-0` fix corrected layout but provided no repaint trigger on load. Fix: `ComicCard.tsx` now fades the `<img>` in on `onLoad` (opacity 0→100, same mechanism `ComicImage` uses), with a `ref.complete`/`naturalWidth` check so cached images don't stay hidden. Kept the plain `<img>` (not `next/image`) deliberately — `next.config` doesn't set `unoptimized`, so converting the grid would route every thumbnail through Netlify's Image CDN.
+7. **Checkbox needed two taps (iOS).** Selecting a card's checkbox took two taps on iOS, one on Android. Cause: iOS Safari "sticky hover" — elements with `:hover` styles (checkbox `hover:bg-pop-cream`, card `group-hover`) consume the first tap as hover and the second as click. Fix: enabled `future.hoverOnlyWhenSupported` in `tailwind.config.ts`, which gates all `hover:`/`group-hover:` styles behind `@media (hover: hover)` so they don't apply on touch devices. Global fix — resolves the same double-tap pattern app-wide. (Checkbox already `stopPropagation`s, so it was not a double-toggle.)
+
 ### Where We Left Off
-Deployed May 27, 2026 and **device-validated by the user the same day** — all 5 collection-UI fixes confirmed resolved on iPhone + Android post-deploy, alongside the cover-persistence validation. Issue #1 (detail-modal thumbnail) kept as cropped-to-fill 2:3; option remains to switch to `contain` (zero-crop, letterboxed) if preferred later.
+Deployed May 27, 2026 (twice). First deploy (`42bff35`): 5 collection-UI fixes — all device-validated on iPhone + Android, plus cover-persistence validation. Second deploy: 2 iOS-Safari follow-ups (blank-cover repaint + double-tap checkbox) — pending iOS re-test. Issue #1 (detail-modal thumbnail) kept as cropped-to-fill 2:3; option remains to switch to `contain` (zero-crop, letterboxed) if preferred later.
 
 ### Changes Since Last Deploy
 _Reset — Session 47 deployed May 27, 2026. No accumulated undeployed changes._

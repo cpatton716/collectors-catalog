@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
+
 import { DollarSign, Pencil, Star, Tag, TrendingDown, TrendingUp } from "lucide-react";
 
 import { SelectionCheckbox } from "@/components/collection/SelectionCheckbox";
@@ -26,6 +28,18 @@ export function ComicCard({
   onToggleSelect,
 }: ComicCardProps) {
   const { comic, coverImageUrl, conditionLabel, forSale, askingPrice } = item;
+
+  // iOS Safari sometimes leaves a loaded <img> unpainted until a reflow (cover
+  // shows blank until the card re-renders). Fading the image in on load forces
+  // the repaint; the complete-check covers cached images that finished loading
+  // before React attached onLoad, so they don't stay invisible.
+  const imgRef = useRef<HTMLImageElement>(null);
+  const [imgReady, setImgReady] = useState(false);
+  useEffect(() => {
+    if (imgRef.current?.complete && imgRef.current.naturalWidth > 0) {
+      setImgReady(true);
+    }
+  }, [coverImageUrl]);
 
   // Calculate profit/loss
   const estimatedValue = comic.priceData?.estimatedValue || 0;
@@ -60,9 +74,12 @@ export function ComicCard({
       <div className="relative aspect-[2/3] bg-pop-cream border-b-3 border-pop-black">
         {coverImageUrl ? (
           <img
+            ref={imgRef}
             src={coverImageUrl}
             alt={`${comic.title} #${comic.issueNumber}`}
-            className="absolute inset-0 w-full h-full object-cover"
+            onLoad={() => setImgReady(true)}
+            decoding="async"
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-200 ${imgReady ? "opacity-100" : "opacity-0"}`}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center dots-red">

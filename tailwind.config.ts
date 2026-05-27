@@ -1,6 +1,12 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  future: {
+    // Apply hover:/group-hover: styles only on devices that truly support hover.
+    // Prevents iOS Safari's "first tap = hover, second tap = click" double-tap
+    // (e.g. selection checkboxes that needed two taps to check).
+    hoverOnlyWhenSupported: true,
+  },
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
