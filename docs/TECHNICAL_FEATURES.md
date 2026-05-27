@@ -2,7 +2,7 @@
 
 > Reference document for spec doc creation. Each feature below should get its own detailed spec document through individual review sessions.
 >
-> **Last Updated:** May 9, 2026 — Session 46
+> **Last Updated:** May 27, 2026 — Session 47
 
 ---
 
@@ -79,7 +79,11 @@ User-snapped photos taken via the FAB scan flow are now uploaded to a dedicated 
 
 **Boundary respected:** This is a write to `comics.cover_image_url` — Cover-Image Preservation Rule (3b) still holds. The user's photo lands in `comics`, not in `comic_metadata`. External harvest pipelines continue to write to `comic_metadata` only.
 
-**Key files:** `src/app/api/comics/upload-cover/route.ts`, `src/lib/uploadCoverImage.ts`, `src/app/scan/page.tsx` (`handleSave()`), `supabase/migrations/20260509_comic_covers_bucket.sql`
+**Session 47 (May 27, 2026) — PROD-VALIDATED end-to-end + iOS rendering fixes.** The full upload pipeline was confirmed working in production on iPhone + Android (first user verification): a newly scanned cover persists into the collection grid, the detail view, and survives a reload. Two iOS Safari rendering bugs against the persisted cover were fixed in the same session:
+- **Grid paint bug (`ComicCard.tsx`).** On iOS Safari the cover image rendered blank/cut-off on first paint. Fixed by making the `<img>` `absolute inset-0` inside its aspect-ratio box and fading it in (opacity 0→100) on the `load` event — the opacity transition forces the iOS repaint. A `complete` / `naturalWidth` check short-circuits the fade for already-cached images so they don't flash. Deliberately kept a plain `<img>` (NOT `next/image`) to avoid Netlify Image CDN cost.
+- **Detail-modal thumbnail squish.** The modal cover thumbnail used `w-20 h-30`; `h-30` is an undefined Tailwind class that collapsed the box. Changed to `w-20 aspect-[2/3] self-start` so the thumbnail renders as a proper tall comic cover.
+
+**Key files:** `src/app/api/comics/upload-cover/route.ts`, `src/lib/uploadCoverImage.ts`, `src/app/scan/page.tsx` (`handleSave()`), `src/components/ComicCard.tsx` (iOS fade-in-on-load grid render), `supabase/migrations/20260509_comic_covers_bucket.sql`
 
 ---
 
@@ -431,7 +435,9 @@ Binary ratings (positive/negative) per transaction (sale/auction/trade). 7-day e
 ## 16. Offline-First Architecture (PWA)
 Service Worker: network-first for pages, cache-first for static assets. Offline action queue syncs on reconnect via Background Sync API. `useOffline` hook exposes `isOnline`, `pendingActionsCount`, `syncPendingActions()`. Guest collection stored entirely in localStorage.
 
-**Key files:** `public/sw.js`, `src/hooks/useOffline.ts`, `src/lib/offlineCache.ts`, `src/lib/storage.ts`
+**Session 47 (May 27, 2026) — Mobile nav hides during collection multi-select.** The floating bottom `MobileNav` was overlapping the collection's multi-select action bar. The collection page (`src/app/collection/page.tsx`) now dispatches a `cc:selection-mode` window `CustomEvent` (`{ detail: { active } }`) when entering/exiting select mode, and `MobileNav.tsx` listens for it and hides itself while selection is active. To keep the bar above everything, its z-index was raised (z-40 → z-50) and the grid bottom padding bumped (`pb-20` → `pb-28`) so the last row of comics isn't hidden behind the bar. Touch-target reliability was also fixed project-wide via Tailwind `future.hoverOnlyWhenSupported` (in `tailwind.config`) so sticky `:hover` styles no longer require a double-tap on iOS to select a checkbox.
+
+**Key files:** `public/sw.js`, `src/hooks/useOffline.ts`, `src/lib/offlineCache.ts`, `src/lib/storage.ts`, `src/app/collection/page.tsx` (dispatches `cc:selection-mode`), `src/components/MobileNav.tsx` (listens, hides during select), `tailwind.config` (`hoverOnlyWhenSupported`)
 
 ---
 

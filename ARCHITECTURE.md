@@ -953,7 +953,7 @@ Seller's Stripe Express Dashboard shows incoming transfer on 2-5 day payout sche
 | `src/components/CSVImport.tsx` | Batch lookups with dedup + parallel processing, shows unique lookup count in progress |
 | `src/components/messaging/MessageThread.tsx` | Real-time via Supabase Broadcast (replaced postgres_changes) |
 | `src/components/Navigation.tsx` | Broadcast subscriptions for message badge, profileId from `/api/username/current`, 20 FAQs, fixed "More" dropdown active state |
-| `src/components/MobileNav.tsx` | Broadcast subscriptions for message badge updates |
+| `src/components/MobileNav.tsx` | Broadcast subscriptions for message badge updates; listens for the `cc:selection-mode` window `CustomEvent` (dispatched by `/collection`) and hides the floating bottom nav while multi-select mode is active so the selection action bar isn't covered (Session 47) |
 | `src/components/creatorCredits/` | Creator Credits UI (CreatorBadge, FeedbackList, FeedbackModal, LeaveFeedbackButton, SellerResponseForm) |
 | `src/components/CoverReviewQueue.tsx` | Admin cover image contribution review |
 | `src/components/follows/` | Follow system UI (FollowButton, FollowerCount, FollowListModal) |
@@ -1607,7 +1607,8 @@ Session 40 shipped as five sub-sessions (40a–40e) focused on PROD marketplace 
 | Installable | Web manifest + service worker |
 | Offline Mode | Key Hunt cached lookups |
 | Camera Access | Live preview + capture |
-| Bottom Navigation | Auto-hide on scroll |
+| Bottom Navigation | Auto-hide on scroll; also hides while `/collection` multi-select mode is active, signalled by the `cc:selection-mode` window `CustomEvent` (`{ active: boolean }`) — a lightweight decoupled channel from the collection page to `MobileNav` (Session 47) |
+| Touch-device hover gating | `tailwind.config.ts` sets `future.hoverOnlyWhenSupported: true` so `hover:`/`group-hover:` styles only apply on hover-capable (non-touch) pointers — prevents iOS "double-tap to interact" where the first tap triggers the hover state instead of the action (Session 47) |
 | Safe Areas | iOS notch handling |
 
 **Session 45b PWA cleanup:** `public/manifest.json` no longer ships the "Quick Lookup" app shortcut, and `public/sw.js` no longer pre-caches `/api/quick-lookup` — both removed alongside the orphan route.

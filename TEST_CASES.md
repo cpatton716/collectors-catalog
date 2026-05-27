@@ -27,6 +27,8 @@ A guide for testing the main and secondary features of the application.
 | Review detected details | After scan completes | Form shows detected details with confidence indicator |
 | Edit detected details | Modify any field in the form | Changes save correctly |
 | Fun facts during scan | Upload image and wait | Rotating comic facts display while analyzing |
+| **(Session 47 — May 27) Scanned cover persists to collection + survives reload** ✅ Verified May 27 (iPhone + Android) | As a signed-in user, scan a comic with the camera → save it → open Collection → reload the page | The photo you snapped appears as the comic's cover in the collection grid AND the detail view, and persists after a hard reload (uploaded to Supabase Storage, not a transient data URI). First production user verification of the Session 46 cover-upload pipeline. |
+| **(Session 47 — May 27) "Add Book" button stays on one line (iOS)** ✅ Verified May 27 (iPhone) | View the scan flow on iOS where the "Add Book" button appears | The "Add Book" button label stays on a single line — it does NOT wrap to two lines (`whitespace-nowrap`). |
 
 ### 2. Collection Management
 
@@ -42,6 +44,7 @@ A guide for testing the main and secondary features of the application.
 | Filter by list | Select list from dropdown | Only comics in that list show |
 | Sort collection | Change sort dropdown | Comics reorder by date/title/value/issue |
 | Star a comic | Click star icon on comic card | Comic marked as starred, filter works |
+| **(Session 47 — May 27) Grid cover renders fully on first load (iOS)** ✅ Verified May 27 (iPhone + Android) | Open Collection on iOS Safari with a comic that has a cover image; hard-reload to bypass cache | Cover renders fully on first paint and fades in cleanly — NOT blank, cut-off, or half-painted. Cached images appear immediately without a flash. |
 
 ### 2a. Bulk Actions (Multi-Select)
 
@@ -65,6 +68,8 @@ A guide for testing the main and secondary features of the application.
 | Select All | Click "Select All" button | All visible comics selected |
 | Clear selection | Click "Clear" button | All comics deselected |
 | Select All toggle | With all selected → Click "Select All" | Button shows "ALL SELECTED" state |
+| **(Session 47 — May 27) Checkbox selects on a single tap (iOS)** ✅ Verified May 27 (iPhone) | In selection mode on iOS Safari, tap a comic's checkbox once | Comic selects on the FIRST tap — no second tap required. (Sticky `:hover` was gated via Tailwind `hoverOnlyWhenSupported` so hover styles only apply on hover-capable devices.) |
+| **(Session 47 — May 27) Selection header readable, no overlap** ✅ Verified May 27 (iPhone) | Enter selection mode on mobile and select several comics | The "N SELECTED" count and the Cancel button do NOT overlap. On mobile the count sits on its own centered row above the action labels; all labels stay on a single line (no wrapping). |
 
 #### Bulk Delete
 
@@ -115,6 +120,7 @@ A guide for testing the main and secondary features of the application.
 | Toolbar on mobile | View on mobile viewport | Toolbar buttons show icons only (no text labels) |
 | Touch targets | Tap buttons on mobile | All buttons have adequate touch target size (44px+) |
 | Content not obscured | Scroll collection in selection mode | Bottom padding prevents toolbar from hiding content |
+| **(Session 47 — May 27) Action bar stays visible while scrolling** ✅ Verified May 27 (iPhone + Android) | Enter selection mode on mobile and scroll the collection up and down | The multi-select action bar stays visible and on top — it is NOT hidden behind the floating bottom nav. The bottom nav hides while selection mode is active (via the `cc:selection-mode` event); the last row of comics is fully visible above the action bar. |
 
 ### 3. Comic Details & Editing
 
@@ -123,6 +129,7 @@ A guide for testing the main and secondary features of the application.
 | Test Case | Steps | Expected Result |
 |-----------|-------|-----------------|
 | View comic details | Click comic in collection | Detail modal opens with all info |
+| **(Session 47 — May 27) Detail-modal cover thumbnail is a proper tall cover** ✅ Verified May 27 (iPhone + Android) | On mobile, open the detail modal for a comic that has a cover image | The cover thumbnail renders as a proper tall comic cover (2:3 aspect ratio), NOT squished/collapsed. (Fixed the undefined `h-30` Tailwind class → `aspect-[2/3]`.) |
 | View cover lightbox | Click cover image in modal | Full-screen lightbox opens |
 | Close lightbox | Click X or outside image | Lightbox closes |
 | Edit comic details | Click "Edit Details" → Modify → Save | Changes persist |

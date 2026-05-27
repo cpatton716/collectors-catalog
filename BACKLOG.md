@@ -337,6 +337,25 @@ Per product requirement, **user-typed variant names land in `barcode_catalog.var
 
 ---
 
+### Route FAB Scan Through In-App Camera (Android Low-Memory Crash Fix)
+**Priority:** Medium (Post-Launch)
+**Status:** Pending — surfaced in Session 46 DEV_LOG
+**Added:** May 27, 2026
+
+**Background (Session 46):** The floating-action-button (FAB) scan path launches the **system camera** to capture a cover photo. On Android, handing off to the system camera app pushes our PWA to the background, and Android's low-memory killer can reap the backgrounded PWA process while the camera is open — when the user returns from the camera, the app reloads/crashes with an effective "low memory" failure and the in-progress scan is lost.
+
+**Documented fix:** Route the FAB scan through the in-app `LiveCameraCapture` component (currently dead-code-pathed) instead of the system camera. Capturing in-app keeps the PWA in the foreground, so the OS doesn't reap it, and the scan flow stays continuous.
+
+**What's needed:**
+- Wire the FAB scan trigger to `LiveCameraCapture` rather than the system camera intent / file-input capture.
+- Re-activate / un-dead-code the `LiveCameraCapture` path; confirm it still works post-changes.
+- Verify on a real Android device that the previously-crashing flow now completes without the low-memory reap.
+- Confirm iOS behavior is unaffected (or benefits) by the same in-app capture path.
+
+**Related:** Session 46 mobile collection-UI fixes; Batch Scanning (also benefits from a persistent in-app camera).
+
+---
+
 ### Fix CGC Cert Lookup Cloudflare 403 Errors
 **Priority:** Medium (Post-Launch)
 **Status:** Deferred post-launch pending ZenRows ROI decision
@@ -775,6 +794,24 @@ User-validated talking points from May 3-4 weekend show (CLZ came up most among 
 - Brief content already in `docs/CLZ_COMPARISON_BRIEF.md` would be the source of truth for the page copy
 
 **Related:** Testimonials / Social Proof on Homepage; Competitive Positioning (EVALUATION § 5); CLAUDE.md branding section.
+
+---
+
+### Resolve npm audit Vulnerabilities (Dependencies)
+**Priority:** Low-Medium (Post-Launch maintenance)
+**Status:** Pending
+**Added:** May 27, 2026
+
+`npm audit --audit-level=high` reports **15 vulnerabilities (7 high, 8 moderate) as of May 27, 2026** in transitive dependencies — notably `ws` (uninitialized memory disclosure) and `resend`'s transitive chain (`resend` → `svix` → `uuid`; also `@sentry/nextjs` → `@sentry/webpack-plugin` → `uuid`). `npm audit fix` is available, but test carefully for breakage before committing — several fixes touch deps inside `resend` and `@sentry/nextjs`, so run the full test + build suite and smoke-test email/error-tracking after applying.
+
+---
+
+### Detail-Modal Mobile Cover Thumbnail — Optional `object-contain` (Zero-Crop)
+**Priority:** Low (cosmetic)
+**Status:** Pending — optional, user preference
+**Added:** May 27, 2026
+
+The mobile detail-modal cover thumbnail (fixed in Session 47) is currently a cropped-to-fill 2:3 box. Open option to switch it to `object-contain` (zero-crop, letterboxed) if the user prefers seeing the full cover edge-to-edge over a tighter framed thumbnail. One-line CSS change; pick the look the user wants.
 
 ---
 

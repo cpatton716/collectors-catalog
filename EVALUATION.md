@@ -2,7 +2,7 @@
 
 > Launch readiness scorecard. See `BACKLOG.md` for open work items and `DEV_LOG.md` for session history.
 
-*Last Updated: May 9, 2026 (Session 46)*
+*Last Updated: May 27, 2026 (Session 47)*
 
 ---
 
@@ -146,7 +146,7 @@ See BACKLOG.md for open auction/marketplace work.
 
 ## 4. User Experience & Onboarding
 
-**Score: 8.7/10** (up from 8.5/10 — Session 46 fixed the production-affecting "?" placeholder bug for ALL signed-in users: FAB scan photos now persist to the new `comic-covers` Supabase bucket via `/api/comics/upload-cover` and `src/lib/uploadCoverImage.ts`, so My Collection cards show the actual cover the user just photographed instead of a placeholder. This was a universal regression affecting every signed-in scan — major scan-UX win. Variant Name resolver also shipped (catalog → AI → derived) but blocked by a 12-vs-17-digit barcode OCR gap in production — see BACKLOG "Variant Detection — Two-Pass High-Res Barcode OCR (Option C3)".)
+**Score: 8.8/10** (up from 8.7/10 — Session 47 PROD-validated the Session 46 cover-persistence pipeline end-to-end on iPhone + Android for the first time (May 27, 2026); confirmed FAB scan photos persist to the `comic-covers` Supabase bucket and render on My Collection cards instead of the "?" placeholder. Session 47 also resolved a cluster of mobile collection-UI bugs — squished detail-modal cover thumbnail, two-line "Add Book" button, blank/cut-off grid covers on iOS Safari first paint, overlapping multi-select header, action bar hidden behind the floating nav, and the iOS double-tap checkbox. Session 46 had fixed the production-affecting "?" placeholder bug for ALL signed-in users (FAB scan photos now persist via `/api/comics/upload-cover` and `src/lib/uploadCoverImage.ts`); Variant Name resolver also shipped but stays blocked by a 12-vs-17-digit barcode OCR gap in production — see BACKLOG "Variant Detection — Two-Pass High-Res Barcode OCR (Option C3)".)
 
 ### Guest Experience Flow
 1. Land on home page → see features & "How It Works"
@@ -251,16 +251,16 @@ See BACKLOG.md for open auction/marketplace work.
 
 ## 7. Mobile Experience
 
-**Score: 9.0/10** (up from 8.9/10 — Session 44 added reusable `CoverLightbox.tsx` full-screen cover viewer wired into Key Hunt; primes a pattern for tap-to-zoom across other cover-display surfaces (My Collection, Auction Detail, Sales). Convention-floor users on phones can now read tiny cover details without leaving Key Hunt.)
+**Score: 9.1/10** (up from 9.0/10 — Session 47 cleared a batch of mobile collection-UI bugs device-validated on iPhone + Android: detail-modal cover thumbnail no longer squished (bad `h-30` class), "Add Book" button no longer wraps to two lines on iOS, grid covers no longer blank/cut-off on iOS Safari first paint, multi-select header no longer overlaps Cancel, the multi-select action bar is no longer hidden behind the floating bottom nav, and the iOS two-tap checkbox is fixed globally via Tailwind `hoverOnlyWhenSupported`. Cover-persistence scan flow also confirmed working on both phones for the first time.)
 
 | Feature | Status |
 |---------|--------|
 | PWA installable | ✅ |
 | Offline Key Hunt | ✅ |
-| Responsive design | ✅ |
-| Mobile navigation | ✅ |
+| Responsive design | ✅ Collection-page mobile layout bugs (cover thumbnail, Add Book button, grid first-paint, multi-select header/action bar) fixed + device-validated iPhone + Android May 27, 2026 (Session 47) |
+| Mobile navigation | ✅ Floating bottom nav now hides during multi-select so the action bar isn't obscured (Session 47) |
 | Camera scanning | ✅ |
-| Touch interactions | ✅ |
+| Touch interactions | ✅ iOS sticky-hover double-tap on checkboxes fixed globally via Tailwind `hoverOnlyWhenSupported` (Session 47) |
 | Mobile auction/listing modal layout | ✅ Fixed Apr 23, 2026 (Session 40a) |
 | Cover lightbox (tap-to-zoom) | ✅ Added May 5, 2026 (Session 44) — reusable `CoverLightbox`, wired into Key Hunt |
 | Haptic feedback | ❌ |
@@ -274,8 +274,8 @@ See BACKLOG.md for open auction/marketplace work.
 
 | Feature | Status |
 |---------|--------|
-| Core Collection Management | ✅ Complete — filter UX refactored Apr 28, 2026 (mobile bottom-sheet drawer + active chips) |
-| AI Cover Recognition | ✅ Complete — signed-in scan covers now persist via `comic-covers` Supabase bucket (May 9, 2026, Session 46) |
+| Core Collection Management | ✅ Complete — filter UX refactored Apr 28, 2026 (mobile bottom-sheet drawer + active chips); mobile collection-UI bug cluster fixed + device-validated May 27, 2026 (Session 47) |
+| AI Cover Recognition | ✅ Complete — signed-in scan covers persist via `comic-covers` Supabase bucket (Session 46); PROD-validated end-to-end on iPhone + Android May 27, 2026 (Session 47) |
 | Variant Name Resolver (3-tier) | ⚠️ Code-complete, blocked in prod — see BACKLOG "Variant Detection — Two-Pass High-Res Barcode OCR (Option C3)" (production AI captures only 12-digit UPC, not the 17-digit barcode the resolver needs to match `barcode_catalog`) |
 | Listed Value (eBay Browse API) | ✅ Complete |
 | Grade-Aware Pricing | ✅ Complete |
@@ -392,3 +392,5 @@ _Deployed May 1, 2026 — Session 43 bundle (payment-deadline anchor, trade_matc
 _Session 44 changes (May 5, 2026, not yet deployed): Second Chance "Offer to Runner-up" RLS-anon-read fix, Key Hunt KEY ISSUE chips + 3-tier resolver, curated DB expansion 404 → 1,130, `CoverLightbox` component, admin-only `/clz-comparison` page, partner-shareable CLZ comparison brief, TECHNICAL_FEATURES.md Key Hunt section update, Clerk dashboard username rules tightened._
 
 _Deployed May 9, 2026 — Session 46 bundle: Scan Cover Persistence (`comic-covers` Supabase bucket + `/api/comics/upload-cover` + `src/lib/uploadCoverImage.ts` — fixes universal "?" placeholder for signed-in users), 3-Tier Variant Name Resolver (`src/lib/variantResolver.ts` wired into `/api/analyze`, with admin-approval guard for community variant names — blocked in prod by 12-vs-17-digit OCR gap, see BACKLOG)._
+
+_Deployed May 27, 2026 — Session 47 bundle: Session 46 cover-persistence pipeline PROD-validated end-to-end on iPhone + Android (first user verification), plus a cluster of mobile collection-UI fixes (detail-modal cover thumbnail, "Add Book" button wrap, iOS Safari grid first-paint, multi-select header overlap, action bar behind floating nav, iOS double-tap checkbox)._
