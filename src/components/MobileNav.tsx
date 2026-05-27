@@ -50,6 +50,7 @@ export function MobileNav() {
   const { isSignedIn } = useUser();
   const { tier, isTrialing, isAdmin } = useSubscription();
   const [isVisible, setIsVisible] = useState(true);
+  const [selectionMode, setSelectionMode] = useState(false);
   const [showDrawer, setShowDrawer] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const lastScrollY = useRef(0);
@@ -142,6 +143,16 @@ export function MobileNav() {
     setShowDrawer(false);
   }, [pathname]);
 
+  // Hide the bottom nav while a page is in multi-select mode so its action
+  // bar (sell/trade/delete/etc.) is never covered by the floating nav.
+  useEffect(() => {
+    const handleSelectionMode = (e: Event) => {
+      setSelectionMode((e as CustomEvent<{ active: boolean }>).detail?.active ?? false);
+    };
+    window.addEventListener("cc:selection-mode", handleSelectionMode);
+    return () => window.removeEventListener("cc:selection-mode", handleSelectionMode);
+  }, []);
+
   // Guest nav items: Home, Collection, Shop, More
   const guestNavItems: NavItem[] = [
     { href: "/", icon: Home, label: "Home" },
@@ -193,7 +204,7 @@ export function MobileNav() {
       {/* Bottom Navigation Bar */}
       <nav
         className={`fixed bottom-0 left-0 right-0 md:hidden z-50 transition-transform duration-300 ease-in-out ${
-          isVisible ? "translate-y-0" : "translate-y-full"
+          isVisible && !selectionMode ? "translate-y-0" : "translate-y-full"
         }`}
       >
         <div className="mx-3 mb-3 bg-white/80 backdrop-blur-lg rounded-2xl shadow-lg border border-gray-200/50">

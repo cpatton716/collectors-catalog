@@ -379,3 +379,10 @@ This document tracks testing sessions with platform and account context.
 - 1 regression caught + fixed: Ultimate Fallout #4 keyInfo title-format drift (alias added; 10 new tests in `keyComicsDatabase.test.ts`)
 - Class-of-bug logged to BACKLOG (Audit Curated Key DB for AI-vs-DB Title-Format Drift)
 - CovrPrice partner reply (May 6) reframed across docs/CLZ_COMPARISON_BRIEF.md + admin tablet page (no longer "active conversations"; now "queued as beta tester / API on 2027 roadmap")
+
+## May 27, 2026 - Session 47 Start
+- **Platform:** Both (Mobile + Web)
+- **Account Type:** Free, Premium
+- **Device(s):** iPhone, Android, Mac Chrome
+- **Sounds:** No
+- **Focus:** TBD (lead candidate: Variant Detection — Two-Pass High-Res Barcode OCR, BACKLOG #1)

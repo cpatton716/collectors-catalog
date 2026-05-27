@@ -148,6 +148,19 @@ function CollectionPageContent() {
     if (sortParam) setSortBy(sortParam);
   }, [searchParams]);
 
+  // Tell the mobile bottom nav to hide while we're in multi-select mode so its
+  // floating bar never covers the selection action toolbar.
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent("cc:selection-mode", { detail: { active: isSelectionMode } }),
+    );
+    return () => {
+      window.dispatchEvent(
+        new CustomEvent("cc:selection-mode", { detail: { active: false } }),
+      );
+    };
+  }, [isSelectionMode]);
+
   // Welcome toast for promo trial users
   useEffect(() => {
     if (searchParams.get("welcome") === "promo") {
@@ -670,7 +683,7 @@ function CollectionPageContent() {
           </FeatureButton>
           <button
             onClick={() => router.push("/scan")}
-            className="inline-flex items-center gap-2 px-3 py-2 bg-pop-blue border-2 border-pop-black text-white font-bold shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000] transition-all"
+            className="inline-flex items-center gap-2 whitespace-nowrap px-3 py-2 bg-pop-blue border-2 border-pop-black text-white font-bold shadow-[2px_2px_0px_#000] hover:shadow-[3px_3px_0px_#000] transition-all"
           >
             <Plus className="w-5 h-5" />
             Add Book
@@ -1152,7 +1165,7 @@ function CollectionPageContent() {
           </div>
         </div>
       ) : viewMode === "grid" ? (
-        <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 ${isSelectionMode ? "pb-20" : ""}`}>
+        <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 ${isSelectionMode ? "pb-28" : ""}`}>
           {filteredCollection.map((item) => (
             <ComicCard
               key={item.id}

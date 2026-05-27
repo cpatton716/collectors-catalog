@@ -4,6 +4,32 @@ This log tracks session-by-session progress on Collectors Chest.
 
 ---
 
+## May 27, 2026 (Wednesday) — Session 47: Cover Persistence PROD-Validated + 5 Collection-UI Fixes (Deployed May 27, 2026)
+
+### Summary
+Opened by validating the Session 46 cover-persistence fix in production — never user-confirmed before, because an Android camera "low memory" crash had blocked the test. Confirmed working on both iPhone (`patton@collectors-chest.com`, Premium) and Android (`cpatten716@gmail.com`, Premium): scanned covers now persist into the collection grid AND the detail view, and survive reload. The earlier Android camera crash did not recur. Then fixed 5 collection-UI issues surfaced during that same testing pass and deployed them for device verification.
+
+### Cover Persistence — VALIDATED ✅
+Session 46's Supabase Storage upload pipeline (commit `aaa3fac`) confirmed end-to-end in production for the first time, on both platforms.
+
+### Collection UI Fixes
+1. **Detail-modal cover squished (iOS + Android).** Mobile cover thumbnail used `w-20 h-30` — `h-30` is not a defined Tailwind class, so the box had no height and flex `stretch` collapsed it into a short, wide crop. Fixed to `w-20 aspect-[2/3] self-start` (proper 80×120 box). Desktop variant was already correct. File: `ComicDetailModal.tsx`.
+2. **"Add Book" button too tall (iOS).** Text wrapped to two lines; added `whitespace-nowrap`. File: `collection/page.tsx`.
+3. **Grid thumbnail cut off on first loads, self-corrected on reload (iOS).** Plain `<img>` with `w-full h-full` mis-sized before image load on iOS Safari. Changed to `absolute inset-0 w-full h-full object-cover` so the box sizes from the `aspect-[2/3]` container, not the image. Deliberately avoided switching to `next/image` to not route every grid thumbnail through Netlify's image CDN (cost). File: `ComicCard.tsx`.
+4. **Multi-select header overlap.** `justify-between` with an unconstrained count caused "N SELECTED" to wrap and overlap Cancel. Reflowed: count gets its own centered row on mobile (`order-last w-full`), inline on sm+; all labels `whitespace-nowrap`. File: `SelectionHeader.tsx`.
+5. **Multi-select action bar hidden behind floating nav.** Action toolbar was `z-40`, MobileNav `z-50`. Now the bottom nav hides while in select mode via a `cc:selection-mode` window event (dispatched from collection page, listened in MobileNav), and the action bar raised to `z-50`. Grid bottom padding bumped `pb-20 → pb-28`. Files: `MobileNav.tsx`, `collection/page.tsx`, `SelectionToolbar.tsx`.
+
+### Quality Gates (pre-deploy)
+`check:routes` ✓ · `build` ✓ · `smoke-test` ✓ (homepage 200) · `npm test` ✓ 850/850 · lint 0 errors on changed files. No new env vars (UI/CSS + client-side event only).
+
+### Where We Left Off
+Deployed May 27, 2026. The iOS-Safari-specific fixes (#2 button wrap, #3 image glitch) need real-device verification — user testing on iPhone + Android post-deploy. Issue #1 (detail-modal thumbnail) kept as cropped-to-fill 2:3; option noted to switch to `contain` (zero-crop, letterboxed) if preferred.
+
+### Changes Since Last Deploy
+_Reset — Session 47 deployed May 27, 2026. No accumulated undeployed changes._
+
+---
+
 ## May 9, 2026 (Saturday) — Session 46: Scan Cover Persistence + 3-Tier Variant Resolver (Deployed May 9, 2026 — through commit `300bef4`)
 
 ### Summary

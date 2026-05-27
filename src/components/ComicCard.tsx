@@ -62,7 +62,7 @@ export function ComicCard({
           <img
             src={coverImageUrl}
             alt={`${comic.title} #${comic.issueNumber}`}
-            className="w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center dots-red">

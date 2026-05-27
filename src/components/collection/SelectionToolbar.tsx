@@ -23,7 +23,7 @@ export function SelectionToolbar({
   const isDisabled = disabled || selectionCount === 0;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 bg-pop-cream border-t-4 border-pop-black shadow-[0_-4px_0px_#000]">
+    <div className="fixed bottom-0 left-0 right-0 z-50 bg-pop-cream border-t-4 border-pop-black shadow-[0_-4px_0px_#000]">
       <div className="max-w-7xl mx-auto px-4 py-4">
         <div className="flex items-center justify-center gap-3 md:gap-5">
           {/* Add to List */}

@@ -332,7 +332,7 @@ export function ComicDetailModal({
               {/* Mobile Cover Thumbnail */}
               <div
                 onClick={() => item.coverImageUrl && setShowImageLightbox(true)}
-                className={`flex-shrink-0 w-20 h-30 rounded-lg overflow-hidden shadow-md ${item.coverImageUrl ? "cursor-pointer" : ""}`}
+                className={`flex-shrink-0 self-start w-20 aspect-[2/3] rounded-lg overflow-hidden shadow-md ${item.coverImageUrl ? "cursor-pointer" : ""}`}
               >
                 <ComicImage
                   src={item.coverImageUrl}
