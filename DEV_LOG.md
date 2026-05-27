@@ -23,7 +23,7 @@ Session 46's Supabase Storage upload pipeline (commit `aaa3fac`) confirmed end-t
 `check:routes` ✓ · `build` ✓ · `smoke-test` ✓ (homepage 200) · `npm test` ✓ 850/850 · lint 0 errors on changed files. No new env vars (UI/CSS + client-side event only).
 
 ### Where We Left Off
-Deployed May 27, 2026. The iOS-Safari-specific fixes (#2 button wrap, #3 image glitch) need real-device verification — user testing on iPhone + Android post-deploy. Issue #1 (detail-modal thumbnail) kept as cropped-to-fill 2:3; option noted to switch to `contain` (zero-crop, letterboxed) if preferred.
+Deployed May 27, 2026 and **device-validated by the user the same day** — all 5 collection-UI fixes confirmed resolved on iPhone + Android post-deploy, alongside the cover-persistence validation. Issue #1 (detail-modal thumbnail) kept as cropped-to-fill 2:3; option remains to switch to `contain` (zero-crop, letterboxed) if preferred later.
 
 ### Changes Since Last Deploy
 _Reset — Session 47 deployed May 27, 2026. No accumulated undeployed changes._
